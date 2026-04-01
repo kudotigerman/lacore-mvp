@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Offer = {
   offer: string;
@@ -15,6 +15,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offer, setOffer] = useState<Offer | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const canSubmit = input.trim().length > 0 && !loading;
 
   const tickerText = useMemo(
@@ -63,6 +64,13 @@ export default function LandingPage() {
     ],
     []
   );
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth < 768);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -147,7 +155,7 @@ export default function LandingPage() {
               width: "100%",
               maxWidth: 1300,
               display: "grid",
-              gridTemplateColumns: "1fr auto 1fr",
+              gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr auto 1fr",
               alignItems: "center",
               gap: 16
             }}
@@ -164,35 +172,37 @@ export default function LandingPage() {
             >
               LACORE
             </p>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 18,
-                justifySelf: "center",
-                textAlign: "center"
-              }}
-            >
-              {[
-                { href: "#how-it-works", label: "HOW IT WORKS" },
-                { href: "#what-you-get", label: "WHAT YOU GET" },
-                { href: "#pricing", label: "PRICING" }
-              ].map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  style={{
-                    fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 11,
-                    letterSpacing: "0.15em",
-                    color: "#52525B",
-                    textDecoration: "none"
-                  }}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
+            {!isMobile && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 18,
+                  justifySelf: "center",
+                  textAlign: "center"
+                }}
+              >
+                {[
+                  { href: "#how-it-works", label: "HOW IT WORKS" },
+                  { href: "#what-you-get", label: "WHAT YOU GET" },
+                  { href: "#pricing", label: "PRICING" }
+                ].map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    style={{
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.15em",
+                      color: "#52525B",
+                      textDecoration: "none"
+                    }}
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            )}
             <button
               type="button"
               style={{
@@ -201,9 +211,9 @@ export default function LandingPage() {
                 background: "transparent",
                 color: "#06B6D4",
                 fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 11,
+                fontSize: isMobile ? 10 : 11,
                 letterSpacing: "0.15em",
-                padding: "10px 14px",
+                padding: isMobile ? "8px 16px" : "10px 14px",
                 cursor: "pointer"
               }}
             >
@@ -241,7 +251,7 @@ export default function LandingPage() {
             style={{
               margin: "20px 0 0",
               fontFamily: "var(--font-bebas-neue), sans-serif",
-              fontSize: "clamp(72px, 12vw, 160px)",
+              fontSize: isMobile ? "clamp(48px, 12vw, 72px)" : "clamp(72px, 12vw, 160px)",
               lineHeight: 0.95,
               letterSpacing: "0.02em",
               textTransform: "uppercase"
@@ -279,7 +289,7 @@ export default function LandingPage() {
             style={{
               width: "100%",
               maxWidth: 720,
-              margin: "0 auto"
+              margin: isMobile ? "0 16px" : "0 auto"
             }}
           >
             <div
@@ -314,7 +324,7 @@ export default function LandingPage() {
                   background: "transparent",
                   color: "#F4F4F5",
                   fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: 15,
+                  fontSize: isMobile ? 14 : 15,
                   minHeight: 80,
                   resize: "none"
                 }}
@@ -509,9 +519,12 @@ export default function LandingPage() {
             style={{
               marginTop: 18,
               display: "flex",
-              flexWrap: "wrap",
+              flexDirection: isMobile ? "column" : "row",
+              flexWrap: isMobile ? "nowrap" : "wrap",
               justifyContent: "center",
-              gap: 8
+              gap: 8,
+              width: "100%",
+              maxWidth: isMobile ? 720 : undefined
             }}
           >
             {[
@@ -527,7 +540,9 @@ export default function LandingPage() {
                   color: "#52525B",
                   fontFamily: "var(--font-space-mono), monospace",
                   fontSize: 10,
-                  letterSpacing: "0.12em"
+                  letterSpacing: "0.12em",
+                  width: isMobile ? "100%" : "auto",
+                  textAlign: "center"
                 }}
               >
                 {item}
@@ -539,7 +554,7 @@ export default function LandingPage() {
         <section
           style={{
             width: "100%",
-            padding: "120px 0",
+            padding: isMobile ? "60px 24px" : "120px 0",
             textAlign: "center"
           }}
         >
@@ -586,7 +601,7 @@ export default function LandingPage() {
           id="how-it-works"
           style={{
             background: "#0C0C0E",
-            padding: "120px 48px"
+            padding: isMobile ? "60px 24px" : "120px 48px"
           }}
         >
           <p
@@ -615,7 +630,7 @@ export default function LandingPage() {
             style={{
               marginTop: 48,
               display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))",
               gap: 20
             }}
           >
@@ -670,7 +685,7 @@ export default function LandingPage() {
           id="what-you-get"
           style={{
             width: "100%",
-            padding: "120px 48px",
+            padding: isMobile ? "60px 24px" : "120px 48px",
             background: "#09090B",
             textAlign: "center"
           }}
@@ -704,9 +719,9 @@ export default function LandingPage() {
               textAlign: "left",
               background: "#0C0C0E",
               border: "1px solid #06B6D4",
-              padding: 32,
+              padding: isMobile ? 20 : 32,
               fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 13,
+              fontSize: isMobile ? 11 : 13,
               lineHeight: 1.9,
               color: "#F4F4F5"
             }}
@@ -733,7 +748,7 @@ export default function LandingPage() {
         <section
           style={{
             background: "#0C0C0E",
-            padding: "80px 48px",
+            padding: isMobile ? "60px 24px" : "80px 48px",
             textAlign: "center"
           }}
         >
@@ -767,7 +782,7 @@ export default function LandingPage() {
           id="pricing"
           style={{
             width: "100%",
-            padding: "160px 48px",
+            padding: isMobile ? "60px 24px" : "160px 48px",
             textAlign: "center"
           }}
         >
