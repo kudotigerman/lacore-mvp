@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { getSupabaseClient } from "@/lib/supabase";
 
 type Offer = {
   offer: string;
@@ -21,6 +23,8 @@ export default function LandingPage() {
   const [typedText, setTypedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const canSubmit = input.trim().length > 0 && !loading;
 
   const tickerText = useMemo(
@@ -89,6 +93,22 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
+    async function getSession() {
+      try {
+        const supabase = getSupabaseClient();
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+        setIsLoggedIn(Boolean(session?.user));
+      } catch {
+        setIsLoggedIn(false);
+      }
+    }
+
+    void getSession();
+  }, []);
+
+  useEffect(() => {
     const cursorInterval = setInterval(() => {
       setShowCursor((prev) => !prev);
     }, 500);
@@ -148,6 +168,35 @@ export default function LandingPage() {
       }
 
       setOffer(data.offer);
+      setSaveStatus("idle");
+
+      try {
+        const supabase = getSupabaseClient();
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          setIsLoggedIn(true);
+          setSaveStatus("saving");
+          const { error: saveError } = await supabase.from("offers").insert([
+            {
+              user_id: session.user.id,
+              offer: data.offer.offer,
+              audience: data.offer.audience,
+              pricing: data.offer.pricing,
+              positioning: data.offer.positioning,
+              headline: data.offer.headline
+            }
+          ] as never);
+          if (saveError) throw saveError;
+          setSaveStatus("saved");
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch {
+        setSaveStatus("error");
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       setError(message);
@@ -513,79 +562,132 @@ export default function LandingPage() {
           )}
 
           {offer && (
-            <section
-              style={{
-                width: "100%",
-                maxWidth: 720,
-                marginTop: 14,
-                border: "1px solid #06B6D4",
-                background: "#0C0C0E",
-                padding: 20,
-                animation: "offer-enter 400ms ease"
-              }}
-            >
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                <h2
+            <div style={{ width: "100%", maxWidth: 720, marginTop: 14 }}>
+              <section
+                style={{
+                  border: "1px solid #06B6D4",
+                  background: "#0C0C0E",
+                  padding: 20,
+                  animation: "offer-enter 400ms ease"
+                }}
+              >
+                <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontSize: 38,
+                      lineHeight: 1,
+                      letterSpacing: "0.04em",
+                      color: "#06B6D4"
+                    }}
+                  >
+                    YOUR OFFER
+                  </h2>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 999,
+                      background: "#06B6D4",
+                      animation: "pulse-dot 1s ease-in-out infinite"
+                    }}
+                  />
+                </div>
+                {[
+                  { label: "OFFER", value: offer.offer },
+                  { label: "AUDIENCE", value: offer.audience },
+                  { label: "PRICING", value: offer.pricing },
+                  { label: "POSITIONING", value: offer.positioning },
+                  { label: "HEADLINE", value: offer.headline }
+                ].map((item, idx) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      borderBottom: idx === 4 ? "none" : "1px solid #27272A",
+                      padding: "14px 0"
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        color: "#06B6D4"
+                      }}
+                    >
+                      {item.label}
+                    </p>
+                    <p
+                      style={{
+                        margin: "8px 0 0",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        color: "#F4F4F5"
+                      }}
+                    >
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </section>
+
+              {isLoggedIn ? (
+                <p
                   style={{
-                    margin: 0,
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
-                    fontSize: 38,
-                    lineHeight: 1,
-                    letterSpacing: "0.04em",
-                    color: "#06B6D4"
+                    margin: "10px 0 0",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    color:
+                      saveStatus === "saved"
+                        ? "#06B6D4"
+                        : saveStatus === "error"
+                          ? "#f87171"
+                          : "#52525B"
                   }}
                 >
-                  YOUR OFFER
-                </h2>
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                    background: "#06B6D4",
-                    animation: "pulse-dot 1s ease-in-out infinite"
-                  }}
-                />
-              </div>
-              {[
-                { label: "OFFER", value: offer.offer },
-                { label: "AUDIENCE", value: offer.audience },
-                { label: "PRICING", value: offer.pricing },
-                { label: "POSITIONING", value: offer.positioning },
-                { label: "HEADLINE", value: offer.headline }
-              ].map((item, idx) => (
-                <div
-                  key={item.label}
-                  style={{
-                    borderBottom: idx === 4 ? "none" : "1px solid #27272A",
-                    padding: "14px 0"
-                  }}
-                >
+                  {saveStatus === "saved"
+                    ? "Saved to your dashboard."
+                    : saveStatus === "saving"
+                      ? "Saving to your dashboard..."
+                      : saveStatus === "error"
+                        ? "Could not save to dashboard."
+                        : ""}
+                </p>
+              ) : (
+                <div style={{ marginTop: 12 }}>
                   <p
                     style={{
                       margin: 0,
                       fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.2em",
-                      color: "#06B6D4"
+                      fontSize: 12,
+                      color: "#A1A1AA"
                     }}
                   >
-                    {item.label}
+                    SAVE YOUR OFFER — Sign up to access your dashboard and continue building.
                   </p>
-                  <p
+                  <Link
+                    href="/auth"
                     style={{
-                      margin: "8px 0 0",
+                      display: "inline-block",
+                      marginTop: 8,
+                      border: "1px solid #06B6D4",
+                      color: "#06B6D4",
+                      background: "transparent",
+                      textDecoration: "none",
                       fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                      color: "#F4F4F5"
+                      fontSize: 11,
+                      letterSpacing: "0.14em",
+                      padding: "8px 12px"
                     }}
                   >
-                    {item.value}
-                  </p>
+                    CREATE FREE ACCOUNT →
+                  </Link>
                 </div>
-              ))}
-            </section>
+              )}
+            </div>
           )}
 
           <div
