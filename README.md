@@ -37,4 +37,3 @@ You type one sentence about what you sell. LACORE generates your complete busine
 Follow the journey: [@Al3x403](https://x.com/Al3x403)
 
 ---
-*Built by a non-technical founder using Cursor + Claude API*
