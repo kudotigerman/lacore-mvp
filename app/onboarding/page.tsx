@@ -68,59 +68,69 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#05070d] text-slate-100">
-      <div className="mx-auto flex h-screen w-full max-w-4xl flex-col px-4 py-6 sm:px-6">
-        <div className="mb-4 border-b border-slate-800 pb-4">
-          <h1 className="text-xl font-semibold text-white">LACORE Onboarding</h1>
+    <main className="min-h-screen bg-[#09090B] text-[#F4F4F5]">
+      <div className="mx-auto flex h-screen w-full max-w-5xl flex-col px-4 py-6 sm:px-6">
+        <div className="mb-5">
+          <p className="font-mono text-xs uppercase tracking-[0.34em] text-cyan-400">LACORE</p>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-2">
           {messages.map((message, idx) => (
             <div
               key={`${message.role}-${idx}`}
-              className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed sm:text-base ${
+              className={`text-sm leading-relaxed sm:text-base ${
                 message.role === "assistant"
-                  ? "bg-slate-800 text-slate-100"
-                  : "ml-auto bg-cyan-500 text-slate-950"
+                  ? "w-full border-l-2 border-cyan-400 pl-5 pr-2 py-2 text-[#F4F4F5]"
+                  : "ml-auto max-w-[80%] bg-[#18181B] px-4 py-3 font-mono text-[#F4F4F5]"
               }`}
             >
-              {message.text}
+              {message.role === "assistant" ? (
+                <p className="font-mono text-sm leading-relaxed text-[#F4F4F5]">{message.text}</p>
+              ) : (
+                message.text
+              )}
             </div>
           ))}
 
           {loading && (
-            <div className="max-w-[90%] rounded-2xl bg-slate-800 px-4 py-3 text-sm text-slate-200 sm:text-base">
-              LACORE is building your offer...
+            <div className="flex w-full items-center gap-2 border-l-2 border-cyan-400 pl-5 py-3">
+              <span className="signal-dot" />
+              <span className="signal-dot" />
+              <span className="signal-dot" />
             </div>
           )}
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="font-mono text-sm text-red-400">{error}</p>}
 
           {offer && (
-            <section className="mt-6 rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-5 shadow-[0_0_0_1px_rgba(6,182,212,0.12)]">
-              <h2 className="text-lg font-semibold text-cyan-400">Your Offer</h2>
-              <div className="mt-4 space-y-3 text-sm sm:text-base">
-                <p>
-                  <span className="font-medium text-slate-300">Offer:</span> {offer.offer}
-                </p>
-                <p>
-                  <span className="font-medium text-slate-300">Audience:</span> {offer.audience}
-                </p>
-                <p>
-                  <span className="font-medium text-slate-300">Pricing:</span> {offer.pricing}
-                </p>
-                <p>
-                  <span className="font-medium text-slate-300">Positioning:</span> {offer.positioning}
-                </p>
-                <p>
-                  <span className="font-medium text-slate-300">Headline:</span> {offer.headline}
-                </p>
+            <section className="offer-card-enter mt-6 w-full border border-cyan-500 bg-[#0C0C0E] p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <h2 className="font-heading text-4xl uppercase leading-none tracking-[0.04em] text-cyan-400">
+                  YOUR OFFER
+                </h2>
+                <span className="pulse-dot" />
+              </div>
+              <div className="space-y-0">
+                {[
+                  { label: "Offer", value: offer.offer },
+                  { label: "Audience", value: offer.audience },
+                  { label: "Pricing", value: offer.pricing },
+                  { label: "Positioning", value: offer.positioning },
+                  { label: "Headline", value: offer.headline }
+                ].map((item) => (
+                  <div key={item.label} className="border-b border-[#27272A] py-4 last:border-b-0">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-400">
+                      {item.label.toUpperCase()}
+                    </p>
+                    <p className="font-mono mt-2 text-sm text-[#F4F4F5] sm:text-base">{item.value}</p>
+                  </div>
+                ))}
               </div>
 
               <button
                 type="button"
                 disabled
-                className="mt-6 inline-flex cursor-not-allowed items-center rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-500"
+                className="font-mono mt-6 inline-flex cursor-not-allowed items-center border border-cyan-500/30 px-4 py-2 text-xs uppercase tracking-[0.16em] text-[#52525B]"
               >
                 Continue →
               </button>
@@ -128,19 +138,20 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
+        <form onSubmit={handleSubmit} className="mt-4 flex items-center gap-3 border-t border-cyan-500/20 pt-4">
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
             placeholder="Type your business in one paragraph..."
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-cyan-500"
+            className="font-mono flex-1 border-0 border-b border-transparent bg-transparent px-1 py-3 text-sm text-[#F4F4F5] outline-none transition placeholder:text-[#52525B] focus:border-cyan-400"
           />
           <button
             type="submit"
             disabled={!canSubmit}
-            className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+            aria-label="Send"
+            className="font-mono px-1 py-2 text-2xl text-cyan-400 transition hover:text-cyan-300 disabled:cursor-not-allowed disabled:text-[#52525B]"
           >
-            Send
+            →
           </button>
         </form>
       </div>
