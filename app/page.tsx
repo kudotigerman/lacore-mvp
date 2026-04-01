@@ -22,6 +22,47 @@ export default function LandingPage() {
       "OFFER GENERATION · LANDING PAGE · LEAD CAPTURE · AUTO CONTENT · DEAL CLOSING · ANALYTICS · ",
     []
   );
+  const layers = useMemo(
+    () => [
+      {
+        number: "01",
+        title: "OFFER & POSITIONING",
+        description:
+          "A sharp offer, target audience, pricing, and competitive positioning. Generated in seconds."
+      },
+      {
+        number: "02",
+        title: "YOUR PRESENCE",
+        description:
+          "Landing page live in minutes. Social profiles optimized. Stripe connected. Ready to take money."
+      },
+      {
+        number: "03",
+        title: "CONTENT MACHINE",
+        description:
+          "Posts published daily to Instagram, X, Threads, LinkedIn. AI-generated visuals. No effort from you."
+      },
+      {
+        number: "04",
+        title: "LEAD CAPTURE",
+        description:
+          "Every DM, comment, and form captured. Leads qualified automatically. Hot ones flagged in real time."
+      },
+      {
+        number: "05",
+        title: "CLOSING SYSTEM",
+        description:
+          "Scripts tailored to your offer. Auto follow-up sequences. Step-by-step guidance to close every deal."
+      },
+      {
+        number: "06",
+        title: "ANALYTICS BOARD",
+        description:
+          "Your entire business on one visual board. Revenue. Leads. What's working. What to do next."
+      }
+    ],
+    []
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,6 +124,96 @@ export default function LandingPage() {
           padding: "0 20px"
         }}
       >
+        <nav
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+            height: 68,
+            background: "rgba(9,9,11,0.9)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderBottom: "1px solid #1C1C1F",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0 24px"
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 1300,
+              display: "grid",
+              gridTemplateColumns: "1fr auto 1fr",
+              alignItems: "center",
+              gap: 16
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                justifySelf: "start",
+                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontSize: 22,
+                letterSpacing: "0.06em",
+                color: "#06B6D4"
+              }}
+            >
+              LACORE
+            </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 18,
+                justifySelf: "center",
+                textAlign: "center"
+              }}
+            >
+              {[
+                { href: "#how-it-works", label: "HOW IT WORKS" },
+                { href: "#what-you-get", label: "WHAT YOU GET" },
+                { href: "#pricing", label: "PRICING" }
+              ].map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  style={{
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.15em",
+                    color: "#52525B",
+                    textDecoration: "none"
+                  }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+            <button
+              type="button"
+              style={{
+                justifySelf: "end",
+                border: "1px solid #06B6D4",
+                background: "transparent",
+                color: "#06B6D4",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.15em",
+                padding: "10px 14px",
+                cursor: "pointer"
+              }}
+            >
+              START FOR FREE →
+            </button>
+          </div>
+        </nav>
+
+        <div style={{ height: 68 }} />
+
         <section
           style={{
             minHeight: "60vh",
@@ -403,6 +534,280 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section
+          style={{
+            width: "100%",
+            padding: "120px 0",
+            textAlign: "center"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "#06B6D4"
+            }}
+          >
+            THE PROBLEM
+          </p>
+          <h2
+            style={{
+              margin: "24px 0 0",
+              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontSize: "clamp(48px, 6vw, 96px)",
+              lineHeight: 0.95,
+              color: "#F4F4F5"
+            }}
+          >
+            <span style={{ display: "block" }}>MOST PEOPLE WHO HAVE SOMETHING TO SELL</span>
+            <span style={{ display: "block" }}>NEVER MAKE REAL MONEY FROM IT.</span>
+          </h2>
+          <p
+            style={{
+              margin: "24px auto 0",
+              maxWidth: 560,
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 14,
+              lineHeight: 1.8,
+              color: "#52525B"
+            }}
+          >
+            Not because they&apos;re bad at what they do. Because they don&apos;t have a system.
+            LACORE is that system.
+          </p>
+          <div style={{ width: "100%", height: 1, background: "#1C1C1F", marginTop: 56 }} />
+        </section>
+
+        <section
+          id="how-it-works"
+          style={{
+            background: "#0C0C0E",
+            padding: "120px 48px"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "#06B6D4"
+            }}
+          >
+            HOW IT WORKS
+          </p>
+          <h2
+            style={{
+              margin: "18px 0 0",
+              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontSize: "clamp(56px, 7vw, 112px)",
+              lineHeight: 0.95
+            }}
+          >
+            <span style={{ display: "block", color: "#F4F4F5" }}>ONE INPUT.</span>
+            <span style={{ display: "block", color: "#06B6D4" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
+          </h2>
+          <div
+            style={{
+              marginTop: 48,
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 20
+            }}
+          >
+            {layers.map((layer) => (
+              <div
+                key={layer.number}
+                style={{
+                  border: "1px solid #1C1C1F",
+                  padding: 32,
+                  background: "transparent"
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: 48,
+                    lineHeight: 1,
+                    color: "#1C1C1F"
+                  }}
+                >
+                  {layer.number}
+                </p>
+                <h3
+                  style={{
+                    margin: "10px 0 0",
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: 28,
+                    letterSpacing: "0.02em",
+                    color: "#F4F4F5"
+                  }}
+                >
+                  {layer.title}
+                </h3>
+                <p
+                  style={{
+                    margin: "12px 0 0",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 12,
+                    lineHeight: 1.8,
+                    color: "#52525B"
+                  }}
+                >
+                  {layer.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="what-you-get"
+          style={{
+            width: "100%",
+            padding: "120px 48px",
+            background: "#09090B",
+            textAlign: "center"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "#06B6D4"
+            }}
+          >
+            THE MAGIC MOMENT
+          </p>
+          <h2
+            style={{
+              margin: "20px 0 0",
+              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontSize: "clamp(64px, 8vw, 128px)",
+              lineHeight: 0.94
+            }}
+          >
+            <span style={{ display: "block", color: "#F4F4F5" }}>60 MINUTES AFTER SIGNING UP</span>
+            <span style={{ display: "block", color: "#06B6D4" }}>YOUR FIRST LEAD ARRIVES.</span>
+          </h2>
+          <div
+            style={{
+              margin: "34px auto 0",
+              maxWidth: 600,
+              textAlign: "left",
+              background: "#0C0C0E",
+              border: "1px solid #06B6D4",
+              padding: 32,
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 13,
+              lineHeight: 1.9,
+              color: "#F4F4F5"
+            }}
+          >
+            <p style={{ margin: 0 }}>&gt; Offer generated ✓</p>
+            <p style={{ margin: 0 }}>&gt; Landing page live ✓</p>
+            <p style={{ margin: 0 }}>&gt; First post published ✓</p>
+            <p style={{ margin: 0 }}>&gt; System running in background ✓</p>
+            <p style={{ margin: 0 }}>&gt; NEW LEAD: Someone is interested.</p>
+            <p style={{ margin: 0 }}>&gt; &quot;Here&apos;s exactly what to say.&quot; →</p>
+          </div>
+          <p
+            style={{
+              margin: "18px 0 0",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 13,
+              color: "#52525B"
+            }}
+          >
+            That&apos;s the moment. That&apos;s what nobody else delivers.
+          </p>
+        </section>
+
+        <section
+          style={{
+            background: "#0C0C0E",
+            padding: "80px 48px",
+            textAlign: "center"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 12,
+              color: "#3F3F46"
+            }}
+          >
+            NOT A LANDING PAGE BUILDER · NOT A SOCIAL MEDIA SCHEDULER · NOT A CRM · NOT AN AI
+            CONTENT TOOL
+          </p>
+          <p
+            style={{
+              margin: "20px auto 0",
+              maxWidth: 1100,
+              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontSize: 36,
+              lineHeight: 1.1,
+              color: "#F4F4F5"
+            }}
+          >
+            LACORE IS WHAT HAPPENS WHEN ALL OF THESE WORK TOGETHER TOWARD ONE GOAL: YOUR FIRST
+            SALE.
+          </p>
+        </section>
+
+        <section
+          id="pricing"
+          style={{
+            width: "100%",
+            padding: "160px 48px",
+            textAlign: "center"
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontSize: "clamp(64px, 8vw, 120px)",
+              lineHeight: 0.94
+            }}
+          >
+            <span style={{ display: "block", color: "#F4F4F5" }}>YOU SAY WHAT YOU SELL.</span>
+            <span style={{ display: "block", color: "#06B6D4" }}>LACORE DOES THE REST.</span>
+          </h2>
+          <button
+            type="button"
+            style={{
+              marginTop: 24,
+              border: "1px solid #06B6D4",
+              background: "transparent",
+              color: "#06B6D4",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 12,
+              letterSpacing: "0.2em",
+              padding: "12px 20px",
+              cursor: "pointer"
+            }}
+          >
+            START FOR FREE →
+          </button>
+          <p
+            style={{
+              margin: "16px 0 0",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 12,
+              color: "#3F3F46"
+            }}
+          >
+            Free to start. No marketing skills needed. No agency. No team.
+          </p>
         </section>
 
         <div
