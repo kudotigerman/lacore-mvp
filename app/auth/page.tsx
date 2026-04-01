@@ -12,6 +12,8 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
   const router = useRouter();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -24,12 +26,14 @@ export default function AuthPage() {
     try {
       const supabase = getSupabaseClient();
       if (mode === "signup") {
+        const normalizedEmail = email.trim();
         const { error: signUpError } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password
         });
         if (signUpError) throw signUpError;
-        router.push("/dashboard");
+        setConfirmationEmail(normalizedEmail);
+        setEmailConfirmationSent(true);
         return;
       }
 
@@ -82,98 +86,122 @@ export default function AuthPage() {
           <span style={{ display: "block", color: "#06B6D4" }}>STARTS HERE.</span>
         </h1>
 
-        <div style={{ marginTop: 26, display: "flex", gap: 24 }}>
-          {[
-            { key: "signup", label: "SIGN UP" },
-            { key: "signin", label: "SIGN IN" }
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setMode(tab.key as AuthMode)}
-              style={{
-                border: "none",
-                background: "transparent",
-                padding: "0 0 8px",
-                color: mode === tab.key ? "#06B6D4" : "#52525B",
-                borderBottom: mode === tab.key ? "1px solid #06B6D4" : "1px solid transparent",
-                fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 12,
-                letterSpacing: "0.15em",
-                cursor: "pointer"
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {!emailConfirmationSent ? (
+          <>
+            <div style={{ marginTop: 26, display: "flex", gap: 24 }}>
+              {[
+                { key: "signup", label: "SIGN UP" },
+                { key: "signin", label: "SIGN IN" }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setMode(tab.key as AuthMode)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    padding: "0 0 8px",
+                    color: mode === tab.key ? "#06B6D4" : "#52525B",
+                    borderBottom: mode === tab.key ? "1px solid #06B6D4" : "1px solid transparent",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 12,
+                    letterSpacing: "0.15em",
+                    cursor: "pointer"
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-        <form onSubmit={handleSubmit} style={{ marginTop: 28 }}>
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="Email"
+            <form onSubmit={handleSubmit} style={{ marginTop: 28 }}>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Email"
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderBottom: "1px solid #1C1C1F",
+                  background: "transparent",
+                  color: "#F4F4F5",
+                  padding: "12px 4px",
+                  outline: "none",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 14
+                }}
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Password"
+                style={{
+                  width: "100%",
+                  marginTop: 18,
+                  border: "none",
+                  borderBottom: "1px solid #1C1C1F",
+                  background: "transparent",
+                  color: "#F4F4F5",
+                  padding: "12px 4px",
+                  outline: "none",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 14
+                }}
+              />
+              {error && (
+                <p
+                  style={{
+                    margin: "14px 0 0",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    color: "#f87171",
+                    fontSize: 12
+                  }}
+                >
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  marginTop: 22,
+                  border: "1px solid #06B6D4",
+                  background: "transparent",
+                  color: "#06B6D4",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 12,
+                  letterSpacing: "0.18em",
+                  padding: "12px 20px",
+                  cursor: loading ? "not-allowed" : "pointer"
+                }}
+              >
+                {loading
+                  ? mode === "signup"
+                    ? "CREATING ACCOUNT..."
+                    : "SIGNING IN..."
+                  : mode === "signup"
+                    ? "CREATE ACCOUNT →"
+                    : "SIGN IN →"}
+              </button>
+            </form>
+          </>
+        ) : (
+          <p
             style={{
-              width: "100%",
-              border: "none",
-              borderBottom: "1px solid #1C1C1F",
-              background: "transparent",
-              color: "#F4F4F5",
-              padding: "12px 4px",
-              outline: "none",
+              margin: "28px 0 0",
               fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 14
-            }}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Password"
-            style={{
-              width: "100%",
-              marginTop: 18,
-              border: "none",
-              borderBottom: "1px solid #1C1C1F",
-              background: "transparent",
-              color: "#F4F4F5",
-              padding: "12px 4px",
-              outline: "none",
-              fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 14
-            }}
-          />
-          {error && (
-            <p
-              style={{
-                margin: "14px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
-                color: "#f87171",
-                fontSize: 12
-              }}
-            >
-              {error}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: 22,
-              border: "1px solid #06B6D4",
-              background: "transparent",
               color: "#06B6D4",
-              fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 12,
-              letterSpacing: "0.18em",
-              padding: "12px 20px",
-              cursor: loading ? "not-allowed" : "pointer"
+              fontSize: 13,
+              textAlign: "center",
+              lineHeight: 1.8
             }}
           >
-            {loading ? "PROCESSING..." : mode === "signup" ? "CREATE ACCOUNT →" : "SIGN IN →"}
-          </button>
-        </form>
+            CHECK YOUR EMAIL. We sent a confirmation link to {confirmationEmail}. Click it to
+            activate your account.
+          </p>
+        )}
       </section>
     </main>
   );
