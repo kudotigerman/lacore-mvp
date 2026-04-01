@@ -16,6 +16,11 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [offer, setOffer] = useState<Offer | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [exampleIndex, setExampleIndex] = useState(0);
+  const [typedText, setTypedText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
   const canSubmit = input.trim().length > 0 && !loading;
 
   const tickerText = useMemo(
@@ -64,6 +69,17 @@ export default function LandingPage() {
     ],
     []
   );
+  const animatedExamples = useMemo(
+    () => [
+      "I'm a freelance designer working with brands. I want $5,000/month.",
+      "I do SMM for small businesses. Looking for 3-4 clients at $1,500 each.",
+      "I'm a copywriter, I write landing pages and email sequences. Goal: $8k/month.",
+      "I teach English online. Want to fill my schedule and earn $3,000/month.",
+      "I'm a video editor working with YouTubers. Want consistent $6k/month income.",
+      "I do web design for restaurants and cafes. Want $10,000/month."
+    ],
+    []
+  );
 
   useEffect(() => {
     const updateViewport = () => setIsMobile(window.innerWidth < 768);
@@ -71,6 +87,44 @@ export default function LandingPage() {
     window.addEventListener("resize", updateViewport);
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
+
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 500);
+    return () => clearInterval(cursorInterval);
+  }, []);
+
+  useEffect(() => {
+    if (isFocused || input.length > 0) return;
+
+    const currentText = animatedExamples[exampleIndex];
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    if (!isDeleting && typedText === currentText) {
+      timeoutId = setTimeout(() => setIsDeleting(true), 1500);
+      return () => clearTimeout(timeoutId);
+    }
+
+    if (isDeleting && typedText.length === 0) {
+      timeoutId = setTimeout(() => {
+        setIsDeleting(false);
+        setExampleIndex((prev) => (prev + 1) % animatedExamples.length);
+      }, 400);
+      return () => clearTimeout(timeoutId);
+    }
+
+    timeoutId = setTimeout(
+      () => {
+        setTypedText((prev) =>
+          isDeleting ? prev.slice(0, -1) : currentText.slice(0, prev.length + 1)
+        );
+      },
+      isDeleting ? 25 : 45
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [animatedExamples, exampleIndex, input.length, isDeleting, isFocused, typedText]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,6 +155,9 @@ export default function LandingPage() {
       setLoading(false);
     }
   }
+
+  const showAnimatedPlaceholder = !isFocused && input.length === 0;
+  const textareaDisplayValue = showAnimatedPlaceholder ? typedText : input;
 
   return (
     <>
@@ -313,9 +370,10 @@ export default function LandingPage() {
                 WHAT DO YOU SELL?
               </p>
               <textarea
-                value={input}
+                value={textareaDisplayValue}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="I'm a freelance designer working with brands and creators. I want $5,000/month."
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
                 style={{
                   width: "100%",
                   marginTop: 14,
@@ -329,9 +387,24 @@ export default function LandingPage() {
                   resize: "none"
                 }}
               />
+              {showAnimatedPlaceholder && (
+                <span
+                  style={{
+                    position: "relative",
+                    top: -40,
+                    marginLeft: 2,
+                    color: "#06B6D4",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: isMobile ? 14 : 15,
+                    opacity: showCursor ? 1 : 0
+                  }}
+                >
+                  |
+                </span>
+              )}
               <div
                 style={{
-                  marginTop: 14,
+                  marginTop: showAnimatedPlaceholder ? -4 : 14,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between"
