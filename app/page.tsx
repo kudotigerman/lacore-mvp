@@ -2,9 +2,12 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 
-type Offer = {
+type OfferVariant = {
+  variant: "A" | "B" | "C";
+  label: string;
   offer: string;
   audience: string;
   pricing: string;
@@ -13,19 +16,34 @@ type Offer = {
 };
 
 export default function LandingPage() {
+  const router = useRouter();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [offer, setOffer] = useState<Offer | null>(null);
+  const [variants, setVariants] = useState<OfferVariant[] | null>(null);
+  const [selectedVariantLetter, setSelectedVariantLetter] = useState<"A" | "B" | "C" | null>(null);
+  const [chooseError, setChooseError] = useState<string | null>(null);
+  const [savingChoice, setSavingChoice] = useState(false);
+  const [guestNeedsAuth, setGuestNeedsAuth] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [exampleIndex, setExampleIndex] = useState(0);
   const [animatedText, setAnimatedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [submitHover, setSubmitHover] = useState(false);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const canSubmit = input.trim().length > 0 && !loading;
+
+  const loadingMessages = useMemo(
+    () => [
+      "ANALYZING YOUR MARKET...",
+      "IDENTIFYING YOUR AUDIENCE...",
+      "CRAFTING 3 STRATEGIES...",
+      "ALMOST READY..."
+    ],
+    []
+  );
 
   const tickerText = useMemo(
     () =>
@@ -75,13 +93,16 @@ export default function LandingPage() {
   );
   const animatedExamples = useMemo(
     () => [
-      "I'm a freelance designer working with brands. I want $5,000/month.",
-      "I do SMM for small businesses. Looking for 3-4 clients at $1,500 each.",
-      "I'm a copywriter, I write landing pages and email sequences. Goal: $8k/month.",
-      "I teach English online. Want to fill my schedule and earn $3,000/month.",
-      "I'm a video editor working with YouTubers. Want consistent $6k/month income.",
-      "I do web design for restaurants and cafes. Want $10,000/month.",
-      "I'm a real estate agent helping clients buy and sell properties. I want $8,000/month."
+      "real estate in Dubai",
+      "online fitness coaching",
+      "brand design services",
+      "legal consulting",
+      "restaurant franchise",
+      "UX/UI design for SaaS",
+      "luxury travel packages",
+      "personal finance coaching",
+      "wedding photography",
+      "software development"
     ],
     []
   );
@@ -110,13 +131,22 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
+    if (!loading) return;
+    setLoadingMsgIndex(0);
+    const id = setInterval(() => {
+      setLoadingMsgIndex((i) => (i + 1) % loadingMessages.length);
+    }, 2800);
+    return () => clearInterval(id);
+  }, [loading, loadingMessages.length]);
+
+  useEffect(() => {
     if (isFocused || input.length > 0) return;
 
     const currentText = animatedExamples[exampleIndex];
     let timeoutId: ReturnType<typeof setTimeout>;
 
     if (isTyping && animatedText === currentText) {
-      timeoutId = setTimeout(() => setIsTyping(false), 1800);
+      timeoutId = setTimeout(() => setIsTyping(false), 2000);
       return () => clearTimeout(timeoutId);
     }
 
@@ -147,7 +177,10 @@ export default function LandingPage() {
 
     setLoading(true);
     setError(null);
-    setOffer(null);
+    setVariants(null);
+    setSelectedVariantLetter(null);
+    setChooseError(null);
+    setGuestNeedsAuth(false);
 
     try {
       const response = await fetch("/api/generate-offer", {
@@ -161,43 +194,63 @@ export default function LandingPage() {
         throw new Error(data?.error || "Failed to generate offer.");
       }
 
-      setOffer(data.offer);
-      setSaveStatus("idle");
+      if (!Array.isArray(data.variants) || data.variants.length !== 3) {
+        throw new Error("Invalid response from server.");
+      }
+
+      setVariants(data.variants as OfferVariant[]);
 
       try {
         const supabase = getSupabaseClient();
         const {
           data: { session }
         } = await supabase.auth.getSession();
-
-        if (session?.user) {
-          setIsLoggedIn(true);
-          setSaveStatus("saving");
-          const { error: saveError } = await supabase
-            .from("offers")
-            .upsert(
-              {
-                user_id: session.user.id,
-                offer: data.offer.offer,
-                audience: data.offer.audience,
-                pricing: data.offer.pricing,
-                positioning: data.offer.positioning,
-                headline: data.offer.headline
-              } as never
-            );
-          if (saveError) throw saveError;
-          setSaveStatus("saved");
-        } else {
-          setIsLoggedIn(false);
-        }
+        setIsLoggedIn(Boolean(session?.user));
       } catch {
-        setSaveStatus("error");
+        setIsLoggedIn(false);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       setError(message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleChooseStrategy(v: OfferVariant) {
+    setSelectedVariantLetter(v.variant);
+    setChooseError(null);
+    setGuestNeedsAuth(false);
+
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        setGuestNeedsAuth(true);
+        return;
+      }
+
+      setSavingChoice(true);
+      const { error: saveError } = await supabase.from("offers").upsert(
+        {
+          user_id: session.user.id,
+          offer: v.offer,
+          audience: v.audience,
+          pricing: v.pricing,
+          positioning: v.positioning,
+          headline: v.headline
+        } as never
+      );
+      if (saveError) throw saveError;
+      setIsLoggedIn(true);
+      router.push("/dashboard");
+    } catch (e) {
+      setChooseError(e instanceof Error ? e.message : "Could not save. Try again.");
+    } finally {
+      setSavingChoice(false);
     }
   }
 
@@ -435,99 +488,90 @@ export default function LandingPage() {
           >
             <div
               style={{
-                background: "#0F0F12",
-                border: "1px solid #1C1C1F",
-                borderRadius: 2,
-                padding: 32,
-                position: "relative"
+                background: "#000000",
+                padding: isMobile ? "24px 20px" : "32px 28px",
+                position: "relative",
+                width: "100%",
+                boxSizing: "border-box"
               }}
             >
               <p
                 style={{
                   margin: 0,
                   fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.2em",
+                  fontSize: 11,
+                  letterSpacing: "4px",
                   textTransform: "uppercase",
-                  color: "#06B6D4"
+                  color: "#A1A1AA"
                 }}
               >
-                WHAT DO YOU SELL?
+                ASK LACORE HOW TO SELL
               </p>
-              <textarea
-                value={textareaDisplayValue}
-                onChange={(event) => setInput(event.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                style={{
-                  width: "100%",
-                  marginTop: 14,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  color: "#F4F4F5",
-                  fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: isMobile ? 14 : 15,
-                  minHeight: 80,
-                  resize: "none"
-                }}
-              />
-              {showAnimatedPlaceholder && (
-                <span
+              <div style={{ position: "relative", marginTop: 20 }}>
+                <textarea
+                  value={textareaDisplayValue}
+                  onChange={(event) => setInput(event.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
                   style={{
-                    position: "absolute",
-                    marginTop: 14,
-                    marginLeft: `${Math.max(animatedText.length * (isMobile ? 7 : 7.5), 2)}px`,
-                    color: "#06B6D4",
+                    width: "100%",
+                    minHeight: 100,
+                    border: "none",
+                    outline: "none",
+                    background: "#000000",
+                    color: showAnimatedPlaceholder ? "#3A3A3F" : "#F4F4F5",
                     fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: isMobile ? 14 : 15,
-                    animation: "cursor-blink 500ms infinite"
+                    fontSize: isMobile ? 15 : 16,
+                    lineHeight: 1.5,
+                    fontStyle: showAnimatedPlaceholder ? "italic" : "normal",
+                    resize: "vertical",
+                    padding: 0,
+                    display: "block",
+                    caretColor: showAnimatedPlaceholder ? "transparent" : "#06B6D4"
                   }}
-                >
-                  |
-                </span>
-              )}
-              <div
+                />
+                {showAnimatedPlaceholder && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      left: `${Math.max(animatedText.length * (isMobile ? 8.2 : 8.6), 1)}px`,
+                      top: 0,
+                      color: "#3A3A3F",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: isMobile ? 15 : 16,
+                      fontStyle: "italic",
+                      lineHeight: 1.5,
+                      pointerEvents: "none",
+                      animation: "cursor-blink 500ms infinite"
+                    }}
+                  >
+                    |
+                  </span>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                aria-label="Generate offer"
+                onMouseEnter={() => setSubmitHover(true)}
+                onMouseLeave={() => setSubmitHover(false)}
                 style={{
-                  marginTop: showAnimatedPlaceholder ? -4 : 14,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between"
+                  marginTop: 20,
+                  width: "100%",
+                  border: "none",
+                  background: canSubmit ? (submitHover ? "#0891B2" : "#06B6D4") : "#3F3F46",
+                  color: "#000000",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 12,
+                  letterSpacing: "0.15em",
+                  fontWeight: 700,
+                  cursor: canSubmit ? "pointer" : "not-allowed",
+                  padding: "14px 28px",
+                  transition: "background 180ms ease"
                 }}
               >
-                <p
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 10,
-                    letterSpacing: "0.12em",
-                    color: "#3F3F46"
-                  }}
-                >
-                  ↵ ENTER TO START
-                </p>
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  aria-label="Generate offer"
-                  onMouseEnter={() => setSubmitHover(true)}
-                  onMouseLeave={() => setSubmitHover(false)}
-                  style={{
-                    border: "none",
-                    background: canSubmit ? (submitHover ? "#0891B2" : "#06B6D4") : "#3F3F46",
-                    color: "#000000",
-                    fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 12,
-                    letterSpacing: "0.15em",
-                    fontWeight: 700,
-                    cursor: canSubmit ? "pointer" : "not-allowed",
-                    padding: "14px 28px",
-                    transition: "background 180ms ease"
-                  }}
-                >
-                  GENERATE MY OFFER →
-                </button>
-              </div>
+                GENERATE MY OFFER →
+              </button>
             </div>
           </form>
 
@@ -536,53 +580,25 @@ export default function LandingPage() {
               style={{
                 width: "100%",
                 maxWidth: 720,
-                marginTop: 14,
-                background: "#0F0F12",
-                border: "1px solid #1C1C1F",
-                borderRadius: 2,
-                padding: "20px 32px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10
+                marginTop: 28,
+                marginLeft: "auto",
+                marginRight: "auto",
+                padding: "32px 24px",
+                textAlign: "center"
               }}
             >
-              <span
+              <h2
                 style={{
-                  fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.14em",
-                  color: "#06B6D4"
+                  margin: 0,
+                  fontFamily: "var(--font-bebas-neue), sans-serif",
+                  fontSize: isMobile ? 42 : 56,
+                  lineHeight: 1.05,
+                  color: "#06B6D4",
+                  letterSpacing: "0.02em"
                 }}
               >
-                ANALYZING YOUR BUSINESS...
-              </span>
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 999,
-                  background: "#06B6D4",
-                  animation: "dot-pulse 1s ease-in-out infinite"
-                }}
-              />
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 999,
-                  background: "#06B6D4",
-                  animation: "dot-pulse 1s ease-in-out 0.15s infinite"
-                }}
-              />
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 999,
-                  background: "#06B6D4",
-                  animation: "dot-pulse 1s ease-in-out 0.3s infinite"
-                }}
-              />
+                {loadingMessages[loadingMsgIndex]}
+              </h2>
             </div>
           )}
 
@@ -601,163 +617,174 @@ export default function LandingPage() {
             </p>
           )}
 
-          {offer && (
-            <div style={{ width: "100%", maxWidth: 720, marginTop: 14 }}>
-              <section
+          {variants && variants.length === 3 && (
+            <div
+              style={{
+                width: "100%",
+                maxWidth: 1100,
+                marginTop: 24,
+                marginLeft: "auto",
+                marginRight: "auto",
+                animation: "offer-enter 400ms ease"
+              }}
+            >
+              <div
                 style={{
-                  border: "1px solid #06B6D4",
-                  background: "#0C0C0E",
-                  padding: 20,
-                  animation: "offer-enter 400ms ease"
+                  display: "flex",
+                  flexDirection: isMobile ? "column" : "row",
+                  gap: 16,
+                  alignItems: "stretch",
+                  justifyContent: "center"
                 }}
               >
-                <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontFamily: "var(--font-bebas-neue), sans-serif",
-                      fontSize: 38,
-                      lineHeight: 1,
-                      letterSpacing: "0.04em",
-                      color: "#06B6D4"
-                    }}
-                  >
-                    YOUR OFFER
-                  </h2>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 999,
-                      background: "#06B6D4",
-                      animation: "pulse-dot 1s ease-in-out infinite"
-                    }}
-                  />
-                </div>
-                {[
-                  { label: "OFFER", value: offer.offer },
-                  { label: "AUDIENCE", value: offer.audience },
-                  { label: "PRICING", value: offer.pricing },
-                  { label: "POSITIONING", value: offer.positioning },
-                  { label: "HEADLINE", value: offer.headline }
-                ].map((item, idx) => (
-                  <div
-                    key={item.label}
-                    style={{
-                      borderBottom: idx === 4 ? "none" : "1px solid #27272A",
-                      padding: "14px 0"
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.2em",
-                        color: "#06B6D4"
-                      }}
-                    >
-                      {item.label}
-                    </p>
-                    <p
-                      style={{
-                        margin: "8px 0 0",
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 14,
-                        lineHeight: 1.6,
-                        color: "#F4F4F5"
-                      }}
-                    >
-                      {item.value}
-                    </p>
-                  </div>
-                ))}
-              </section>
+                {[...variants]
+                  .sort((a, b) => a.variant.localeCompare(b.variant))
+                  .map((v) => {
+                    const isSelected = selectedVariantLetter === v.variant;
+                    return (
+                      <article
+                        key={v.variant}
+                        style={{
+                          flex: isMobile ? "none" : "1 1 0",
+                          minWidth: isMobile ? "100%" : 0,
+                          maxWidth: isMobile ? "100%" : 360,
+                          boxSizing: "border-box",
+                          background: isSelected
+                            ? "rgba(6, 182, 212, 0.05)"
+                            : "#0C0C0E",
+                          border: isSelected ? "2px solid #06B6D4" : "1px solid #1C1C1F",
+                          padding: "20px 18px 18px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "var(--font-bebas-neue), sans-serif",
+                            fontSize: 48,
+                            lineHeight: 1,
+                            color: "#06B6D4",
+                            letterSpacing: "0.02em"
+                          }}
+                        >
+                          {v.variant}
+                        </span>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: "var(--font-space-mono), monospace",
+                            fontSize: 10,
+                            letterSpacing: "3px",
+                            textTransform: "uppercase",
+                            color: "#71717A"
+                          }}
+                        >
+                          {v.label}
+                        </p>
+                        <h3
+                          style={{
+                            margin: 0,
+                            fontFamily: "var(--font-bebas-neue), sans-serif",
+                            fontSize: 28,
+                            lineHeight: 1.1,
+                            color: "#F4F4F5",
+                            letterSpacing: "0.02em"
+                          }}
+                        >
+                          {v.headline}
+                        </h3>
+                        <div>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-space-mono), monospace",
+                              fontSize: 9,
+                              letterSpacing: "0.2em",
+                              color: "#52525B",
+                              textTransform: "uppercase"
+                            }}
+                          >
+                            FOR{" "}
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-space-mono), monospace",
+                              fontSize: 13,
+                              lineHeight: 1.5,
+                              color: "#A1A1AA"
+                            }}
+                          >
+                            {v.audience}
+                          </span>
+                        </div>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: "var(--font-space-mono), monospace",
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                            color: "#06B6D4",
+                            fontWeight: 700
+                          }}
+                        >
+                          {v.pricing}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={savingChoice}
+                          onClick={() => void handleChooseStrategy(v)}
+                          style={{
+                            marginTop: "auto",
+                            width: "100%",
+                            border: "none",
+                            background: savingChoice && isSelected ? "#0891B2" : "#06B6D4",
+                            color: "#000000",
+                            fontFamily: "var(--font-space-mono), monospace",
+                            fontSize: 11,
+                            letterSpacing: "0.12em",
+                            fontWeight: 700,
+                            padding: "12px 14px",
+                            cursor: savingChoice ? "wait" : "pointer",
+                            opacity: savingChoice && !isSelected ? 0.45 : 1
+                          }}
+                        >
+                          {savingChoice && isSelected
+                            ? "SAVING..."
+                            : "CHOOSE THIS STRATEGY →"}
+                        </button>
+                      </article>
+                    );
+                  })}
+              </div>
 
-              {isLoggedIn ? (
-                <div style={{ marginTop: 10 }}>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 11,
-                      color:
-                        saveStatus === "saved"
-                          ? "#06B6D4"
-                          : saveStatus === "error"
-                            ? "#f87171"
-                            : "#52525B"
-                    }}
-                  >
-                    {saveStatus === "saved"
-                      ? "Saved to your dashboard."
-                      : saveStatus === "saving"
-                        ? "Saving to your dashboard..."
-                        : saveStatus === "error"
-                          ? "Could not save to dashboard."
-                          : ""}
-                  </p>
-                  {saveStatus === "saved" && (
-                    <div style={{ marginTop: 10 }}>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontFamily: "var(--font-space-mono), monospace",
-                          fontSize: 11,
-                          color: "#52525B",
-                          letterSpacing: "0.08em"
-                        }}
-                      >
-                        YOUR OFFER IS SAVED. NEXT: BUILD YOUR PRESENCE.
-                      </p>
-                      <Link
-                        href="/dashboard"
-                        style={{
-                          display: "inline-block",
-                          marginTop: 8,
-                          border: "1px solid #06B6D4",
-                          color: "#06B6D4",
-                          background: "transparent",
-                          textDecoration: "none",
-                          fontFamily: "var(--font-space-mono), monospace",
-                          fontSize: 11,
-                          letterSpacing: "0.14em",
-                          padding: "8px 12px"
-                        }}
-                      >
-                        GO TO YOUR DASHBOARD →
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ marginTop: 12 }}>
+              {guestNeedsAuth && (
+                <div
+                  style={{
+                    marginTop: 20,
+                    padding: "16px 18px",
+                    border: "1px solid #27272A",
+                    background: "#0C0C0E",
+                    maxWidth: 520,
+                    marginLeft: "auto",
+                    marginRight: "auto"
+                  }}
+                >
                   <p
                     style={{
                       margin: 0,
                       fontFamily: "var(--font-space-mono), monospace",
                       fontSize: 12,
-                      color: "#06B6D4",
-                      letterSpacing: "0.08em"
+                      color: "#A1A1AA",
+                      lineHeight: 1.5
                     }}
                   >
-                    SAVE YOUR OFFER
-                  </p>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 12,
-                      color: "#A1A1AA"
-                    }}
-                  >
-                    Create a free account to access your dashboard and continue building.
+                    Sign in to save your chosen strategy and open your dashboard.
                   </p>
                   <Link
                     href="/auth"
                     style={{
                       display: "inline-block",
-                      marginTop: 8,
+                      marginTop: 10,
                       border: "1px solid #06B6D4",
                       color: "#06B6D4",
                       background: "transparent",
@@ -771,6 +798,20 @@ export default function LandingPage() {
                     CREATE FREE ACCOUNT →
                   </Link>
                 </div>
+              )}
+
+              {chooseError && (
+                <p
+                  style={{
+                    margin: "14px 0 0",
+                    textAlign: "center",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 12,
+                    color: "#f87171"
+                  }}
+                >
+                  {chooseError}
+                </p>
               )}
             </div>
           )}

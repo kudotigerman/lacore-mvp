@@ -10,6 +10,8 @@ type Offer = {
   headline: string;
 };
 
+type ApiVariant = Offer & { variant?: string };
+
 type Message = {
   role: "assistant" | "user";
   text: string;
@@ -50,7 +52,18 @@ export default function OnboardingPage() {
         throw new Error(data?.error || "Failed to generate offer.");
       }
 
-      setOffer(data.offer);
+      if (!Array.isArray(data.variants) || data.variants.length < 1) {
+        throw new Error("Invalid response from server.");
+      }
+      const list = data.variants as ApiVariant[];
+      const picked = list.find((x) => x.variant === "A") ?? list[0];
+      setOffer({
+        offer: picked.offer,
+        audience: picked.audience,
+        pricing: picked.pricing,
+        positioning: picked.positioning,
+        headline: picked.headline
+      });
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: "Your offer is ready. Review it below." }
