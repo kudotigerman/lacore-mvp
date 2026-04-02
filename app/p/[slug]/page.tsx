@@ -30,12 +30,12 @@ export default function PublicLandingPage() {
   const fetchHtml = useCallback(async () => {
     setLoading(true);
     const supabase = getSupabaseClient();
-    const { data } = await supabase
+    const { data } = (await supabase
       .from("landing_pages")
       .select("html_content")
       .eq("slug", slug)
-      .single();
-    const content = data?.html_content ?? "";
+      .single()) as unknown as { data: { html_content: string } | null };
+    const content = (data as { html_content: string } | null)?.html_content ?? "";
     setHtml(content);
     setCurrentHtml(content);
     setLoading(false);
