@@ -341,10 +341,16 @@ export default function PublicLandingPage() {
           ) : (
             <>
               <iframe
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                 srcDoc={html}
                 title="Landing page preview"
-                style={{ width: "100%", height: "100vh", border: "none", display: "block" }}
+                style={{
+                  width: "100%",
+                  height: "100vh",
+                  minHeight: "100vh",
+                  border: "none",
+                  display: "block"
+                }}
               />
               <button
                 type="button"
@@ -453,12 +459,13 @@ export default function PublicLandingPage() {
             </div>
           ) : (
             <iframe
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
               srcDoc={html}
               title="Landing page preview"
               style={{
                 width: "100%",
                 height: "calc(100vh - 56px)",
+                minHeight: "calc(100vh - 56px)",
                 border: "none",
                 display: "block"
               }}
