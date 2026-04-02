@@ -20,9 +20,8 @@ export default function LandingPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [exampleIndex, setExampleIndex] = useState(0);
-  const [typedText, setTypedText] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showCursor, setShowCursor] = useState(true);
+  const [animatedText, setAnimatedText] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [submitHover, setSubmitHover] = useState(false);
@@ -81,7 +80,8 @@ export default function LandingPage() {
       "I'm a copywriter, I write landing pages and email sequences. Goal: $8k/month.",
       "I teach English online. Want to fill my schedule and earn $3,000/month.",
       "I'm a video editor working with YouTubers. Want consistent $6k/month income.",
-      "I do web design for restaurants and cafes. Want $10,000/month."
+      "I do web design for restaurants and cafes. Want $10,000/month.",
+      "I'm a real estate agent helping clients buy and sell properties. I want $8,000/month."
     ],
     []
   );
@@ -110,26 +110,19 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor((prev) => !prev);
-    }, 500);
-    return () => clearInterval(cursorInterval);
-  }, []);
-
-  useEffect(() => {
     if (isFocused || input.length > 0) return;
 
     const currentText = animatedExamples[exampleIndex];
     let timeoutId: ReturnType<typeof setTimeout>;
 
-    if (!isDeleting && typedText === currentText) {
-      timeoutId = setTimeout(() => setIsDeleting(true), 1500);
+    if (isTyping && animatedText === currentText) {
+      timeoutId = setTimeout(() => setIsTyping(false), 1800);
       return () => clearTimeout(timeoutId);
     }
 
-    if (isDeleting && typedText.length === 0) {
+    if (!isTyping && animatedText.length === 0) {
       timeoutId = setTimeout(() => {
-        setIsDeleting(false);
+        setIsTyping(true);
         setExampleIndex((prev) => (prev + 1) % animatedExamples.length);
       }, 400);
       return () => clearTimeout(timeoutId);
@@ -137,15 +130,15 @@ export default function LandingPage() {
 
     timeoutId = setTimeout(
       () => {
-        setTypedText((prev) =>
-          isDeleting ? prev.slice(0, -1) : currentText.slice(0, prev.length + 1)
+        setAnimatedText((prev) =>
+          isTyping ? currentText.slice(0, prev.length + 1) : prev.slice(0, -1)
         );
       },
-      isDeleting ? 25 : 45
+      isTyping ? 45 : 20
     );
 
     return () => clearTimeout(timeoutId);
-  }, [animatedExamples, exampleIndex, input.length, isDeleting, isFocused, typedText]);
+  }, [animatedExamples, exampleIndex, input.length, isFocused, isTyping, animatedText]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -209,7 +202,7 @@ export default function LandingPage() {
   }
 
   const showAnimatedPlaceholder = !isFocused && input.length === 0;
-  const textareaDisplayValue = showAnimatedPlaceholder ? typedText : input;
+  const textareaDisplayValue = showAnimatedPlaceholder ? animatedText : input;
 
   function scrollToSection(sectionId: string) {
     const section = document.getElementById(sectionId);
@@ -236,6 +229,10 @@ export default function LandingPage() {
         @keyframes pulse-dot {
           0%, 100% { opacity: 0.45; transform: scale(0.9); }
           50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes cursor-blink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
         }
       `}</style>
       <main
@@ -441,7 +438,8 @@ export default function LandingPage() {
                 background: "#0F0F12",
                 border: "1px solid #1C1C1F",
                 borderRadius: 2,
-                padding: 32
+                padding: 32,
+                position: "relative"
               }}
             >
               <p
@@ -477,13 +475,13 @@ export default function LandingPage() {
               {showAnimatedPlaceholder && (
                 <span
                   style={{
-                    position: "relative",
-                    top: -40,
-                    marginLeft: 2,
+                    position: "absolute",
+                    marginTop: 14,
+                    marginLeft: `${Math.max(animatedText.length * (isMobile ? 7 : 7.5), 2)}px`,
                     color: "#06B6D4",
                     fontFamily: "var(--font-space-mono), monospace",
                     fontSize: isMobile ? 14 : 15,
-                    opacity: showCursor ? 1 : 0
+                    animation: "cursor-blink 500ms infinite"
                   }}
                 >
                   |
