@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -26,7 +26,28 @@ export default function DashboardPage() {
   const [businessName, setBusinessName] = useState("");
   const [realResults, setRealResults] = useState("");
   const [idealClient, setIdealClient] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [editingOffer, setEditingOffer] = useState(false);
+  const [offerDraft, setOfferDraft] = useState<Offer | null>(null);
+  const [offerSaveError, setOfferSaveError] = useState<string | null>(null);
+  const [regenerateConfirm, setRegenerateConfirm] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const router = useRouter();
+
+  const offerTextareaStyle: CSSProperties = {
+    background: "#111115",
+    border: "1px solid #06B6D4",
+    color: "#F4F4F5",
+    fontFamily: "var(--font-space-mono), monospace",
+    fontSize: 13,
+    lineHeight: 1.6,
+    padding: "10px 12px",
+    width: "100%",
+    outline: "none",
+    resize: "vertical",
+    boxSizing: "border-box"
+  };
+  const offerInputStyle: CSSProperties = { ...offerTextareaStyle, resize: "none" };
 
   const progressMessages = useMemo(
     () => [
@@ -79,6 +100,7 @@ export default function DashboardPage() {
       }
 
       setEmail(session.user.email ?? "");
+      setUserId(session.user.id);
       setSessionToken(session.access_token);
       const { data, error } = await supabase
         .from("offers")
@@ -164,6 +186,44 @@ export default function DashboardPage() {
   async function handleCopyUrl() {
     if (!landingSlug) return;
     await navigator.clipboard.writeText(`https://www.lacore.ai/p/${landingSlug}`);
+  }
+
+  async function handleSaveOffer() {
+    if (!userId || !offerDraft) return;
+    setOfferSaveError(null);
+    const supabase = getSupabaseClient();
+    const { error } = await supabase
+      .from("offers")
+      .update({
+        offer: offerDraft.offer,
+        audience: offerDraft.audience,
+        pricing: offerDraft.pricing,
+        positioning: offerDraft.positioning,
+        headline: offerDraft.headline
+      } as never)
+      .eq("user_id", userId);
+    if (error) {
+      setOfferSaveError(error.message);
+      return;
+    }
+    setOffer(offerDraft);
+    setOfferDraft(null);
+    setEditingOffer(false);
+  }
+
+  async function handleRegenerateSiteConfirmed() {
+    if (!userId) return;
+    setRegenerateError(null);
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from("landing_pages").delete().eq("user_id", userId);
+    if (error) {
+      setRegenerateError(error.message);
+      setRegenerateConfirm(false);
+      return;
+    }
+    setLandingSlug(null);
+    setRegenerateConfirm(false);
+    void handleBuildLandingPage();
   }
 
   if (loading) {
@@ -494,66 +554,181 @@ export default function DashboardPage() {
             </div>
           ) : (
             <section style={{ border: "1px solid #06B6D4", background: "#0C0C0E", padding: 20 }}>
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
-                    fontSize: 38,
-                    lineHeight: 1,
-                    letterSpacing: "0.04em",
-                    color: "#06B6D4"
-                  }}
-                >
-                  YOUR OFFER
-                </h2>
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                    background: "#06B6D4"
-                  }}
-                />
-              </div>
-              {[
-                { label: "OFFER", value: offer.offer },
-                { label: "AUDIENCE", value: offer.audience },
-                { label: "PRICING", value: offer.pricing },
-                { label: "POSITIONING", value: offer.positioning },
-                { label: "HEADLINE", value: offer.headline }
-              ].map((item, idx) => (
-                <div
-                  key={item.label}
-                  style={{
-                    borderBottom: idx === 4 ? "none" : "1px solid #27272A",
-                    padding: "14px 0"
-                  }}
-                >
-                  <p
+              <div
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <h2
                     style={{
                       margin: 0,
-                      fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.2em",
+                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontSize: 38,
+                      lineHeight: 1,
+                      letterSpacing: "0.04em",
                       color: "#06B6D4"
                     }}
                   >
-                    {item.label}
-                  </p>
-                  <p
+                    YOUR OFFER
+                  </h2>
+                  <span
                     style={{
-                      margin: "8px 0 0",
+                      width: 8,
+                      height: 8,
+                      borderRadius: 999,
+                      background: "#06B6D4"
+                    }}
+                  />
+                </div>
+                {!editingOffer && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOfferSaveError(null);
+                      setOfferDraft({ ...offer });
+                      setEditingOffer(true);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #1C1C1F",
+                      color: "#A1A1AA",
                       fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                      color: "#F4F4F5"
+                      fontSize: 10,
+                      letterSpacing: "2px",
+                      padding: "6px 12px",
+                      cursor: "pointer"
                     }}
                   >
-                    {item.value}
-                  </p>
+                    EDIT →
+                  </button>
+                )}
+              </div>
+              {(
+                [
+                  { label: "OFFER", key: "offer" as const, multiline: true },
+                  { label: "AUDIENCE", key: "audience" as const, multiline: true },
+                  { label: "PRICING", key: "pricing" as const, multiline: true },
+                  { label: "POSITIONING", key: "positioning" as const, multiline: true },
+                  { label: "HEADLINE", key: "headline" as const, multiline: false }
+                ] as const
+              ).map((item, idx) => {
+                const source = editingOffer && offerDraft ? offerDraft : offer;
+                const value = source[item.key];
+                return (
+                  <div
+                    key={item.label}
+                    style={{
+                      borderBottom: idx === 4 ? "none" : "1px solid #27272A",
+                      padding: "14px 0"
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        color: "#06B6D4"
+                      }}
+                    >
+                      {item.label}
+                    </p>
+                    {editingOffer && offerDraft ? (
+                      item.multiline ? (
+                        <textarea
+                          value={offerDraft[item.key]}
+                          onChange={(e) =>
+                            setOfferDraft((d) => (d ? { ...d, [item.key]: e.target.value } : d))
+                          }
+                          rows={4}
+                          style={offerTextareaStyle}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={offerDraft[item.key]}
+                          onChange={(e) =>
+                            setOfferDraft((d) => (d ? { ...d, [item.key]: e.target.value } : d))
+                          }
+                          style={offerInputStyle}
+                        />
+                      )
+                    ) : (
+                      <p
+                        style={{
+                          margin: "8px 0 0",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 14,
+                          lineHeight: 1.6,
+                          color: "#F4F4F5"
+                        }}
+                      >
+                        {value}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+              {editingOffer && (
+                <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+                  {offerSaveError && (
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 11,
+                        color: "#f87171"
+                      }}
+                    >
+                      {offerSaveError}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveOffer()}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background: "#06B6D4",
+                      color: "#000000",
+                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontSize: 18,
+                      letterSpacing: "0.05em",
+                      padding: "14px 24px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    SAVE CHANGES →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingOffer(false);
+                      setOfferDraft(null);
+                      setOfferSaveError(null);
+                    }}
+                    style={{
+                      width: "100%",
+                      border: "1px solid #06B6D4",
+                      background: "transparent",
+                      color: "#06B6D4",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.12em",
+                      padding: "12px 16px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    CANCEL
+                  </button>
                 </div>
-              ))}
+              )}
             </section>
           )}
         </div>
@@ -746,11 +921,12 @@ export default function DashboardPage() {
                         COPY
                       </button>
                     </div>
-                    <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                    <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <a
                         href={`/p/${landingSlug}`}
                         style={{
                           flex: 1,
+                          minWidth: 100,
                           textAlign: "center",
                           textDecoration: "none",
                           border: "1px solid #06B6D4",
@@ -766,6 +942,7 @@ export default function DashboardPage() {
                         href={`/p/${landingSlug}?edit=true`}
                         style={{
                           flex: 1,
+                          minWidth: 100,
                           textAlign: "center",
                           textDecoration: "none",
                           border: "1px solid #06B6D4",
@@ -783,6 +960,7 @@ export default function DashboardPage() {
                         title="Coming soon"
                         style={{
                           flex: 1,
+                          minWidth: 100,
                           border: "1px solid #1C1C1F",
                           background: "transparent",
                           color: "#52525B",
@@ -795,6 +973,100 @@ export default function DashboardPage() {
                         CONNECT DOMAIN
                       </button>
                     </div>
+                    {regenerateConfirm ? (
+                      <div style={{ marginTop: 12 }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: "var(--font-space-mono), monospace",
+                            fontSize: 11,
+                            color: "#A1A1AA",
+                            lineHeight: 1.5
+                          }}
+                        >
+                          Are you sure? This will replace your current site.
+                        </p>
+                        {regenerateError && (
+                          <p
+                            style={{
+                              margin: "8px 0 0",
+                              fontFamily: "var(--font-space-mono), monospace",
+                              fontSize: 11,
+                              color: "#f87171"
+                            }}
+                          >
+                            {regenerateError}
+                          </p>
+                        )}
+                        <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegenerateError(null);
+                              void handleRegenerateSiteConfirmed();
+                            }}
+                            disabled={buildingLanding}
+                            style={{
+                              flex: 1,
+                              border: "none",
+                              background: "#06B6D4",
+                              color: "#000000",
+                              fontFamily: "var(--font-space-mono), monospace",
+                              fontSize: 11,
+                              letterSpacing: "0.1em",
+                              padding: "10px 12px",
+                              cursor: buildingLanding ? "not-allowed" : "pointer"
+                            }}
+                          >
+                            YES
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegenerateConfirm(false);
+                              setRegenerateError(null);
+                            }}
+                            disabled={buildingLanding}
+                            style={{
+                              flex: 1,
+                              border: "1px solid #06B6D4",
+                              background: "transparent",
+                              color: "#06B6D4",
+                              fontFamily: "var(--font-space-mono), monospace",
+                              fontSize: 11,
+                              letterSpacing: "0.1em",
+                              padding: "10px 12px",
+                              cursor: buildingLanding ? "not-allowed" : "pointer"
+                            }}
+                          >
+                            NO
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRegenerateError(null);
+                          setRegenerateConfirm(true);
+                        }}
+                        disabled={buildingLanding || !offer}
+                        style={{
+                          marginTop: 12,
+                          width: "100%",
+                          border: "none",
+                          background: "#06B6D4",
+                          color: "#000000",
+                          fontFamily: "var(--font-bebas-neue), sans-serif",
+                          fontSize: 14,
+                          letterSpacing: "0.05em",
+                          padding: "12px 20px",
+                          cursor: buildingLanding || !offer ? "not-allowed" : "pointer"
+                        }}
+                      >
+                        REGENERATE SITE →
+                      </button>
+                    )}
                     <p
                       style={{
                         margin: "8px 0 0",
