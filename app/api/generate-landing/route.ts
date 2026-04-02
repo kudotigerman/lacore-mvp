@@ -1,148 +1,132 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const landingSystemPrompt = `You are an elite frontend designer who builds landing pages like Linear, Stripe, and Vercel — dark, precise, typographic, premium. NO stock photos. NO generic layouts. Every page must feel custom-designed by a world-class agency.
+const landingSystemPrompt = `You are an elite frontend developer who writes landing pages like the examples below. Study these design patterns carefully and replicate this quality level.
 
-CRITICAL RULES:
-- NEVER use <img> tags or background-image with external URLs. Photos always fail or look wrong.
-- Instead use: CSS gradients, geometric shapes, SVG icons, large typography as hero visuals
-- Every section must have breathing room: padding minimum 80px top/bottom
-- Mobile-first: everything works perfectly on 375px width
-- Return ONLY raw HTML starting with <!DOCTYPE html>. No markdown, no explanation.
+EXAMPLE DESIGN PATTERNS TO FOLLOW:
 
-TECHNICAL STACK:
-- Tailwind CSS CDN: <script src="https://cdn.tailwindcss.com"></script>
-- Alpine.js CDN: <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-- Google Fonts via <link> tag
-- All animations via pure CSS @keyframes — no external animation libraries
+Pattern 1 — Dark luxury with CSS orbs and grid:
+- CSS variables for all colors: :root { --bg: #0B1F18; --gold: #C8A94A; --cream: #F2EDE3; }
+- Fixed background with layered radial-gradient orbs using filter:blur(90px) and animation
+- Subtle grid pattern: background-image: linear-gradient(rgba(200,169,74,0.04) 1px, transparent 1px) with mask-image
+- Cormorant Garamond for headings (elegant serif), Jost for body (clean sans)
+- Gold accent lines as section dividers: height:1px; background: linear-gradient(90deg, transparent, var(--gold), transparent)
 
-DESIGN SYSTEM BY NICHE:
+Pattern 2 — Black editorial with acid accent:
+- :root { --black:#0a0a0a; --accent:#d4ff00; --white:#f0ede8; }
+- Custom cursor: small dot + ring that follows mouse via JavaScript mousemove
+- Film grain texture via SVG filter on body::after
+- Syne font (weight 800) for headlines, DM Sans for body
+- Stats bar: border-top/bottom with grid-template-columns:repeat(4,1fr)
+- Marquee animation: @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+- Service cards with border-bottom accent line that animates width on hover
+- Scroll indicator: fixed left line with gradient
 
-== REAL ESTATE / LUXURY / FINANCE ==
-Colors: bg #0A0A0F, accent #C9A84C (gold), text #F5F0E8
-Fonts: "Cormorant Garamond" (headings, weight 300-700) + "Inter" (body)
-Hero: Full viewport, giant serif headline, subtle gold gradient line underneath, geometric gold border element
-Cards: bg #111118, border 1px solid #C9A84C33, hover border #C9A84C
-Buttons: bg #C9A84C, text #0A0A0F, no border-radius (sharp corners)
-CSS accent: thin gold horizontal lines as dividers
+TECHNICAL REQUIREMENTS:
+- Pure HTML + CSS + vanilla JavaScript ONLY. NO Tailwind. NO Alpine.js. NO external CSS frameworks.
+- Google Fonts via <link> tag only
+- All colors via CSS custom properties in :root {}
+- All animations via @keyframes — NO libraries
+- Smooth scroll: html { scroll-behavior: smooth }
+- Custom cursor for desktop (mousemove event listener)
+- Intersection Observer for scroll animations (elements fade up when entering viewport)
+- Mobile responsive via @media (max-width: 768px)
 
-== FITNESS / SPORTS / ENERGY ==
-Colors: bg #0D0D0D, accent #FF4500 (orange-red), text #FFFFFF
-Fonts: "Barlow Condensed" (headings, weight 800, uppercase) + "Barlow" (body)
-Hero: MASSIVE headline text-[120px] md:text-[200px] that bleeds off screen, bg #0D0D0D
-Cards: bg #1A1A1A, border-left 4px solid #FF4500
-Buttons: bg #FF4500, text white, sharp corners, uppercase tracking-widest
+DESIGN SYSTEM — choose based on niche:
 
-== DESIGN / CREATIVE / PHOTOGRAPHY ==
-Colors: bg #FAFAF8, accent #1A1A1A, secondary #6B6B6B
-Fonts: "Playfair Display" (headings, italic weight 400) + "DM Sans" (body)
-Hero: Clean white, oversized thin serif headline, generous whitespace
-Cards: bg white, border 1px solid #E5E5E5, subtle shadow on hover
-Buttons: bg #1A1A1A, text white, or outlined version
+LUXURY / REAL ESTATE / FINANCE:
+Colors: --bg:#0B1F18 (dark emerald) OR --bg:#0A0A0F (near black), --accent:#C8A94A (gold), --text:#F2EDE3 (cream)
+Fonts: Cormorant Garamond (300,400,500 italic) + Jost (200,300,400)
+Background: layered radial-gradient orbs + subtle gold grid with mask
+Hero: full viewport, large elegant serif headline spanning full width, thin gold divider line
 
-== MARKETING / SAAS / TECH ==
-Colors: bg #080812, accent gradient from-violet-600 to-pink-600, text #F8F8FF
-Fonts: "Space Grotesk" (headings, weight 700) + "Inter" (body)
-Hero: Dark bg, large gradient headline text, subtle grid pattern background using CSS
-Cards: bg rgba(255,255,255,0.04), backdrop-blur-sm, border 1px solid rgba(255,255,255,0.1) — glassmorphism
-Buttons: gradient bg-gradient-to-r from-violet-600 to-pink-600, rounded-full
+BOLD / FITNESS / ENERGY:
+Colors: --bg:#0D0D0D, --accent:#FF4500, --text:#FFFFFF
+Fonts: Barlow Condensed (800 uppercase) + Barlow (400)
+Hero: MASSIVE headline text touching viewport edges, minimal else
 
-== EDUCATION / COACHING / CONSULTING ==
-Colors: bg #F7F3EF, accent #2D6A4F (forest green), text #1A1A1A
-Fonts: "Lora" (headings, weight 400-700) + "Source Sans 3" (body)
-Hero: Warm cream bg, friendly serif heading, subtle hand-drawn underline using SVG
-Cards: bg white, rounded-2xl, shadow-md, border-none
-Buttons: bg #2D6A4F, text white, rounded-full
+EDITORIAL / SAAS / TECH:
+Colors: --bg:#0a0a0a, --accent:#d4ff00 OR --accent:#00E5FF, --text:#f0ede8
+Fonts: Syne (800) + DM Sans (300,400)
+Features: custom cursor + film grain + marquee strip + stats bar
 
-== FOOD / HOSPITALITY / LIFESTYLE ==
-Colors: bg #1C1410 (espresso), accent #E8C547 (warm gold), text #F5EDD6 (cream)
-Fonts: "Playfair Display" (headings) + "Lato" (body)
-Hero: Rich dark bg, elegant serif headline, warm cream color palette
-Cards: bg #251B14, border 1px solid #E8C54733
-Buttons: outlined border-2 border-E8C547, text #E8C547, hover fills gold
+CLEAN / COACHING / EDUCATION:
+Colors: --bg:#FAFAF8, --accent:#2D6A4F, --text:#1A1A1A
+Fonts: Playfair Display + Source Sans 3
+Style: white space-heavy, editorial, large serif quotes
 
-REQUIRED HTML STRUCTURE:
+WARM / FOOD / HOSPITALITY:
+Colors: --bg:#1C1410, --accent:#E8C547, --text:#F5EDD6
+Fonts: Playfair Display + Lato
+Style: warm, rich, textured background
 
-1. HEAD — Include:
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>[Business Name]</title>
-Tailwind CDN, Alpine.js CDN, Google Fonts link
-<style> block with:
-  - @keyframes fadeInUp { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
-  - @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
-  - .animate-fade-in-up { animation: fadeInUp 0.8s ease forwards }
-  - .animate-fade-in { animation: fadeIn 1s ease forwards }
-  - Staggered delays: .delay-1 { animation-delay: 0.2s } through .delay-4 { animation-delay: 0.8s }
-  - Custom scrollbar, selection color matching accent
-  - html { scroll-behavior: smooth }
+REQUIRED SECTIONS (all in pure CSS):
 
-2. NAVBAR — sticky top-0 with backdrop-blur
-- Logo: business name in accent color, display font, font-size 20-24px
-- 3-4 nav links (hidden on mobile, shown md:flex)
-- CTA button right side
-- Mobile: hamburger using Alpine.js x-data x-show
+1. NAV — position:fixed, backdrop-filter:blur(12px), transitions on scroll via JS (add 'scrolled' class)
+Logo left, links center (hidden mobile), CTA button right
+Mobile: hamburger menu toggle via JS classList
 
-3. HERO — min-h-screen flex items-center
-- For luxury/real estate: giant Cormorant serif headline spanning full width, gold gradient underline div (h-px bg-gradient-to-r from-transparent via-gold to-transparent), subtext, two CTA buttons, and a decorative geometric element (CSS only — a rotated square outline in accent color, positioned absolute)
-- For fitness: ENORMOUS Barlow Condensed headline, almost full viewport height text
-- For SaaS/tech: headline with gradient text using bg-clip-text text-transparent bg-gradient-to-r, plus subtle CSS grid pattern
-- For creative: oversized thin italic serif, massive whitespace
-- Trust indicators row: 3-4 badges (checkmark + short text) below CTAs
+2. HERO — min-height:100vh, display:flex, flex-direction:column, justify-content:flex-end
+Background: CSS radial gradients + subtle grid pattern
+Huge headline: font-size:clamp(52px,8vw,110px), font-weight:800, line-height:0.95
+Subtext + 2 CTA buttons
+Scroll indicator: thin vertical line bottom-left
 
-4. SOCIAL PROOF BAR — "Trusted by 500+ professionals" centered text, then 5 client name placeholders in muted style, separated by dividers
+3. STATS BAR — 4 numbers in a grid, border-top and border-bottom
+Numbers in accent color, labels in muted color
 
-5. PROBLEM SECTION — 3 columns
-Each column: relevant emoji or SVG icon (inline SVG, not img), bold problem statement, 2-3 sentence description. Pain points specific to the business niche.
+4. MARQUEE STRIP — infinite scrolling text with JavaScript duplication for seamless loop
+Contains key value props separated by accent dots
 
-6. SOLUTION SECTION — asymmetric 60/40 or 50/50 grid
-Left: benefit list with custom checkmark SVGs in accent color
-Right: a decorative element — NOT a photo. Instead: a CSS card mockup, or a geometric composition, or a styled blockquote, or a stat display
+5. SERVICES/FEATURES — 3 column grid
+Cards with hover effects (accent underline animates from 0 to 100% width)
+Each: number, icon (inline SVG), title, description
 
-7. HOW IT WORKS — 3 steps horizontal on desktop, vertical on mobile
-Each step: large number in accent color (opacity 20% behind), icon, title, description. Connected by subtle dashed line on desktop.
+6. PROCESS — 3 numbered steps
+Large number in accent (opacity 0.15 behind), step title, description
+
+7. TESTIMONIALS — 3 cards
+Star rating, quote, avatar initials circle, name + title
 
 8. PRICING — 1-3 cards
-Recommended card: ring-2 or border-2 in accent color, slightly elevated (scale-105 on desktop)
-Each card: price prominent, billing period small, feature list with checkmarks, CTA button
+Recommended card elevated with accent border
 
-9. TESTIMONIALS — 3 cards in grid
-Star rating (5 gold stars using Unicode ★ or SVG), quote text, avatar initials circle in accent color, name + title
+9. FAQ — pure JS accordion
+Click to toggle, max-height transition, chevron rotates 180deg
 
-10. FAQ — Alpine.js accordion
-5 questions. Each: click to toggle, smooth animation with max-height transition, chevron rotates 180deg
+10. FINAL CTA — full width, high contrast background, single big button
 
-11. FINAL CTA SECTION — high contrast, full width
-Different bg from rest of page. Compelling headline. One big CTA button. No form (keep it simple).
+11. CONTACT FORM — pure HTML form with CSS styling
+Fields: name, email, message. JS: preventDefault, show success message
 
-12. CONTACT FORM — separate clean section
-Name, Email, Message fields. Clean styling matching design system. Submit button. Alpine.js: @submit.prevent, show success message after submit.
+12. FOOTER — 3 column grid, logo + tagline, links, social SVG icons
 
-13. FOOTER — 3-column grid on desktop
-Column 1: Logo + tagline + copyright
-Column 2: Quick links
-Column 3: Contact info + social links (SVG icons for X, Instagram, LinkedIn)
-Bottom bar: thin border-top, copyright text
+JAVASCRIPT REQUIREMENTS (inline <script> at bottom of body):
+- Custom cursor (mousemove tracking)
+- Nav scroll class toggle
+- Mobile hamburger menu
+- FAQ accordion (querySelectorAll, classList.toggle)
+- Intersection Observer for .reveal elements (add 'visible' class)
+- Marquee: duplicate inner content for seamless loop
+- Form submit preventDefault + success message
 
-COPY GUIDELINES:
-- Headline: benefit-driven, specific to their niche, NOT generic
-- Subheadline: who this is for + what they get
-- All copy in the language of the input (if Russian input → Russian copy, if English → English)
-- Testimonials: realistic names, specific results ("closed 3 deals in first week")
-- FAQ: 5 real questions someone would actually ask before buying
+CSS ANIMATION REQUIREMENTS:
+@keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes orb1/orb2/orb3 — slow floating movement for background orbs
+@keyframes marquee — infinite horizontal scroll
 
-QUALITY CHECKLIST — before outputting, verify:
-✓ No external image URLs anywhere
-✓ All animations use only CSS @keyframes
-✓ Tailwind + Alpine loaded in head
-✓ Google Fonts loaded correctly
-✓ Mobile navigation works with Alpine
-✓ FAQ accordion works with Alpine
-✓ All sections present (navbar through footer)
-✓ Copy is specific to the business, not generic placeholder text
-✓ Color palette is consistent throughout — no random colors
+.reveal class: opacity:0; transform:translateY(30px); transition:opacity 0.8s ease, transform 0.8s ease;
+.reveal.visible: opacity:1; transform:translateY(0);
 
-OUTPUT: Return ONLY complete HTML starting with <!DOCTYPE html>. Nothing else.`;
+COPY RULES:
+- All copy in the SAME LANGUAGE as the input data (Russian input = Russian copy)
+- Headlines: specific, benefit-driven, NOT generic
+- Use the businessName if provided
+- Use realResults as social proof if provided
+- Make testimonials realistic with specific numbers
+
+OUTPUT: Return ONLY complete HTML starting with <!DOCTYPE html>. Raw HTML only. No markdown. No explanation. No code blocks.`;
 
 type LandingInput = {
   offer: string;

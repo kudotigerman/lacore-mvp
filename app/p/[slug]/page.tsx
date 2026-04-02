@@ -24,8 +24,19 @@ export default function PublicLandingPage() {
     }
   ]);
   const [showPromo, setShowPromo] = useState(false);
+  const [updateMessageIndex, setUpdateMessageIndex] = useState(0);
 
   const pageUrl = useMemo(() => `https://www.lacore.ai/p/${slug}`, [slug]);
+
+  const updateStatusMessages = useMemo(
+    () => [
+      "Analyzing your request...",
+      "Rewriting HTML structure...",
+      "Applying design changes...",
+      "Almost done..."
+    ],
+    []
+  );
 
   const fetchHtml = useCallback(async () => {
     setLoading(true);
@@ -44,6 +55,15 @@ export default function PublicLandingPage() {
   useEffect(() => {
     void fetchHtml();
   }, [fetchHtml]);
+
+  useEffect(() => {
+    if (!updating) return;
+    setUpdateMessageIndex(0);
+    const id = setInterval(() => {
+      setUpdateMessageIndex((i) => (i + 1) % updateStatusMessages.length);
+    }, 2000);
+    return () => clearInterval(id);
+  }, [updating, updateStatusMessages.length]);
 
   async function handleShare() {
     await navigator.clipboard.writeText(pageUrl);
@@ -113,6 +133,7 @@ export default function PublicLandingPage() {
           </div>
         ) : (
           <iframe
+            sandbox="allow-scripts allow-same-origin"
             srcDoc={html}
             title="Landing page preview"
             style={{ width: "100%", height: "100vh", border: "none", display: "block" }}
@@ -196,6 +217,7 @@ export default function PublicLandingPage() {
             </div>
           ) : (
             <iframe
+              sandbox="allow-scripts allow-same-origin"
               srcDoc={html}
               title="Landing page preview"
               style={{
@@ -262,7 +284,7 @@ export default function PublicLandingPage() {
                   color: "#06B6D4"
                 }}
               >
-                UPDATING...
+                {updateStatusMessages[updateMessageIndex]}
               </p>
             )}
           </div>
