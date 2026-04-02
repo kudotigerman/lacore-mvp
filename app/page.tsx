@@ -179,16 +179,18 @@ export default function LandingPage() {
         if (session?.user) {
           setIsLoggedIn(true);
           setSaveStatus("saving");
-          const { error: saveError } = await supabase.from("offers").insert([
-            {
-              user_id: session.user.id,
-              offer: data.offer.offer,
-              audience: data.offer.audience,
-              pricing: data.offer.pricing,
-              positioning: data.offer.positioning,
-              headline: data.offer.headline
-            }
-          ] as never);
+          const { error: saveError } = await supabase
+            .from("offers")
+            .upsert(
+              {
+                user_id: session.user.id,
+                offer: data.offer.offer,
+                audience: data.offer.audience,
+                pricing: data.offer.pricing,
+                positioning: data.offer.positioning,
+                headline: data.offer.headline
+              } as never
+            );
           if (saveError) throw saveError;
           setSaveStatus("saved");
         } else {
@@ -663,10 +665,21 @@ export default function LandingPage() {
                       margin: 0,
                       fontFamily: "var(--font-space-mono), monospace",
                       fontSize: 12,
+                      color: "#06B6D4",
+                      letterSpacing: "0.08em"
+                    }}
+                  >
+                    SAVE YOUR OFFER
+                  </p>
+                  <p
+                    style={{
+                      margin: "6px 0 0",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 12,
                       color: "#A1A1AA"
                     }}
                   >
-                    SAVE YOUR OFFER — Sign up to access your dashboard and continue building.
+                    Create a free account to access your dashboard and continue building.
                   </p>
                   <Link
                     href="/auth"
