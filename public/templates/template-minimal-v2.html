@@ -27,7 +27,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:22px 64px;display:fl
 /* SPLIT HERO */
 .hero{position:relative;min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:120px 64px 80px;gap:60px;z-index:1;}
 .hero-eyebrow{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:28px;opacity:0;animation:fadeUp 0.7s ease 0.2s forwards;}
-.hero h1{font-family:'Playfair Display',serif;font-size:clamp(52px,6vw,96px);font-weight:900;line-height:0.95;letter-spacing:-3px;opacity:0;animation:fadeUp 0.9s ease 0.4s forwards;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(40px,5vw,72px)!important;font-weight:900;line-height:1.05!important;letter-spacing:-3px;opacity:0;animation:fadeUp 0.9s ease 0.4s forwards;}
 .hero h1 em{font-style:italic;color:var(--muted);}
 .hero-line{width:64px;height:2px;background:var(--black);margin:32px 0;opacity:0;animation:fadeIn 0.8s ease 0.7s forwards;}
 .hero-desc{font-size:17px;line-height:1.85;color:var(--muted);max-width:440px;opacity:0;animation:fadeUp 0.8s ease 0.8s forwards;}
@@ -89,7 +89,7 @@ section{position:relative;z-index:1;padding:108px 64px;}
 .bc-dark .bnum{color:var(--bg);}
 .bnuml{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);}
 .bc-dark .bnuml{color:rgba(250,250,248,0.5);}
-.bquote{font-family:'Playfair Display',serif;font-size:22px;font-style:italic;font-weight:400;line-height:1.5;grid-column:span 8;}
+.bquote{font-family:'Playfair Display',serif;font-size:18px;font-style:italic;font-weight:400;line-height:1.5;grid-column:span 8;}
 /* PROCESS */
 .plist{margin-top:56px;}
 .pitem{display:grid;grid-template-columns:100px 1fr;gap:48px;padding:44px 0;border-top:1px solid var(--border2);align-items:start;}
@@ -136,7 +136,7 @@ section{position:relative;z-index:1;padding:108px 64px;}
 .fans p{padding:0 0 24px;font-size:14px;line-height:1.9;color:var(--muted);}
 /* CTA */
 .ctasec{background:var(--black);text-align:center;padding:120px 64px;}
-.ctatitle{font-family:'Playfair Display',serif;font-size:clamp(52px,8vw,112px);font-weight:900;line-height:0.92;letter-spacing:-4px;color:var(--bg);margin-bottom:20px;}
+.ctatitle{font-family:'Playfair Display',serif;font-size:clamp(40px,6vw,80px)!important;font-weight:900;line-height:0.92;letter-spacing:-4px;color:var(--bg);margin-bottom:20px;}
 .ctatitle em{font-style:italic;color:rgba(250,250,248,0.35);}
 .ctasub{font-size:17px;color:rgba(250,250,248,0.5);margin-bottom:48px;}
 /* CONTACT */
@@ -170,8 +170,9 @@ footer{background:var(--bg2);border-top:1px solid var(--border2);padding:64px 64
 .fade-3{opacity:0;animation:fadeUp 0.7s ease 0.35s forwards;}
 .fade-4{opacity:0;animation:fadeUp 0.7s ease 0.5s forwards;}
 .fade-5{opacity:0;animation:fadeUp 0.7s ease 0.65s forwards;}
+.stat{padding:28px 40px!important;}
 @media(max-width:900px){.hero{grid-template-columns:1fr;}.hero-right{display:none;}.hero-bg-text{display:none;}.b-xl,.b-sm,.b-md,.b-wide,.b-xs,.bquote{grid-column:span 12;}}
-@media(max-width:768px){nav{padding:18px 24px;}.nav-links,.nav-cta{display:none;}.hamburger{display:flex;}section{padding:72px 24px;}.tgrid{grid-template-columns:1fr;}.pgrid{grid-template-columns:1fr;}.cgrid{grid-template-columns:1fr;gap:48px;}.pitem{grid-template-columns:60px 1fr;gap:24px;}.pnum{font-size:48px;}.ftop{grid-template-columns:1fr;gap:32px;}.fbot{flex-direction:column;gap:16px;}}
+@media(max-width:768px){nav{padding:18px 24px;}.nav-links,.nav-cta{display:none;}.hamburger{display:flex;}.hero h1{font-size:clamp(32px,8vw,48px)!important;letter-spacing:-1px!important;line-height:1.1!important;}.hero{padding:100px 24px 60px!important;gap:24px!important;}.stitle,.section-title,.ctatitle{font-size:clamp(28px,7vw,42px)!important;letter-spacing:-0.5px!important;}section{padding:64px 24px!important;}.bento{grid-template-columns:1fr!important;gap:12px!important;}.bc,.b-xl,.b-sm,.b-md,.b-xs,.b-wide,.bquote{grid-column:span 1!important;grid-row:span 1!important;}.bc{padding:28px 24px!important;}.pitem{grid-template-columns:60px 1fr!important;gap:16px!important;padding:24px 0!important;}.pnum{font-size:40px!important;}.tgrid{grid-template-columns:1fr!important;gap:12px!important;}.pgrid{grid-template-columns:1fr!important;}.ftop{grid-template-columns:1fr!important;gap:28px!important;}.fbot{flex-direction:column!important;gap:12px!important;}.cgrid{grid-template-columns:1fr!important;gap:40px!important;}}
 </style>
 </head>
 <body>
