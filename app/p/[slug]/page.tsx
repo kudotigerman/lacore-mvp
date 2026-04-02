@@ -133,7 +133,7 @@ export default function PublicLandingPage() {
           </div>
         ) : (
           <iframe
-            sandbox="allow-scripts allow-same-origin"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             srcDoc={html}
             title="Landing page preview"
             style={{ width: "100%", height: "100vh", border: "none", display: "block" }}
@@ -217,7 +217,7 @@ export default function PublicLandingPage() {
             </div>
           ) : (
             <iframe
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
               srcDoc={html}
               title="Landing page preview"
               style={{

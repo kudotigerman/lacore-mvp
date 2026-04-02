@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const landingSystemPrompt = `You are an elite frontend developer who writes landing pages like the examples below. Study these design patterns carefully and replicate this quality level.
+const landingSystemPrompt = `CRITICAL: Every HTML element MUST be visible by default. Never use opacity:0 without a paired CSS animation that brings it to opacity:1. Never rely on JavaScript to make elements visible — CSS animations only. All sections must render visible without any JavaScript.
+
+You are an elite frontend developer who writes landing pages like the examples below. Study these design patterns carefully and replicate this quality level.
 
 EXAMPLE DESIGN PATTERNS TO FOLLOW:
 
@@ -29,7 +31,6 @@ TECHNICAL REQUIREMENTS:
 - All animations via @keyframes — NO libraries
 - Smooth scroll: html { scroll-behavior: smooth }
 - Custom cursor for desktop (mousemove event listener)
-- Intersection Observer for scroll animations (elements fade up when entering viewport)
 - Mobile responsive via @media (max-width: 768px)
 
 DESIGN SYSTEM — choose based on niche:
@@ -106,18 +107,21 @@ JAVASCRIPT REQUIREMENTS (inline <script> at bottom of body):
 - Nav scroll class toggle
 - Mobile hamburger menu
 - FAQ accordion (querySelectorAll, classList.toggle)
-- Intersection Observer for .reveal elements (add 'visible' class)
+- // All animations handled by CSS — no JS observer needed
 - Marquee: duplicate inner content for seamless loop
 - Form submit preventDefault + success message
 
 CSS ANIMATION REQUIREMENTS:
-@keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+.fade-1{opacity:0;animation:fadeUp 0.7s ease 0.1s forwards;}
+.fade-2{opacity:0;animation:fadeUp 0.7s ease 0.2s forwards;}
+.fade-3{opacity:0;animation:fadeUp 0.7s ease 0.3s forwards;}
+.fade-4{opacity:0;animation:fadeUp 0.7s ease 0.5s forwards;}
+.fade-5{opacity:0;animation:fadeUp 0.7s ease 0.7s forwards;}
+Use fade-1 through fade-5 on major sections or blocks for staggered entrance (CSS only — no Intersection Observer).
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 @keyframes orb1/orb2/orb3 — slow floating movement for background orbs
 @keyframes marquee — infinite horizontal scroll
-
-.reveal class: opacity:0; transform:translateY(30px); transition:opacity 0.8s ease, transform 0.8s ease;
-.reveal.visible: opacity:1; transform:translateY(0);
 
 COPY RULES:
 - All copy in the SAME LANGUAGE as the input data (Russian input = Russian copy)
