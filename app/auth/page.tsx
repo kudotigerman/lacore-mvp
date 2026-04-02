@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type AuthMode = "signup" | "signin";
@@ -27,6 +28,8 @@ export default function AuthPage() {
       const supabase = getSupabaseClient();
       if (mode === "signup") {
         const normalizedEmail = email.trim();
+        // For easier local testing, disable email confirmations in Supabase Dashboard:
+        // Authentication -> Providers -> Email -> turn off "Confirm email".
         const { error: signUpError } = await supabase.auth.signUp({
           email: normalizedEmail,
           password
@@ -81,9 +84,22 @@ export default function AuthPage() {
       }}
     >
       <section style={{ width: "100%", maxWidth: 560 }}>
+        <Link
+          href="/"
+          style={{
+            display: "inline-block",
+            fontFamily: "var(--font-space-mono), monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            color: "#06B6D4",
+            textDecoration: "none"
+          }}
+        >
+          ← BACK TO LACORE
+        </Link>
         <p
           style={{
-            margin: 0,
+            margin: "14px 0 0",
             fontFamily: "var(--font-space-mono), monospace",
             fontSize: 12,
             letterSpacing: "0.3em",
@@ -277,19 +293,36 @@ export default function AuthPage() {
             </form>
           </>
         ) : (
-          <p
-            style={{
-              margin: "28px 0 0",
-              fontFamily: "var(--font-space-mono), monospace",
-              color: "#06B6D4",
-              fontSize: 13,
-              textAlign: "center",
-              lineHeight: 1.8
-            }}
-          >
-            CHECK YOUR EMAIL. We sent a confirmation link to {confirmationEmail}. Click it to
-            activate your account.
-          </p>
+          <div style={{ marginTop: 28, textAlign: "center" }}>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-space-mono), monospace",
+                color: "#06B6D4",
+                fontSize: 13,
+                lineHeight: 1.8
+              }}
+            >
+              CHECK YOUR EMAIL. We sent a confirmation link to {confirmationEmail}. Click it to
+              activate your account.
+            </p>
+            <Link
+              href="/"
+              style={{
+                display: "inline-block",
+                marginTop: 14,
+                border: "1px solid #06B6D4",
+                color: "#06B6D4",
+                textDecoration: "none",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.14em",
+                padding: "8px 12px"
+              }}
+            >
+              ← BACK TO LACORE
+            </Link>
+          </div>
         )}
       </section>
     </main>

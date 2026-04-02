@@ -211,6 +211,13 @@ export default function LandingPage() {
   const showAnimatedPlaceholder = !isFocused && input.length === 0;
   const textareaDisplayValue = showAnimatedPlaceholder ? typedText : input;
 
+  function scrollToSection(sectionId: string) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   return (
     <>
       <style>{`
@@ -269,18 +276,20 @@ export default function LandingPage() {
               gap: 16
             }}
           >
-            <p
+            <Link
+              href="/"
               style={{
                 margin: 0,
                 justifySelf: "start",
                 fontFamily: "var(--font-bebas-neue), sans-serif",
                 fontSize: 22,
                 letterSpacing: "0.06em",
-                color: "#06B6D4"
+                color: "#06B6D4",
+                textDecoration: "none"
               }}
             >
               LACORE
-            </p>
+            </Link>
             {!isMobile && (
               <div
                 style={{
@@ -291,29 +300,54 @@ export default function LandingPage() {
                   textAlign: "center"
                 }}
               >
-                {[
-                  { href: "#how-it-works", label: "HOW IT WORKS" },
-                  { href: "#what-you-get", label: "WHAT YOU GET" },
-                  { href: "#pricing", label: "PRICING" }
-                ].map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    style={{
-                      fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 11,
-                      letterSpacing: "0.15em",
-                      color: "#52525B",
-                      textDecoration: "none"
-                    }}
-                  >
-                    {item.label}
-                  </a>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("how-it-works")}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.15em",
+                    color: "#52525B",
+                    textDecoration: "none",
+                    cursor: "pointer"
+                  }}
+                >
+                  HOW IT WORKS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("what-you-get")}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.15em",
+                    color: "#52525B",
+                    textDecoration: "none",
+                    cursor: "pointer"
+                  }}
+                >
+                  WHAT YOU GET
+                </button>
+                <Link
+                  href="/auth"
+                  style={{
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.15em",
+                    color: "#52525B",
+                    textDecoration: "none"
+                  }}
+                >
+                  PRICING
+                </Link>
               </div>
             )}
-            <button
-              type="button"
+            <Link
+              href="/auth"
               style={{
                 justifySelf: "end",
                 border: "1px solid #06B6D4",
@@ -323,11 +357,12 @@ export default function LandingPage() {
                 fontSize: isMobile ? 10 : 11,
                 letterSpacing: "0.15em",
                 padding: isMobile ? "8px 16px" : "10px 14px",
-                cursor: "pointer"
+                cursor: "pointer",
+                textDecoration: "none"
               }}
             >
               START FOR FREE →
-            </button>
+            </Link>
           </div>
         </nav>
 
@@ -854,6 +889,7 @@ export default function LandingPage() {
             <span style={{ display: "block", color: "#06B6D4" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
           </h2>
           <div
+            id="what-you-get"
             style={{
               marginTop: 48,
               display: "grid",
@@ -909,7 +945,7 @@ export default function LandingPage() {
         </section>
 
         <section
-          id="what-you-get"
+          id="magic-moment"
           style={{
             width: "100%",
             padding: isMobile ? "60px 24px" : "120px 48px",

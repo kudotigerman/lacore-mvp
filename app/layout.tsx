@@ -16,7 +16,10 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   title: "LACORE",
-  description: "You say what you sell. LACORE does the rest."
+  description: "You say what you sell. LACORE does the rest.",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
