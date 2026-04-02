@@ -152,6 +152,9 @@ type LandingInput = {
   headline: string;
   userName?: string;
   userEmail: string;
+  businessName?: string;
+  realResults?: string;
+  idealClient?: string;
 };
 
 function randomFourDigits() {
@@ -207,7 +210,18 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "user",
-            content: JSON.stringify(body)
+            content:
+              `Business data:\n` +
+              `Offer: ${body.offer}\n` +
+              `Audience: ${body.audience}\n` +
+              `Pricing: ${body.pricing}\n` +
+              `Positioning: ${body.positioning}\n` +
+              `Headline: ${body.headline}\n` +
+              `User name: ${body.userName || "Not provided"}\n` +
+              `User email: ${body.userEmail}\n` +
+              `Business name: ${body.businessName || "Not provided"}\n` +
+              `Best result/proof: ${body.realResults || "Not provided"}\n` +
+              `Ideal client description: ${body.idealClient || "Not provided"}`
           }
         ]
       })

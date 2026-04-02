@@ -22,6 +22,10 @@ export default function DashboardPage() {
   const [buildError, setBuildError] = useState<string | null>(null);
   const [messageIndex, setMessageIndex] = useState(0);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [businessName, setBusinessName] = useState("");
+  const [realResults, setRealResults] = useState("");
+  const [idealClient, setIdealClient] = useState("");
   const router = useRouter();
 
   const progressMessages = useMemo(
@@ -110,7 +114,11 @@ export default function DashboardPage() {
     router.replace("/auth");
   }
 
-  async function handleBuildLandingPage() {
+  async function handleBuildLandingPage(extra?: {
+    businessName?: string;
+    realResults?: string;
+    idealClient?: string;
+  }) {
     if (!offer || !sessionToken) return;
     setBuildError(null);
     setBuildingLanding(true);
@@ -126,7 +134,10 @@ export default function DashboardPage() {
         body: JSON.stringify({
           ...offer,
           userName: email.split("@")[0],
-          userEmail: email
+          userEmail: email,
+          businessName: extra?.businessName ?? businessName,
+          realResults: extra?.realResults ?? realResults,
+          idealClient: extra?.idealClient ?? idealClient
         })
       });
       const result = await response.json();
@@ -216,6 +227,186 @@ export default function DashboardPage() {
           >
             LACORE is building your personalized landing page
           </p>
+        </div>
+      )}
+
+      {showOnboarding && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9998,
+            background: "rgba(9,9,11,0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              border: "1px solid #1C1C1F",
+              background: "#09090B",
+              padding: 20
+            }}
+          >
+            <h3
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontSize: 36,
+                color: "#F4F4F5",
+                lineHeight: 1
+              }}
+            >
+              TELL US ABOUT YOUR BUSINESS
+            </h3>
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 11,
+                color: "#A1A1AA"
+              }}
+            >
+              3 quick questions to make your landing page 10x better
+            </p>
+
+            <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    color: "#06B6D4"
+                  }}
+                >
+                  BUSINESS NAME
+                </p>
+                <input
+                  value={businessName}
+                  onChange={(event) => setBusinessName(event.target.value)}
+                  placeholder="Dubai Elite Properties"
+                  style={{
+                    width: "100%",
+                    marginTop: 6,
+                    border: "1px solid #1C1C1F",
+                    background: "#0F0F12",
+                    color: "#F4F4F5",
+                    padding: "10px 12px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 12,
+                    outline: "none"
+                  }}
+                />
+              </div>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    color: "#06B6D4"
+                  }}
+                >
+                  YOUR BEST RESULT
+                </p>
+                <input
+                  value={realResults}
+                  onChange={(event) => setRealResults(event.target.value)}
+                  placeholder="Closed a $12M deal in 3 weeks"
+                  style={{
+                    width: "100%",
+                    marginTop: 6,
+                    border: "1px solid #1C1C1F",
+                    background: "#0F0F12",
+                    color: "#F4F4F5",
+                    padding: "10px 12px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 12,
+                    outline: "none"
+                  }}
+                />
+              </div>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    color: "#06B6D4"
+                  }}
+                >
+                  YOUR IDEAL CLIENT
+                </p>
+                <input
+                  value={idealClient}
+                  onChange={(event) => setIdealClient(event.target.value)}
+                  placeholder="HNW investors looking for Dubai real estate"
+                  style={{
+                    width: "100%",
+                    marginTop: 6,
+                    border: "1px solid #1C1C1F",
+                    background: "#0F0F12",
+                    color: "#F4F4F5",
+                    padding: "10px 12px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 12,
+                    outline: "none"
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOnboarding(false);
+                  void handleBuildLandingPage();
+                }}
+                style={{
+                  flex: 1,
+                  border: "1px solid #06B6D4",
+                  background: "transparent",
+                  color: "#06B6D4",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
+                  padding: "10px 12px",
+                  cursor: "pointer"
+                }}
+              >
+                SKIP →
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOnboarding(false);
+                  void handleBuildLandingPage({ businessName, realResults, idealClient });
+                }}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  background: "#06B6D4",
+                  color: "#000000",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
+                  padding: "10px 12px",
+                  cursor: "pointer"
+                }}
+              >
+                BUILD MY PAGE →
+              </button>
+            </div>
+          </div>
         </div>
       )}
       <nav
@@ -461,7 +652,7 @@ export default function DashboardPage() {
                   <div style={{ marginTop: 10 }}>
                     <button
                       type="button"
-                      onClick={handleBuildLandingPage}
+                      onClick={() => setShowOnboarding(true)}
                       disabled={!offer || buildingLanding}
                       style={{
                         width: "100%",
