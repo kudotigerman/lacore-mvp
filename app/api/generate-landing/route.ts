@@ -1,117 +1,145 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const landingSystemPrompt = `You are a world-class landing page designer and conversion copywriter. You design pages that win Awwwards, convert at 15%+, and make people say 'wow' when they open them.
+const landingSystemPrompt = `You are a world-class landing page designer. Generate a STUNNING, PROFESSIONAL, VISUALLY RICH single-page HTML landing page.
 
-Generate a COMPLETE, STUNNING, HIGH-CONVERTING single-page HTML landing page personalized for this specific business.
+TECHNICAL STACK TO USE:
+- Tailwind CSS via CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Alpine.js via CDN: <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+- Google Fonts via <link> in head
+- Real images from Unsplash (use direct URLs): https://images.unsplash.com/photo-[ID]?w=1200&q=80&fit=crop
+  Choose photo IDs that match the business niche
 
-DESIGN PHILOSOPHY:
-- Every page must feel custom-designed for THIS business, not a template
-- Use design trends from 2025: bold typography, micro-animations, glassmorphism or noise textures where appropriate
-- The page should feel premium, trustworthy, and emotionally resonant
+UNSPLASH PHOTO IDs BY NICHE (use these exact IDs):
+- Real estate: 1560518883-ce09059eeffa, 1570129477492-1f239a2278e7, 1449844908441-8d1a1f9ed1cc
+- Fitness/coaching: 1571019613454-1cb2f99b2d8b, 1534438327276-14e5300c3a48, 1517836357463-d25dfeac3438
+- Design/creative: 1558618666-fcd25c85cd64, 1561070791-2526b2e96498, 1572044162444-ad60f128bdea  
+- Marketing/SMM: 1611162617213-7d7a39e9b1d7, 1432888498266-38ffec3eaf0a, 1553877522-43269d4ea984
+- Education/courses: 1522202176988-66273c2fd55f, 1501504905252-473c47e087f8, 1434030216411-0b793f4b4173
+- Tech/software: 1518770660439-4636190af475, 1461749280684-dccba630e2f6, 1555949963-ff9fe0c870cb
+- Food/restaurant: 1504674900247-0877df9cc836, 1414235077428-338989a2e8c0, 1565299624946-b28dc8a6855c
+- Health/wellness/beauty: 1544161515-4ab6ce6db874, 1571019613454-1cb2f99b2d8b, 1498842812179-c81a8f3ce35b
+- General business: 1507003211169-0a1dd7228f2d, 1521737852567-6949f3f9f2b5, 1600880292203-757bb62b4baf
 
-COLOR & STYLE — choose based on business niche:
-- Real estate / luxury / finance → deep navy #0A1628 background, gold #C9A84C accent, cream text, serif display font (Playfair Display)
-- Fitness / sports / coaching → near-black background, electric orange #FF4D00 or red #E63946 accent, bold condensed font (Oswald or Barlow Condensed)
-- Creative / design / photography / art → pure white or #FAFAFA background, black text, one unexpected accent (electric blue or warm yellow), elegant font (DM Serif Display or Cormorant)
-- Marketing / SMM / growth → dark #0D0D0D with purple-to-pink gradient accents (#7C3AED to #EC4899), modern font (Plus Jakarta Sans)
-- Education / teaching / courses / coaching → warm off-white #FFFBF5 background, deep teal #0D9488 or indigo #4F46E5 accent, friendly font (Nunito or Poppins)
-- Tech / dev / software / SaaS → dark #0A0A0F background, electric green #00FF94 or cyan #00D4FF accent, monospace elements, font (Space Grotesk or Inter)
-- Food / restaurant / culinary → dark #1A0A00 or warm cream #FFF8F0, rich orange #D4622A or deep red accent, font (Lora or Merriweather)
-- Health / wellness / beauty / skincare → soft white #FEFEFE or sage #F0F4F0, rose #E8B4B8 or sage green #6B8F71 accent, clean font (Josefin Sans or Raleway)
-- Real person / freelancer / consultant → professional dark or light depending on field, trust-building colors, font that matches personality
-- Default → sophisticated dark #080C14, electric blue #2563EB accent, modern font (Cabinet Grotesk)
+DESIGN REQUIREMENTS:
+Choose the visual style based on business niche:
 
-REQUIRED SECTIONS (make each one visually distinct and stunning):
+DARK PREMIUM (real estate, finance, luxury):
+- bg-gray-950 or bg-slate-900 background
+- Gold/amber accents: text-amber-400, bg-amber-500
+- Font: Playfair Display for headings, Inter for body
+- Hero: full-height with overlay on Unsplash background image
 
-1. NAVIGATION
-   - Logo (business name in accent color) left
-   - 3-4 nav links center (hidden on mobile, hamburger menu)
-   - CTA button right (filled, accent color)
-   - Fixed/sticky, with blur backdrop on scroll
+BOLD ENERGY (fitness, sports, motivation):
+- bg-zinc-950 background
+- Orange/red: text-orange-500, bg-orange-500
+- Font: Oswald for headings (bold condensed)
+- Hero: dark bg with large hero image
 
-2. HERO (most important section)
-   - Full viewport height
-   - Massive display headline (from the provided headline field) — make it HUGE, 80-120px on desktop
-   - Compelling subheadline (2-3 sentences, from the offer field)
-   - Two buttons: primary CTA (filled) + secondary (outlined)
-   - Trust indicators row: 3 stats or badges (e.g. "50+ clients" "5★ rating" "Money-back guarantee")
-   - Background: gradient, subtle pattern, or atmospheric effect that fits the niche
-   - Add a subtle entrance animation (fade + slide up) using CSS @keyframes
+CLEAN MINIMAL (design, creative, photography):
+- bg-white or bg-gray-50 background, dark text
+- One bold accent: slate-900, with a pop color
+- Font: DM Serif Display headings, DM Sans body
+- Lots of whitespace, large typography
 
-3. SOCIAL PROOF BAR
-   - "Trusted by professionals in [city/industry]"
-   - 5 placeholder company logos (use text abbreviations styled as logos)
-   - Scrolling ticker animation
+GRADIENT MODERN (marketing, SMM, growth):
+- bg-slate-950 background
+- Purple/pink gradient: from-purple-600 to-pink-600
+- Font: Plus Jakarta Sans
+- Glassmorphism cards: bg-white/5 backdrop-blur border border-white/10
+
+WARM FRIENDLY (education, coaching, courses):
+- bg-amber-50 or bg-white background
+- Teal or indigo: text-teal-600, bg-teal-600
+- Font: Poppins
+- Rounded corners everywhere, friendly illustrations with CSS shapes
+
+TECH DARK (software, SaaS, dev):
+- bg-gray-950 background with subtle grid pattern
+- Cyan/green: text-cyan-400, bg-cyan-500
+- Font: Space Grotesk
+- Code-like elements, terminal aesthetics
+
+REQUIRED HTML STRUCTURE:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[Business Name]</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=[CHOSEN_FONT]:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { display: ['[CHOSEN_FONT]', 'serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+
+SECTIONS TO BUILD:
+
+1. NAVBAR (sticky, with blur)
+- Logo text left in accent color, font-display
+- Nav links center (hidden on mobile)
+- CTA button right
+- x-data for mobile menu toggle
+
+2. HERO (min-h-screen, with REAL Unsplash background image)
+- Background: bg-[url('https://images.unsplash.com/photo-[ID]?w=1920&q=80&fit=crop')] bg-cover bg-center
+- Dark overlay: bg-black/60 or gradient
+- Huge headline: text-5xl md:text-7xl lg:text-8xl font-display font-black
+- Subheadline: text-xl md:text-2xl
+- Two CTA buttons
+- Trust badges row (flex, gap)
+- Entrance animation: add this CSS class and @keyframes fadeInUp
+
+3. LOGOS BAR (social proof)
+- "Trusted by 500+ professionals"
+- 5 company name placeholders in muted style
 
 4. PROBLEM SECTION
-   - Headline: "Does this sound familiar?"
-   - 3 pain points from the audience's perspective (based on audience field)
-   - Each with an icon (use emoji or CSS shapes), short title, 1-2 sentence description
-   - Dark/light contrast section
+- Grid of 3 cards with emojis/icons
+- Each pain point with title + description
 
-5. SOLUTION SECTION  
-   - Headline: "Introducing [business name]"
-   - The offer explained clearly (from offer field)
-   - 3 core benefits with icons
-   - One highlighted quote or bold statement
+5. SOLUTION/BENEFITS SECTION  
+- Large section with Unsplash image on one side (md:grid-cols-2)
+- 3 benefit items with checkmark icons
 
 6. HOW IT WORKS
-   - 3 simple numbered steps
-   - Timeline or card layout
-   - CTA button at bottom
+- 3 numbered steps in a row (md:grid-cols-3)
+- Connected with subtle line
 
-7. PRICING SECTION
-   - Based on the pricing field
-   - 1-3 pricing tiers if applicable, or one clear offer
-   - Highlight the recommended option
-   - Money-back guarantee badge
-   - CTA button
+7. PRICING
+- 1-3 cards based on pricing data
+- Highlighted recommended plan with ring-2 ring-accent
 
 8. TESTIMONIALS
-   - 3 testimonials with placeholder names and photos (use CSS avatar initials)
-   - Star ratings
-   - Mark as [TESTIMONIAL 1], [TESTIMONIAL 2], [TESTIMONIAL 3] in HTML comments
+- 3 cards with star ratings, avatar initials, quote, name
+- Grid layout
 
-9. FAQ
-   - 5 common questions with accordion toggle (CSS/JS)
-   - Questions relevant to the business niche
+9. FAQ (Alpine.js accordion)
+- 5 questions with smooth toggle
+- x-data, x-show, @click
 
-10. FINAL CTA SECTION
-    - Full-width, accent color background
-    - Bold headline: urgent, benefit-focused
-    - Lead capture form: Name + Email + Message fields + Submit button
-    - Form shows success message on submit (no backend needed yet)
-    - Privacy note below form
+10. FINAL CTA + CONTACT FORM
+- Full-width section with Unsplash background
+- Form: name, email, message, submit button
+- @submit.prevent shows success message with x-show
 
 11. FOOTER
-    - Logo + tagline
-    - 3 columns: Services, Company, Contact
-    - Copyright
-    - Social media icon links (placeholder hrefs)
+- Logo + tagline
+- 3 column links grid
+- Copyright + social icons (SVG)
 
-TECHNICAL REQUIREMENTS:
-- Import Google Fonts via <link> in <head>
-- All CSS in one <style> block in <head> — no external CSS files
-- All JS in one <script> block before </body>
-- CSS variables for colors: --primary, --accent, --text, --bg, --surface
-- Mobile-first responsive: breakpoints at 768px and 1024px
-- Smooth scroll behavior
-- Hover states on all interactive elements
-- Page load animations (stagger children with animation-delay)
-- Hamburger menu for mobile
-- Accordion FAQ with smooth height transition
-- Form validation (required fields)
-- Performance: no heavy external resources
+COPY: Use the provided business data throughout. Make it specific, compelling, benefit-driven.
 
-COPY GUIDELINES:
-- Use the provided data: offer, audience, pricing, positioning, headline
-- Write copy that speaks directly to the target audience
-- Use power words, social proof language, urgency
-- Every CTA should be action-oriented and specific
-- Headlines should be bold, specific, benefit-driven
-
-Return ONLY the complete HTML document starting with <!DOCTYPE html>. No markdown. No explanation. No code blocks.`;
+Return ONLY complete HTML. No markdown. No explanation. No code blocks. Start with <!DOCTYPE html>`;
 
 type LandingInput = {
   offer: string;
