@@ -11,7 +11,7 @@ TECHNICAL STACK TO USE:
   Choose photo IDs that match the business niche
 
 UNSPLASH PHOTO IDs BY NICHE (use these exact IDs):
-- Real estate: 1560518883-ce09059eeffa, 1570129477492-1f239a2278e7, 1449844908441-8d1a1f9ed1cc
+- Real estate: 1512917922575-e47d70b9d4da, 1582407947304-d394f4a3f0d6, 1545324418-cc1a3fa10c00
 - Fitness/coaching: 1571019613454-1cb2f99b2d8b, 1534438327276-14e5300c3a48, 1517836357463-d25dfeac3438
 - Design/creative: 1558618666-fcd25c85cd64, 1561070791-2526b2e96498, 1572044162444-ad60f128bdea  
 - Marketing/SMM: 1611162617213-7d7a39e9b1d7, 1432888498266-38ffec3eaf0a, 1553877522-43269d4ea984
@@ -20,6 +20,8 @@ UNSPLASH PHOTO IDs BY NICHE (use these exact IDs):
 - Food/restaurant: 1504674900247-0877df9cc836, 1414235077428-338989a2e8c0, 1565299624946-b28dc8a6855c
 - Health/wellness/beauty: 1544161515-4ab6ce6db874, 1571019613454-1cb2f99b2d8b, 1498842812179-c81a8f3ce35b
 - General business: 1507003211169-0a1dd7228f2d, 1521737852567-6949f3f9f2b5, 1600880292203-757bb62b4baf
+
+CRITICAL: For real estate, NEVER use photos of small houses or keys. Always use skylines, luxury interiors, or modern architecture.
 
 DESIGN REQUIREMENTS:
 Choose the visual style based on business niche:

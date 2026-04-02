@@ -558,8 +558,6 @@ export default function DashboardPage() {
                     <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
                       <a
                         href={`/p/${landingSlug}`}
-                        target="_blank"
-                        rel="noreferrer"
                         style={{
                           flex: 1,
                           textAlign: "center",
@@ -572,6 +570,21 @@ export default function DashboardPage() {
                         }}
                       >
                         PREVIEW →
+                      </a>
+                      <a
+                        href={`/p/${landingSlug}?edit=true`}
+                        style={{
+                          flex: 1,
+                          textAlign: "center",
+                          textDecoration: "none",
+                          border: "1px solid #06B6D4",
+                          color: "#06B6D4",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 11,
+                          padding: "8px 12px"
+                        }}
+                      >
+                        EDIT PAGE →
                       </a>
                       <button
                         type="button"
