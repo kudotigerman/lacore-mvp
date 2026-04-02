@@ -1,136 +1,40 @@
+import fs from "fs";
+import path from "path";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const landingSystemPrompt = `CRITICAL: Every HTML element MUST be visible by default. Never use opacity:0 without a paired CSS animation that brings it to opacity:1. Never rely on JavaScript to make elements visible — CSS animations only. All sections must render visible without any JavaScript.
+const placeholderFillSystemPrompt = `You are a professional copywriter. You receive business data and a list of placeholder variable names from an HTML landing page template. Your job is to return a JSON object where each key is a placeholder name and each value is the text to fill in.
 
-You are an elite frontend developer who writes landing pages like the examples below. Study these design patterns carefully and replicate this quality level.
+RULES:
+- Return ONLY a valid JSON object, nothing else. No markdown, no backticks, no explanation.
+- All copy must be in the SAME LANGUAGE as the input data (if input is Russian, write Russian; if English, write English)
+- Make all copy specific, compelling, and benefit-driven based on the actual business data
+- For placeholder names that are obvious (like BUSINESS_NAME, EMAIL, PHONE, CITY) use the data provided
+- For nav items (NAV_1, NAV_2 etc) use relevant section names
+- For hero text: make it powerful and specific to the niche
+- For testimonials: create realistic names and specific results
+- For FAQ: write 5 real questions someone would ask before buying
+- For stats (S1N, S2N etc): use realistic impressive numbers
+- For marquee items (M1-M5): short compelling phrases about the business
+- For bento stats (BST1, BST2): impressive metrics
+- For floating card numbers (FC1N-FC4N): key metrics/stats, FC1L-FC4L: short labels
+- Keep all values concise - no value should exceed 150 characters
+- LOGO_1 and LOGO_2: split the business name into two parts for the styled logo`;
 
-EXAMPLE DESIGN PATTERNS TO FOLLOW:
-
-Pattern 1 — Dark luxury with CSS orbs and grid:
-- CSS variables for all colors: :root { --bg: #0B1F18; --gold: #C8A94A; --cream: #F2EDE3; }
-- Fixed background with layered radial-gradient orbs using filter:blur(90px) and animation
-- Subtle grid pattern: background-image: linear-gradient(rgba(200,169,74,0.04) 1px, transparent 1px) with mask-image
-- Cormorant Garamond for headings (elegant serif), Jost for body (clean sans)
-- Gold accent lines as section dividers: height:1px; background: linear-gradient(90deg, transparent, var(--gold), transparent)
-
-Pattern 2 — Black editorial with acid accent:
-- :root { --black:#0a0a0a; --accent:#d4ff00; --white:#f0ede8; }
-- Custom cursor: small dot + ring that follows mouse via JavaScript mousemove
-- Film grain texture via SVG filter on body::after
-- Syne font (weight 800) for headlines, DM Sans for body
-- Stats bar: border-top/bottom with grid-template-columns:repeat(4,1fr)
-- Marquee animation: @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-- Service cards with border-bottom accent line that animates width on hover
-- Scroll indicator: fixed left line with gradient
-
-TECHNICAL REQUIREMENTS:
-- Pure HTML + CSS + vanilla JavaScript ONLY. NO Tailwind. NO Alpine.js. NO external CSS frameworks.
-- Google Fonts via <link> tag only
-- All colors via CSS custom properties in :root {}
-- All animations via @keyframes — NO libraries
-- Smooth scroll: html { scroll-behavior: smooth }
-- Custom cursor for desktop (mousemove event listener)
-- Mobile responsive via @media (max-width: 768px)
-
-DESIGN SYSTEM — choose based on niche:
-
-LUXURY / REAL ESTATE / FINANCE:
-Colors: --bg:#0B1F18 (dark emerald) OR --bg:#0A0A0F (near black), --accent:#C8A94A (gold), --text:#F2EDE3 (cream)
-Fonts: Cormorant Garamond (300,400,500 italic) + Jost (200,300,400)
-Background: layered radial-gradient orbs + subtle gold grid with mask
-Hero: full viewport, large elegant serif headline spanning full width, thin gold divider line
-
-BOLD / FITNESS / ENERGY:
-Colors: --bg:#0D0D0D, --accent:#FF4500, --text:#FFFFFF
-Fonts: Barlow Condensed (800 uppercase) + Barlow (400)
-Hero: MASSIVE headline text touching viewport edges, minimal else
-
-EDITORIAL / SAAS / TECH:
-Colors: --bg:#0a0a0a, --accent:#d4ff00 OR --accent:#00E5FF, --text:#f0ede8
-Fonts: Syne (800) + DM Sans (300,400)
-Features: custom cursor + film grain + marquee strip + stats bar
-
-CLEAN / COACHING / EDUCATION:
-Colors: --bg:#FAFAF8, --accent:#2D6A4F, --text:#1A1A1A
-Fonts: Playfair Display + Source Sans 3
-Style: white space-heavy, editorial, large serif quotes
-
-WARM / FOOD / HOSPITALITY:
-Colors: --bg:#1C1410, --accent:#E8C547, --text:#F5EDD6
-Fonts: Playfair Display + Lato
-Style: warm, rich, textured background
-
-REQUIRED SECTIONS (all in pure CSS):
-
-1. NAV — position:fixed, backdrop-filter:blur(12px), transitions on scroll via JS (add 'scrolled' class)
-Logo left, links center (hidden mobile), CTA button right
-Mobile: hamburger menu toggle via JS classList
-
-2. HERO — min-height:100vh, display:flex, flex-direction:column, justify-content:flex-end
-Background: CSS radial gradients + subtle grid pattern
-Huge headline: font-size:clamp(52px,8vw,110px), font-weight:800, line-height:0.95
-Subtext + 2 CTA buttons
-Scroll indicator: thin vertical line bottom-left
-
-3. STATS BAR — 4 numbers in a grid, border-top and border-bottom
-Numbers in accent color, labels in muted color
-
-4. MARQUEE STRIP — infinite scrolling text with JavaScript duplication for seamless loop
-Contains key value props separated by accent dots
-
-5. SERVICES/FEATURES — 3 column grid
-Cards with hover effects (accent underline animates from 0 to 100% width)
-Each: number, icon (inline SVG), title, description
-
-6. PROCESS — 3 numbered steps
-Large number in accent (opacity 0.15 behind), step title, description
-
-7. TESTIMONIALS — 3 cards
-Star rating, quote, avatar initials circle, name + title
-
-8. PRICING — 1-3 cards
-Recommended card elevated with accent border
-
-9. FAQ — pure JS accordion
-Click to toggle, max-height transition, chevron rotates 180deg
-
-10. FINAL CTA — full width, high contrast background, single big button
-
-11. CONTACT FORM — pure HTML form with CSS styling
-Fields: name, email, message. JS: preventDefault, show success message
-
-12. FOOTER — 3 column grid, logo + tagline, links, social SVG icons
-
-JAVASCRIPT REQUIREMENTS (inline <script> at bottom of body):
-- Custom cursor (mousemove tracking)
-- Nav scroll class toggle
-- Mobile hamburger menu
-- FAQ accordion (querySelectorAll, classList.toggle)
-- // All animations handled by CSS — no JS observer needed
-- Marquee: duplicate inner content for seamless loop
-- Form submit preventDefault + success message
-
-CSS ANIMATION REQUIREMENTS:
-@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-.fade-1{opacity:0;animation:fadeUp 0.7s ease 0.1s forwards;}
-.fade-2{opacity:0;animation:fadeUp 0.7s ease 0.2s forwards;}
-.fade-3{opacity:0;animation:fadeUp 0.7s ease 0.3s forwards;}
-.fade-4{opacity:0;animation:fadeUp 0.7s ease 0.5s forwards;}
-.fade-5{opacity:0;animation:fadeUp 0.7s ease 0.7s forwards;}
-Use fade-1 through fade-5 on major sections or blocks for staggered entrance (CSS only — no Intersection Observer).
-@keyframes fadeIn { from{opacity:0} to{opacity:1} }
-@keyframes orb1/orb2/orb3 — slow floating movement for background orbs
-@keyframes marquee — infinite horizontal scroll
-
-COPY RULES:
-- All copy in the SAME LANGUAGE as the input data (Russian input = Russian copy)
-- Headlines: specific, benefit-driven, NOT generic
-- Use the businessName if provided
-- Use realResults as social proof if provided
-- Make testimonials realistic with specific numbers
-
-OUTPUT: Return ONLY complete HTML starting with <!DOCTYPE html>. Raw HTML only. No markdown. No explanation. No code blocks.`;
+function detectNiche(offer: string, audience: string, positioning: string): string {
+  const text = `${offer} ${audience} ${positioning}`.toLowerCase();
+  if (text.match(/real estate|недвижимость|property|realty|дубай|dubai|батуми|batumi|квартир|риелтор/))
+    return "luxury-v2";
+  if (text.match(/saas|software|tech|app|startup|digital|marketing|smm|агентств|диджитал/)) return "acid-v2";
+  if (text.match(/design|designer|photography|фотограф|дизайн|creative|portfolio|креатив/)) return "minimal-v2";
+  if (text.match(/ai|crypto|web3|developer|blockchain|gaming|nft|разработ/)) return "neon-v2";
+  if (text.match(/coach|коуч|mentor|education|курс|обучение|консульт|наставник/)) return "warm-v2";
+  if (text.match(/fitness|фитнес|gym|sport|trainer|тренер|boxing|спорт/)) return "energy-v2";
+  if (text.match(/b2b|legal|юрист|финанс|finance|invest|консалтинг|consulting|corporate|бизнес/)) return "navy-v2";
+  if (text.match(/beauty|красот|spa|wellness|skincare|massag|косметолог|салон/)) return "pastel-v2";
+  if (text.match(/premium|luxury|vip|elite|exclusive|премиум|элит/)) return "luxury-v2";
+  return "acid-v2";
+}
 
 type LandingInput = {
   offer: string;
@@ -184,6 +88,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    const niche = detectNiche(body.offer, body.audience, body.positioning);
+    const templatePath = path.join(process.cwd(), "public", "templates", `template-${niche}.html`);
+    let templateHtml: string;
+    try {
+      templateHtml = fs.readFileSync(templatePath, "utf-8");
+    } catch {
+      return NextResponse.json(
+        { error: "Failed to load landing template.", details: `template-${niche}.html` },
+        { status: 500 }
+      );
+    }
+
+    const placeholders = [
+      ...new Set([...templateHtml.matchAll(/\{\{([^}]+)\}\}/g)].map((m) => m[1].trim()))
+    ];
+
+    const displayName = body.businessName || body.userEmail.split("@")[0];
+
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -193,23 +115,12 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 8000,
-        system: landingSystemPrompt,
+        max_tokens: 3000,
+        system: placeholderFillSystemPrompt,
         messages: [
           {
             role: "user",
-            content:
-              `Business data:\n` +
-              `Offer: ${body.offer}\n` +
-              `Audience: ${body.audience}\n` +
-              `Pricing: ${body.pricing}\n` +
-              `Positioning: ${body.positioning}\n` +
-              `Headline: ${body.headline}\n` +
-              `User name: ${body.userName || "Not provided"}\n` +
-              `User email: ${body.userEmail}\n` +
-              `Business name: ${body.businessName || "Not provided"}\n` +
-              `Best result/proof: ${body.realResults || "Not provided"}\n` +
-              `Ideal client description: ${body.idealClient || "Not provided"}`
+            content: `Business data:\nName: ${displayName}\nOffer: ${body.offer}\nAudience: ${body.audience}\nPricing: ${body.pricing}\nPositioning: ${body.positioning}\nHeadline: ${body.headline}\nBest result: ${body.realResults || "Not provided"}\nIdeal client: ${body.idealClient || "Not provided"}\n\nFill these placeholders:\n${placeholders.join(", ")}`
           }
         ]
       })
@@ -226,9 +137,30 @@ export async function POST(request: Request) {
     const completion = (await anthropicResponse.json()) as {
       content?: Array<{ type: string; text?: string }>;
     };
-    const html = completion.content?.find((item) => item.type === "text")?.text?.trim();
-    if (!html || !html.startsWith("<!DOCTYPE html>")) {
-      return NextResponse.json({ error: "Invalid HTML returned from Claude." }, { status: 502 });
+    const rawText = completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
+
+    let filledValues: Record<string, string> = {};
+    try {
+      const cleaned = rawText.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(cleaned) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Invalid JSON shape");
+      }
+      filledValues = Object.fromEntries(
+        Object.entries(parsed as Record<string, unknown>).map(([k, v]) => [k, String(v ?? "")])
+      );
+    } catch {
+      throw new Error("Failed to parse placeholder values from Claude");
+    }
+
+    let html = templateHtml;
+    for (const [key, value] of Object.entries(filledValues)) {
+      html = html.replaceAll(`{{${key}}}`, value);
+    }
+    html = html.replace(/\{\{[^}]+\}\}/g, "");
+
+    if (!html.trim().startsWith("<!DOCTYPE html>")) {
+      return NextResponse.json({ error: "Invalid HTML after template fill." }, { status: 502 });
     }
 
     const existingPage = await supabase
