@@ -114,36 +114,272 @@ export default function PublicLandingPage() {
     }
   }
 
+  const promoModal = showPromo && (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lacore-promo-title"
+      onClick={() => setShowPromo(false)}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 10000,
+        background: "rgba(9,9,11,0.96)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 560,
+          background: "#09090B",
+          border: "1px solid #1C1C1F",
+          padding: "48px 40px 40px",
+          boxShadow: "0 0 0 1px rgba(6,182,212,0.08), 0 24px 80px rgba(0,0,0,0.55)"
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setShowPromo(false)}
+          aria-label="Close"
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            border: "none",
+            background: "transparent",
+            color: "#06B6D4",
+            fontSize: 28,
+            lineHeight: 1,
+            cursor: "pointer",
+            padding: 4,
+            fontFamily: "var(--font-space-mono), monospace"
+          }}
+        >
+          ×
+        </button>
+
+        <p
+          style={{
+            margin: 0,
+            fontFamily: "var(--font-space-mono), monospace",
+            fontSize: 10,
+            letterSpacing: "4px",
+            color: "#06B6D4",
+            textTransform: "uppercase"
+          }}
+        >
+          BUILT WITH
+        </p>
+        <h2
+          id="lacore-promo-title"
+          style={{
+            margin: "12px 0 0",
+            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontSize: "clamp(72px, 22vw, 120px)",
+            lineHeight: 0.9,
+            color: "#F4F4F5",
+            letterSpacing: "-0.02em"
+          }}
+        >
+          LACORE
+        </h2>
+        <p
+          style={{
+            margin: "8px 0 0",
+            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontSize: "clamp(32px, 8vw, 48px)",
+            lineHeight: 0.95,
+            color: "#06B6D4"
+          }}
+        >
+          From idea to first client.
+        </p>
+        <p
+          style={{
+            margin: "20px 0 0",
+            fontFamily: "var(--font-space-mono), monospace",
+            fontSize: 14,
+            lineHeight: 1.65,
+            color: "#A1A1AA"
+          }}
+        >
+          One sentence. 60 minutes. A working sales machine.
+        </p>
+        <div
+          style={{
+            marginTop: 28,
+            height: 1,
+            background: "linear-gradient(90deg, transparent, #06B6D4, transparent)",
+            opacity: 0.6
+          }}
+        />
+        <div
+          style={{
+            marginTop: 28,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 24,
+            textAlign: "center"
+          }}
+        >
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontSize: 42,
+                lineHeight: 1,
+                color: "#F4F4F5"
+              }}
+            >
+              60 min
+            </p>
+            <p
+              style={{
+                margin: "10px 0 0",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.06em",
+                color: "#71717A",
+                textTransform: "uppercase"
+              }}
+            >
+              to live landing page
+            </p>
+          </div>
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontSize: 42,
+                lineHeight: 1,
+                color: "#06B6D4"
+              }}
+            >
+              0
+            </p>
+            <p
+              style={{
+                margin: "10px 0 0",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.06em",
+                color: "#71717A",
+                textTransform: "uppercase"
+              }}
+            >
+              design skills needed
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://www.lacore.ai"
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: "block",
+            marginTop: 36,
+            width: "100%",
+            textAlign: "center",
+            textDecoration: "none",
+            background: "#06B6D4",
+            color: "#000000",
+            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontSize: 24,
+            letterSpacing: "0.04em",
+            padding: "18px 24px",
+            border: "none",
+            cursor: "pointer",
+            boxSizing: "border-box"
+          }}
+        >
+          CREATE YOUR FREE SITE →
+        </a>
+        <p
+          style={{
+            margin: "14px 0 0",
+            textAlign: "center",
+            fontFamily: "var(--font-space-mono), monospace",
+            fontSize: 11,
+            color: "#52525B",
+            letterSpacing: "0.04em"
+          }}
+        >
+          No credit card. No code. No agency.
+        </p>
+      </div>
+    </div>
+  );
+
   if (!editMode) {
     return (
-      <main style={{ minHeight: "100vh", margin: 0, padding: 0 }}>
-        {loading ? (
-          <div
-            style={{
-              minHeight: "100vh",
-              background: "#09090B",
-              color: "#A1A1AA",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-space-mono), monospace"
-            }}
-          >
-            Loading page...
-          </div>
-        ) : (
-          <iframe
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            srcDoc={html}
-            title="Landing page preview"
-            style={{ width: "100%", height: "100vh", border: "none", display: "block" }}
-          />
-        )}
-      </main>
+      <>
+        <main style={{ minHeight: "100vh", margin: 0, padding: 0, position: "relative" }}>
+          {loading ? (
+            <div
+              style={{
+                minHeight: "100vh",
+                background: "#09090B",
+                color: "#A1A1AA",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "var(--font-space-mono), monospace"
+              }}
+            >
+              Loading page...
+            </div>
+          ) : (
+            <>
+              <iframe
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                srcDoc={html}
+                title="Landing page preview"
+                style={{ width: "100%", height: "100vh", border: "none", display: "block" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPromo(true)}
+                style={{
+                  position: "fixed",
+                  bottom: 20,
+                  right: 20,
+                  zIndex: 9998,
+                  border: "1px solid #06B6D4",
+                  background: "rgba(9,9,11,0.92)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  color: "#06B6D4",
+                  borderRadius: 4,
+                  padding: "8px 14px",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+                }}
+              >
+                ⚡ Built with LACORE
+              </button>
+            </>
+          )}
+        </main>
+        {promoModal}
+      </>
     );
   }
 
   return (
+    <>
     <main style={{ minHeight: "100vh", margin: 0, padding: 0, background: "#09090B" }}>
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <section style={{ width: "70%", minHeight: "100vh", background: "#06080d" }}>
@@ -331,93 +567,23 @@ export default function PublicLandingPage() {
             style={{
               margin: "0 16px 16px",
               border: "1px solid #06B6D4",
-              background: "rgba(0,0,0,0.8)",
+              background: "rgba(9,9,11,0.92)",
               color: "#06B6D4",
               borderRadius: 4,
-              padding: "6px 12px",
+              padding: "8px 14px",
               fontFamily: "var(--font-space-mono), monospace",
               fontSize: 9,
-              cursor: "pointer"
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.35)"
             }}
           >
-            ⚡ Built with LACORE — Create yours free
+            ⚡ Built with LACORE
           </button>
         </aside>
       </div>
-
-      {showPromo && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.84)",
-            zIndex: 10000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20
-          }}
-        >
-          <div style={{ width: "100%", maxWidth: 760, border: "1px solid #1C1C1F", background: "#09090B", padding: 24 }}>
-            <button
-              type="button"
-              onClick={() => setShowPromo(false)}
-              style={{
-                border: "1px solid #1C1C1F",
-                background: "transparent",
-                color: "#A1A1AA",
-                fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 10,
-                padding: "6px 10px",
-                cursor: "pointer",
-                float: "right"
-              }}
-            >
-              CLOSE
-            </button>
-            <h3
-              style={{
-                margin: "20px 0 0",
-                fontFamily: "var(--font-bebas-neue), sans-serif",
-                fontSize: "clamp(52px,7vw,90px)",
-                lineHeight: 0.95,
-                color: "#F4F4F5"
-              }}
-            >
-              YOUR BUSINESS DESERVES THIS
-            </h3>
-            <p
-              style={{
-                margin: "14px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 13,
-                color: "#A1A1AA"
-              }}
-            >
-              From idea to live landing page in 60 seconds. No design skills.
-            </p>
-            <a
-              href="https://www.lacore.ai"
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-block",
-                marginTop: 16,
-                border: "1px solid #06B6D4",
-                background: "#06B6D4",
-                color: "#000",
-                textDecoration: "none",
-                fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 12,
-                letterSpacing: "0.12em",
-                padding: "12px 18px"
-              }}
-            >
-              START BUILDING →
-            </a>
-          </div>
-        </div>
-      )}
     </main>
+    {promoModal}
+    </>
   );
 }
