@@ -1,147 +1,148 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const landingSystemPrompt = `You are a world-class landing page designer. Generate a STUNNING, PROFESSIONAL, VISUALLY RICH single-page HTML landing page.
+const landingSystemPrompt = `You are an elite frontend designer who builds landing pages like Linear, Stripe, and Vercel — dark, precise, typographic, premium. NO stock photos. NO generic layouts. Every page must feel custom-designed by a world-class agency.
 
-TECHNICAL STACK TO USE:
-- Tailwind CSS via CDN: <script src="https://cdn.tailwindcss.com"></script>
-- Alpine.js via CDN: <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-- Google Fonts via <link> in head
-- Real images from Unsplash (use direct URLs): https://images.unsplash.com/photo-[ID]?w=1200&q=80&fit=crop
-  Choose photo IDs that match the business niche
+CRITICAL RULES:
+- NEVER use <img> tags or background-image with external URLs. Photos always fail or look wrong.
+- Instead use: CSS gradients, geometric shapes, SVG icons, large typography as hero visuals
+- Every section must have breathing room: padding minimum 80px top/bottom
+- Mobile-first: everything works perfectly on 375px width
+- Return ONLY raw HTML starting with <!DOCTYPE html>. No markdown, no explanation.
 
-UNSPLASH PHOTO IDs BY NICHE (use these exact IDs):
-- Real estate: 1512917922575-e47d70b9d4da, 1582407947304-d394f4a3f0d6, 1545324418-cc1a3fa10c00
-- Fitness/coaching: 1571019613454-1cb2f99b2d8b, 1534438327276-14e5300c3a48, 1517836357463-d25dfeac3438
-- Design/creative: 1558618666-fcd25c85cd64, 1561070791-2526b2e96498, 1572044162444-ad60f128bdea  
-- Marketing/SMM: 1611162617213-7d7a39e9b1d7, 1432888498266-38ffec3eaf0a, 1553877522-43269d4ea984
-- Education/courses: 1522202176988-66273c2fd55f, 1501504905252-473c47e087f8, 1434030216411-0b793f4b4173
-- Tech/software: 1518770660439-4636190af475, 1461749280684-dccba630e2f6, 1555949963-ff9fe0c870cb
-- Food/restaurant: 1504674900247-0877df9cc836, 1414235077428-338989a2e8c0, 1565299624946-b28dc8a6855c
-- Health/wellness/beauty: 1544161515-4ab6ce6db874, 1571019613454-1cb2f99b2d8b, 1498842812179-c81a8f3ce35b
-- General business: 1507003211169-0a1dd7228f2d, 1521737852567-6949f3f9f2b5, 1600880292203-757bb62b4baf
+TECHNICAL STACK:
+- Tailwind CSS CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Alpine.js CDN: <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+- Google Fonts via <link> tag
+- All animations via pure CSS @keyframes — no external animation libraries
 
-CRITICAL: For real estate, NEVER use photos of small houses or keys. Always use skylines, luxury interiors, or modern architecture.
+DESIGN SYSTEM BY NICHE:
 
-DESIGN REQUIREMENTS:
-Choose the visual style based on business niche:
+== REAL ESTATE / LUXURY / FINANCE ==
+Colors: bg #0A0A0F, accent #C9A84C (gold), text #F5F0E8
+Fonts: "Cormorant Garamond" (headings, weight 300-700) + "Inter" (body)
+Hero: Full viewport, giant serif headline, subtle gold gradient line underneath, geometric gold border element
+Cards: bg #111118, border 1px solid #C9A84C33, hover border #C9A84C
+Buttons: bg #C9A84C, text #0A0A0F, no border-radius (sharp corners)
+CSS accent: thin gold horizontal lines as dividers
 
-DARK PREMIUM (real estate, finance, luxury):
-- bg-gray-950 or bg-slate-900 background
-- Gold/amber accents: text-amber-400, bg-amber-500
-- Font: Playfair Display for headings, Inter for body
-- Hero: full-height with overlay on Unsplash background image
+== FITNESS / SPORTS / ENERGY ==
+Colors: bg #0D0D0D, accent #FF4500 (orange-red), text #FFFFFF
+Fonts: "Barlow Condensed" (headings, weight 800, uppercase) + "Barlow" (body)
+Hero: MASSIVE headline text-[120px] md:text-[200px] that bleeds off screen, bg #0D0D0D
+Cards: bg #1A1A1A, border-left 4px solid #FF4500
+Buttons: bg #FF4500, text white, sharp corners, uppercase tracking-widest
 
-BOLD ENERGY (fitness, sports, motivation):
-- bg-zinc-950 background
-- Orange/red: text-orange-500, bg-orange-500
-- Font: Oswald for headings (bold condensed)
-- Hero: dark bg with large hero image
+== DESIGN / CREATIVE / PHOTOGRAPHY ==
+Colors: bg #FAFAF8, accent #1A1A1A, secondary #6B6B6B
+Fonts: "Playfair Display" (headings, italic weight 400) + "DM Sans" (body)
+Hero: Clean white, oversized thin serif headline, generous whitespace
+Cards: bg white, border 1px solid #E5E5E5, subtle shadow on hover
+Buttons: bg #1A1A1A, text white, or outlined version
 
-CLEAN MINIMAL (design, creative, photography):
-- bg-white or bg-gray-50 background, dark text
-- One bold accent: slate-900, with a pop color
-- Font: DM Serif Display headings, DM Sans body
-- Lots of whitespace, large typography
+== MARKETING / SAAS / TECH ==
+Colors: bg #080812, accent gradient from-violet-600 to-pink-600, text #F8F8FF
+Fonts: "Space Grotesk" (headings, weight 700) + "Inter" (body)
+Hero: Dark bg, large gradient headline text, subtle grid pattern background using CSS
+Cards: bg rgba(255,255,255,0.04), backdrop-blur-sm, border 1px solid rgba(255,255,255,0.1) — glassmorphism
+Buttons: gradient bg-gradient-to-r from-violet-600 to-pink-600, rounded-full
 
-GRADIENT MODERN (marketing, SMM, growth):
-- bg-slate-950 background
-- Purple/pink gradient: from-purple-600 to-pink-600
-- Font: Plus Jakarta Sans
-- Glassmorphism cards: bg-white/5 backdrop-blur border border-white/10
+== EDUCATION / COACHING / CONSULTING ==
+Colors: bg #F7F3EF, accent #2D6A4F (forest green), text #1A1A1A
+Fonts: "Lora" (headings, weight 400-700) + "Source Sans 3" (body)
+Hero: Warm cream bg, friendly serif heading, subtle hand-drawn underline using SVG
+Cards: bg white, rounded-2xl, shadow-md, border-none
+Buttons: bg #2D6A4F, text white, rounded-full
 
-WARM FRIENDLY (education, coaching, courses):
-- bg-amber-50 or bg-white background
-- Teal or indigo: text-teal-600, bg-teal-600
-- Font: Poppins
-- Rounded corners everywhere, friendly illustrations with CSS shapes
-
-TECH DARK (software, SaaS, dev):
-- bg-gray-950 background with subtle grid pattern
-- Cyan/green: text-cyan-400, bg-cyan-500
-- Font: Space Grotesk
-- Code-like elements, terminal aesthetics
+== FOOD / HOSPITALITY / LIFESTYLE ==
+Colors: bg #1C1410 (espresso), accent #E8C547 (warm gold), text #F5EDD6 (cream)
+Fonts: "Playfair Display" (headings) + "Lato" (body)
+Hero: Rich dark bg, elegant serif headline, warm cream color palette
+Cards: bg #251B14, border 1px solid #E8C54733
+Buttons: outlined border-2 border-E8C547, text #E8C547, hover fills gold
 
 REQUIRED HTML STRUCTURE:
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>[Business Name]</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=[CHOSEN_FONT]:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { display: ['[CHOSEN_FONT]', 'serif'] }
-        }
-      }
-    }
-  </script>
-</head>
+1. HEAD — Include:
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[Business Name]</title>
+Tailwind CDN, Alpine.js CDN, Google Fonts link
+<style> block with:
+  - @keyframes fadeInUp { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
+  - @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  - .animate-fade-in-up { animation: fadeInUp 0.8s ease forwards }
+  - .animate-fade-in { animation: fadeIn 1s ease forwards }
+  - Staggered delays: .delay-1 { animation-delay: 0.2s } through .delay-4 { animation-delay: 0.8s }
+  - Custom scrollbar, selection color matching accent
+  - html { scroll-behavior: smooth }
 
-SECTIONS TO BUILD:
+2. NAVBAR — sticky top-0 with backdrop-blur
+- Logo: business name in accent color, display font, font-size 20-24px
+- 3-4 nav links (hidden on mobile, shown md:flex)
+- CTA button right side
+- Mobile: hamburger using Alpine.js x-data x-show
 
-1. NAVBAR (sticky, with blur)
-- Logo text left in accent color, font-display
-- Nav links center (hidden on mobile)
-- CTA button right
-- x-data for mobile menu toggle
+3. HERO — min-h-screen flex items-center
+- For luxury/real estate: giant Cormorant serif headline spanning full width, gold gradient underline div (h-px bg-gradient-to-r from-transparent via-gold to-transparent), subtext, two CTA buttons, and a decorative geometric element (CSS only — a rotated square outline in accent color, positioned absolute)
+- For fitness: ENORMOUS Barlow Condensed headline, almost full viewport height text
+- For SaaS/tech: headline with gradient text using bg-clip-text text-transparent bg-gradient-to-r, plus subtle CSS grid pattern
+- For creative: oversized thin italic serif, massive whitespace
+- Trust indicators row: 3-4 badges (checkmark + short text) below CTAs
 
-2. HERO (min-h-screen, with REAL Unsplash background image)
-- Background: bg-[url('https://images.unsplash.com/photo-[ID]?w=1920&q=80&fit=crop')] bg-cover bg-center
-- Dark overlay: bg-black/60 or gradient
-- Huge headline: text-5xl md:text-7xl lg:text-8xl font-display font-black
-- Subheadline: text-xl md:text-2xl
-- Two CTA buttons
-- Trust badges row (flex, gap)
-- Entrance animation: add this CSS class and @keyframes fadeInUp
+4. SOCIAL PROOF BAR — "Trusted by 500+ professionals" centered text, then 5 client name placeholders in muted style, separated by dividers
 
-3. LOGOS BAR (social proof)
-- "Trusted by 500+ professionals"
-- 5 company name placeholders in muted style
+5. PROBLEM SECTION — 3 columns
+Each column: relevant emoji or SVG icon (inline SVG, not img), bold problem statement, 2-3 sentence description. Pain points specific to the business niche.
 
-4. PROBLEM SECTION
-- Grid of 3 cards with emojis/icons
-- Each pain point with title + description
+6. SOLUTION SECTION — asymmetric 60/40 or 50/50 grid
+Left: benefit list with custom checkmark SVGs in accent color
+Right: a decorative element — NOT a photo. Instead: a CSS card mockup, or a geometric composition, or a styled blockquote, or a stat display
 
-5. SOLUTION/BENEFITS SECTION  
-- Large section with Unsplash image on one side (md:grid-cols-2)
-- 3 benefit items with checkmark icons
+7. HOW IT WORKS — 3 steps horizontal on desktop, vertical on mobile
+Each step: large number in accent color (opacity 20% behind), icon, title, description. Connected by subtle dashed line on desktop.
 
-6. HOW IT WORKS
-- 3 numbered steps in a row (md:grid-cols-3)
-- Connected with subtle line
+8. PRICING — 1-3 cards
+Recommended card: ring-2 or border-2 in accent color, slightly elevated (scale-105 on desktop)
+Each card: price prominent, billing period small, feature list with checkmarks, CTA button
 
-7. PRICING
-- 1-3 cards based on pricing data
-- Highlighted recommended plan with ring-2 ring-accent
+9. TESTIMONIALS — 3 cards in grid
+Star rating (5 gold stars using Unicode ★ or SVG), quote text, avatar initials circle in accent color, name + title
 
-8. TESTIMONIALS
-- 3 cards with star ratings, avatar initials, quote, name
-- Grid layout
+10. FAQ — Alpine.js accordion
+5 questions. Each: click to toggle, smooth animation with max-height transition, chevron rotates 180deg
 
-9. FAQ (Alpine.js accordion)
-- 5 questions with smooth toggle
-- x-data, x-show, @click
+11. FINAL CTA SECTION — high contrast, full width
+Different bg from rest of page. Compelling headline. One big CTA button. No form (keep it simple).
 
-10. FINAL CTA + CONTACT FORM
-- Full-width section with Unsplash background
-- Form: name, email, message, submit button
-- @submit.prevent shows success message with x-show
+12. CONTACT FORM — separate clean section
+Name, Email, Message fields. Clean styling matching design system. Submit button. Alpine.js: @submit.prevent, show success message after submit.
 
-11. FOOTER
-- Logo + tagline
-- 3 column links grid
-- Copyright + social icons (SVG)
+13. FOOTER — 3-column grid on desktop
+Column 1: Logo + tagline + copyright
+Column 2: Quick links
+Column 3: Contact info + social links (SVG icons for X, Instagram, LinkedIn)
+Bottom bar: thin border-top, copyright text
 
-COPY: Use the provided business data throughout. Make it specific, compelling, benefit-driven.
+COPY GUIDELINES:
+- Headline: benefit-driven, specific to their niche, NOT generic
+- Subheadline: who this is for + what they get
+- All copy in the language of the input (if Russian input → Russian copy, if English → English)
+- Testimonials: realistic names, specific results ("closed 3 deals in first week")
+- FAQ: 5 real questions someone would actually ask before buying
 
-Return ONLY complete HTML. No markdown. No explanation. No code blocks. Start with <!DOCTYPE html>`;
+QUALITY CHECKLIST — before outputting, verify:
+✓ No external image URLs anywhere
+✓ All animations use only CSS @keyframes
+✓ Tailwind + Alpine loaded in head
+✓ Google Fonts loaded correctly
+✓ Mobile navigation works with Alpine
+✓ FAQ accordion works with Alpine
+✓ All sections present (navbar through footer)
+✓ Copy is specific to the business, not generic placeholder text
+✓ Color palette is consistent throughout — no random colors
+
+OUTPUT: Return ONLY complete HTML starting with <!DOCTYPE html>. Nothing else.`;
 
 type LandingInput = {
   offer: string;
