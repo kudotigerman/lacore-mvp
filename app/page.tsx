@@ -25,6 +25,7 @@ export default function LandingPage() {
   const [showCursor, setShowCursor] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [submitHover, setSubmitHover] = useState(false);
   const canSubmit = input.trim().length > 0 && !loading;
 
   const tickerText = useMemo(
@@ -476,18 +477,22 @@ export default function LandingPage() {
                   type="submit"
                   disabled={!canSubmit}
                   aria-label="Generate offer"
+                  onMouseEnter={() => setSubmitHover(true)}
+                  onMouseLeave={() => setSubmitHover(false)}
                   style={{
                     border: "none",
-                    background: "transparent",
-                    color: canSubmit ? "#06B6D4" : "#3F3F46",
+                    background: canSubmit ? (submitHover ? "#0891B2" : "#06B6D4") : "#3F3F46",
+                    color: "#000000",
                     fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 28,
-                    lineHeight: 1,
+                    fontSize: 12,
+                    letterSpacing: "0.15em",
+                    fontWeight: 700,
                     cursor: canSubmit ? "pointer" : "not-allowed",
-                    padding: 0
+                    padding: "14px 28px",
+                    transition: "background 180ms ease"
                   }}
                 >
-                  →
+                  GENERATE MY OFFER →
                 </button>
               </div>
             </div>
@@ -637,27 +642,61 @@ export default function LandingPage() {
               </section>
 
               {isLoggedIn ? (
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 11,
-                    color:
-                      saveStatus === "saved"
-                        ? "#06B6D4"
+                <div style={{ marginTop: 10 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      color:
+                        saveStatus === "saved"
+                          ? "#06B6D4"
+                          : saveStatus === "error"
+                            ? "#f87171"
+                            : "#52525B"
+                    }}
+                  >
+                    {saveStatus === "saved"
+                      ? "Saved to your dashboard."
+                      : saveStatus === "saving"
+                        ? "Saving to your dashboard..."
                         : saveStatus === "error"
-                          ? "#f87171"
-                          : "#52525B"
-                  }}
-                >
-                  {saveStatus === "saved"
-                    ? "Saved to your dashboard."
-                    : saveStatus === "saving"
-                      ? "Saving to your dashboard..."
-                      : saveStatus === "error"
-                        ? "Could not save to dashboard."
-                        : ""}
-                </p>
+                          ? "Could not save to dashboard."
+                          : ""}
+                  </p>
+                  {saveStatus === "saved" && (
+                    <div style={{ marginTop: 10 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 11,
+                          color: "#52525B",
+                          letterSpacing: "0.08em"
+                        }}
+                      >
+                        YOUR OFFER IS SAVED. NEXT: BUILD YOUR PRESENCE.
+                      </p>
+                      <Link
+                        href="/dashboard"
+                        style={{
+                          display: "inline-block",
+                          marginTop: 8,
+                          border: "1px solid #06B6D4",
+                          color: "#06B6D4",
+                          background: "transparent",
+                          textDecoration: "none",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 11,
+                          letterSpacing: "0.14em",
+                          padding: "8px 12px"
+                        }}
+                      >
+                        GO TO YOUR DASHBOARD →
+                      </Link>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={{ marginTop: 12 }}>
                   <p
