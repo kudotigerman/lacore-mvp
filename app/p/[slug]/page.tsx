@@ -10,36 +10,37 @@ type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 const FRIENDLY_COMPILE_MESSAGE =
   "I had trouble with that change. The page wasn't updated. Try rephrasing your request or be more specific about what you want to change.";
 
-  function buildLandingIframeSrcDoc(compiledJs: string): string {
-    return `<!DOCTYPE html>
-  <html>
-  <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  </head>
-  <body style="margin:0;padding:0;overflow-x:hidden;">
-  <div id="root"></div>
-  <script>
-  const useState = React.useState;
-  const useEffect = React.useEffect;
-  const useRef = React.useRef;
-  const useCallback = React.useCallback;
-  const useMemo = React.useMemo;
-  const useReducer = React.useReducer;
-  const useContext = React.useContext;
-  const createContext = React.createContext;
-  const Fragment = React.Fragment;
-  ${compiledJs}
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(React.createElement(LandingPage));
-  </script>
-  </body>
-  </html>`;
-  }
+function buildLandingIframeSrcDoc(compiledJs: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+<body style="margin:0;padding:0;overflow-x:hidden;">
+<div id="root"></div>
+<script>
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+const useCallback = React.useCallback;
+const useMemo = React.useMemo;
+const useReducer = React.useReducer;
+const useContext = React.useContext;
+const createContext = React.createContext;
+const Fragment = React.Fragment;
+${compiledJs}
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(LandingPage));
+</script>
+</body>
+</html>`;
+}
 
+/** Isolated iframe + UMD React only — never compileLandingJsx / parent-tree render (avoids dual React #425). */
 function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: string }) {
   const [srcDoc, setSrcDoc] = useState<string | null>(null);
   const [compileError, setCompileError] = useState<string | null>(null);
