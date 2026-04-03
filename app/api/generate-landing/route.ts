@@ -9,7 +9,9 @@ import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 60;
 
-const reactLandingSystemPrompt = `You are a world-class web designer and React developer. You create landing pages that look like they cost $10,000 from a top agency. Think Stripe, Linear, Vercel - clean, bold, premium.
+const reactLandingSystemPrompt = `You must respond with ONLY a React component. Never respond with explanations, apologies, or error messages. If you cannot complete the request, still return a valid React LandingPage component.
+
+You are a world-class web designer and React developer. You create landing pages that look like they cost $10,000 from a top agency. Think Stripe, Linear, Vercel - clean, bold, premium.
 
 Generate a complete React functional component for a landing page.
 
@@ -162,7 +164,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 16000,
+        max_tokens: 4000,
         system: reactLandingSystemPrompt,
         messages: [
           {
@@ -196,8 +198,14 @@ Make it look world-class. Every section must feel premium and intentional.`
     const completion = (await anthropicResponse.json()) as {
       content?: Array<{ type: string; text?: string }>;
     };
-    let jsx = completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
-    jsx = jsx.replace(/^```(?:tsx|jsx|typescript)?\s*/i, "").replace(/\s*```\s*$/i, "");
+    const rawText = completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
+
+    if (!rawText.includes("import React") && !rawText.includes("function LandingPage")) {
+      console.error("Claude returned non-JSX response:", rawText.slice(0, 200));
+      return NextResponse.json({ error: "Generation failed. Please try again." }, { status: 500 });
+    }
+
+    let jsx = rawText.replace(/^```(?:tsx|jsx|typescript)?\s*/i, "").replace(/\s*```\s*$/i, "");
 
     const validationError = validateGeneratedJsx(jsx);
     if (validationError) {
@@ -232,7 +240,7 @@ Make it look world-class. Every section must feel premium and intentional.`
 
     return NextResponse.json({ slug, jsx: jsxWithSlug, success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown server error.";
-    return NextResponse.json({ error: "Failed to generate landing page.", details: message }, { status: 500 });
+    console.error("generate-landing:", error);
+    return NextResponse.json({ error: "Failed to generate. Please try again in a moment." }, { status: 500 });
   }
 }
