@@ -149,10 +149,11 @@ export default function DashboardPage() {
           siteVibe: extra?.siteVibe ?? siteVibe
         })
       });
-      const text = await response.text();
       if (!response.ok) {
-        throw new Error(text.slice(0, 200));
+        const errText = await response.text();
+        throw new Error(errText.slice(0, 200));
       }
+      const text = await response.text();
       let result: { success?: boolean; error?: string; slug?: string };
       try {
         result = JSON.parse(text) as { success?: boolean; error?: string; slug?: string };
