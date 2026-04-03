@@ -14,6 +14,7 @@ function buildLandingIframeSrcDoc(compiledJs: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>
+<script>if(typeof lockdown!=="undefined"){try{lockdown({errorTaming:"unsafe",consoleTaming:"unsafe",overrideTaming:"severe"});}catch(e){}}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
@@ -67,7 +68,7 @@ function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: str
   return (
     <iframe
       srcDoc={srcDoc}
-      sandbox="allow-scripts"
+      sandbox="allow-scripts allow-same-origin"
       style={{ width: "100%", height, border: "none", display: "block" }}
     />
   );
