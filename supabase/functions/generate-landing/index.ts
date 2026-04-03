@@ -28,62 +28,99 @@ STEP 2 — APPLY NICHE DESIGN SYSTEM
 ════════════════════════════════════
 
 NICHE A — LEGAL / FINANCE / CONSULTING:
+UNIQUE VISUAL IDENTITY PER NICHE — MANDATORY. Never repeat the same layout across niches.
+
 Palette: bg #0A0C10, text #E8EDF5, accent #C5A253 (gold)
 Fonts: Playfair Display (headings, weight 700-900) + Inter (body)
 Personality: Authoritative. Silent confidence. Editorial whitespace. Gold accents signal trust and prestige.
-Hero H1 style: Large serif, two-line, second line in gold gradient
-Floating card metric: something like "98% win rate" or "$2.4M saved for clients"
 Stats: professional metrics (years of experience, cases won, clients served, money saved/made)
 Testimonials: formal tone, C-suite or business owner quotes with specific outcomes
 CTA energy: calm and trustworthy — "Book a Consultation", "Schedule a Call"
 Unique touch: Add a "As seen in" or "Trusted by" logos strip with text placeholders (Forbes, FT, Bloomberg style)
+Floating element: NOT a card. Instead: a vertical "trust badge" strip on the right side.
+  Style: border-left 3px solid accent, padding 20px 24px, background transparent
+  Content: large number top (e.g. "94%"), small label below ("Win rate"), then divider, then another stat
+Hero layout: LEFT-aligned content (not centered). H1 max-width 600px, text-align left.
+H1 style: Playfair Display, weight 900, font-size clamp(3.2rem,5vw,5rem), NO gradient on second line — instead color accent directly
+Section 4 (instead of bento grid): "PRACTICE AREAS" — 3 horizontal cards in a row, each with: number (01, 02, 03), title, description. Border-bottom only, no background fill.
+Section 5: "CASE RESULTS" — 3 stats in large format: outcome + client type + testimonial quote in one card
+Nav style: serif logo, nav links with dot separator between them
 
 NICHE B — DESIGN / CREATIVE / AGENCY:
 Palette: bg #050508, text #FFFFFF, accent #7C5CFC (electric purple) OR bg #FAFAF8, text #0A0A0A, accent #FF3366
 Choose dark palette for bold/energetic vibe, light for professional/warm
 Fonts: Inter weight 900 for headings (letter-spacing -0.04em) + Inter 400 body
 Personality: Bold. Provocative. Creative confidence. Shows craft through the design itself.
-Hero H1: Massive oversized type, single powerful statement. Use CSS: font-size clamp(4rem, 8vw, 7rem)
-Floating card: portfolio metric like "47 brands launched" or "3.2M impressions generated"
 Stats: creative metrics (projects completed, brands built, clients served, awards won)
-Unique touch: Add a scrolling marquee strip of services/clients using CSS animation
 Testimonials: casual, enthusiastic tone — creative professionals talking to peers
 CTA: bold and direct — "Start Your Project", "Let's Build Something"
+Floating element: Rotated tag/label (-8deg rotation).
+  Style: position absolute, transform rotate(-8deg), background accent, color white,
+  padding 12px 24px, font-weight 900, font-size 1.1rem, border-radius 4px
+  Content: single bold statement like "47 brands launched ↗"
+Hero layout: CENTERED but OVERSIZED. H1 takes full width: font-size clamp(4rem,9vw,8rem), line-height 0.95
+  Use a SPLIT WORD effect: first word normal color, rest accent color
+Section 4 (instead of bento): "SELECTED WORKS" — asymmetric grid: 1 large card (col-span 2, row-span 2) + 2 small cards. Large card has a mockup placeholder (div styled as laptop/phone screen with gradient inside)
+Section between hero and stats: MARQUEE strip — scrolling text with client names and services
+Nav: ALL CAPS logo, minimal nav links, no separator
 
 NICHE C — COACHING / WELLNESS / EDUCATION:
 Palette: bg #FDFAF7, text #1A0E08, accent #D4520A (warm orange) OR bg #F8F4FF, text #1A0A2E, accent #8B5CF6
 Choose warm orange for fitness/nutrition, purple for mindset/spiritual coaching
 Fonts: Playfair Display (headings, italic weight 700) + Inter (body, weight 400)
 Personality: Human. Warm. Transformational. The design feels like a conversation, not a sales pitch.
-Hero H1: Personal, empathetic — speaks directly to pain: "Finally, [result] without [sacrifice]"
-Floating card: transformation metric — "127 clients transformed" or "Lost 18kg in 12 weeks"
 Stats: transformation metrics (clients coached, success rate, years experience, lives changed)
-Testimonials: emotional, personal — before/after stories with specific life changes
 CTA: warm and inviting — "Start Your Transformation", "Book Free Discovery Call"
-Unique touch: Add a "Your journey" timeline showing transformation steps (3 steps visual)
+Floating element: Speech bubble shape.
+  Style: border-radius 20px 20px 20px 4px, background white (or accent light), color dark text
+  padding 16px 20px, box-shadow 0 8px 32px rgba(0,0,0,0.12)
+  Content: emoji + transformation result + person name (small)
+  Example: "🔥 Lost 23kg in 3 months — Anna M."
+Hero layout: CENTERED, personal photo placeholder (circle div, 120px, accent border, right side of hero)
+H1: personal and direct — warm font, NOT heavy weight (700 not 900), italic on key word
+Section 4: "YOUR TRANSFORMATION JOURNEY" — horizontal timeline with 3-4 steps connected by dotted line
+  Each step: circle number + title + short description + icon
+Section 5: "REAL RESULTS" — 2 large testimonial cards with before/after format
+  Card structure: "Before: [pain]" → "After: [result]" + name + photo placeholder
+Nav: warm, rounded logo, nav links with emoji or icon prefix
 
 NICHE D — TECH / SAAS / DEVELOPMENT:
 Palette: bg #030712, text #F9FAFB, accent #06B6D4 (cyan) OR accent #10B981 (green)
 Fonts: Inter weight 800 headings + Inter 400 body. Monospace for code/tech elements.
 Personality: Precise. Fast. Innovative. The design communicates technical excellence.
-Hero H1: Outcome-focused — "Build [result] in [timeframe]". Use gradient text on key word.
-Floating card: performance metric — "4.2x faster" or "99.9% uptime" or "ship in 2 weeks"
 Stats: technical metrics (projects delivered, uptime %, clients, years of expertise)
 Testimonials: technical founders or CTOs, specific technical outcomes
 CTA: action-oriented — "Start Building", "Get a Free Audit", "Ship Faster"
 Unique touch: Add a features comparison table or tech stack logos row
+Floating element: Terminal/code snippet style.
+  Style: background #1a1a2e, border 1px solid accent, border-radius 8px, padding 16px 20px
+  font-family monospace, font-size 0.85rem
+  Content: fake code like: "status: ✓ deployed\\nuptime: 99.9%\\nresponse: 42ms"
+  Add 3 colored dots top-left (like terminal window)
+Hero layout: LEFT-aligned, with a right-side "terminal preview" div (fake dashboard/code window)
+H1: Inter Black, tight letter-spacing -0.04em, NO serif
+Section 4: "TECH STACK & CAPABILITIES" — icon grid (6 items, 3 columns), each item: tech logo emoji + name + brief
+Section between stats and features: INTEGRATION LOGOS strip — row of tech company names (React, Node, AWS, etc) with muted opacity
+Nav: monospace or tech font for logo, nav links with version badge style
 
 NICHE E — REAL ESTATE / PROPERTY:
 Palette: bg #0D1117, text #F0EBE1, accent #C9A96E (gold) — luxury real estate feel
 OR bg #F5F5F0, text #1A1A1A, accent #2D5016 (forest green) — for investment/sustainable angle
 Fonts: Playfair Display headings + Inter body
 Personality: Prestigious. Location-specific. Trust through numbers and track record.
-Hero H1: Location + result — "Your dream property in [city], without the stress"
-Floating card: deal metric — "$12M in transactions" or "47 properties sold this year"
 Stats: volume metrics (properties sold, total value, years in market, client satisfaction %)
 Testimonials: homebuyers and investors with specific properties and outcomes
 CTA: — "Book a Property Tour", "Get Free Valuation", "View Available Properties"
 Unique touch: Add a "Properties Sold" or "Recent Deals" mini gallery section
+Floating element: Property stats card.
+  Style: glassmorphism (backdrop-filter blur), border-radius 16px
+  Content: 🏠 + "From $180,000" + location pin emoji + "Batumi, Georgia"
+Hero layout: Full-width background with overlay, content LEFT-aligned over it
+  Background: large gradient that simulates a luxury property photo atmosphere
+Section 4: "FEATURED PROPERTIES" — horizontal scroll cards (overflow-x auto, display flex, gap 20px)
+  Each card: property type + price + location + size + CTA
+Section 5: "WHY THIS MARKET" — 3 reasons with large icon, title, description
+Nav: serif logo, gold accents throughout
 
 NICHE F — GENERAL SERVICE:
 Palette based on siteVibe:
@@ -93,6 +130,23 @@ Palette based on siteVibe:
   Warm → bg #FDF8F5, text #1A0A05, accent #E85D04
 Fonts: Inter everywhere (weight 800 headings, 400 body)
 Personality: Clear value proposition. No confusion about what they do and why it matters.
+Apply based on siteVibe with UNIQUE layouts per vibe:
+
+  BOLD vibe: Hero full-width text rotated -2deg. Oversized H1. Stats in a ticker-tape style.
+  WARM vibe: Hero with decorative botanical/geometric shapes (CSS drawn). Rounded everything (border-radius 32px+).
+  PROFESSIONAL vibe: Corporate clean. Two-column hero (text left, graphic right). Grid-based features.
+  LUXURY vibe: Minimal. One product/service center of screen. Lots of whitespace. Editorial.
+
+GENERAL RULES FOR UNIQUENESS:
+1. Never use the same hero layout for two different niches
+2. Never use the same floating element style for two different niches
+3. Section 4 structure must differ completely between niches
+4. Typography weight and size hierarchy must differ per niche
+5. Button border-radius varies: Legal=4px (sharp), Creative=999px (pill), Coaching=16px (soft), Tech=8px (balanced)
+6. Card border-radius varies: Legal=8px, Creative=24px, Coaching=20px, Tech=12px, Real Estate=16px
+7. Spacing philosophy varies: Legal=tight and dense, Creative=very spacious, Coaching=breathing room, Tech=precise
+
+When implementing, wrap niche floating elements in a container with class hero-float-mobile-hide so mobile CSS can hide them.
 
 ════════════════════════════════════
 STEP 3 — BUILD THE PAGE
@@ -123,11 +177,11 @@ section { padding: 110px 0; }
 .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: [ACCENT]; margin-bottom: 16px; display: block; }
 h2.section-title { font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 800; line-height: 1.15; margin-bottom: 20px; }
 p.section-sub { font-size: 1.05rem; opacity: 0.6; max-width: 540px; line-height: 1.75; }
-.card { border-radius: 20px; padding: 36px; transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.card { border-radius: [NICHE_CARD_RADIUS per GENERAL RULES]; padding: 36px; transition: transform 0.25s ease, box-shadow 0.25s ease; }
 .card:hover { transform: translateY(-5px); box-shadow: 0 24px 60px rgba(0,0,0,0.18); }
-.btn-primary { display: inline-flex; align-items: center; gap: 8px; background: [ACCENT]; color: #fff; padding: 16px 34px; border-radius: 12px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.01em; }
+.btn-primary { display: inline-flex; align-items: center; gap: 8px; background: [ACCENT]; color: #fff; padding: 16px 34px; border-radius: [NICHE_BTN_RADIUS per GENERAL RULES]; font-weight: 700; font-size: 15px; border: none; cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.01em; }
 .btn-primary:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 12px 32px [ACCENT]50; }
-.btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: [ACCENT]; border: 2px solid [ACCENT]; padding: 15px 32px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.2s ease; }
+.btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: [ACCENT]; border: 2px solid [ACCENT]; padding: 15px 32px; border-radius: [NICHE_BTN_RADIUS]; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.2s ease; }
 .btn-secondary:hover { background: [ACCENT]15; transform: translateY(-2px); }
 
 MANDATORY ANIMATIONS:
@@ -142,176 +196,108 @@ MANDATORY ANIMATIONS:
 .fade-up-4 { animation: fadeInUp 0.75s 0.45s ease both; }
 
 ══ SECTION 1: NAV ══
-<nav id="nav">
-  Fixed, full width, z-index 1000, height 70px, padding 0 32px
-  Display flex, align-items center, justify-content space-between
-  Default: background transparent, transition background 0.35s, border-bottom transparent
-  Class .nav-scrolled: background [BG]F0, backdrop-filter blur(20px), border-bottom 1px solid rgba(255,255,255,0.07)
-  
-  Logo: font-weight 900, font-size 22px, color [ACCENT], letter-spacing -0.02em
-  Nav links: display flex, gap 36px, font-size 14px, font-weight 500, opacity 0.65, hover opacity 1, transition 0.2s
-  CTA: btn-primary style but padding 11px 24px, font-size 14px, border-radius 10px, animation pulseGlow 3s infinite
+Implement <nav id="nav"> per YOUR detected niche in STEP 2 (Legal: serif logo + dot separators; Creative: ALL CAPS logo; Coaching: rounded logo + emoji prefixes; Tech: monospace logo + badge links; Real Estate: serif + gold; General F: match siteVibe).
+Still required: fixed, full width, z-index 1000, height 70px, padding 0 32px, flex space-between align-center, transparent default, .nav-scrolled with backdrop blur and subtle border, CTA button, hamburger + .mobile-nav for mobile.
 
 ══ SECTION 2: HERO ══
-  min-height 100vh, display flex, align-items center, position relative, overflow hidden, padding-top 70px
-  
-  Background orbs (position absolute, z-index 0, pointer-events none):
-    Orb 1: 650px × 650px, top -150px, right -150px, border-radius 50%
-      background radial-gradient(circle, [ACCENT]35 0%, transparent 65%), filter blur(90px)
-    Orb 2: 450px × 450px, bottom -100px, left -120px
-      background radial-gradient(circle, [ACCENT]20 0%, transparent 65%), filter blur(110px)
-    Orb 3: 300px × 300px, top 40%, left 40%, opacity 0.12
-      background radial-gradient(circle, [ACCENT] 0%, transparent 60%), filter blur(60px)
-  
-  Content (position relative, z-index 1, max-width 680px):
-    Badge: class fade-up, inline-flex, align-items center, gap 8px, padding 8px 20px, border-radius 999px
-      border 1px solid [ACCENT]60, background [ACCENT]12, font-size 11px, font-weight 700
-      letter-spacing 0.12em, text-transform uppercase, color [ACCENT], margin-bottom 36px
-      Add a small ✦ or ◆ symbol before the text
-    
-    H1: class fade-up-2, font-size clamp(3rem, 5.5vw, 5.2rem), font-weight 900, line-height 1.08
-      letter-spacing -0.03em, margin-bottom 28px
-      Line 1: [NICHE_TEXT] color
-      Line 2 span: background linear-gradient(135deg, [ACCENT], [ACCENT_LIGHTER])
-        -webkit-background-clip text, -webkit-text-fill-color transparent, background-clip text
-    
-    Subheadline: class fade-up-3, font-size 1.12rem, line-height 1.8, opacity 0.62, max-width 540px, margin-bottom 44px
-    
-    Button row: class fade-up-4, display flex, gap 16px, flex-wrap wrap, align-items center
-      btn-primary + btn-secondary
-    
-    Social proof row: margin-top 52px, display flex, align-items center, gap 16px
-      Avatar stack: 3 overlapping circles (40px, accent bg, initials, margin-left -12px)
-      Text: font-size 13px, opacity 0.5 — "★★★★★  Loved by 300+ clients"
-  
-  Floating card: position absolute, right 6%, top 22%, z-index 2, animation float 6s ease-in-out infinite
-    background rgba(255,255,255,0.07), backdrop-filter blur(20px)
-    border 1px solid rgba(255,255,255,0.13), border-radius 22px, padding 22px 28px, min-width 230px
-    Icon: 2rem emoji, margin-bottom 10px, display block
-    Metric: font-size 2rem, font-weight 900, color [ACCENT], display block, line-height 1
-    Label: font-size 0.8rem, opacity 0.55, margin-top 4px
+min-height 100vh, padding-top 70px, position relative, overflow hidden.
+Implement hero layout AND niche floating element EXACTLY per STEP 2 for your niche. Do NOT use the old generic glass "floating card" (blur box with emoji + metric) unless siteVibe under NICHE F explicitly fits a soft card.
+Background: use orbs/gradients only if they fit the niche (e.g. Real Estate: luxury atmosphere gradient; Legal: subtle; Creative: bold).
+Include: badge, H1, subheadline, btn-primary + btn-secondary, social proof row — styled per niche typography rules.
+Wrap niche-specific floating UI in <div class="hero-float-mobile-hide">...</div>.
 
 ══ SECTION 3: TRUST / STATS BAR ══
-  border-top 1px solid rgba(255,255,255,0.07), border-bottom 1px solid rgba(255,255,255,0.07)
-  padding 56px 0, background rgba(255,255,255,0.02)
-  
-  Grid: display grid, grid-template-columns repeat(3, 1fr), text-align center
-  Each stat: padding 0 40px
-    Not last: border-right 1px solid rgba(255,255,255,0.08)
-    Number: font-size 3.2rem, font-weight 900, color [ACCENT], display block, line-height 1, margin-bottom 10px
-      Use specific niche-relevant impressive numbers
-    Label: font-size 0.88rem, opacity 0.5, letter-spacing 0.04em
+border-top 1px solid rgba(255,255,255,0.07), border-bottom 1px solid rgba(255,255,255,0.07)
+padding 56px 0, background rgba(255,255,255,0.02)
+Grid: display grid, grid-template-columns repeat(3, 1fr), text-align center
+Each stat: padding 0 40px; not last: border-right 1px solid rgba(255,255,255,0.08) [adapt borders for light themes]
+Number: font-size 3.2rem, font-weight 900, color [ACCENT], line-height 1, margin-bottom 10px — niche-appropriate metrics
+Label: font-size 0.88rem, opacity 0.5, letter-spacing 0.04em
+For NICHE B include MARQUEE strip between hero and this stats bar as specified in STEP 2.
 
-══ SECTION 4: FEATURES / SERVICES ══
-  Section label (centered) + H2 (centered) + subtext (centered, max-width 520px, margin 0 auto 64px)
-  
-  Grid: display grid, grid-template-columns repeat(2, 1fr), gap 20px
-  
-  4 cards total. Cards have [PALETTE card style]. One card (card index 1 or 2): accent gradient background
-    Accent card: background linear-gradient(135deg, [ACCENT] 0%, [ACCENT_DARK] 100%), color white
-  
-  Each card structure:
-    Icon: font-size 2.2rem, margin-bottom 20px, display block
-    h3: font-size 1.15rem, font-weight 700, margin-bottom 12px
-    p: font-size 0.93rem; opacity 0.68 (1.0 for accent card), line-height 1.72
+══ SECTION 4: (PRIMARY CONTENT — NICHE-SPECIFIC) ══
+Section label + H2 + subtext — titles MUST match STEP 2 (e.g. PRACTICE AREAS, SELECTED WORKS, YOUR TRANSFORMATION JOURNEY, TECH STACK & CAPABILITIES, FEATURED PROPERTIES, or NICHE F layout per vibe).
+Layout, grid, and card structure MUST follow STEP 2 for your niche — not the old 2×2 bento with one gradient card.
 
-══ SECTION 5: TESTIMONIALS ══
-  Section label + H2 centered, subtext centered
-  
-  Grid: display grid, grid-template-columns repeat(2, 1fr), gap 24px, margin-top 56px
-  
-  2 testimonial cards. One is "featured" (slightly elevated):
-    Featured card: border 2px solid [ACCENT], position relative
-      Featured badge (position absolute, top -14px, right 24px):
-        background [ACCENT], color white, padding 5px 16px, border-radius 999px
-        font-size 10px, font-weight 800, letter-spacing 0.12em, text-transform uppercase
-        Content: "⭐ FEATURED"
-  
-  Each card:
-    Stars row: color #F59E0B, font-size 1rem, letter-spacing 2px, margin-bottom 16px
-    Quote: font-size 1rem, line-height 1.78, font-style italic, margin-bottom 24px, opacity 0.88
-    Author row: display flex, align-items center, gap 14px
-      Avatar: width 46px, height 46px, border-radius 50%, background [ACCENT], display flex
-        align-items center, justify-content center, font-weight 800, font-size 17px, color white, flex-shrink 0
-      Name: font-weight 700, font-size 0.95rem, display block, margin-bottom 3px
-      Role: font-size 0.82rem, opacity 0.55
+══ SECTION 5: (SOCIAL PROOF — NICHE-SPECIFIC) ══
+Follow STEP 2 Section 5 for your niche (CASE RESULTS, REAL RESULTS with before/after, WHY THIS MARKET, etc.). Not the old generic two-column testimonial grid unless your niche is General F and vibe calls for it.
 
 ══ SECTION 6: PRICING ══
-  Section label + H2 centered + subtext centered
-  
-  Grid: display grid, grid-template-columns repeat(2, 1fr), gap 28px
-  max-width 860px, margin 56px auto 0
-  
-  Card 1 (standard): [palette card style], border-radius 24px
-  Card 2 (featured): border 2px solid [ACCENT], border-radius 24px, position relative
-    transform scale(1.04) on desktop
-    box-shadow 0 32px 80px [ACCENT]25
-    MOST POPULAR badge: position absolute, top -16px, left 50%, transform translateX(-50%)
-      background [ACCENT], color white, padding 7px 22px, border-radius 999px
-      font-size 11px, font-weight 800, letter-spacing 0.1em, white-space nowrap
-  
-  Each pricing card:
-    padding 40px 36px, display flex, flex-direction column
-    Tier name: font-size 11px, font-weight 800, letter-spacing 0.2em, text-transform uppercase
-      opacity 0.55, margin-bottom 20px, display block
-    Price: font-size 3.6rem, font-weight 900, color [ACCENT], line-height 1, display block
-    Period: font-size 0.9rem, opacity 0.5, display block, margin-top 4px, margin-bottom 28px
-    Divider: height 1px, background rgba(255,255,255,0.08), margin-bottom 28px
-    Features list: list-style none, display flex, flex-direction column, gap 14px, flex 1, margin-bottom 36px
-      Feature item: display flex, align-items flex-start, gap 12px
-        Checkmark span: color [ACCENT], font-weight 800, font-size 1.1rem, flex-shrink 0, margin-top 1px
-        Text: font-size 0.94rem, line-height 1.55
-    CTA: width 100%, padding 16px, font-size 15px, margin-top auto
-      Card 1: btn-secondary style
-      Card 2: btn-primary style
+Section label + H2 centered + subtext centered
+
+Grid: display grid, grid-template-columns repeat(2, 1fr), gap 28px
+max-width 860px, margin 56px auto 0
+
+Card 1 (standard): [palette card style], border-radius 24px
+Card 2 (featured): border 2px solid [ACCENT], border-radius 24px, position relative
+  transform scale(1.04) on desktop
+  box-shadow 0 32px 80px [ACCENT]25
+  MOST POPULAR badge: position absolute, top -16px, left 50%, transform translateX(-50%)
+    background [ACCENT], color white, padding 7px 22px, border-radius 999px
+    font-size 11px, font-weight 800, letter-spacing 0.1em, white-space nowrap
+
+Each pricing card:
+  padding 40px 36px, display flex, flex-direction column
+  Tier name: font-size 11px, font-weight 800, letter-spacing 0.2em, text-transform uppercase
+    opacity 0.55, margin-bottom 20px, display block
+  Price: font-size 3.6rem, font-weight 900, color [ACCENT], line-height 1, display block
+  Period: font-size 0.9rem, opacity 0.5, display block, margin-top 4px, margin-bottom 28px
+  Divider: height 1px, background rgba(255,255,255,0.08), margin-bottom 28px
+  Features list: list-style none, display flex, flex-direction column, gap 14px, flex 1, margin-bottom 36px
+    Feature item: display flex, align-items flex-start, gap 12px
+      Checkmark span: color [ACCENT], font-weight 800, font-size 1.1rem, flex-shrink 0, margin-top 1px
+      Text: font-size 0.94rem, line-height 1.55
+  CTA: width 100%, padding 16px, font-size 15px, margin-top auto
+    Card 1: btn-secondary style
+    Card 2: btn-primary style
 
 ══ SECTION 7: CTA BANNER ══
-  margin 0 28px, border-radius 28px, padding 90px 80px
-  background linear-gradient(135deg, [ACCENT]18 0%, [ACCENT]06 100%)
-  border 1px solid [ACCENT]25
-  text-align center
-  
-  H2: font-size clamp(2rem, 3.5vw, 3rem), font-weight 900, margin-bottom 20px
-  Subtext: font-size 1.05rem, opacity 0.62, max-width 480px, margin 0 auto 44px, line-height 1.75
-  btn-primary: padding 20px 48px, font-size 16px, animation pulseGlow 2.5s infinite
-  Trust line below button: margin-top 24px, font-size 12px, opacity 0.4
-    Content: "✓ No contracts  ✓ Results guaranteed  ✓ Cancel anytime"
+margin 0 28px, border-radius 28px, padding 90px 80px
+background linear-gradient(135deg, [ACCENT]18 0%, [ACCENT]06 100%)
+border 1px solid [ACCENT]25
+text-align center
+
+H2: font-size clamp(2rem, 3.5vw, 3rem), font-weight 900, margin-bottom 20px
+Subtext: font-size 1.05rem, opacity 0.62, max-width 480px, margin 0 auto 44px, line-height 1.75
+btn-primary: padding 20px 48px, font-size 16px, animation pulseGlow 2.5s infinite
+Trust line below button: margin-top 24px, font-size 12px, opacity 0.4
+  Content: "✓ No contracts  ✓ Results guaranteed  ✓ Cancel anytime"
 
 ══ SECTION 8: CONTACT FORM ══
-  max-width 620px, margin 0 auto, text-align center
-  
-  Section label + H2 + subtext above form
-  
-  Form (#contact-form): margin-top 48px, display grid, gap 18px, text-align left
-  
-  Each field wrapper: display flex, flex-direction column, gap 8px
-  Label: font-size 13px, font-weight 600, opacity 0.75, letter-spacing 0.02em
-  
-  Input/textarea CSS:
-    width 100%, padding 15px 20px, border-radius 12px
-    border 1px solid rgba(255,255,255,0.12) [or rgba(0,0,0,0.12) for light themes]
-    background rgba(255,255,255,0.05) [or rgba(0,0,0,0.04) for light]
-    color inherit, font-size 15px, font-family inherit
-    outline none, transition border-color 0.2s, -webkit-appearance none
-  Input:focus: border-color [ACCENT]
-  Textarea: min-height 130px, resize vertical
-  
-  Submit button: btn-primary, width 100%, justify-content center, padding 18px, font-size 16px, margin-top 4px
-  
-  Success message (#success-msg): display none, text-align center, padding 32px 20px
-    Background [ACCENT]10, border 1px solid [ACCENT]30, border-radius 16px
-    Color [ACCENT], font-weight 600, font-size 1.1rem
-    Content: "✓ Message sent! I'll get back to you within 24 hours."
+max-width 620px, margin 0 auto, text-align center
+
+Section label + H2 + subtext above form
+
+Form (#contact-form): margin-top 48px, display grid, gap 18px, text-align left
+
+Each field wrapper: display flex, flex-direction column, gap 8px
+Label: font-size 13px, font-weight 600, opacity 0.75, letter-spacing 0.02em
+
+Input/textarea CSS:
+  width 100%, padding 15px 20px, border-radius 12px
+  border 1px solid rgba(255,255,255,0.12) [or rgba(0,0,0,0.12) for light themes]
+  background rgba(255,255,255,0.05) [or rgba(0,0,0,0.04) for light]
+  color inherit, font-size 15px, font-family inherit
+  outline none, transition border-color 0.2s, -webkit-appearance none
+Input:focus: border-color [ACCENT]
+Textarea: min-height 130px, resize vertical
+
+Submit button: btn-primary, width 100%, justify-content center, padding 18px, font-size 16px, margin-top 4px
+
+Success message (#success-msg): display none, text-align center, padding 32px 20px
+  Background [ACCENT]10, border 1px solid [ACCENT]30, border-radius 16px
+  Color [ACCENT], font-weight 600, font-size 1.1rem
+  Content: "✓ Message sent! I'll get back to you within 24 hours."
 
 ══ FOOTER ══
-  border-top 1px solid rgba(255,255,255,0.07), padding 52px 0 36px
-  
-  Grid: display grid, grid-template-columns 1fr auto 1fr, align-items center, gap 24px
-  
-  Left: Logo (font-weight 900, color [ACCENT]) + tagline (font-size 13px, opacity 0.4, margin-top 8px)
-  Center: Copyright text, font-size 12px, opacity 0.35, text-align center
-  Right: display flex, gap 20px, justify-content flex-end
-    Social links: font-size 13px, opacity 0.45, hover opacity 0.9, transition 0.2s
+border-top 1px solid rgba(255,255,255,0.07), padding 52px 0 36px
+
+Grid: display grid, grid-template-columns 1fr auto 1fr, align-items center, gap 24px
+
+Left: Logo (font-weight 900, color [ACCENT]) + tagline (font-size 13px, opacity 0.4, margin-top 8px)
+Center: Copyright text, font-size 12px, opacity 0.35, text-align center
+Right: display flex, gap 20px, justify-content flex-end
+  Social links: font-size 13px, opacity 0.45, hover opacity 0.9, transition 0.2s
 
 ════════════════════════════════════
 STEP 4 — MOBILE CSS
@@ -327,6 +313,7 @@ STEP 4 — MOBILE CSS
   .hero .btn-row { flex-direction: column; width: 100%; }
   .hero .btn-row a, .hero .btn-row button { width: 100%; justify-content: center; }
   .floating-card { display: none; }
+  .hero-float-mobile-hide { display: none !important; }
   .orb-1, .orb-2, .orb-3 { opacity: 0.5; }
   .stats-grid { grid-template-columns: 1fr; gap: 40px; }
   .stats-grid .stat:not(:last-child) { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 40px; }
@@ -436,7 +423,7 @@ COPY RULES — CRITICAL
    Send a message → "SEND A MESSAGE →"
    Join a waitlist → "JOIN THE WAITLIST →"
 7. Trust line under CTA: always add a short reassurance ("No credit card • Cancel anytime" or "Free consultation • No obligations")
-8. The floating card metric must be niche-specific and impressive.
+8. The niche floating element (trust strip, rotated tag, speech bubble, terminal, property card, etc.) must be niche-specific and impressive.
 9. Add class="scroll-reveal" to section headings, cards, and key content for scroll animations.
 `;
 
