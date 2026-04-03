@@ -80,6 +80,15 @@ CONTENT RULES:
 
 QUALITY BAR: Every section must look intentional and premium. No placeholder text. No lorem ipsum. Every pixel serves the conversion goal.`;
 
+const retrySystemPrompt = `CRITICAL: You must respond with ONLY valid React JSX code. No explanations. No markdown. No backticks.
+
+Your response must:
+1. Start EXACTLY with: import React, { useState } from 'react';
+2. Define a function called LandingPage
+3. End with: export default LandingPage;
+
+Nothing before the import. Nothing after the export. Only code.`;
+
 type LandingInput = {
   offer: string;
   audience: string;
@@ -104,18 +113,63 @@ function injectSlugIntoJsx(jsx: string, slug: string): string {
   return out;
 }
 
-function validateGeneratedJsx(jsx: string): string | null {
-  const t = jsx.trim();
-  if (!t.startsWith("import React, { useState } from 'react'") && !t.startsWith('import React, { useState } from "react"')) {
-    return "Generated code must start with import React, { useState } from 'react'.";
+// Strips markdown fences and any text before the import statement
+function cleanJsx(raw: string): string {
+  // Remove markdown code fences
+  let cleaned = raw.replace(/^```(?:tsx|jsx|typescript|js)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
+
+  // Find where the actual import starts
+  const importIndex = cleaned.indexOf("import React");
+  if (importIndex > 0) {
+    cleaned = cleaned.slice(importIndex);
   }
-  if (!/\bLandingPage\b/.test(t)) {
+
+  return cleaned.trim();
+}
+
+function validateJsx(jsx: string): string | null {
+  if (!jsx.includes("import React")) {
+    return "Generated code must start with import React.";
+  }
+  if (!/\bLandingPage\b/.test(jsx)) {
     return "Generated code must define LandingPage.";
   }
-  if (!/\bexport\s+default\s+/.test(t)) {
+  if (!/\bexport\s+default\b/.test(jsx)) {
     return "Generated code must export default LandingPage.";
   }
   return null;
+}
+
+async function callClaude(
+  apiKey: string,
+  systemPrompt: string,
+  userMessage: string
+): Promise<string> {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }],
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Claude API error ${response.status}: ${details}`);
+  }
+
+  const completion = (await response.json()) as {
+    content?: Array<{ type: string; text?: string }>;
+  };
+
+  return completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
 }
 
 export async function POST(request: Request) {
@@ -138,38 +192,17 @@ export async function POST(request: Request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader
-        }
-      }
+      global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user },
-      error: userError
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     const displayName = body.businessName || body.userEmail.split("@")[0];
 
-    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        system: reactLandingSystemPrompt,
-        messages: [
-          {
-            role: "user",
-            content: `Generate a premium landing page for this business:
+    const userMessage = `Generate a premium landing page for this business:
 
 Business name: ${displayName}
 What they sell: ${body.offer}
@@ -181,37 +214,35 @@ Primary goal: ${body.primaryGoal || "Not provided"}
 Site vibe: ${body.siteVibe || "Not provided"}
 Language: detect from the offer text and write ALL copy in that language
 
-Make it look world-class. Every section must feel premium and intentional.`
-          }
-        ]
-      })
-    });
+Make it look world-class. Every section must feel premium and intentional.`;
 
-    if (!anthropicResponse.ok) {
-      const details = await anthropicResponse.text();
-      return NextResponse.json(
-        { error: "Claude request failed.", details },
-        { status: anthropicResponse.status }
-      );
-    }
+    // Attempt 1 — full quality prompt
+    let rawText = await callClaude(apiKey, reactLandingSystemPrompt, userMessage);
+    let jsx = cleanJsx(rawText);
+    let validationError = validateJsx(jsx);
 
-    const completion = (await anthropicResponse.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
-    const rawText = completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
-
-    if (!rawText.includes("import React") && !rawText.includes("function LandingPage")) {
-      console.error("Claude returned non-JSX response:", rawText.slice(0, 200));
-      return NextResponse.json({ error: "Generation failed. Please try again." }, { status: 500 });
-    }
-
-    let jsx = rawText.replace(/^```(?:tsx|jsx|typescript)?\s*/i, "").replace(/\s*```\s*$/i, "");
-
-    const validationError = validateGeneratedJsx(jsx);
+    // Attempt 2 — if validation failed, retry with strict prompt
     if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 502 });
+      console.warn("Attempt 1 failed validation:", validationError, "— retrying...");
+      const retryMessage = `${userMessage}
+
+IMPORTANT: Your previous response failed validation. You MUST:
+- Start with exactly: import React, { useState } from 'react';
+- Define: function LandingPage() { ... }
+- End with: export default LandingPage;
+- NO text before the import. NO text after the export.`;
+
+      rawText = await callClaude(apiKey, retrySystemPrompt, retryMessage);
+      jsx = cleanJsx(rawText);
+      validationError = validateJsx(jsx);
     }
 
+    if (validationError) {
+      console.error("Both attempts failed. Last JSX sample:", jsx.slice(0, 300));
+      return NextResponse.json({ error: "Generation failed after 2 attempts. Please try again." }, { status: 502 });
+    }
+
+    // Resolve slug
     const existingPage = await supabase
       .from("landing_pages")
       .select("slug")
@@ -226,11 +257,7 @@ Make it look world-class. Every section must feel premium and intentional.`
     const { error: upsertError } = await supabase
       .from("landing_pages")
       .upsert(
-        {
-          user_id: user.id,
-          slug,
-          jsx_content: jsxWithSlug
-        } as never,
+        { user_id: user.id, slug, jsx_content: jsxWithSlug } as never,
         { onConflict: "slug" }
       );
 
