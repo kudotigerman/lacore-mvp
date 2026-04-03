@@ -20,6 +20,33 @@ function ensureReturnLandingPage(body: string): string {
   return body.replace(/\bexport\s+default\s+LandingPage\b\s*;?/g, "return LandingPage;");
 }
 
+/** Transformed JS for embedding in an isolated iframe (React UMD + createRoot). */
+function stripExportForIframeScript(body: string): string {
+  let b = body.replace(/\bexport\s+default\s+function\s+LandingPage\b/g, "function LandingPage");
+  b = b.replace(/\bexport\s+default\s+LandingPage\s*;?\s*/g, "");
+  b = b.replace(/\n\s*return\s+LandingPage\s*;?\s*$/m, "");
+  return b.trim();
+}
+
+/**
+ * Compile stored JSX to executable JS for a sandboxed iframe (no new Function in parent).
+ * Escapes closing script tags for safe HTML embedding.
+ */
+export function jsxSourceToCompiledScript(jsxSource: string): string {
+  let cleaned = jsxSource.trim();
+  cleaned = cleaned.replace(/^```(?:tsx|jsx|typescript)?\s*/i, "").replace(/\s*```\s*$/i, "");
+
+  const { code } = transform(cleaned, {
+    transforms: ["jsx", "typescript"],
+    jsxRuntime: "classic",
+    production: true
+  });
+
+  let body = stripReactImports(code.trim());
+  body = stripExportForIframeScript(body);
+  return body.replace(/<\/script>/gi, "<\\/script>");
+}
+
 /**
  * Turns AI-generated JSX source into a mountable React component.
  * Expects classic JSX runtime output and strips React imports (passed explicitly).

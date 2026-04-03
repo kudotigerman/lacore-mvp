@@ -1,32 +1,51 @@
 "use client";
 
-import {
-  type ComponentType,
-  FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
-import { compileLandingJsx } from "@/lib/compileLandingJsx";
+import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 
 type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 
-function LiveLandingView({ jsxSource }: { jsxSource: string }) {
-  const [Comp, setComp] = useState<ComponentType | null>(null);
+const FRIENDLY_COMPILE_MESSAGE =
+  "I had trouble with that change. The page wasn't updated. Try rephrasing your request or be more specific about what you want to change.";
+
+function buildLandingIframeSrcDoc(compiledJs: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+<body style="margin:0;padding:0;">
+<div id="root"></div>
+<script>
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+${compiledJs}
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(LandingPage));
+</script>
+</body>
+</html>`;
+}
+
+function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: string }) {
+  const [srcDoc, setSrcDoc] = useState<string | null>(null);
   const [compileError, setCompileError] = useState<string | null>(null);
 
   useEffect(() => {
+    setCompileError(null);
+    setSrcDoc(null);
     try {
-      setCompileError(null);
-      const C = compileLandingJsx(jsxSource);
-      setComp(() => C);
-    } catch (e) {
-      setComp(null);
-      setCompileError(e instanceof Error ? e.message : "Could not load this page.");
+      const compiledJs = jsxSourceToCompiledScript(jsxSource);
+      setSrcDoc(buildLandingIframeSrcDoc(compiledJs));
+    } catch {
+      setCompileError(FRIENDLY_COMPILE_MESSAGE);
     }
   }, [jsxSource]);
 
@@ -34,16 +53,20 @@ function LiveLandingView({ jsxSource }: { jsxSource: string }) {
     return (
       <div
         style={{
-          minHeight: "100vh",
+          width: "100%",
+          height,
+          minHeight: height === "100%" ? 200 : height,
           background: "#09090B",
-          color: "#f87171",
+          color: "#A1A1AA",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           padding: 24,
           fontFamily: "var(--font-space-mono), monospace",
           fontSize: 13,
-          textAlign: "center"
+          lineHeight: 1.6,
+          textAlign: "center",
+          boxSizing: "border-box"
         }}
       >
         {compileError}
@@ -51,11 +74,12 @@ function LiveLandingView({ jsxSource }: { jsxSource: string }) {
     );
   }
 
-  if (!Comp) {
+  if (!srcDoc) {
     return (
       <div
         style={{
-          minHeight: "100vh",
+          width: "100%",
+          height,
           background: "#09090B",
           color: "#A1A1AA",
           display: "flex",
@@ -69,7 +93,19 @@ function LiveLandingView({ jsxSource }: { jsxSource: string }) {
     );
   }
 
-  return <Comp />;
+  return (
+    <iframe
+      title="Landing page preview"
+      sandbox="allow-scripts"
+      srcDoc={srcDoc}
+      style={{
+        width: "100%",
+        height,
+        border: "none",
+        display: "block"
+      }}
+    />
+  );
 }
 
 export default function PublicLandingPage() {
@@ -104,10 +140,10 @@ export default function PublicLandingPage() {
 
   const updateStatusMessages = useMemo(
     () => [
-      "Analyzing your request...",
-      "Rewriting structure...",
-      "Applying design changes...",
-      "Almost done..."
+      "Reading your current page...",
+      "Planning the changes...",
+      "Writing new component...",
+      "Compiling..."
     ],
     []
   );
@@ -139,7 +175,7 @@ export default function PublicLandingPage() {
     setUpdateMessageIndex(0);
     const id = setInterval(() => {
       setUpdateMessageIndex((i) => (i + 1) % updateStatusMessages.length);
-    }, 2000);
+    }, 3000);
     return () => clearInterval(id);
   }, [updating, updateStatusMessages.length]);
 
@@ -185,7 +221,8 @@ export default function PublicLandingPage() {
       });
       const result = await response.json();
       if (!response.ok || !result?.success) {
-        throw new Error(result?.error || "Failed to update page.");
+        const apiErr = typeof result?.error === "string" ? result.error : "Failed to update page.";
+        throw new Error(apiErr);
       }
 
       if (typeof result.jsx === "string" && result.jsx.trim()) {
@@ -200,7 +237,9 @@ export default function PublicLandingPage() {
         { role: "assistant", text: `Updated: ${instruction}`, time: timeAssistant }
       ]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to update page.";
+      const raw = err instanceof Error ? err.message : "Failed to update page.";
+      const compileLike = /compile|syntax|invalid jsx|landing component|failed to compile/i.test(raw);
+      const message = compileLike ? FRIENDLY_COMPILE_MESSAGE : raw;
       const timeAssistant = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setMessages((prev) => [...prev, { role: "assistant", text: message, time: timeAssistant }]);
     } finally {
@@ -439,9 +478,10 @@ export default function PublicLandingPage() {
             </div>
           ) : useLiveReact ? (
             <>
-              <div style={{ width: "100%", minHeight: "100vh" }}>
+              <div style={{ width: "100%", height: "100vh" }}>
                 <LiveLandingView
                   jsxSource={jsxContent}
+                  height="100vh"
                   key={jsxContent.slice(0, 120) + jsxContent.length}
                 />
               </div>
@@ -527,16 +567,16 @@ export default function PublicLandingPage() {
           0%, 60%, 100% { transform: translateY(0); }
           30% { transform: translateY(-8px); }
         }
-        @keyframes progressSlide {
-          0% { width: 0%; left: 0; }
-          50% { width: 60%; left: 20%; }
-          100% { width: 0%; left: 100%; }
+        @keyframes lacoreEditStatusFade {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
       <div
         style={{
           position: "fixed",
           inset: 0,
+          zIndex: 50,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -547,6 +587,8 @@ export default function PublicLandingPage() {
           style={{
             height: 52,
             flexShrink: 0,
+            position: "relative",
+            zIndex: 100,
             background: "#09090B",
             borderBottom: "1px solid #1C1C1F",
             display: "flex",
@@ -645,10 +687,10 @@ export default function PublicLandingPage() {
 
         <div
           style={{
+            flex: 1,
             display: "flex",
             flexDirection: "row",
-            height: "calc(100vh - 52px)",
-            flex: 1,
+            overflow: "hidden",
             minHeight: 0
           }}
         >
@@ -656,11 +698,12 @@ export default function PublicLandingPage() {
             style={{
               width: 360,
               flexShrink: 0,
+              height: "100%",
+              overflow: "hidden",
               background: "#09090B",
               borderRight: "1px solid #1C1C1F",
               display: "flex",
               flexDirection: "column",
-              height: "100%",
               minHeight: 0
             }}
           >
@@ -837,11 +880,13 @@ export default function PublicLandingPage() {
                     />
                   </div>
                   <span
+                    key={updateMessageIndex}
                     style={{
                       fontFamily: "var(--font-space-mono), monospace",
                       fontSize: 11,
                       color: "#06B6D4",
-                      marginLeft: 4
+                      marginLeft: 4,
+                      animation: "lacoreEditStatusFade 0.45s ease-out"
                     }}
                   >
                     {updateStatusMessages[updateMessageIndex]}
@@ -950,56 +995,18 @@ export default function PublicLandingPage() {
               flex: 1,
               height: "100%",
               overflow: "hidden",
-              position: "relative",
               background: "#06080d",
-              minWidth: 0
+              minWidth: 0,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column"
             }}
           >
-            {updating ? (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  zIndex: 10,
-                  pointerEvents: "none"
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "rgba(9,9,11,0.15)"
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    overflow: "hidden",
-                    zIndex: 11
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      height: 3,
-                      background: "linear-gradient(90deg, #06B6D4, #0891B2)",
-                      animation: "progressSlide 2s ease-in-out infinite"
-                    }}
-                  />
-                </div>
-              </div>
-            ) : null}
-            <div style={{ height: "100%", overflow: "auto" }}>
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
               {loading ? (
                 <div
                   style={{
                     height: "100%",
-                    minHeight: 240,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1012,6 +1019,7 @@ export default function PublicLandingPage() {
               ) : useLiveReact ? (
                 <LiveLandingView
                   jsxSource={jsxContent}
+                  height="100%"
                   key={jsxContent.slice(0, 120) + jsxContent.length}
                 />
               ) : (
@@ -1022,7 +1030,6 @@ export default function PublicLandingPage() {
                   style={{
                     width: "100%",
                     height: "100%",
-                    minHeight: "100%",
                     border: "none",
                     display: "block"
                   }}
