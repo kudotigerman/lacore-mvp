@@ -18,10 +18,37 @@ RULES:
 - No imports except: import React, { useState } from 'react';
 - Contact form must keep posting to /api/leads with JSON { name, email, message, slug }
 - Preserve the hardcoded slug string in the source (do not change it unless the instruction asks)
+- Make ONLY the requested change. Do not rewrite other sections. Return the complete component with minimal changes from the original.
 - Return the COMPLETE modified component only. No markdown. No explanation. Start with: import React, { useState } from 'react';`;
 
 function cleanClaudeCode(text: string): string {
   return text.replace(/^```(?:tsx|jsx|typescript)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+}
+
+const simpleTextKeywords = /(поменяй|измени|замени|change|replace|rename)/i;
+const simpleColorKeywords = /(цвет|color|сделай|make it)/i;
+const simpleVisibilityKeywords = /(убери|скрой|remove|hide)/i;
+
+function extractQuotedPair(instruction: string): { from: string; to: string } | null {
+  const quoted = [...instruction.matchAll(/["'`](.+?)["'`]/g)].map((m) => m[1]).filter(Boolean);
+  if (quoted.length >= 2) {
+    return { from: quoted[0], to: quoted[1] };
+  }
+  return null;
+}
+
+function applyFastEdit(jsx: string, instruction: string): string | null {
+  const isSimple =
+    simpleTextKeywords.test(instruction) ||
+    simpleColorKeywords.test(instruction) ||
+    simpleVisibilityKeywords.test(instruction);
+  if (!isSimple) return null;
+
+  const pair = extractQuotedPair(instruction);
+  if (!pair) return null;
+
+  if (!jsx.includes(pair.from)) return null;
+  return jsx.replace(pair.from, pair.to);
 }
 
 export async function POST(request: Request) {
@@ -65,6 +92,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    if (useJsx && body.currentJsx) {
+      const fastEditedJsx = applyFastEdit(body.currentJsx, body.instruction);
+      if (fastEditedJsx && fastEditedJsx !== body.currentJsx) {
+        const { error: saveError } = await supabase
+          .from("landing_pages")
+          .update({ jsx_content: fastEditedJsx } as never)
+          .eq("slug", body.slug)
+          .eq("user_id", user.id);
+
+        if (saveError) {
+          return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, jsx: fastEditedJsx, fast: true });
+      }
+    }
+
     const system = useJsx ? editJsxSystemPrompt : editHtmlSystemPrompt;
     const userContent = useJsx
       ? `CURRENT JSX:\n${body.currentJsx}\n\nINSTRUCTION: ${body.instruction}`
@@ -79,7 +123,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 16000,
+        max_tokens: 4000,
         system,
         messages: [{ role: "user", content: userContent }]
       })
@@ -120,7 +164,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
       }
 
-      return NextResponse.json({ jsx, success: true });
+      return NextResponse.json({ jsx, success: true, fast: false });
     }
 
     const html = cleanClaudeCode(raw);
@@ -138,7 +182,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ html, success: true });
+    return NextResponse.json({ html, success: true, fast: false });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server error.";
     return NextResponse.json({ error: "Failed to edit landing page.", details: message }, { status: 500 });
