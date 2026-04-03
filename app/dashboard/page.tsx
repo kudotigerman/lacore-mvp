@@ -161,7 +161,7 @@ export default function DashboardPage() {
         throw new Error("Server error: " + text.slice(0, 200));
       }
       if (!result?.success) throw new Error(result?.error || "Failed to build landing page.");
-      setLandingSlug(result.slug);
+      setLandingSlug(result.slug ?? null);
       router.push(`/p/${result.slug}?edit=true`); // FIX: редирект сразу на лендинг
     } catch (err) {
       setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
