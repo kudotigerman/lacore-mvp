@@ -24,8 +24,8 @@ export default function DashboardPage() {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [businessName, setBusinessName] = useState("");
-  const [realResults, setRealResults] = useState("");
-  const [idealClient, setIdealClient] = useState("");
+  const [primaryGoal, setPrimaryGoal] = useState("");
+  const [siteVibe, setSiteVibe] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [editingOffer, setEditingOffer] = useState(false);
   const [offerDraft, setOfferDraft] = useState<Offer | null>(null);
@@ -138,8 +138,8 @@ export default function DashboardPage() {
 
   async function handleBuildLandingPage(extra?: {
     businessName?: string;
-    realResults?: string;
-    idealClient?: string;
+    primaryGoal?: string;
+    siteVibe?: string;
   }) {
     if (!offer || !sessionToken) return;
     setBuildError(null);
@@ -158,8 +158,8 @@ export default function DashboardPage() {
           userName: email.split("@")[0],
           userEmail: email,
           businessName: extra?.businessName ?? businessName,
-          realResults: extra?.realResults ?? realResults,
-          idealClient: extra?.idealClient ?? idealClient
+          primaryGoal: extra?.primaryGoal ?? primaryGoal,
+          siteVibe: extra?.siteVibe ?? siteVibe
         })
       });
       const result = await response.json();
@@ -334,7 +334,7 @@ export default function DashboardPage() {
               3 quick questions to make your landing page 10x better
             </p>
 
-            <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+            <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
               <div>
                 <p
                   style={{
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                 <input
                   value={businessName}
                   onChange={(event) => setBusinessName(event.target.value)}
-                  placeholder="Dubai Elite Properties"
+                  placeholder="Nike, Alex Design Studio, LexLaw..."
                   style={{
                     width: "100%",
                     marginTop: 6,
@@ -374,24 +374,43 @@ export default function DashboardPage() {
                     color: "#06B6D4"
                   }}
                 >
-                  YOUR BEST RESULT
+                  PRIMARY GOAL
                 </p>
-                <input
-                  value={realResults}
-                  onChange={(event) => setRealResults(event.target.value)}
-                  placeholder="Closed a $12M deal in 3 weeks"
+                <p
                   style={{
-                    width: "100%",
-                    marginTop: 6,
-                    border: "1px solid #1C1C1F",
-                    background: "#0F0F12",
-                    color: "#F4F4F5",
-                    padding: "10px 12px",
+                    margin: "6px 0 0",
                     fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 12,
-                    outline: "none"
+                    fontSize: 10,
+                    color: "#71717A"
                   }}
-                />
+                >
+                  What should visitors do on your site?
+                </p>
+                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {["📞 Book a call", "💳 Buy a package", "✉️ Send a message", "📋 Join a waitlist"].map((goal) => {
+                    const selected = primaryGoal === goal;
+                    return (
+                      <button
+                        key={goal}
+                        type="button"
+                        onClick={() => setPrimaryGoal(goal)}
+                        style={{
+                          border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
+                          background: selected ? "#06B6D4" : "transparent",
+                          color: selected ? "#000000" : "#A1A1AA",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 11,
+                          lineHeight: 1.4,
+                          textAlign: "left",
+                          padding: "10px 10px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {goal}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <p
@@ -403,24 +422,48 @@ export default function DashboardPage() {
                     color: "#06B6D4"
                   }}
                 >
-                  YOUR IDEAL CLIENT
+                  SITE VIBE
                 </p>
-                <input
-                  value={idealClient}
-                  onChange={(event) => setIdealClient(event.target.value)}
-                  placeholder="HNW investors looking for Dubai real estate"
+                <p
                   style={{
-                    width: "100%",
-                    marginTop: 6,
-                    border: "1px solid #1C1C1F",
-                    background: "#0F0F12",
-                    color: "#F4F4F5",
-                    padding: "10px 12px",
+                    margin: "6px 0 0",
                     fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 12,
-                    outline: "none"
+                    fontSize: 10,
+                    color: "#71717A"
                   }}
-                />
+                >
+                  How should your site feel?
+                </p>
+                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[
+                    "💼 Professional & trustworthy",
+                    "⚡ Bold & energetic",
+                    "💎 Luxury & premium",
+                    "🤝 Warm & approachable"
+                  ].map((vibe) => {
+                    const selected = siteVibe === vibe;
+                    return (
+                      <button
+                        key={vibe}
+                        type="button"
+                        onClick={() => setSiteVibe(vibe)}
+                        style={{
+                          border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
+                          background: selected ? "#06B6D4" : "transparent",
+                          color: selected ? "#000000" : "#A1A1AA",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 11,
+                          lineHeight: 1.4,
+                          textAlign: "left",
+                          padding: "10px 10px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {vibe}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -449,18 +492,19 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => {
                   setShowOnboarding(false);
-                  void handleBuildLandingPage({ businessName, realResults, idealClient });
+                  void handleBuildLandingPage({ businessName, primaryGoal, siteVibe });
                 }}
+                disabled={!businessName.trim() || !primaryGoal || !siteVibe}
                 style={{
                   flex: 1,
                   border: "none",
-                  background: "#06B6D4",
-                  color: "#000000",
+                  background: !businessName.trim() || !primaryGoal || !siteVibe ? "#1C1C1F" : "#06B6D4",
+                  color: !businessName.trim() || !primaryGoal || !siteVibe ? "#52525B" : "#000000",
                   fontFamily: "var(--font-space-mono), monospace",
                   fontSize: 11,
                   letterSpacing: "0.12em",
                   padding: "10px 12px",
-                  cursor: "pointer"
+                  cursor: !businessName.trim() || !primaryGoal || !siteVibe ? "not-allowed" : "pointer"
                 }}
               >
                 BUILD MY PAGE →

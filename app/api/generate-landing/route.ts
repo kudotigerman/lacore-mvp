@@ -7,37 +7,74 @@ ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS jsx_content text;
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const reactLandingSystemPrompt = `You are an expert React developer. Generate a complete React functional component for a landing page.
+const reactLandingSystemPrompt = `You are a world-class web designer and React developer. You create landing pages that look like they cost $10,000 from a top agency. Think Stripe, Linear, Vercel - clean, bold, premium.
 
-RULES:
+Generate a complete React functional component for a landing page.
+
+TECHNICAL RULES:
 - Component name: LandingPage
-- Use ONLY inline styles, no CSS files, no Tailwind classes
+- Only inline styles - no CSS files, no Tailwind classes
 - No imports except: import React, { useState } from 'react';
-- All content hardcoded inside the component
-- Contact form uses fetch to POST to /api/leads with JSON body: { name, email, message, slug }
-- slug value should be hardcoded as '{{SLUG_PLACEHOLDER}}' (the string the app will replace with the real slug)
-- Use useState for form state and submission
-- All animations via CSS keyframes injected in a <style> tag inside the component
-- Return complete component code starting with: import React, { useState } from 'react';
+- All CSS animations via a <style> tag injected inside the component JSX
+- Contact form uses fetch POST to /api/leads with body: { name, email, message, slug: 'SLUG_VALUE' }
+- Use useState for form state and nav mobile menu
+- Return ONLY the component code starting with: import React, { useState } from 'react';
 
-DESIGN: You will be given a DESIGN SYSTEM name (luxury, acid, minimal, neon, warm, energy, navy, pastel). Implement that aesthetic using only inline style objects and optional keyframes in <style>.
+DESIGN SYSTEM - choose based on niche and vibe:
 
-Return ONLY the React component code. No markdown. No explanation. Start with: import React, { useState } from 'react';`;
+For LUXURY / PREMIUM vibe or real estate / finance niche:
+- Colors: bg #0A0A0A, accent gold #C8A84C, text #F8F9FC
+- Font stack: Georgia, serif for headings - system-ui for body
+- Style: editorial, lots of whitespace, elegant
 
-function detectDesignSystem(offer: string, audience: string, positioning: string): string {
-  const text = `${offer} ${audience} ${positioning}`.toLowerCase();
-  if (text.match(/real estate|недвижимость|property|realty|дубай|dubai|батуми|batumi|квартир|риелтор/))
-    return "luxury";
-  if (text.match(/saas|software|tech|app|startup|digital|marketing|smm|агентств|диджитал/)) return "acid";
-  if (text.match(/design|designer|photography|фотограф|дизайн|creative|portfolio|креатив/)) return "minimal";
-  if (text.match(/ai|crypto|web3|developer|blockchain|gaming|nft|разработ/)) return "neon";
-  if (text.match(/coach|коуч|mentor|education|курс|обучение|консульт|наставник/)) return "warm";
-  if (text.match(/fitness|фитнес|gym|sport|trainer|тренер|boxing|спорт/)) return "energy";
-  if (text.match(/b2b|legal|юрист|финанс|finance|invest|консалтинг|consulting|corporate|бизнес/)) return "navy";
-  if (text.match(/beauty|красот|spa|wellness|skincare|massag|косметолог|салон/)) return "pastel";
-  if (text.match(/premium|luxury|vip|elite|exclusive|премиум|элит/)) return "luxury";
-  return "acid";
-}
+For BOLD / ENERGETIC vibe or fitness / sport / agency niche:
+- Colors: bg #080808, accent #FF3D00 or #06B6D4, text #FFFFFF
+- Font stack: Impact, Arial Black for headings
+- Style: high contrast, big numbers, aggressive
+
+For PROFESSIONAL / TRUSTWORTHY vibe or B2B / legal / consulting:
+- Colors: bg #0F1628, accent #4A90D9, text #F0F4FF
+- Font stack: system-ui, clean sans-serif
+- Style: structured, data-driven, authoritative
+
+For WARM / APPROACHABLE vibe or coaching / wellness / education:
+- Colors: bg #FDF8F5, accent #E8917A, text #1C1416
+- Font stack: Georgia for headings, system-ui for body
+- Style: friendly, inviting, human
+
+REQUIRED SECTIONS (in order):
+1. NAV - logo left, 3-4 nav links center, CTA button right, mobile hamburger menu
+2. HERO - massive headline (font-size clamp(56px, 8vw, 120px)), subheadline, 2 CTA buttons, animated background (mesh gradient or geometric pattern via CSS)
+3. STATS BAR - 3-4 impressive numbers in a horizontal row with animated count-up feel
+4. SERVICES - bento grid layout (CSS grid), 4-6 cards with icons (use unicode or emoji), one accent card
+5. PROCESS - numbered steps (01, 02, 03) with titles and descriptions
+6. TESTIMONIALS - 3 cards with star rating, quote, avatar initials, name, role
+7. PRICING - 2-3 tiers, middle one highlighted with accent border
+8. FAQ - 5 questions with accordion (useState toggle)
+9. CTA SECTION - full-width accent background, big headline, button
+10. CONTACT - split layout: info left, form right with name/email/message fields + submit button
+11. FOOTER - logo, tagline, 2 column links, copyright, social icons (use unicode)
+
+ANIMATION REQUIREMENTS (inject via <style> tag):
+- Hero: fadeUp animation on headline and subtext
+- Floating elements in hero background
+- Nav: solid bg on scroll (use useState + useEffect with window.addEventListener scroll)
+- Cards: subtle border highlight on hover via CSS
+- Marquee strip between hero and stats: scrolling text with key services
+
+CONTENT RULES:
+- All text in the SAME LANGUAGE as the input data
+- Make headlines powerful and specific - no generic 'Welcome to our service'
+- Use the primaryGoal to determine the main CTA button text and form purpose:
+  'Book a call' -> 'BOOK YOUR FREE CALL ->'
+  'Buy a package' -> 'GET STARTED ->'
+  'Send a message' -> 'GET IN TOUCH ->'
+  'Join a waitlist' -> 'JOIN THE WAITLIST ->'
+- Use the siteVibe to inform tone of ALL copy
+- Stat numbers should be realistic and impressive for the niche
+- Testimonials should feel real - specific results, real-sounding names
+
+QUALITY BAR: Every section must look intentional and premium. No placeholder text. No lorem ipsum. Every pixel serves the conversion goal.`;
 
 type LandingInput = {
   offer: string;
@@ -48,8 +85,8 @@ type LandingInput = {
   userName?: string;
   userEmail: string;
   businessName?: string;
-  realResults?: string;
-  idealClient?: string;
+  primaryGoal?: string;
+  siteVibe?: string;
 };
 
 function randomFourDigits() {
@@ -112,7 +149,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const designSystem = detectDesignSystem(body.offer, body.audience, body.positioning);
     const displayName = body.businessName || body.userEmail.split("@")[0];
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
@@ -129,20 +165,19 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "user",
-            content: `DESIGN SYSTEM: ${designSystem}
+            content: `Generate a premium landing page for this business:
 
-Business data:
-Name: ${displayName}
-Offer: ${body.offer}
-Audience: ${body.audience}
+Business name: ${displayName}
+What they sell: ${body.offer}
+Target audience: ${body.audience}
 Pricing: ${body.pricing}
 Positioning: ${body.positioning}
 Headline: ${body.headline}
-Best result: ${body.realResults || "Not provided"}
-Ideal client: ${body.idealClient || "Not provided"}
-Contact email for display (footer etc.): ${body.userEmail}
+Primary goal: ${body.primaryGoal || "Not provided"}
+Site vibe: ${body.siteVibe || "Not provided"}
+Language: detect from the offer text and write ALL copy in that language
 
-Build a single-page landing with hero, benefits, social proof section, FAQ, and the contact form posting to /api/leads.`
+Make it look world-class. Every section must feel premium and intentional.`
           }
         ]
       })
