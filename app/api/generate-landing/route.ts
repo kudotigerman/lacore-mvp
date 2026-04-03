@@ -108,7 +108,7 @@ REQUIRED CSS ANIMATIONS (inside <style> tag — always include ALL of these)
   .hero-sub { font-size: 1rem !important; }
   .bento-grid { grid-template-columns: 1fr !important; }
   .pricing-grid { grid-template-columns: 1fr !important; }
-  .stats-row { grid-template-columns: 1fr 1fr !important; }
+  .stats-row { grid-template-columns: 1fr !important; }
   .testimonials-grid { grid-template-columns: 1fr !important; }
   .contact-split { flex-direction: column !important; }
   .footer-cols { flex-direction: column !important; gap: 32px !important; }
@@ -145,35 +145,31 @@ REQUIRED SECTIONS — ALL 7 — IN ORDER
      Primary: accent bg, white text, padding:16px 36px, border-radius:12px, font-weight:700, font-size:1rem, animation:pulseGlow 2s infinite
      Secondary: transparent, border:2px solid accent, accent text, same padding, border-radius:12px
    - Social proof line below buttons: "★★★★★  Loved by 300+ professionals" — opacity:0.5, font-size:0.85rem, margin-top:20px
-   - TWO FLOATING CARDS (className="floating-card", position:absolute):
-     Card 1 (top-right, ~20% from top, ~5% from right):
+   - ONE FLOATING CARD only (className="floating-card", position:absolute, top-right ~20% from top, ~5% from right):
        bg: rgba(255,255,255,0.06), backdrop-filter:blur(12px), border:1px solid rgba(255,255,255,0.12)
        border-radius:16px, padding:16px 20px, animation:float 5s ease-in-out infinite
        Content: emoji icon (🚀 or 📈 or ✓) + metric number (bold, accent color) + label (small, muted)
        Example: "🚀  +340%  Revenue growth"
-     Card 2 (bottom-left, ~65% from top, ~3% from left):
-       Same glassmorphism style, animation:floatReverse 6s ease-in-out infinite, animation-delay:1.5s
-       Content: different metric. Example: "⚡  48h  Average delivery"
 
 3. STATS BAR
-   - 4 stats in a grid (className="stats-row", display:grid, gridTemplateColumns:repeat(4,1fr))
+   - 3 stats in a grid (className="stats-row", display:grid, gridTemplateColumns:repeat(3,1fr))
    - Each stat: big number (font-size:3rem, font-weight:900, accent color), label below (small, muted)
    - Numbers must be niche-specific and impressive. Use real-looking numbers with + or % 
    - Separator lines between stats (border-right on all but last)
 
 4. SERVICES / FEATURES — BENTO GRID
    - Section heading centered: smaller label above, big H2, short subtext
-   - CSS grid (className="bento-grid"): gridTemplateColumns: repeat(3, 1fr), gap:20px
-   - 6 cards total. Cards 1 spans gridColumn: "span 2" (wide card). Card 6 spans gridColumn: "span 2".
+   - CSS grid (className="bento-grid"): 2x2 layout — gridTemplateColumns: repeat(2, 1fr), gap:20px (no column spans)
+   - 4 cards total, equal cells
    - Each card: border-radius:20px, padding:32px, border:1px solid rgba(accent,0.15)
    - Background: alternating — palette bg slightly lighter, or gradient from accent to darker
-   - Accent card (1 of the 6): strong accent bg gradient, white text
+   - Accent card (1 of the 4): strong accent bg gradient, white text
    - Each card has: emoji icon (2rem, margin-bottom:16px), bold title, short description (2-3 lines)
 
 5. TESTIMONIALS
    - Section heading centered
-   - Grid (className="testimonials-grid"): gridTemplateColumns:repeat(3,1fr), gap:24px
-   - 3 cards. Middle card is "featured" — slightly larger padding, accent border, "⭐ Featured" badge top-right
+   - Grid (className="testimonials-grid"): gridTemplateColumns:repeat(2,1fr), gap:24px
+   - 2 cards. One card is "featured" — slightly larger padding, accent border, "⭐ Featured" badge top-right
    - Each card: border-radius:16px, padding:28px, border:1px solid rgba(accent,0.2)
    - Stars: ★★★★★ in accent color
    - Quote: italic, font-size:1rem, line-height:1.7, margin:12px 0
@@ -183,13 +179,13 @@ REQUIRED SECTIONS — ALL 7 — IN ORDER
 
 6. PRICING
    - Section heading centered
-   - Grid (className="pricing-grid"): display:grid, gridTemplateColumns:repeat(3,1fr), gap:24px, max-width:900px, margin:0 auto
-   - 3 tiers. Middle tier: accent border:2px, "MOST POPULAR" badge, slightly elevated (transform:scale(1.03) or box-shadow)
+   - Grid (className="pricing-grid"): display:grid, gridTemplateColumns:repeat(2,1fr), gap:24px, max-width:720px, margin:0 auto
+   - 2 tiers. Featured tier: accent border:2px, "MOST POPULAR" badge, slightly elevated (transform:scale(1.03) or box-shadow)
    - Each card: border-radius:20px, padding:36px, border:1px solid rgba(accent,0.15), display:flex, flexDirection:column
    - Tier name: font-weight:800, font-size:0.85rem, letter-spacing:0.15em, text-transform:uppercase
    - Price: font-size:3rem, font-weight:900, accent color. Period + unit below in small muted text
-   - Feature list: 5-6 items, each with ✓ in accent color, font-size:0.95rem
-   - CTA button at bottom (margin-top:auto): full width, primary for middle, outlined for others
+   - Feature list: 4-5 items, each with ✓ in accent color, font-size:0.95rem
+   - CTA button at bottom (margin-top:auto): full width, primary style for featured tier, outlined for the other
 
 7. FINAL CTA + CONTACT FORM + FOOTER (one combined closing section)
    - FINAL CTA block first: full-width, accent gradient (linear-gradient 135deg), large headline "Ready to [specific outcome]?", 1-2 lines subtext, one large CTA button (white bg, dark text, padding:20px 48px, border-radius:12px, font-weight:800), animation: scaleIn 0.5s ease on mount
