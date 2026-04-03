@@ -137,18 +137,30 @@ export default function DashboardPage() {
     setBuildLogVisible(1);
 
     try {
-      const response = await fetch("/api/generate-landing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
-        body: JSON.stringify({
-          ...offer,
-          userName: email.split("@")[0],
-          userEmail: email,
-          businessName: extra?.businessName ?? businessName,
-          primaryGoal: extra?.primaryGoal ?? primaryGoals.join(", "), // FIX: массив → строка
-          siteVibe: extra?.siteVibe ?? siteVibe
-        })
-      });
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Missing Supabase configuration.");
+      }
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/generate-landing`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionToken}`,
+            apikey: supabaseAnonKey,
+          },
+          body: JSON.stringify({
+            ...offer,
+            userName: email.split("@")[0],
+            userEmail: email,
+            businessName: extra?.businessName ?? businessName,
+            primaryGoal: extra?.primaryGoal ?? primaryGoals.join(", "), // FIX: массив → строка
+            siteVibe: extra?.siteVibe ?? siteVibe,
+          }),
+        }
+      );
       const text = await response.text();
       let result: { success?: boolean; error?: string; slug?: string };
       try {
