@@ -80,15 +80,6 @@ CONTENT RULES:
 
 QUALITY BAR: Every section must look intentional and premium. No placeholder text. No lorem ipsum. Every pixel serves the conversion goal.`;
 
-const retrySystemPrompt = `CRITICAL: You must respond with ONLY valid React JSX code. No explanations. No markdown. No backticks.
-
-Your response must:
-1. Start EXACTLY with: import React, { useState } from 'react';
-2. Define a function called LandingPage
-3. End with: export default LandingPage;
-
-Nothing before the import. Nothing after the export. Only code.`;
-
 type LandingInput = {
   offer: string;
   audience: string;
@@ -113,63 +104,25 @@ function injectSlugIntoJsx(jsx: string, slug: string): string {
   return out;
 }
 
-// Strips markdown fences and any text before the import statement
 function cleanJsx(raw: string): string {
   // Remove markdown code fences
   let cleaned = raw.replace(/^```(?:tsx|jsx|typescript|js)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
-
-  // Find where the actual import starts
+  // Find where the actual import starts and cut everything before it
   const importIndex = cleaned.indexOf("import React");
   if (importIndex > 0) {
     cleaned = cleaned.slice(importIndex);
   }
-
   return cleaned.trim();
 }
 
 function validateJsx(jsx: string): string | null {
   if (!jsx.includes("import React")) {
-    return "Generated code must start with import React.";
+    return "Generated code must contain import React.";
   }
-  if (!/\bLandingPage\b/.test(jsx)) {
-    return "Generated code must define LandingPage.";
-  }
-  if (!/\bexport\s+default\b/.test(jsx)) {
-    return "Generated code must export default LandingPage.";
+  if (!/\bfunction\s+LandingPage\b/.test(jsx) && !/\bconst\s+LandingPage\b/.test(jsx)) {
+    return "Generated code must define LandingPage component.";
   }
   return null;
-}
-
-async function callClaude(
-  apiKey: string,
-  systemPrompt: string,
-  userMessage: string
-): Promise<string> {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    }),
-  });
-
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(`Claude API error ${response.status}: ${details}`);
-  }
-
-  const completion = (await response.json()) as {
-    content?: Array<{ type: string; text?: string }>;
-  };
-
-  return completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
 }
 
 export async function POST(request: Request) {
@@ -216,30 +169,37 @@ Language: detect from the offer text and write ALL copy in that language
 
 Make it look world-class. Every section must feel premium and intentional.`;
 
-    // Attempt 1 — full quality prompt
-    let rawText = await callClaude(apiKey, reactLandingSystemPrompt, userMessage);
-    let jsx = cleanJsx(rawText);
-    let validationError = validateJsx(jsx);
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        system: reactLandingSystemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      }),
+    });
 
-    // Attempt 2 — if validation failed, retry with strict prompt
-    if (validationError) {
-      console.warn("Attempt 1 failed validation:", validationError, "— retrying...");
-      const retryMessage = `${userMessage}
-
-IMPORTANT: Your previous response failed validation. You MUST:
-- Start with exactly: import React, { useState } from 'react';
-- Define: function LandingPage() { ... }
-- End with: export default LandingPage;
-- NO text before the import. NO text after the export.`;
-
-      rawText = await callClaude(apiKey, retrySystemPrompt, retryMessage);
-      jsx = cleanJsx(rawText);
-      validationError = validateJsx(jsx);
+    if (!response.ok) {
+      const details = await response.text();
+      return NextResponse.json({ error: "Claude request failed.", details }, { status: response.status });
     }
 
+    const completion = (await response.json()) as {
+      content?: Array<{ type: string; text?: string }>;
+    };
+
+    const rawText = completion.content?.find((item) => item.type === "text")?.text?.trim() || "";
+    const jsx = cleanJsx(rawText);
+    const validationError = validateJsx(jsx);
+
     if (validationError) {
-      console.error("Both attempts failed. Last JSX sample:", jsx.slice(0, 300));
-      return NextResponse.json({ error: "Generation failed after 2 attempts. Please try again." }, { status: 502 });
+      console.error("JSX validation failed:", validationError, "\nSample:", jsx.slice(0, 300));
+      return NextResponse.json({ error: "Generation failed. Please try again." }, { status: 502 });
     }
 
     // Resolve slug
