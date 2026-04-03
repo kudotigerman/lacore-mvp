@@ -6,13 +6,14 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
 
-type ChatMessage = { role: "user" | "assistant"; text: string };
+type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 
 function LiveLandingView({ jsxSource }: { jsxSource: string }) {
   const [Comp, setComp] = useState<ComponentType | null>(null);
@@ -82,14 +83,22 @@ export default function PublicLandingPage() {
   const [loading, setLoading] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [updating, setUpdating] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      text: "Tell me what you want to change and I will apply it to your page."
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return [
+      {
+        role: "assistant",
+        text: "Your landing page is live. Tell me what you'd like to change.",
+        time
+      }
+    ];
+  });
   const [showPromo, setShowPromo] = useState(false);
   const [updateMessageIndex, setUpdateMessageIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [dashBackHover, setDashBackHover] = useState(false);
+  const [chatInputFocused, setChatInputFocused] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const pageUrl = useMemo(() => `https://www.lacore.ai/p/${slug}`, [slug]);
 
@@ -134,16 +143,22 @@ export default function PublicLandingPage() {
     return () => clearInterval(id);
   }, [updating, updateStatusMessages.length]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, updating]);
+
   async function handleShare() {
     await navigator.clipboard.writeText(pageUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
   }
 
-  async function handleEdit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleEditDirect() {
     const instruction = chatInput.trim();
     if (!instruction || updating) return;
 
-    setMessages((prev) => [...prev, { role: "user", text: instruction }]);
+    const timeUser = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setMessages((prev) => [...prev, { role: "user", text: instruction, time: timeUser }]);
     setChatInput("");
     setUpdating(true);
 
@@ -179,16 +194,23 @@ export default function PublicLandingPage() {
       if (typeof result.html === "string" && result.html.trim()) {
         setHtml(result.html);
       }
+      const timeAssistant = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: `Updated: ${instruction}` }
+        { role: "assistant", text: `Updated: ${instruction}`, time: timeAssistant }
       ]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update page.";
-      setMessages((prev) => [...prev, { role: "assistant", text: message }]);
+      const timeAssistant = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setMessages((prev) => [...prev, { role: "assistant", text: message, time: timeAssistant }]);
     } finally {
       setUpdating(false);
     }
+  }
+
+  async function handleEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await handleEditDirect();
   }
 
   const promoModal = showPromo && (
@@ -496,215 +518,521 @@ export default function PublicLandingPage() {
 
   return (
     <>
-    <main style={{ minHeight: "100vh", margin: 0, padding: 0, background: "#09090B" }}>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        <section style={{ width: "70%", minHeight: "100vh", background: "#06080d" }}>
-          <div
-            style={{
-              height: 56,
-              borderBottom: "1px solid #1C1C1F",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 16px"
-            }}
-          >
-            <p
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.8); }
+        }
+        @keyframes bounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-8px); }
+        }
+        @keyframes progressSlide {
+          0% { width: 0%; left: 0; }
+          50% { width: 60%; left: 20%; }
+          100% { width: 0%; left: 100%; }
+        }
+      `}</style>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          background: "#09090B"
+        }}
+      >
+        <header
+          style={{
+            height: 52,
+            flexShrink: 0,
+            background: "#09090B",
+            borderBottom: "1px solid #1C1C1F",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 20px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/dashboard";
+              }}
+              onMouseEnter={() => setDashBackHover(true)}
+              onMouseLeave={() => setDashBackHover(false)}
               style={{
-                margin: 0,
+                border: "none",
+                background: "transparent",
+                color: "#06B6D4",
                 fontFamily: "var(--font-space-mono), monospace",
                 fontSize: 11,
-                color: "#A1A1AA"
+                letterSpacing: "2px",
+                cursor: "pointer",
+                padding: "6px 0",
+                opacity: dashBackHover ? 0.7 : 1
+              }}
+            >
+              ← DASHBOARD
+            </button>
+            <div style={{ width: 1, height: 20, background: "#1C1C1F" }} />
+            <span
+              style={{
+                background: "#111115",
+                border: "1px solid #1C1C1F",
+                color: "#A1A1AA",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 11,
+                padding: "5px 12px",
+                borderRadius: 4
               }}
             >
               lacore.ai/p/{slug}
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                onClick={handleShare}
-                style={{
-                  border: "1px solid #1C1C1F",
-                  background: "transparent",
-                  color: "#A1A1AA",
-                  fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.12em",
-                  padding: "8px 10px",
-                  cursor: "pointer"
-                }}
-              >
-                SHARE →
-              </button>
-              <button
-                type="button"
-                onClick={() => void fetchHtml()}
-                style={{
-                  border: "1px solid #06B6D4",
-                  background: "transparent",
-                  color: "#06B6D4",
-                  fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: 10,
-                  letterSpacing: "0.12em",
-                  padding: "8px 10px",
-                  cursor: "pointer"
-                }}
-              >
-                REGENERATE
-              </button>
-            </div>
+            </span>
           </div>
-          {loading ? (
-            <div
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => void handleShare()}
               style={{
-                height: "calc(100vh - 56px)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#A1A1AA",
-                fontFamily: "var(--font-space-mono), monospace"
+                border: "1px solid #1C1C1F",
+                background: "transparent",
+                color: copied ? "#06B6D4" : "#A1A1AA",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                letterSpacing: "2px",
+                padding: "7px 14px",
+                cursor: "pointer"
               }}
             >
-              Loading page...
-            </div>
-          ) : useLiveReact ? (
-            <div style={{ width: "100%", height: "calc(100vh - 56px)", overflow: "auto" }}>
-              <LiveLandingView jsxSource={jsxContent} key={jsxContent.slice(0, 120) + jsxContent.length} />
-            </div>
-          ) : (
-            <iframe
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
-              srcDoc={html}
-              title="Landing page preview"
+              {copied ? "COPIED!" : "SHARE"}
+            </button>
+            <button
+              type="button"
+              onClick={() => window.open(`/p/${slug}`, "_blank")}
               style={{
-                width: "100%",
-                height: "calc(100vh - 56px)",
-                minHeight: "calc(100vh - 56px)",
-                border: "none",
-                display: "block"
+                border: "1px solid #1C1C1F",
+                background: "transparent",
+                color: "#A1A1AA",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                letterSpacing: "2px",
+                padding: "7px 14px",
+                cursor: "pointer"
               }}
-            />
-          )}
-        </section>
+            >
+              PREVIEW ↗
+            </button>
+            <button
+              type="button"
+              onClick={() => void fetchHtml()}
+              style={{
+                border: "1px solid #1C1C1F",
+                background: "transparent",
+                color: "#A1A1AA",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                padding: "7px 14px",
+                cursor: "pointer"
+              }}
+            >
+              REGENERATE
+            </button>
+          </div>
+        </header>
 
-        <aside
+        <div
           style={{
-            width: "30%",
-            minHeight: "100vh",
-            borderLeft: "1px solid #1C1C1F",
-            background: "#09090B",
             display: "flex",
-            flexDirection: "column"
+            flexDirection: "row",
+            height: "calc(100vh - 52px)",
+            flex: 1,
+            minHeight: 0
           }}
         >
-          <div style={{ padding: 16, borderBottom: "1px solid #1C1C1F" }}>
-            <h2
-              style={{
-                margin: 0,
-                fontFamily: "var(--font-bebas-neue), sans-serif",
-                fontSize: 38,
-                color: "#06B6D4"
-              }}
-            >
-              EDIT YOUR PAGE
-            </h2>
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "grid", gap: 10 }}>
-            {messages.map((message, idx) => (
-              <div
-                key={`${message.role}-${idx}`}
-                style={{
-                  border: `1px solid ${message.role === "assistant" ? "#1C1C1F" : "#06B6D4"}`,
-                  background: message.role === "assistant" ? "#111115" : "rgba(6,182,212,0.08)",
-                  padding: 10
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-space-mono), monospace",
-                    fontSize: 11,
-                    color: message.role === "assistant" ? "#A1A1AA" : "#06B6D4"
-                  }}
-                >
-                  {message.text}
-                </p>
-              </div>
-            ))}
-            {updating && (
-              <p
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-space-mono), monospace",
-                  fontSize: 11,
-                  color: "#06B6D4"
-                }}
-              >
-                {updateStatusMessages[updateMessageIndex]}
-              </p>
-            )}
-          </div>
-
-          <form onSubmit={handleEdit} style={{ padding: 16, borderTop: "1px solid #1C1C1F" }}>
-            <input
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              placeholder="Tell me what to change..."
-              style={{
-                width: "100%",
-                border: "1px solid #1C1C1F",
-                background: "#0F0F12",
-                color: "#F4F4F5",
-                padding: "10px 12px",
-                fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 12,
-                outline: "none"
-              }}
-            />
-            <button
-              type="submit"
-              disabled={updating || !chatInput.trim()}
-              style={{
-                marginTop: 8,
-                width: "100%",
-                border: "1px solid #06B6D4",
-                background: "transparent",
-                color: "#06B6D4",
-                padding: "10px 12px",
-                fontFamily: "var(--font-space-mono), monospace",
-                fontSize: 11,
-                letterSpacing: "0.14em",
-                cursor: updating || !chatInput.trim() ? "not-allowed" : "pointer"
-              }}
-            >
-              APPLY →
-            </button>
-          </form>
-
-          <button
-            type="button"
-            onClick={() => setShowPromo(true)}
+          <aside
             style={{
-              margin: "0 16px 16px",
-              border: "1px solid #06B6D4",
-              background: "rgba(9,9,11,0.92)",
-              color: "#06B6D4",
-              borderRadius: 4,
-              padding: "8px 14px",
-              fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 9,
-              letterSpacing: "0.08em",
-              cursor: "pointer",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.35)"
+              width: 360,
+              flexShrink: 0,
+              background: "#09090B",
+              borderRight: "1px solid #1C1C1F",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              minHeight: 0
             }}
           >
-            ⚡ Built with LACORE
-          </button>
-        </aside>
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "20px 20px 16px",
+                borderBottom: "1px solid #1C1C1F"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#22C55E",
+                    animation: "pulse 2s ease-in-out infinite",
+                    flexShrink: 0
+                  }}
+                />
+                <span
+                  style={{
+                    marginLeft: 10,
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: 22,
+                    color: "#F4F4F5",
+                    letterSpacing: "1px"
+                  }}
+                >
+                  LACORE AGENT
+                </span>
+              </div>
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 10,
+                  color: "#52525B",
+                  lineHeight: 1.6
+                }}
+              >
+                Your landing page is live. Tell me what you&apos;d like to change.
+              </p>
+            </div>
+
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: 16,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                minHeight: 0
+              }}
+            >
+              {messages.map((message, idx) =>
+                message.role === "assistant" ? (
+                  <div
+                    key={`${message.role}-${idx}`}
+                    style={{
+                      background: "#111115",
+                      borderLeft: "3px solid #06B6D4",
+                      padding: "12px 14px",
+                      borderRadius: "0 4px 4px 0",
+                      alignSelf: "stretch"
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 12,
+                        color: "#E4E4E7",
+                        lineHeight: 1.7
+                      }}
+                    >
+                      {message.text}
+                    </p>
+                    {message.time ? (
+                      <p
+                        style={{
+                          margin: "6px 0 0",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 9,
+                          color: "#3F3F46"
+                        }}
+                      >
+                        {message.time}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div
+                    key={`${message.role}-${idx}`}
+                    style={{
+                      background: "#0C0C0E",
+                      border: "1px solid #1C1C1F",
+                      padding: "12px 14px",
+                      borderRadius: 4,
+                      alignSelf: "flex-end",
+                      maxWidth: "85%"
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 12,
+                        color: "#A1A1AA",
+                        lineHeight: 1.7
+                      }}
+                    >
+                      {message.text}
+                    </p>
+                    {message.time ? (
+                      <p
+                        style={{
+                          margin: "6px 0 0",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 9,
+                          color: "#3F3F46",
+                          textAlign: "right"
+                        }}
+                      >
+                        {message.time}
+                      </p>
+                    ) : null}
+                  </div>
+                )
+              )}
+              {updating ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 14px",
+                    background: "#111115",
+                    borderLeft: "3px solid #06B6D4"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "#06B6D4",
+                        animation: "bounce 1.2s ease-in-out infinite",
+                        animationDelay: "0s"
+                      }}
+                    />
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "#06B6D4",
+                        animation: "bounce 1.2s ease-in-out infinite",
+                        animationDelay: "0.2s"
+                      }}
+                    />
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "#06B6D4",
+                        animation: "bounce 1.2s ease-in-out infinite",
+                        animationDelay: "0.4s"
+                      }}
+                    />
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      color: "#06B6D4",
+                      marginLeft: 4
+                    }}
+                  >
+                    {updateStatusMessages[updateMessageIndex]}
+                  </span>
+                </div>
+              ) : null}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <form
+              onSubmit={handleEdit}
+              style={{
+                flexShrink: 0,
+                borderTop: "1px solid #1C1C1F",
+                padding: 16,
+                margin: 0
+              }}
+            >
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleEditDirect();
+                  }
+                }}
+                onFocus={() => setChatInputFocused(true)}
+                onBlur={() => setChatInputFocused(false)}
+                placeholder="Tell me what to change..."
+                rows={3}
+                disabled={updating}
+                style={{
+                  width: "100%",
+                  background: "#0C0C0E",
+                  border: `1px solid ${chatInputFocused ? "#06B6D4" : "#1C1C1F"}`,
+                  color: "#F4F4F5",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 12,
+                  padding: 12,
+                  resize: "none",
+                  outline: "none",
+                  lineHeight: 1.6,
+                  boxSizing: "border-box"
+                }}
+              />
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 9,
+                    color: "#3F3F46"
+                  }}
+                >
+                  ⏎ send &nbsp; ⇧⏎ newline
+                </span>
+                <button
+                  type="submit"
+                  disabled={updating || !chatInput.trim()}
+                  style={{
+                    background: updating || !chatInput.trim() ? "#1C1C1F" : "#06B6D4",
+                    color: updating || !chatInput.trim() ? "#3F3F46" : "#000000",
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: 16,
+                    letterSpacing: "1px",
+                    border: "none",
+                    padding: "10px 24px",
+                    cursor: updating || !chatInput.trim() ? "not-allowed" : "pointer"
+                  }}
+                >
+                  APPLY →
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPromo(true)}
+                style={{
+                  marginTop: 12,
+                  width: "100%",
+                  border: "1px solid #06B6D4",
+                  background: "rgba(9,9,11,0.92)",
+                  color: "#06B6D4",
+                  borderRadius: 4,
+                  padding: "8px 14px",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.35)"
+                }}
+              >
+                ⚡ Built with LACORE
+              </button>
+            </form>
+          </aside>
+
+          <div
+            style={{
+              flex: 1,
+              height: "100%",
+              overflow: "hidden",
+              position: "relative",
+              background: "#06080d",
+              minWidth: 0
+            }}
+          >
+            {updating ? (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 10,
+                  pointerEvents: "none"
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(9,9,11,0.15)"
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 3,
+                    overflow: "hidden",
+                    zIndex: 11
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      height: 3,
+                      background: "linear-gradient(90deg, #06B6D4, #0891B2)",
+                      animation: "progressSlide 2s ease-in-out infinite"
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
+            <div style={{ height: "100%", overflow: "auto" }}>
+              {loading ? (
+                <div
+                  style={{
+                    height: "100%",
+                    minHeight: 240,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#A1A1AA",
+                    fontFamily: "var(--font-space-mono), monospace"
+                  }}
+                >
+                  Loading page...
+                </div>
+              ) : useLiveReact ? (
+                <LiveLandingView
+                  jsxSource={jsxContent}
+                  key={jsxContent.slice(0, 120) + jsxContent.length}
+                />
+              ) : (
+                <iframe
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                  srcDoc={html}
+                  title="Landing page preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    minHeight: "100%",
+                    border: "none",
+                    display: "block"
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </main>
-    {promoModal}
+      {promoModal}
     </>
   );
 }
