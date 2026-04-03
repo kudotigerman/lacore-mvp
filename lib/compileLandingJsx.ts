@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import React, { useState } from "react";
+import React from "react";
 import { transform } from "sucrase";
 
 function stripReactImports(source: string): string {
@@ -40,7 +40,7 @@ export function compileLandingJsx(jsxSource: string): ComponentType {
   // Executing AI-generated code; sandbox is structural (trusted owner content only).
   // eslint-disable-next-line no-new-func -- runtime JSX compilation for stored landings
   const factory = new Function("React", "useState", `"use strict";\n${body}`);
-  const Comp = factory(React, useState) as unknown;
+  const Comp = factory(React, React.useState) as unknown;
   if (typeof Comp !== "function") {
     throw new Error("Landing component did not compile.");
   }
