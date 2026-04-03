@@ -10,6 +10,20 @@ type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 const FRIENDLY_COMPILE_MESSAGE =
   "I had trouble with that change. The page wasn't updated. Try rephrasing your request or be more specific about what you want to change.";
 
+const REGENERATE_GOAL_OPTIONS = [
+  "📞 Book a call",
+  "💳 Buy a package",
+  "✉️ Send a message",
+  "📋 Join a waitlist"
+] as const;
+
+const REGENERATE_VIBE_OPTIONS = [
+  "💼 Professional & trustworthy",
+  "⚡ Bold & energetic",
+  "💎 Luxury & premium",
+  "🤝 Warm & approachable"
+] as const;
+
 function buildLandingIframeSrcDoc(compiledJs: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -100,6 +114,12 @@ export default function PublicLandingPage() {
   const [copied, setCopied] = useState(false);
   const [dashBackHover, setDashBackHover] = useState(false);
   const [chatInputFocused, setChatInputFocused] = useState(false);
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
+  const [regenPrimaryGoals, setRegenPrimaryGoals] = useState<string[]>([]);
+  const [regenSiteVibe, setRegenSiteVibe] = useState("");
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const pageUrl = useMemo(() => `https://www.lacore.ai/p/${slug}`, [slug]);
@@ -153,6 +173,89 @@ export default function PublicLandingPage() {
     await navigator.clipboard.writeText(pageUrl);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  function openRegenerateModal() {
+    setRegenError(null);
+    setRegenPrimaryGoals([]);
+    setRegenSiteVibe("");
+    setShowRegenerateModal(true);
+  }
+
+  async function handleRegenerateConfirm() {
+    if (regenPrimaryGoals.length === 0 || !regenSiteVibe.trim()) return;
+    setRegenError(null);
+    setRegenerating(true);
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session?.access_token || !session.user.email) {
+        throw new Error("Sign in required to regenerate.");
+      }
+
+      const { data: offerRow, error: offerErr } = await supabase
+        .from("offers")
+        .select("offer, audience, pricing, positioning, headline")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (offerErr || !offerRow) {
+        throw new Error("No offer found. Add your offer on the dashboard first.");
+      }
+
+      const offerPayload = offerRow as {
+        offer: string;
+        audience: string;
+        pricing: string;
+        positioning: string;
+        headline: string;
+      };
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Missing Supabase configuration.");
+      }
+
+      const email = session.user.email;
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-landing`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: supabaseAnonKey
+        },
+        body: JSON.stringify({
+          ...offerPayload,
+          userName: email.split("@")[0],
+          userEmail: email,
+          primaryGoal: regenPrimaryGoals.join(", "),
+          siteVibe: regenSiteVibe
+        })
+      });
+
+      const text = await response.text();
+      let result: { success?: boolean; error?: string; slug?: string };
+      try {
+        result = JSON.parse(text) as { success?: boolean; error?: string; slug?: string };
+      } catch {
+        throw new Error("Server error: " + text.slice(0, 120));
+      }
+      if (!response.ok || !result?.success) {
+        throw new Error(typeof result?.error === "string" ? result.error : "Regeneration failed.");
+      }
+
+      setShowRegenerateModal(false);
+      setJsxContent("");
+      await fetchHtml();
+      setPreviewKey((k) => k + 1);
+    } catch (err) {
+      setRegenError(err instanceof Error ? err.message : "Regeneration failed.");
+    } finally {
+      setRegenerating(false);
+    }
   }
 
   async function handleEditDirect() {
@@ -446,6 +549,253 @@ export default function PublicLandingPage() {
     </div>
   );
 
+  const regenerateModal = showRegenerateModal && (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 10001,
+        background: "rgba(9,9,11,0.9)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          border: "1px solid #1C1C1F",
+          background: "#09090B",
+          padding: 20,
+          position: "relative"
+        }}
+      >
+        {regenerating ? (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(9,9,11,0.82)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2,
+              borderRadius: 0
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 12,
+                color: "#06B6D4",
+                textAlign: "center",
+                padding: "0 16px"
+              }}
+            >
+              Generating your landing page...
+            </p>
+          </div>
+        ) : null}
+        <h3
+          style={{
+            margin: 0,
+            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontSize: 36,
+            color: "#F4F4F5",
+            lineHeight: 1
+          }}
+        >
+          REGENERATE LANDING
+        </h3>
+        <p
+          style={{
+            margin: "8px 0 0",
+            fontFamily: "var(--font-space-mono), monospace",
+            fontSize: 11,
+            color: "#A1A1AA"
+          }}
+        >
+          Pick a new vibe and goals. Your offer stays the same.
+        </p>
+
+        <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                letterSpacing: "0.14em",
+                color: "#06B6D4"
+              }}
+            >
+              PRIMARY GOAL
+            </p>
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                color: "#71717A"
+              }}
+            >
+              What should visitors do? Select all that apply.
+            </p>
+            <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {REGENERATE_GOAL_OPTIONS.map((goal) => {
+                const selected = regenPrimaryGoals.includes(goal);
+                return (
+                  <button
+                    key={goal}
+                    type="button"
+                    disabled={regenerating}
+                    onClick={() =>
+                      setRegenPrimaryGoals((prev) =>
+                        prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
+                      )
+                    }
+                    style={{
+                      border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
+                      background: selected ? "#06B6D4" : "transparent",
+                      color: selected ? "#000000" : "#A1A1AA",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      lineHeight: 1.4,
+                      textAlign: "left",
+                      padding: "10px 10px",
+                      cursor: regenerating ? "not-allowed" : "pointer",
+                      opacity: regenerating ? 0.5 : 1
+                    }}
+                  >
+                    {goal}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                letterSpacing: "0.14em",
+                color: "#06B6D4"
+              }}
+            >
+              SITE VIBE
+            </p>
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontFamily: "var(--font-space-mono), monospace",
+                fontSize: 10,
+                color: "#71717A"
+              }}
+            >
+              How should your site feel?
+            </p>
+            <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {REGENERATE_VIBE_OPTIONS.map((vibe) => {
+                const selected = regenSiteVibe === vibe;
+                return (
+                  <button
+                    key={vibe}
+                    type="button"
+                    disabled={regenerating}
+                    onClick={() => setRegenSiteVibe(vibe)}
+                    style={{
+                      border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
+                      background: selected ? "#06B6D4" : "transparent",
+                      color: selected ? "#000000" : "#A1A1AA",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      lineHeight: 1.4,
+                      textAlign: "left",
+                      padding: "10px 10px",
+                      cursor: regenerating ? "not-allowed" : "pointer",
+                      opacity: regenerating ? 0.5 : 1
+                    }}
+                  >
+                    {vibe}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {regenError ? (
+          <p
+            style={{
+              margin: "12px 0 0",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              color: "#f87171"
+            }}
+          >
+            {regenError}
+          </p>
+        ) : null}
+
+        <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            disabled={regenerating}
+            onClick={() => setShowRegenerateModal(false)}
+            style={{
+              flex: 1,
+              border: "1px solid #06B6D4",
+              background: "transparent",
+              color: "#06B6D4",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              padding: "10px 12px",
+              cursor: regenerating ? "not-allowed" : "pointer",
+              opacity: regenerating ? 0.5 : 1
+            }}
+          >
+            CANCEL
+          </button>
+          <button
+            type="button"
+            disabled={
+              regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+            }
+            onClick={() => void handleRegenerateConfirm()}
+            style={{
+              flex: 1,
+              border: "none",
+              background:
+                regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                  ? "#1C1C1F"
+                  : "#06B6D4",
+              color:
+                regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                  ? "#52525B"
+                  : "#000000",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              padding: "10px 12px",
+              cursor:
+                regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                  ? "not-allowed"
+                  : "pointer"
+            }}
+          >
+            REGENERATE →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (!editMode) {
     return (
       <>
@@ -657,7 +1007,7 @@ export default function PublicLandingPage() {
             </button>
             <button
               type="button"
-              onClick={() => void fetchHtml()}
+              onClick={() => openRegenerateModal()}
               style={{
                 border: "1px solid #1C1C1F",
                 background: "transparent",
@@ -1012,6 +1362,7 @@ export default function PublicLandingPage() {
                 />
               ) : (
                 <iframe
+                  key={previewKey}
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                   srcDoc={html}
                   title="Landing page preview"
@@ -1027,6 +1378,7 @@ export default function PublicLandingPage() {
           </div>
         </div>
       </div>
+      {regenerateModal}
       {promoModal}
     </>
   );
