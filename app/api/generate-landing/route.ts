@@ -8,7 +8,17 @@ import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 120;
 
-const reactLandingSystemPrompt = `You must respond with ONLY valid React component code. No explanations. No markdown. No backticks. No apologies. If anything fails — still return a valid LandingPage component.
+const reactLandingSystemPrompt = `CRITICAL LENGTH RULE: You have LIMITED tokens. Generate a COMPLETE component within 350 lines maximum.
+- Each section: maximum 30-40 lines
+- No long inline style objects — use short variable names
+- Testimonials: 2 cards max, not 3
+- Pricing: 2 tiers max, not 3
+- Stats: 3 numbers, not 4
+- Every style object must be on ONE line where possible
+- NEVER leave a style object or JSX tag open at the end
+- The component MUST end with: export default LandingPage;
+
+You must respond with ONLY valid React component code. No explanations. No markdown. No backticks. No apologies. If anything fails — still return a valid LandingPage component.
 
 HOOKS RULES — NEVER VIOLATE OR REACT WILL CRASH:
 - ALL useState and useEffect calls must be at the TOP of the LandingPage function
