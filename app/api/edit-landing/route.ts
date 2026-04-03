@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 type EditPayload = {
   slug: string;
@@ -74,7 +74,7 @@ async function callClaude(apiKey: string, system: string, userContent: string): 
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 8000,
+      max_tokens: 6000,
       system,
       messages: [{ role: "user", content: userContent }]
     })

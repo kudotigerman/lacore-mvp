@@ -185,7 +185,13 @@ export default function PublicLandingPage() {
         },
         body: JSON.stringify(bodyPayload)
       });
-      const result = await response.json();
+      const text = await response.text();
+      let result: { success?: boolean; error?: string; jsx?: string; html?: string };
+      try {
+        result = JSON.parse(text) as { success?: boolean; error?: string; jsx?: string; html?: string };
+      } catch {
+        throw new Error("Server error: " + text.slice(0, 150));
+      }
       if (!response.ok || !result?.success) {
         const apiErr = typeof result?.error === "string" ? result.error : "Failed to update page.";
         throw new Error(apiErr);
