@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 30;
+
 const systemPrompt = `You are a world-class business strategist and copywriter. Given what someone sells, generate 3 distinct positioning strategies as a JSON array. Each strategy must be genuinely different in target audience, pricing model, and positioning angle.
 
 Return ONLY a valid JSON array with exactly 3 objects. Each object must have these exact keys: variant (A/B/C), label (short strategy name in uppercase, max 3 words), offer (one sentence describing the service), audience (specific target client), pricing (specific price/model), positioning (unique angle vs competitors), headline (punchy headline max 10 words).

@@ -7,6 +7,8 @@ ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS jsx_content text;
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const maxDuration = 60;
+
 const reactLandingSystemPrompt = `You are a world-class web designer and React developer. You create landing pages that look like they cost $10,000 from a top agency. Think Stripe, Linear, Vercel - clean, bold, premium.
 
 Generate a complete React functional component for a landing page.

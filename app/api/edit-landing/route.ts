@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
 
+export const maxDuration = 60;
+
 type EditPayload = {
   slug: string;
   instruction: string;
