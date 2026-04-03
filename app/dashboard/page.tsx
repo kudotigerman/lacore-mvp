@@ -157,40 +157,42 @@ export default function DashboardPage() {
       if (!reader) throw new Error("No response body.");
       const decoder = new TextDecoder();
       let buffer = "";
-      let result: {
-        success?: boolean;
-        error?: string;
-        details?: string;
-        slug?: string;
-      } | null = null;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buffer.indexOf("\n")) >= 0) {
-          const row = buffer.slice(0, nl).trim();
-          buffer = buffer.slice(nl + 1);
-          if (!row) continue;
-          let obj: Record<string, unknown>;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
           try {
-            obj = JSON.parse(row) as Record<string, unknown>;
-          } catch {
-            throw new Error("Server error: " + row.slice(0, 200));
-          }
-          if (obj.type === "progress") continue;
-          if ("success" in obj) {
-            result = obj as { success?: boolean; error?: string; details?: string; slug?: string };
+            const parsed = JSON.parse(trimmed) as {
+              type?: string;
+              success?: boolean;
+              slug?: string;
+              error?: string;
+            };
+            if (parsed.type === "progress") continue;
+            if ("success" in parsed) {
+              if (parsed.success && parsed.slug) {
+                setLandingSlug(parsed.slug ?? null);
+                router.push(`/p/${parsed.slug}?edit=true`);
+                return;
+              } else {
+                throw new Error(parsed.error || "Failed to build landing page.");
+              }
+            }
+          } catch (e) {
+            if (e instanceof SyntaxError) {
+              // не валидный JSON в строке — пропускаем
+              continue;
+            }
+            throw e;
           }
         }
       }
-      if (!result) throw new Error("Empty response from server.");
-      if (!result.success) {
-        const msg = [result.error, result.details].filter(Boolean).join(" — ");
-        throw new Error(msg || "Failed to build landing page.");
-      }
-      setLandingSlug(result.slug ?? null);
-      if (result.slug) router.push(`/p/${result.slug}?edit=true`); // FIX: редирект сразу на лендинг
+      throw new Error("Empty response from server.");
     } catch (err) {
       setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
     } finally {
