@@ -150,8 +150,8 @@ export default function DashboardPage() {
         })
       });
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText.slice(0, 200));
+        const text = await response.text();
+        throw new Error(text.slice(0, 200));
       }
       const text = await response.text();
       let result: { success?: boolean; error?: string; slug?: string };
