@@ -149,8 +149,17 @@ export default function DashboardPage() {
           siteVibe: extra?.siteVibe ?? siteVibe
         })
       });
-      const result = await response.json();
-      if (!response.ok || !result?.success) throw new Error(result?.error || "Failed to build landing page.");
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text.slice(0, 200));
+      }
+      let result: { success?: boolean; error?: string; slug?: string };
+      try {
+        result = JSON.parse(text) as { success?: boolean; error?: string; slug?: string };
+      } catch {
+        throw new Error("Server error: " + text.slice(0, 200));
+      }
+      if (!result?.success) throw new Error(result?.error || "Failed to build landing page.");
       setLandingSlug(result.slug);
       router.push(`/p/${result.slug}?edit=true`); // FIX: редирект сразу на лендинг
     } catch (err) {
