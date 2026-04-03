@@ -14,7 +14,7 @@ type EditPayload = {
 const editJsxSystemPrompt = `You are editing a React landing page component. The user wants a specific change.
 
 RULES:
-- Return the COMPLETE updated React component starting with: import React, { useState } from 'react';
+- Return the COMPLETE updated React component starting with: import React, { useState, useEffect } from 'react';
 - Make ONLY the requested change, keep everything else identical
 - Preserve all existing inline styles, animations, sections
 - Do not add markdown, backticks, or explanation
@@ -47,11 +47,8 @@ function ensureExportDefaultLandingPage(jsx: string): string {
 }
 
 function validateJsxShape(jsx: string): string | null {
-  const okImport =
-    jsx.startsWith("import React, { useState } from 'react'") ||
-    jsx.startsWith('import React, { useState } from "react"');
-  if (!okImport) {
-    return "Response must start with import React, { useState } from 'react'.";
+  if (!jsx.includes("import React")) {
+    return "Response must contain import React.";
   }
   if (!/\bLandingPage\b/.test(jsx)) return "Response must define LandingPage.";
   if (!/\bexport\s+default\s+/.test(jsx)) return "Response must export default LandingPage.";
