@@ -24,7 +24,8 @@ function ensureReturnLandingPage(body: string): string {
 function stripExportForIframeScript(body: string): string {
   let b = body.replace(/\bexport\s+default\s+function\s+LandingPage\b/g, "function LandingPage");
   b = b.replace(/\bexport\s+default\s+LandingPage\s*;?\s*/g, "");
-  b = b.replace(/\n\s*return\s+LandingPage\s*;?\s*$/m, "");
+  // End of string only (no /m): avoids stripping a mid-file `return LandingPage` line.
+  b = b.replace(/\n\s*return\s+LandingPage\s*;?\s*$/, "");
   return b.trim();
 }
 

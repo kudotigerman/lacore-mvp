@@ -287,6 +287,12 @@ function cleanJsx(raw: string): string {
   return cleaned.trim();
 }
 
+function ensureExportDefault(jsx: string): string {
+  if (jsx.includes("export default LandingPage")) return jsx;
+  if (/export\s+default\s+function\s+LandingPage/.test(jsx)) return jsx;
+  return jsx + "\nexport default LandingPage;";
+}
+
 function validateJsx(jsx: string): string | null {
   if (!jsx.includes("import React")) {
     return "Missing import React.";
@@ -455,6 +461,7 @@ Generate ALL 11 sections. Do not truncate. Do not skip sections. Return the comp
     const slug =
       existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
 
+    jsx = ensureExportDefault(jsx);
     const jsxWithSlug = injectSlugIntoJsx(jsx, slug);
 
     const { error: upsertError } = await supabase
