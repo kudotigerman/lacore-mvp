@@ -1,10 +1,75 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ComponentType,
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
+import { compileLandingJsx } from "@/lib/compileLandingJsx";
 
 type ChatMessage = { role: "user" | "assistant"; text: string };
+
+function LiveLandingView({ jsxSource }: { jsxSource: string }) {
+  const [Comp, setComp] = useState<ComponentType | null>(null);
+  const [compileError, setCompileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setCompileError(null);
+      const C = compileLandingJsx(jsxSource);
+      setComp(() => C);
+    } catch (e) {
+      setComp(null);
+      setCompileError(e instanceof Error ? e.message : "Could not load this page.");
+    }
+  }, [jsxSource]);
+
+  if (compileError) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#09090B",
+          color: "#f87171",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          fontFamily: "var(--font-space-mono), monospace",
+          fontSize: 13,
+          textAlign: "center"
+        }}
+      >
+        {compileError}
+      </div>
+    );
+  }
+
+  if (!Comp) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#09090B",
+          color: "#A1A1AA",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "var(--font-space-mono), monospace"
+        }}
+      >
+        Loading page...
+      </div>
+    );
+  }
+
+  return <Comp />;
+}
 
 export default function PublicLandingPage() {
   const params = useParams<{ slug: string }>();
@@ -13,7 +78,7 @@ export default function PublicLandingPage() {
   const slug = params.slug;
 
   const [html, setHtml] = useState("");
-  const [currentHtml, setCurrentHtml] = useState("");
+  const [jsxContent, setJsxContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [updating, setUpdating] = useState(false);
@@ -31,24 +96,28 @@ export default function PublicLandingPage() {
   const updateStatusMessages = useMemo(
     () => [
       "Analyzing your request...",
-      "Rewriting HTML structure...",
+      "Rewriting structure...",
       "Applying design changes...",
       "Almost done..."
     ],
     []
   );
 
+  const useLiveReact = Boolean(jsxContent.trim());
+
   const fetchHtml = useCallback(async () => {
     setLoading(true);
     const supabase = getSupabaseClient();
     const { data } = (await supabase
       .from("landing_pages")
-      .select("html_content")
+      .select("html_content, jsx_content")
       .eq("slug", slug)
-      .single()) as unknown as { data: { html_content: string } | null };
-    const content = (data as { html_content: string } | null)?.html_content ?? "";
-    setHtml(content);
-    setCurrentHtml(content);
+      .single()) as unknown as {
+      data: { html_content: string | null; jsx_content: string | null } | null;
+    };
+    const row = data as { html_content: string | null; jsx_content: string | null } | null;
+    setHtml(row?.html_content ?? "");
+    setJsxContent(row?.jsx_content ?? "");
     setLoading(false);
   }, [slug]);
 
@@ -87,21 +156,29 @@ export default function PublicLandingPage() {
         throw new Error("Sign in required to edit this page.");
       }
 
+      const bodyPayload = useLiveReact
+        ? { slug, instruction, currentJsx: jsxContent }
+        : { slug, instruction, currentHtml: html };
+
       const response = await fetch("/api/edit-landing", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ slug, instruction, currentHtml })
+        body: JSON.stringify(bodyPayload)
       });
       const result = await response.json();
       if (!response.ok || !result?.success) {
         throw new Error(result?.error || "Failed to update page.");
       }
 
-      setHtml(result.html);
-      setCurrentHtml(result.html);
+      if (typeof result.jsx === "string" && result.jsx.trim()) {
+        setJsxContent(result.jsx);
+      }
+      if (typeof result.html === "string" && result.html.trim()) {
+        setHtml(result.html);
+      }
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: `Updated: ${instruction}` }
@@ -338,6 +415,39 @@ export default function PublicLandingPage() {
             >
               Loading page...
             </div>
+          ) : useLiveReact ? (
+            <>
+              <div style={{ width: "100%", minHeight: "100vh" }}>
+                <LiveLandingView
+                  jsxSource={jsxContent}
+                  key={jsxContent.slice(0, 120) + jsxContent.length}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPromo(true)}
+                style={{
+                  position: "fixed",
+                  bottom: 20,
+                  right: 20,
+                  zIndex: 9998,
+                  border: "1px solid #06B6D4",
+                  background: "rgba(9,9,11,0.92)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  color: "#06B6D4",
+                  borderRadius: 4,
+                  padding: "8px 14px",
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+                }}
+              >
+                ⚡ Built with LACORE
+              </button>
+            </>
           ) : (
             <>
               <iframe
@@ -456,6 +566,10 @@ export default function PublicLandingPage() {
               }}
             >
               Loading page...
+            </div>
+          ) : useLiveReact ? (
+            <div style={{ width: "100%", height: "calc(100vh - 56px)", overflow: "auto" }}>
+              <LiveLandingView jsxSource={jsxContent} key={jsxContent.slice(0, 120) + jsxContent.length} />
             </div>
           ) : (
             <iframe
