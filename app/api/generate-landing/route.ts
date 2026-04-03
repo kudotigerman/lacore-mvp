@@ -92,6 +92,7 @@ Return the complete HTML document only. No explanation.`;
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 12000,
+        stream: true,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],
       }),
@@ -102,12 +103,62 @@ Return the complete HTML document only. No explanation.`;
       return NextResponse.json({ error: "Claude request failed.", details }, { status: 502 });
     }
 
-    const completion = (await anthropicResponse.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
+    const streamBody = anthropicResponse.body;
+    if (!streamBody) {
+      return NextResponse.json({ error: "No response body from Claude." }, { status: 502 });
+    }
 
-    const rawText =
-      completion.content?.find((i) => i.type === "text")?.text?.trim() || "";
+    const reader = streamBody.getReader();
+    const decoder = new TextDecoder();
+    let fullText = "";
+    let lineBuffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        lineBuffer += chunk;
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]" || !data) continue;
+          try {
+            const parsed = JSON.parse(data) as {
+              delta?: { text?: string };
+              content?: Array<{ text?: string }>;
+            };
+            const text =
+              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
+            fullText += text;
+          } catch {
+            /* ignore malformed SSE JSON */
+          }
+        }
+      }
+      if (lineBuffer.startsWith("data: ")) {
+        const data = lineBuffer.slice(6).trim();
+        if (data && data !== "[DONE]") {
+          try {
+            const parsed = JSON.parse(data) as {
+              delta?: { text?: string };
+              content?: Array<{ text?: string }>;
+            };
+            const text =
+              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
+            fullText += text;
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const rawText = fullText.trim();
     const html = cleanHtml(rawText);
 
     if (!html.startsWith("<!DOCTYPE html>") && !html.startsWith("<html")) {
