@@ -18,7 +18,10 @@ RULES:
 - Do not add markdown, backticks, or explanation
 - The component must be valid JSX that compiles without errors
 - Keep all existing useState hooks and useEffect hooks
-- Do not remove any sections`;
+- Do not remove any sections
+
+CRITICAL: The component MUST end with: export default LandingPage;
+This is required. Never omit it. Never use module.exports. Always use: export default LandingPage;`;
 
 const editHtmlSystemPrompt = `You are editing an HTML landing page. The user wants a specific change.
 
@@ -29,6 +32,16 @@ RULES:
 
 function cleanClaudeCode(text: string): string {
   return text.replace(/^```(?:tsx|jsx|typescript|html)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+}
+
+function ensureExportDefaultLandingPage(jsx: string): string {
+  if (!jsx.includes("export default LandingPage")) {
+    if (/\bexport\s+default\s+function\s+LandingPage\b/.test(jsx)) {
+      return jsx;
+    }
+    jsx = jsx + "\nexport default LandingPage;";
+  }
+  return jsx;
 }
 
 function validateJsxShape(jsx: string): string | null {
@@ -140,6 +153,8 @@ Return the complete updated component.`;
         return NextResponse.json({ error: msg }, { status: 502 });
       }
 
+      jsx = ensureExportDefaultLandingPage(jsx);
+
       let shapeErr = validateJsxShape(jsx);
       if (shapeErr) {
         return NextResponse.json({ error: shapeErr }, { status: 502 });
@@ -156,6 +171,7 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
           const msg = e instanceof Error ? e.message : "Claude request failed on retry.";
           return NextResponse.json({ error: msg }, { status: 502 });
         }
+        jsx = ensureExportDefaultLandingPage(jsx);
         shapeErr = validateJsxShape(jsx);
         if (shapeErr) {
           return NextResponse.json({ error: shapeErr }, { status: 502 });
