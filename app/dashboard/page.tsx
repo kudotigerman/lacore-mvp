@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -20,7 +20,9 @@ export default function DashboardPage() {
   const [landingSlug, setLandingSlug] = useState<string | null>(null);
   const [buildingLanding, setBuildingLanding] = useState(false);
   const [buildError, setBuildError] = useState<string | null>(null);
-  const [messageIndex, setMessageIndex] = useState(0);
+  const [buildLogVisible, setBuildLogVisible] = useState(0);
+  const [buildProgressWidth, setBuildProgressWidth] = useState(0);
+  const buildLogEndRef = useRef<HTMLDivElement>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [businessName, setBusinessName] = useState("");
@@ -49,13 +51,16 @@ export default function DashboardPage() {
   };
   const offerInputStyle: CSSProperties = { ...offerTextareaStyle, resize: "none" };
 
-  const progressMessages = useMemo(
+  const buildingLogMessages = useMemo(
     () => [
-      "ANALYZING YOUR BUSINESS...",
-      "CRAFTING YOUR HEADLINE...",
-      "DESIGNING YOUR LAYOUT...",
-      "WRITING YOUR COPY...",
-      "ALMOST READY..."
+      "Analyzing your business...",
+      "Detecting niche: Legal / B2B...",
+      "Choosing design system...",
+      "Writing hero section...",
+      "Building services grid...",
+      "Generating pricing tiers...",
+      "Adding animations...",
+      "Finalizing your page..."
     ],
     []
   );
@@ -144,7 +149,7 @@ export default function DashboardPage() {
     if (!offer || !sessionToken) return;
     setBuildError(null);
     setBuildingLanding(true);
-    setMessageIndex(0);
+    setBuildLogVisible(1);
 
     try {
       const response = await fetch("/api/generate-landing", {
@@ -171,17 +176,38 @@ export default function DashboardPage() {
       setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
     } finally {
       setBuildingLanding(false);
-      setMessageIndex(0);
     }
   }
 
   useEffect(() => {
+    if (!buildingLanding) {
+      setBuildLogVisible(0);
+      setBuildProgressWidth(0);
+      return;
+    }
+
+    let count = 1;
+    const intervalId = window.setInterval(() => {
+      count += 1;
+      if (count <= buildingLogMessages.length) {
+        setBuildLogVisible(count);
+      } else {
+        window.clearInterval(intervalId);
+      }
+    }, 1500);
+
+    const progressTimeout = window.setTimeout(() => setBuildProgressWidth(95), 50);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(progressTimeout);
+    };
+  }, [buildingLanding, buildingLogMessages.length]);
+
+  useEffect(() => {
     if (!buildingLanding) return;
-    const interval = setInterval(() => {
-      setMessageIndex((prev) => (prev + 1) % progressMessages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [buildingLanding, progressMessages.length]);
+    buildLogEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [buildingLanding, buildLogVisible]);
 
   async function handleCopyUrl() {
     if (!landingSlug) return;
@@ -239,55 +265,179 @@ export default function DashboardPage() {
   return (
     <main style={{ minHeight: "100vh", background: "#09090B", color: "#F4F4F5", padding: 24 }}>
       {buildingLanding && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(9,9,11,0.96)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            padding: 24
-          }}
-        >
+        <>
+          <style>{`
+            @keyframes dash-build-pulse {
+              0%, 100% { opacity: 1; transform: scale(1); }
+              50% { opacity: 0.4; transform: scale(0.8); }
+            }
+          `}</style>
           <div
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              height: 4,
-              width: "100%",
-              background: "linear-gradient(90deg,#06B6D4,#0891B2,#06B6D4)",
-              animation: "loading-progress 25s linear forwards"
-            }}
-          />
-          <style>{`@keyframes loading-progress{0%{transform:translateX(-100%)}100%{transform:translateX(0)}}`}</style>
-          <h2
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-bebas-neue), sans-serif",
-              fontSize: isMobile ? 56 : 86,
-              lineHeight: 0.95,
-              color: "#06B6D4",
-              textAlign: "center"
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              background: "#09090B",
+              overflow: "hidden"
             }}
           >
-            {progressMessages[messageIndex]}
-          </h2>
-          <p
-            style={{
-              margin: "14px 0 0",
-              fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 12,
-              color: "#A1A1AA",
-              letterSpacing: "0.08em"
-            }}
-          >
-            LACORE is building your personalized landing page
-          </p>
-        </div>
+            <aside
+              style={{
+                width: isMobile ? "100%" : 360,
+                flexShrink: 0,
+                background: "#09090B",
+                borderRight: isMobile ? "none" : "1px solid #1C1C1F",
+                borderBottom: isMobile ? "1px solid #1C1C1F" : "none",
+                display: "flex",
+                flexDirection: "column",
+                maxHeight: isMobile ? "42vh" : "100%",
+                minHeight: 0
+              }}
+            >
+              <div
+                style={{
+                  flexShrink: 0,
+                  padding: "20px 20px 16px",
+                  borderBottom: "1px solid #1C1C1F"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "#22C55E",
+                      animation: "dash-build-pulse 2s ease-in-out infinite",
+                      flexShrink: 0
+                    }}
+                  />
+                  <span
+                    style={{
+                      marginLeft: 10,
+                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontSize: 22,
+                      color: "#F4F4F5",
+                      letterSpacing: "1px"
+                    }}
+                  >
+                    LACORE AGENT
+                  </span>
+                </div>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  padding: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  minHeight: 0
+                }}
+              >
+                {buildingLogMessages.slice(0, buildLogVisible).map((text, idx) => (
+                  <div
+                    key={`${idx}-${text}`}
+                    style={{
+                      background: "#111115",
+                      borderLeft: "3px solid #06B6D4",
+                      padding: "12px 14px",
+                      borderRadius: "0 4px 4px 0"
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 12,
+                        color: "#E4E4E7",
+                        lineHeight: 1.7
+                      }}
+                    >
+                      {text}
+                    </p>
+                  </div>
+                ))}
+                <div ref={buildLogEndRef} />
+              </div>
+            </aside>
+
+            <div
+              style={{
+                flex: 1,
+                background: "#06080d",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 32,
+                minHeight: isMobile ? "58vh" : "100%",
+                minWidth: 0
+              }}
+            >
+              <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: 48,
+                    lineHeight: 1,
+                    color: "#06B6D4",
+                    letterSpacing: "0.02em"
+                  }}
+                >
+                  LACORE
+                </p>
+                <div
+                  style={{
+                    marginTop: 28,
+                    width: "100%",
+                    height: 3,
+                    background: "#1C1C1F",
+                    borderRadius: 1,
+                    overflow: "hidden"
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 3,
+                      width: `${buildProgressWidth}%`,
+                      background: "#06B6D4",
+                      transition: "width 30s linear",
+                      borderRadius: 1
+                    }}
+                  />
+                </div>
+                <p
+                  style={{
+                    margin: "14px 0 0",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    color: "#71717A",
+                    lineHeight: 1.5
+                  }}
+                >
+                  {buildLogVisible > 0
+                    ? buildingLogMessages[buildLogVisible - 1]
+                    : "Starting..."}
+                </p>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    color: "#3F3F46",
+                    lineHeight: 1.5
+                  }}
+                >
+                  Your landing page will be ready in ~30 seconds
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {showOnboarding && (

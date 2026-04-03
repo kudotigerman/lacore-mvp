@@ -49,7 +49,7 @@ REQUIRED SECTIONS (in order):
 4. SERVICES - bento grid layout (CSS grid), 4-6 cards with icons (use unicode or emoji), one accent card
 5. PROCESS - numbered steps (01, 02, 03) with titles and descriptions
 6. TESTIMONIALS - 3 cards with star rating, quote, avatar initials, name, role
-7. PRICING - 2-3 tiers, middle one highlighted with accent border
+7. PRICING - 2-3 tiers, middle one highlighted with accent border. PRICING section: Always use a single row (display: grid, gridTemplateColumns: repeat(3, 1fr), gap: 24px) for 3 tiers. NEVER use a 2x2 grid or wrap cards. All 3 cards must be equal height using alignItems: stretch. The middle card gets accent border and 'MOST POPULAR' badge.
 8. FAQ - 5 questions with accordion (useState toggle)
 9. CTA SECTION - full-width accent background, big headline, button
 10. CONTACT - split layout: info left, form right with name/email/message fields + submit button
