@@ -7,7 +7,7 @@ ALTER TABLE landing_pages ADD COLUMN IF NOT EXISTS jsx_content text;
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const reactLandingSystemPrompt = `You must respond with ONLY a React component. Never respond with explanations, apologies, or error messages. If you cannot complete the request, still return a valid React LandingPage component.
 
