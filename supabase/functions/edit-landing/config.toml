@@ -1,0 +1,2 @@
+[functions.edit-landing]
+verify_jwt = false

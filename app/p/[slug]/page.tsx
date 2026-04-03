@@ -177,13 +177,29 @@ export default function PublicLandingPage() {
         ? { slug, instruction, currentJsx: jsxContent }
         : { slug, instruction, currentHtml: html };
 
-      const response = await fetch("/api/edit-landing", {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+      const editUrl = useLiveReact
+        ? "/api/edit-landing"
+        : `${supabaseUrl}/functions/v1/edit-landing`;
+
+      if (!useLiveReact && (!supabaseUrl || !supabaseAnonKey)) {
+        throw new Error("Missing Supabase configuration.");
+      }
+
+      const response = await fetch(editUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(bodyPayload)
+        headers: useLiveReact
+          ? {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            }
+          : {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: supabaseAnonKey,
+            },
+        body: JSON.stringify(bodyPayload),
       });
       const text = await response.text();
       let result: { success?: boolean; error?: string; jsx?: string; html?: string };
