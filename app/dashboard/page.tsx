@@ -138,8 +138,7 @@ export default function DashboardPage() {
 
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (!supabaseUrl || !supabaseAnonKey) {
+      if (!supabaseUrl || !(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "")) {
         throw new Error("Missing Supabase configuration.");
       }
       const response = await fetch(
@@ -148,8 +147,8 @@ export default function DashboardPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionToken}`,
-            apikey: supabaseAnonKey,
+            "Authorization": `Bearer ${sessionToken}`,
+            "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
           },
           body: JSON.stringify({
             ...offer,
