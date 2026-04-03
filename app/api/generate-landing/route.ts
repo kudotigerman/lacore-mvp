@@ -15,7 +15,6 @@ HOOKS RULES — NEVER VIOLATE OR REACT WILL CRASH:
 - NEVER call hooks inside conditions, loops, or nested functions
 - NEVER call hooks after an early return
 - Declare ALL state variables first, then ALL useEffects, then return JSX
-- FAQ accordion: use ONE useState<number | null>(null) for open index
 - Nav scroll: useState(false) + useEffect with scroll listener — both at top
 - Form: useState({name:'',email:'',message:''}) at top
 - Mobile menu: useState(false) at top
@@ -29,7 +28,7 @@ TECHNICAL RULES — NEVER VIOLATE:
 - ONLY inline styles. Zero Tailwind. Zero external CSS.
 - ALL animations via a single <style> tag as the first child inside return(). Put ALL @keyframes and @media queries here.
 - Contact form: fetch POST to /api/leads with { name, email, message, slug: 'SLUG_VALUE' }
-- useState for: form fields, mobile nav open/close, FAQ accordion, nav scroll state
+- useState for: form fields, mobile nav open/close, nav scroll state
 - useEffect for: window scroll listener (nav bg change), scroll-triggered animations
 - No external libraries. No framer-motion. Pure React + inline styles.
 - max component length: write ALL sections. Do not truncate or skip any section.
@@ -82,10 +81,6 @@ REQUIRED CSS ANIMATIONS (inside <style> tag — always include ALL of these)
   33% { transform: translateY(12px) rotate(-1deg); }
   66% { transform: translateY(6px) rotate(1deg); }
 }
-@keyframes marqueeScroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 20px 0px ACCENT_COLOR_40; }
   50% { box-shadow: 0 0 40px 8px ACCENT_COLOR_40; }
@@ -104,7 +99,6 @@ REQUIRED CSS ANIMATIONS (inside <style> tag — always include ALL of these)
   .bento-grid { grid-template-columns: 1fr !important; }
   .pricing-grid { grid-template-columns: 1fr !important; }
   .stats-row { grid-template-columns: 1fr 1fr !important; }
-  .process-row { flex-direction: column !important; }
   .testimonials-grid { grid-template-columns: 1fr !important; }
   .contact-split { flex-direction: column !important; }
   .footer-cols { flex-direction: column !important; gap: 32px !important; }
@@ -115,7 +109,7 @@ REQUIRED CSS ANIMATIONS (inside <style> tag — always include ALL of these)
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
-REQUIRED SECTIONS — ALL 11 — IN ORDER
+REQUIRED SECTIONS — ALL 7 — IN ORDER
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. NAV
@@ -151,19 +145,13 @@ REQUIRED SECTIONS — ALL 11 — IN ORDER
        Same glassmorphism style, animation:floatReverse 6s ease-in-out infinite, animation-delay:1.5s
        Content: different metric. Example: "⚡  48h  Average delivery"
 
-3. MARQUEE STRIP
-   - Full-width strip, accent color bg (or slightly lighter), height:48px, overflow:hidden
-   - Single scrolling row of text: "SERVICE1  •  SERVICE2  •  SERVICE3  •  SERVICE4  •  SERVICE5  •  " repeated twice
-   - CSS animation: marqueeScroll linear infinite 25s
-   - White text, font-weight:600, font-size:0.85rem, letter-spacing:0.05em
-
-4. STATS BAR
+3. STATS BAR
    - 4 stats in a grid (className="stats-row", display:grid, gridTemplateColumns:repeat(4,1fr))
    - Each stat: big number (font-size:3rem, font-weight:900, accent color), label below (small, muted)
    - Numbers must be niche-specific and impressive. Use real-looking numbers with + or % 
    - Separator lines between stats (border-right on all but last)
 
-5. SERVICES / FEATURES — BENTO GRID
+4. SERVICES / FEATURES — BENTO GRID
    - Section heading centered: smaller label above, big H2, short subtext
    - CSS grid (className="bento-grid"): gridTemplateColumns: repeat(3, 1fr), gap:20px
    - 6 cards total. Cards 1 spans gridColumn: "span 2" (wide card). Card 6 spans gridColumn: "span 2".
@@ -172,17 +160,7 @@ REQUIRED SECTIONS — ALL 11 — IN ORDER
    - Accent card (1 of the 6): strong accent bg gradient, white text
    - Each card has: emoji icon (2rem, margin-bottom:16px), bold title, short description (2-3 lines)
 
-6. PROCESS — HOW IT WORKS
-   - Section heading centered
-   - Horizontal row (className="process-row", display:flex, gap:0, align-items:flex-start)
-   - 3 steps. Between step 1-2 and 2-3: dashed connector line (flex:1, height:2px, border-top:2px dashed accent, opacity:0.3, margin-top:32px)
-   - Each step: flex:0, width:220px, text-align:center
-     Step number: font-size:4rem, font-weight:900, opacity:0.12, line-height:1, color:accent
-     Icon circle: 56px, accent bg, centered emoji, margin:0 auto 16px
-     Title: font-weight:700, font-size:1.1rem
-     Description: opacity:0.65, font-size:0.9rem
-
-7. TESTIMONIALS
+5. TESTIMONIALS
    - Section heading centered
    - Grid (className="testimonials-grid"): gridTemplateColumns:repeat(3,1fr), gap:24px
    - 3 cards. Middle card is "featured" — slightly larger padding, accent border, "⭐ Featured" badge top-right
@@ -193,7 +171,7 @@ REQUIRED SECTIONS — ALL 11 — IN ORDER
    - Name: font-weight:700. Role: opacity:0.6, font-size:0.85rem
    - Specific results in quotes: "increased revenue by 3x", "got 12 new clients in 6 weeks" — not generic
 
-8. PRICING
+6. PRICING
    - Section heading centered
    - Grid (className="pricing-grid"): display:grid, gridTemplateColumns:repeat(3,1fr), gap:24px, max-width:900px, margin:0 auto
    - 3 tiers. Middle tier: accent border:2px, "MOST POPULAR" badge, slightly elevated (transform:scale(1.03) or box-shadow)
@@ -203,35 +181,12 @@ REQUIRED SECTIONS — ALL 11 — IN ORDER
    - Feature list: 5-6 items, each with ✓ in accent color, font-size:0.95rem
    - CTA button at bottom (margin-top:auto): full width, primary for middle, outlined for others
 
-9. FAQ — ACCORDION
-   - Section heading centered
-   - 5 questions, answers relevant to the business niche
-   - Each FAQ item: border-bottom:1px solid rgba(accent,0.1), padding:20px 0
-   - Question row: flex, justify-between, cursor:pointer, font-weight:600
-   - Arrow: rotates 180deg when open (transition:transform 0.3s, transform: open ? 'rotate(180deg)' : 'rotate(0)')
-   - Answer: shown/hidden via useState, padding-top:12px, opacity:0.7, line-height:1.7
-
-10. FINAL CTA SECTION
-    - Full-width, accent gradient background (linear-gradient 135deg)
-    - Large bold headline: "Ready to [specific outcome]?"
-    - Subtext: 1-2 sentences
-    - Single large CTA button: white bg, dark text, padding:20px 48px, border-radius:12px, font-weight:800, font-size:1.1rem
-    - Animation: scaleIn 0.5s ease on mount
-
-11. CONTACT SECTION + FOOTER
-    Contact (id="contact"):
-    - Section heading centered  
-    - Split layout (className="contact-split", display:flex, gap:64px)
-    - Left (flex:1): icon + title + description + contact info (email, phone emoji, location)
-    - Right (flex:1): form with name, email, textarea(message), submit button (accent bg)
-    - Form submits to /api/leads. Shows success/error state.
-    
-    Footer:
-    - border-top:1px solid rgba(accent,0.1), padding:48px 0 32px
-    - Logo + tagline left
-    - 2 column nav links center  
-    - Social icons right: use unicode symbols ✕ ◎ in for Twitter/X and Instagram
-    - Copyright line bottom center: opacity:0.4
+7. FINAL CTA + CONTACT FORM + FOOTER (one combined closing section)
+   - FINAL CTA block first: full-width, accent gradient (linear-gradient 135deg), large headline "Ready to [specific outcome]?", 1-2 lines subtext, one large CTA button (white bg, dark text, padding:20px 48px, border-radius:12px, font-weight:800), animation: scaleIn 0.5s ease on mount
+   - Then CONTACT (id="contact"): section heading centered; split layout (className="contact-split", display:flex, gap:64px)
+     Left (flex:1): icon + title + short description + contact hints (email, phone emoji, location)
+     Right (flex:1): form name, email, textarea(message), submit (accent bg); POST to /api/leads with slug; show success/error state
+   - Then FOOTER: border-top:1px solid rgba(accent,0.1), padding:48px 0 32px; logo + tagline; 2-column nav links; social placeholders (unicode ✕ ◎); copyright line centered, opacity:0.4
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
 COPY RULES
@@ -247,7 +202,7 @@ COPY RULES
   'Join a waitlist' → 'JOIN WAITLIST →'
 - Stats: realistic, specific, niche-relevant (e.g. for fitness: "2,400+ workouts", "94% client retention")
 - Testimonials: real-sounding people, specific roles, specific measurable results
-- FAQ: answer real objections this specific business would face (price, timeline, process, guarantees)`;
+- Pricing: clear tier names and outcomes; avoid vague "contact us" as the only CTA`;
 
 type LandingInput = {
   offer: string;
@@ -370,9 +325,9 @@ Suggested headline: ${body.headline}
 Primary CTA goal: ${body.primaryGoal || "Book a call"}
 Site vibe: ${body.siteVibe || "Professional"}
 
-IMPORTANT: Detect the language from the offer text above. Write ALL copy — every headline, label, button, testimonial, FAQ, footer — in that same language.
+IMPORTANT: Detect the language from the offer text above. Write ALL copy — every headline, label, button, testimonial, form, footer — in that same language.
 
-Generate ALL 11 sections. Do not truncate. Do not skip sections. Return the complete React component.`;
+Generate ALL 7 sections. Do not truncate. Do not skip sections. Close every JSX tag. Return the complete React component.`;
 
     // Attempt generation with retry on validation failure
     let jsx = "";
@@ -388,7 +343,7 @@ Generate ALL 11 sections. Do not truncate. Do not skip sections. Return the comp
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 8000,           // ← было 4000, теперь 8000
+          max_tokens: 12000,
           system: reactLandingSystemPrompt,
           messages: [
             { role: "user", content: userMessage },
