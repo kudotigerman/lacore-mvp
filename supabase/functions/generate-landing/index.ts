@@ -14,24 +14,33 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const authHeader = req.headers.get("Authorization");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader! } } },
-    );
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    let userId: string | undefined;
+    try {
+      const base64Payload = token.split(".")[1];
+      if (base64Payload) {
+        const b64 = base64Payload.replace(/-/g, "+").replace(/_/g, "/");
+        const pad = (4 - (b64.length % 4)) % 4;
+        const payload = JSON.parse(atob(b64 + "=".repeat(pad)));
+        userId = typeof payload.sub === "string" ? payload.sub : undefined;
+      }
+    } catch {
+      userId = undefined;
+    }
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
+    if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
     const systemPrompt = await Deno.readTextFile(
       new URL("./system-prompt.txt", import.meta.url),
@@ -154,7 +163,7 @@ Return the complete HTML document only.`;
     const existingPage = await supabase
       .from("landing_pages")
       .select("slug")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
     const slug =
       existingPage.data?.slug ??
@@ -163,7 +172,7 @@ Return the complete HTML document only.`;
     html = html.replaceAll("SLUG_VALUE", slug);
 
     const { error: upsertError } = await supabase.from("landing_pages").upsert(
-      { user_id: user.id, slug, html_content: html, jsx_content: null },
+      { user_id: userId, slug, html_content: html, jsx_content: null },
       { onConflict: "slug" },
     );
 
