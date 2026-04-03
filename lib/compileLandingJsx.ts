@@ -66,8 +66,14 @@ export function compileLandingJsx(jsxSource: string): ComponentType {
 
   // Executing AI-generated code; sandbox is structural (trusted owner content only).
   // eslint-disable-next-line no-new-func -- runtime JSX compilation for stored landings
-  const factory = new Function("React", "useState", `"use strict";\n${body}`);
-  const Comp = factory(React, React.useState) as unknown;
+  const factory = new Function(
+    "React", "useState", "useEffect", "useRef", "useCallback", "useMemo", "useReducer", "useContext", "createContext", "Fragment",
+    `"use strict";\n${body}`
+  );
+  const Comp = factory(
+    React, React.useState, React.useEffect, React.useRef, React.useCallback,
+    React.useMemo, React.useReducer, React.useContext, React.createContext, React.Fragment
+  ) as unknown;
   if (typeof Comp !== "function") {
     throw new Error("Landing component did not compile.");
   }
