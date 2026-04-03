@@ -40,7 +40,7 @@ root.render(React.createElement(LandingPage));
 </html>`;
 }
 
-/** Isolated iframe + UMD React only — never compileLandingJsx / parent-tree render (avoids dual React #425). */
+/** Preview runs only inside srcDoc iframe (UMD React), not in the Next.js tree — avoids dual React #425. */
 function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: string }) {
   const [srcDoc, setSrcDoc] = useState<string | null>(null);
   const [compileError, setCompileError] = useState<string | null>(null);
@@ -57,60 +57,18 @@ function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: str
   }, [jsxSource]);
 
   if (compileError) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height,
-          minHeight: height === "100%" ? 200 : height,
-          background: "#09090B",
-          color: "#A1A1AA",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-          fontFamily: "var(--font-space-mono), monospace",
-          fontSize: 13,
-          lineHeight: 1.6,
-          textAlign: "center",
-          boxSizing: "border-box"
-        }}
-      >
-        {compileError}
-      </div>
-    );
+    return <div>{FRIENDLY_COMPILE_MESSAGE}</div>;
   }
 
   if (!srcDoc) {
-    return (
-      <div
-        style={{
-          width: "100%",
-          height,
-          background: "#09090B",
-          color: "#A1A1AA",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "var(--font-space-mono), monospace"
-        }}
-      >
-        Loading page...
-      </div>
-    );
+    return <div style={{ width: "100%", height, boxSizing: "border-box" }} aria-busy="true" />;
   }
 
   return (
     <iframe
-      title="Landing page preview"
-      sandbox="allow-scripts"
       srcDoc={srcDoc}
-      style={{
-        width: "100%",
-        height,
-        border: "none",
-        display: "block"
-      }}
+      sandbox="allow-scripts"
+      style={{ width: "100%", height, border: "none", display: "block" }}
     />
   );
 }
