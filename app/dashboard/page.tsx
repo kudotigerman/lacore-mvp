@@ -149,50 +149,18 @@ export default function DashboardPage() {
           siteVibe: extra?.siteVibe ?? siteVibe
         })
       });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text.slice(0, 200));
+      const text = await response.text();
+      let result: { success?: boolean; error?: string; slug?: string };
+      try {
+        result = JSON.parse(text) as { success?: boolean; error?: string; slug?: string };
+      } catch {
+        throw new Error("Server error: " + text.slice(0, 100));
       }
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body.");
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          try {
-            const parsed = JSON.parse(trimmed) as {
-              type?: string;
-              success?: boolean;
-              slug?: string;
-              error?: string;
-            };
-            if (parsed.type === "progress") continue;
-            if ("success" in parsed) {
-              if (parsed.success && parsed.slug) {
-                setLandingSlug(parsed.slug ?? null);
-                router.push(`/p/${parsed.slug}?edit=true`);
-                return;
-              } else {
-                throw new Error(parsed.error || "Failed to build landing page.");
-              }
-            }
-          } catch (e) {
-            if (e instanceof SyntaxError) {
-              // не валидный JSON в строке — пропускаем
-              continue;
-            }
-            throw e;
-          }
-        }
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || "Failed to build.");
       }
-      throw new Error("Empty response from server.");
+      setLandingSlug(result.slug ?? null);
+      router.push(`/p/${result.slug}?edit=true`);
     } catch (err) {
       setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
     } finally {
