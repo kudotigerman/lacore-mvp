@@ -261,6 +261,75 @@ function validateJsx(jsx: string): string | null {
   return null;
 }
 
+const ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
+
+type AnthropicSsePayload = {
+  type?: string;
+  delta?: { type?: string; text?: string };
+  error?: { type?: string; message?: string };
+};
+
+function parseAnthropicSseDataLine(line: string): AnthropicSsePayload | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("data:")) return null;
+  const jsonPart = trimmed.slice(5).trim();
+  if (!jsonPart) return null;
+  try {
+    return JSON.parse(jsonPart) as AnthropicSsePayload;
+  } catch {
+    return null;
+  }
+}
+
+/** Reads Anthropic SSE stream; optional onProgress(totalChars) throttled inside. */
+async function readAnthropicStreamToText(
+  response: Response,
+  onProgress?: (totalChars: number) => void
+): Promise<string> {
+  if (!response.body) {
+    throw new Error("Anthropic response has no body.");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let carry = "";
+  let fullText = "";
+  let lastProgressSent = 0;
+
+  const consumeEvent = (ev: AnthropicSsePayload) => {
+    if (ev.type === "error") {
+      throw new Error(ev.error?.message || "Anthropic stream error.");
+    }
+    if (
+      ev.type === "content_block_delta" &&
+      ev.delta?.type === "text_delta" &&
+      typeof ev.delta.text === "string"
+    ) {
+      fullText += ev.delta.text;
+      if (onProgress && fullText.length - lastProgressSent >= 8192) {
+        lastProgressSent = fullText.length;
+        onProgress(fullText.length);
+      }
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    carry += decoder.decode(value, { stream: true });
+    const lines = carry.split("\n");
+    carry = lines.pop() ?? "";
+    for (const line of lines) {
+      const parsed = parseAnthropicSseDataLine(line);
+      if (parsed) consumeEvent(parsed);
+    }
+  }
+  if (carry.trim()) {
+    const parsed = parseAnthropicSseDataLine(carry);
+    if (parsed) consumeEvent(parsed);
+  }
+  return fullText;
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as LandingInput;
@@ -329,114 +398,152 @@ IMPORTANT: Detect the language from the offer text above. Write ALL copy — eve
 
 Generate ALL 7 sections. Do not truncate. Do not skip sections. Close every JSX tag. Return the complete React component.`;
 
-    // Attempt generation with retry on validation failure
-    let jsx = "";
-    let lastError = "";
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const pushLine = (obj: unknown) => {
+          controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
+        };
 
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 12000,
-          system: reactLandingSystemPrompt,
-          messages: [
-            { role: "user", content: userMessage },
-            ...(attempt === 2
-              ? [
-                  {
-                    role: "assistant" as const,
-                    content:
-                      "import React, { useState, useEffect } from 'react';",
-                  },
-                ]
-              : []),
-          ],
-        }),
-      });
+        try {
+          let jsx = "";
+          let lastError = "";
 
-      if (!response.ok) {
-        const details = await response.text();
-        console.error(`Attempt ${attempt} failed:`, details);
-        lastError = details;
-        continue;
-      }
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            const anthropicRes = await fetch(ANTHROPIC_MESSAGES_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey,
+                "anthropic-version": "2023-06-01",
+              },
+              body: JSON.stringify({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 8000,
+                stream: true,
+                system: reactLandingSystemPrompt,
+                messages: [
+                  { role: "user", content: userMessage },
+                  ...(attempt === 2
+                    ? [
+                        {
+                          role: "assistant" as const,
+                          content:
+                            "import React, { useState, useEffect } from 'react';",
+                        },
+                      ]
+                    : []),
+                ],
+              }),
+            });
 
-      const completion = (await response.json()) as {
-        content?: Array<{ type: string; text?: string }>;
-      };
+            if (!anthropicRes.ok) {
+              const details = await anthropicRes.text();
+              console.error(`Attempt ${attempt} failed:`, details);
+              lastError = details;
+              continue;
+            }
 
-      const rawText =
-        completion.content?.find((item) => item.type === "text")?.text?.trim() ||
-        "";
+            let rawText = "";
+            try {
+              rawText = await readAnthropicStreamToText(anthropicRes, (chars) => {
+                pushLine({ type: "progress", chars });
+              });
+            } catch (streamErr) {
+              const msg =
+                streamErr instanceof Error ? streamErr.message : String(streamErr);
+              console.error(`Attempt ${attempt} stream error:`, msg);
+              lastError = msg;
+              continue;
+            }
 
-      // On attempt 2 we prefilled the assistant turn — prepend it back
-      const fullRaw =
-        attempt === 2
-          ? "import React, { useState, useEffect } from 'react';\n" + rawText
-          : rawText;
+            rawText = rawText.trim();
+            const fullRaw =
+              attempt === 2
+                ? "import React, { useState, useEffect } from 'react';\n" + rawText
+                : rawText;
 
-      const cleaned = cleanJsx(fullRaw);
-      const validationError = validateJsx(cleaned);
+            const cleaned = cleanJsx(fullRaw);
+            const validationError = validateJsx(cleaned);
 
-      if (!validationError) {
-        jsx = cleaned;
-        break;
-      }
+            if (!validationError) {
+              jsx = cleaned;
+              break;
+            }
 
-      console.warn(`Attempt ${attempt} JSX invalid:`, validationError);
-      lastError = validationError;
-    }
+            console.warn(`Attempt ${attempt} JSX invalid:`, validationError);
+            lastError = validationError;
+          }
 
-    if (!jsx) {
-      console.error("Both attempts failed. Last error:", lastError);
-      return NextResponse.json(
-        { error: "Generation failed after retry. Please try again." },
-        { status: 502 }
-      );
-    }
+          if (!jsx) {
+            console.error("Both attempts failed. Last error:", lastError);
+            pushLine({
+              success: false,
+              error: "Generation failed after retry. Please try again.",
+            });
+            controller.close();
+            return;
+          }
 
-    // Resolve slug
-    const existingPage = await supabase
-      .from("landing_pages")
-      .select("slug")
-      .eq("user_id", user.id)
-      .maybeSingle();
+          const existingPage = await supabase
+            .from("landing_pages")
+            .select("slug")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-    const emailBase = body.userEmail
-      .split("@")[0]
-      .replace(/[^a-zA-Z0-9-]/g, "-")
-      .toLowerCase();
+          const emailBase = body.userEmail
+            .split("@")[0]
+            .replace(/[^a-zA-Z0-9-]/g, "-")
+            .toLowerCase();
 
-    const slug =
-      existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
+          const slug =
+            existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
 
-    jsx = ensureExportDefault(jsx);
-    const jsxWithSlug = injectSlugIntoJsx(jsx, slug);
+          jsx = ensureExportDefault(jsx);
+          const jsxWithSlug = injectSlugIntoJsx(jsx, slug);
 
-    const { error: upsertError } = await supabase
-      .from("landing_pages")
-      .upsert(
-        { user_id: user.id, slug, jsx_content: jsxWithSlug } as never,
-        { onConflict: "slug" }
-      );
+          const { error: upsertError } = await supabase
+            .from("landing_pages")
+            .upsert(
+              { user_id: user.id, slug, jsx_content: jsxWithSlug } as never,
+              { onConflict: "slug" }
+            );
 
-    if (upsertError) {
-      return NextResponse.json(
-        {
-          error: "Failed to save landing page.",
-          details: upsertError.message,
-        },
-        { status: 500 }
-      );
-    }
+          if (upsertError) {
+            pushLine({
+              success: false,
+              error: "Failed to save landing page.",
+              details: upsertError.message,
+            });
+            controller.close();
+            return;
+          }
 
-    return NextResponse.json({ slug, jsx: jsxWithSlug, success: true });
+          pushLine({ success: true, slug, jsx: jsxWithSlug });
+          controller.close();
+        } catch (e) {
+          console.error("generate-landing stream error:", e);
+          controller.enqueue(
+            encoder.encode(
+              `${JSON.stringify({
+                success: false,
+                error: "Failed to generate. Please try again.",
+              })}\n`
+            )
+          );
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   } catch (error) {
     console.error("generate-landing error:", error);
     return NextResponse.json(

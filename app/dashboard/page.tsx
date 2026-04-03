@@ -153,16 +153,44 @@ export default function DashboardPage() {
         const text = await response.text();
         throw new Error(text.slice(0, 200));
       }
-      const text = await response.text();
-      let result: { success?: boolean; error?: string; slug?: string };
-      try {
-        result = JSON.parse(text) as { success?: boolean; error?: string; slug?: string };
-      } catch {
-        throw new Error("Server error: " + text.slice(0, 200));
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body.");
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let result: {
+        success?: boolean;
+        error?: string;
+        details?: string;
+        slug?: string;
+      } | null = null;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) >= 0) {
+          const row = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!row) continue;
+          let obj: Record<string, unknown>;
+          try {
+            obj = JSON.parse(row) as Record<string, unknown>;
+          } catch {
+            throw new Error("Server error: " + row.slice(0, 200));
+          }
+          if (obj.type === "progress") continue;
+          if ("success" in obj) {
+            result = obj as { success?: boolean; error?: string; details?: string; slug?: string };
+          }
+        }
       }
-      if (!result?.success) throw new Error(result?.error || "Failed to build landing page.");
+      if (!result) throw new Error("Empty response from server.");
+      if (!result.success) {
+        const msg = [result.error, result.details].filter(Boolean).join(" — ");
+        throw new Error(msg || "Failed to build landing page.");
+      }
       setLandingSlug(result.slug ?? null);
-      router.push(`/p/${result.slug}?edit=true`); // FIX: редирект сразу на лендинг
+      if (result.slug) router.push(`/p/${result.slug}?edit=true`); // FIX: редирект сразу на лендинг
     } catch (err) {
       setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
     } finally {
