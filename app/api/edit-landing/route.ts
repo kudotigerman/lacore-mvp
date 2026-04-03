@@ -8,47 +8,132 @@ type EditPayload = {
   currentJsx?: string;
 };
 
-const editHtmlSystemPrompt = `You are an expert landing page editor. You will receive an HTML landing page and an instruction to modify it. Make ONLY the requested changes. Keep all other content identical. Return the complete modified HTML. No markdown, no explanation. Start with <!DOCTYPE html>.`;
+const diffSystemPrompt = `You are a precise code editor. The user wants to change something on their landing page.
 
-const editJsxSystemPrompt = `You are an expert React developer. You will receive the full source of a LandingPage React component and an instruction to modify it.
+Analyze the instruction and return a JSON object with one of these formats:
+
+For text/label changes:
+{ "type": "replace", "find": "exact text to find", "replace": "new text" }
+
+For color changes:
+{ "type": "style", "find": "exact color value like #C8A84C or 'gold' or background: '#000'", "replace": "new color value" }
+
+For multiple changes:
+{ "type": "multi", "changes": [{ "find": "...", "replace": "..." }, ...] }
+
+For structural changes (add/remove sections, change layout) on a React landing:
+{ "type": "rewrite", "jsx": "complete new JSX component" }
+
+For structural changes on a legacy HTML landing:
+{ "type": "rewrite", "html": "complete new HTML document starting with <!DOCTYPE html>" }
 
 RULES:
-- Component name stays: LandingPage
-- Use ONLY inline styles, no CSS files, no Tailwind classes
-- No imports except: import React, { useState } from 'react';
-- Contact form must keep posting to /api/leads with JSON { name, email, message, slug }
-- Preserve the hardcoded slug string in the source (do not change it unless the instruction asks)
-- Make ONLY the requested change. Do not rewrite other sections. Return the complete component with minimal changes from the original.
-- Return the COMPLETE modified component only. No markdown. No explanation. Start with: import React, { useState } from 'react';`;
+- Always try 'replace' or 'style' first — only use 'rewrite' when absolutely necessary
+- 'find' must be the EXACT string as it appears in the source (JSX or HTML)
+- For button text: find the exact label text
+- For colors: find the exact color string
+- Return ONLY valid JSON, nothing else`;
 
-function cleanClaudeCode(text: string): string {
-  return text.replace(/^```(?:tsx|jsx|typescript)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-}
-
-const simpleTextKeywords = /(поменяй|измени|замени|change|replace|rename)/i;
-const simpleColorKeywords = /(цвет|color|сделай|make it)/i;
-const simpleVisibilityKeywords = /(убери|скрой|remove|hide)/i;
-
-function extractQuotedPair(instruction: string): { from: string; to: string } | null {
-  const quoted = [...instruction.matchAll(/["'`](.+?)["'`]/g)].map((m) => m[1]).filter(Boolean);
-  if (quoted.length >= 2) {
-    return { from: quoted[0], to: quoted[1] };
+function extractCommonStrings(source: string, limit = 20): string[] {
+  const re = /['"`]([^'"`]{3,50})['"`]/g;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) {
+    const s = m[1];
+    if (!seen.has(s)) {
+      seen.add(s);
+      out.push(s);
+      if (out.length >= limit) break;
+    }
   }
-  return null;
+  return out;
 }
 
-function applyFastEdit(jsx: string, instruction: string): string | null {
-  const isSimple =
-    simpleTextKeywords.test(instruction) ||
-    simpleColorKeywords.test(instruction) ||
-    simpleVisibilityKeywords.test(instruction);
-  if (!isSimple) return null;
+function parseJsonFromClaude(raw: string): unknown {
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  return JSON.parse(cleaned) as unknown;
+}
 
-  const pair = extractQuotedPair(instruction);
-  if (!pair) return null;
+function replaceAllExact(haystack: string, find: string, replace: string): string {
+  if (!haystack.includes(find)) {
+    throw new Error(`Could not find exact string in source: ${find.slice(0, 120)}${find.length > 120 ? "…" : ""}`);
+  }
+  return haystack.split(find).join(replace);
+}
 
-  if (!jsx.includes(pair.from)) return null;
-  return jsx.replace(pair.from, pair.to);
+type ParsedDiff =
+  | { kind: "patch"; fast: true; apply: (content: string) => string }
+  | { kind: "rewrite"; fast: false; content: string; format: "jsx" | "html" };
+
+function parseDiff(raw: unknown, mode: "jsx" | "html"): ParsedDiff | { error: string } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { error: "Invalid diff: not an object." };
+  }
+  const o = raw as Record<string, unknown>;
+  const t = o.type;
+  if (t === "replace" || t === "style") {
+    if (typeof o.find !== "string" || typeof o.replace !== "string") {
+      return { error: "Invalid replace/style diff: missing find or replace string." };
+    }
+    const find = o.find;
+    const rep = o.replace;
+    return {
+      kind: "patch",
+      fast: true,
+      apply: (content: string) => replaceAllExact(content, find, rep)
+    };
+  }
+  if (t === "multi") {
+    if (!Array.isArray(o.changes)) {
+      return { error: "Invalid multi diff: changes must be an array." };
+    }
+    const pairs: { find: string; replace: string }[] = [];
+    for (const item of o.changes) {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return { error: "Invalid multi diff: each change must be an object." };
+      }
+      const c = item as Record<string, unknown>;
+      if (typeof c.find !== "string" || typeof c.replace !== "string") {
+        return { error: "Invalid multi diff: each change needs find and replace strings." };
+      }
+      pairs.push({ find: c.find, replace: c.replace });
+    }
+    return {
+      kind: "patch",
+      fast: true,
+      apply: (content: string) => {
+        let next = content;
+        for (const { find, replace } of pairs) {
+          next = replaceAllExact(next, find, replace);
+        }
+        return next;
+      }
+    };
+  }
+  if (t === "rewrite") {
+    if (mode === "jsx") {
+      if (typeof o.jsx !== "string" || !o.jsx.trim()) {
+        return { error: "Invalid rewrite diff: missing jsx string." };
+      }
+      return { kind: "rewrite", fast: false, content: o.jsx.trim(), format: "jsx" };
+    }
+    if (typeof o.html !== "string" || !o.html.trim()) {
+      return { error: "Invalid rewrite diff: missing html string." };
+    }
+    return { kind: "rewrite", fast: false, content: o.html.trim(), format: "html" };
+  }
+  return { error: `Unknown diff type: ${String(t)}` };
+}
+
+function validateJsx(jsx: string): string | null {
+  const okImport =
+    jsx.startsWith("import React, { useState } from 'react'") ||
+    jsx.startsWith('import React, { useState } from "react"');
+  if (!okImport) return "Rewritten JSX must start with import React, { useState } from 'react'.";
+  if (!/\bLandingPage\b/.test(jsx)) return "Rewritten JSX must define LandingPage.";
+  if (!/\bexport\s+default\s+/.test(jsx)) return "Rewritten JSX must export default LandingPage.";
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -92,27 +177,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    if (useJsx && body.currentJsx) {
-      const fastEditedJsx = applyFastEdit(body.currentJsx, body.instruction);
-      if (fastEditedJsx && fastEditedJsx !== body.currentJsx) {
-        const { error: saveError } = await supabase
-          .from("landing_pages")
-          .update({ jsx_content: fastEditedJsx } as never)
-          .eq("slug", body.slug)
-          .eq("user_id", user.id);
+    const mode = useJsx ? "jsx" : "html";
+    const fullSource = (useJsx ? body.currentJsx : body.currentHtml) as string;
+    const common = extractCommonStrings(fullSource, 20);
+    const prefixLabel = useJsx ? "Current JSX" : "Current HTML";
+    const userContent = `${prefixLabel} (first 200 chars for context): ${fullSource.slice(0, 200)}...
 
-        if (saveError) {
-          return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
-        }
+Instruction: ${body.instruction}
 
-        return NextResponse.json({ success: true, jsx: fastEditedJsx, fast: true });
-      }
-    }
-
-    const system = useJsx ? editJsxSystemPrompt : editHtmlSystemPrompt;
-    const userContent = useJsx
-      ? `CURRENT JSX:\n${body.currentJsx}\n\nINSTRUCTION: ${body.instruction}`
-      : `CURRENT HTML:\n${body.currentHtml}\n\nINSTRUCTION: ${body.instruction}`;
+Common strings in this component you might need:
+${common.length ? common.join("\n") : "(none extracted)"}`;
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -123,8 +197,8 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        system,
+        max_tokens: 16000,
+        system: diffSystemPrompt,
         messages: [{ role: "user", content: userContent }]
       })
     });
@@ -145,44 +219,83 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Empty response from Claude." }, { status: 502 });
     }
 
-    if (useJsx) {
-      const jsx = cleanClaudeCode(raw);
-      const okImport =
-        jsx.startsWith("import React, { useState } from 'react'") ||
-        jsx.startsWith('import React, { useState } from "react"');
-      if (!okImport || !/\bexport\s+default\s+/.test(jsx) || !/\bLandingPage\b/.test(jsx)) {
-        return NextResponse.json({ error: "Invalid JSX returned from Claude." }, { status: 502 });
+    let parsedUnknown: unknown;
+    try {
+      parsedUnknown = parseJsonFromClaude(raw);
+    } catch {
+      return NextResponse.json({ error: "Claude returned invalid JSON." }, { status: 502 });
+    }
+
+    const parsed = parseDiff(parsedUnknown, mode);
+    if ("error" in parsed) {
+      return NextResponse.json({ error: parsed.error }, { status: 502 });
+    }
+
+    if (parsed.kind === "patch") {
+      let updated: string;
+      try {
+        updated = parsed.apply(fullSource);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Patch failed.";
+        return NextResponse.json({ error: msg }, { status: 422 });
+      }
+
+      if (useJsx) {
+        const { error: saveError } = await supabase
+          .from("landing_pages")
+          .update({ jsx_content: updated } as never)
+          .eq("slug", body.slug)
+          .eq("user_id", user.id);
+
+        if (saveError) {
+          return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, jsx: updated, fast: true });
       }
 
       const { error: saveError } = await supabase
         .from("landing_pages")
-        .update({ jsx_content: jsx } as never)
+        .update({ html_content: updated } as never)
         .eq("slug", body.slug)
         .eq("user_id", user.id);
 
       if (saveError) {
         return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
       }
-
-      return NextResponse.json({ jsx, success: true, fast: false });
+      return NextResponse.json({ success: true, html: updated, fast: true });
     }
 
-    const html = cleanClaudeCode(raw);
-    if (!html.startsWith("<!DOCTYPE html>")) {
-      return NextResponse.json({ error: "Invalid HTML returned from Claude." }, { status: 502 });
+    const rewritten = parsed.content;
+    if (parsed.format === "jsx") {
+      const err = validateJsx(rewritten);
+      if (err) {
+        return NextResponse.json({ error: err }, { status: 502 });
+      }
+      const { error: saveError } = await supabase
+        .from("landing_pages")
+        .update({ jsx_content: rewritten } as never)
+        .eq("slug", body.slug)
+        .eq("user_id", user.id);
+
+      if (saveError) {
+        return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, jsx: rewritten, fast: false });
     }
 
+    if (!rewritten.startsWith("<!DOCTYPE html>")) {
+      return NextResponse.json({ error: "Rewritten HTML must start with <!DOCTYPE html>." }, { status: 502 });
+    }
     const { error: saveError } = await supabase
       .from("landing_pages")
-      .update({ html_content: html } as never)
+      .update({ html_content: rewritten } as never)
       .eq("slug", body.slug)
       .eq("user_id", user.id);
 
     if (saveError) {
       return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
     }
-
-    return NextResponse.json({ html, success: true, fast: false });
+    return NextResponse.json({ success: true, html: rewritten, fast: false });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server error.";
     return NextResponse.json({ error: "Failed to edit landing page.", details: message }, { status: 500 });
