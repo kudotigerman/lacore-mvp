@@ -43,12 +43,21 @@ function buildImagePromptFromPost(
   const styleDesc = styleDescription(style);
   const safePost =
     postText.length > MAX_PROMPT_CHARS ? postText.slice(0, MAX_PROMPT_CHARS) + "…" : postText;
-  return `Create a social media image for ${platform} that visually represents this post:
-'${safePost.replace(/'/g, "′")}'
-Business offer: ${offer}. Target audience: ${audience}.
-Style: ${styleDesc}.
-No text overlays on image. Clean, modern, photorealistic visual.
-Make it suitable for ${platform} format.`;
+  return `You are a professional visual content creator for social media.
+Create a photorealistic image for ${platform} that directly illustrates this post:
+
+POST: ${safePost}
+
+Business context: ${offer}
+Target audience: ${audience}
+Visual style: ${styleDesc}
+
+Requirements:
+- Image must visually tell the same story as the post text
+- No text, words, or letters on the image
+- Photorealistic, professional quality
+- Optimized for ${platform} square format
+- Colors and mood must match the post's emotional tone`;
 }
 
 async function generateOneImage(apiKey: string, prompt: string): Promise<string> {

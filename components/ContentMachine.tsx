@@ -59,19 +59,8 @@ const generateImageBtnStyle: CSSProperties = {
   borderRadius: 4
 };
 
-async function downloadImageFile(url: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Download failed.");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl;
-  a.download = "lacore-image.jpg";
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(objectUrl);
+function downloadImageViaProxy(url: string) {
+  window.location.href = `/api/content/proxy-image?url=${encodeURIComponent(url)}`;
 }
 
 export default function ContentMachine({ offer, audience, userId }: ContentMachineProps) {
@@ -435,7 +424,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                     <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                       <button
                         type="button"
-                        onClick={() => void downloadImageFile(img.url!).catch(() => {})}
+                        onClick={() => downloadImageViaProxy(img.url!)}
                         style={{ ...btnBase, fontSize: "11px", letterSpacing: "0.06em" }}
                       >
                         ⬇ DOWNLOAD
