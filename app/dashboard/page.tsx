@@ -10,6 +10,7 @@ import {
   type KeyboardEvent
 } from "react";
 import { useRouter } from "next/navigation";
+import DomainConnect from "@/components/DomainConnect";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Offer = {
@@ -55,6 +56,8 @@ const DASH_COPY: Record<
     closeSettings: string;
     salesBuilderTagline: string;
     signOutShort: string;
+    domainHeading: string;
+    domainNeedLanding: string;
   }
 > = {
   en: {
@@ -75,7 +78,9 @@ const DASH_COPY: Record<
     comingSoon: "Coming soon",
     closeSettings: "Close settings",
     salesBuilderTagline: "Your AI system for getting clients",
-    signOutShort: "SIGN OUT"
+    signOutShort: "SIGN OUT",
+    domainHeading: "DOMAIN",
+    domainNeedLanding: "Publish your landing page first to connect a custom domain."
   },
   ru: {
     settingsTitle: "НАСТРОЙКИ",
@@ -95,7 +100,9 @@ const DASH_COPY: Record<
     comingSoon: "Скоро",
     closeSettings: "Закрыть настройки",
     salesBuilderTagline: "Ваш ИИ для привлечения клиентов",
-    signOutShort: "ВЫЙТИ"
+    signOutShort: "ВЫЙТИ",
+    domainHeading: "ДОМЕН",
+    domainNeedLanding: "Сначала опубликуйте лендинг, чтобы подключить свой домен."
   }
 };
 
@@ -1896,25 +1903,12 @@ export default function DashboardPage() {
                         >
                           EDIT PAGE →
                         </a>
-                        <button
-                          type="button"
-                          disabled
-                          title="Coming soon"
-                          style={{
-                            flex: 1,
-                            minWidth: 100,
-                            border: "1px solid var(--border-primary)",
-                            background: "transparent",
-                            color: "var(--text-muted)",
-                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                            fontSize: 11,
-                            padding: "8px 12px",
-                            cursor: "not-allowed"
-                          }}
-                        >
-                          CONNECT DOMAIN
-                        </button>
                       </div>
+                      {userId ? (
+                        <div style={{ marginTop: 12 }}>
+                          <DomainConnect slug={landingSlug} userId={userId} />
+                        </div>
+                      ) : null}
                       {regenerateConfirm ? (
                         <div style={{ marginTop: 12 }}>
                           <p
@@ -2265,6 +2259,37 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 </div>
+              </section>
+
+              <div style={{ height: 1, background: "var(--border-primary)" }} />
+
+              <section>
+                <p
+                  style={{
+                    margin: "0 0 14px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 10,
+                    letterSpacing: "0.2em",
+                    color: "var(--accent)"
+                  }}
+                >
+                  {t.domainHeading}
+                </p>
+                {landingSlug && userId ? (
+                  <DomainConnect slug={landingSlug} userId={userId} />
+                ) : (
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 12,
+                      color: "var(--text-muted)",
+                      lineHeight: 1.5
+                    }}
+                  >
+                    {t.domainNeedLanding}
+                  </p>
+                )}
               </section>
 
               <div style={{ height: 1, background: "var(--border-primary)" }} />
