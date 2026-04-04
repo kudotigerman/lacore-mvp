@@ -338,6 +338,70 @@ export default function LandingPage() {
           from { width: 0%; }
           to { width: 100%; }
         }
+        .pricing-section-inner {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 max(24px, 5vw);
+        }
+        .pricing-grid {
+          margin-top: 48px;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 28px;
+          max-width: 440px;
+          margin-left: auto;
+          margin-right: auto;
+          align-items: stretch;
+        }
+        @media (min-width: 768px) {
+          .pricing-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
+          }
+        }
+        @media (min-width: 1025px) {
+          .pricing-grid {
+            gap: 20px;
+            align-items: center;
+          }
+        }
+        .pricing-card {
+          border-radius: 20px;
+          display: flex;
+          flex-direction: column;
+          box-sizing: border-box;
+          padding: 40px 36px;
+        }
+        .pricing-card--featured {
+          padding-top: 44px;
+        }
+        .pricing-price {
+          margin-top: 12px;
+          font-size: 3.5rem;
+          font-weight: 900;
+          color: var(--accent);
+          line-height: 1;
+          font-family: var(--font-geist-sans), system-ui, sans-serif;
+        }
+        @media (max-width: 1024px) {
+          .pricing-price {
+            font-size: 2.5rem;
+          }
+          .pricing-card {
+            padding: 28px 20px;
+          }
+          .pricing-card--featured {
+            padding-top: 40px;
+          }
+        }
+        @media (min-width: 1025px) {
+          .pricing-card--featured {
+            transform: scale(1.03);
+          }
+        }
       `}</style>
       <main
         style={{
@@ -1658,7 +1722,7 @@ export default function LandingPage() {
             padding: isMobile ? "60px 0" : "120px 0"
           }}
         >
-          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}>
+          <div className="pricing-section-inner">
             <h2
               style={{
                 margin: 0,
@@ -1685,25 +1749,13 @@ export default function LandingPage() {
               Start free. Upgrade when you&apos;re ready to scale.
             </p>
 
-            <div
-              style={{
-                marginTop: 48,
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
-                gap: isMobile ? 28 : 24,
-                alignItems: isMobile ? "stretch" : "center"
-              }}
-            >
+            <div className="pricing-grid">
               {/* STARTER */}
               <div
+                className="pricing-card"
                 style={{
-                  borderRadius: 20,
-                  padding: "40px 36px",
-                  display: "flex",
-                  flexDirection: "column",
                   border: "1px solid var(--border-primary)",
-                  background: "var(--bg-card)",
-                  boxSizing: "border-box"
+                  background: "var(--bg-card)"
                 }}
               >
                 <span
@@ -1719,18 +1771,7 @@ export default function LandingPage() {
                 >
                   STARTER
                 </span>
-                <div
-                  style={{
-                    marginTop: 12,
-                    fontSize: "3.5rem",
-                    fontWeight: 900,
-                    color: "var(--accent)",
-                    lineHeight: 1,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
-                  }}
-                >
-                  FREE
-                </div>
+                <div className="pricing-price">FREE</div>
                 <p
                   style={{
                     margin: "8px 0 0",
@@ -1802,18 +1843,12 @@ export default function LandingPage() {
 
               {/* PRO */}
               <div
+                className="pricing-card pricing-card--featured"
                 style={{
                   position: "relative",
-                  borderRadius: 20,
-                  padding: "40px 36px",
-                  paddingTop: 44,
-                  display: "flex",
-                  flexDirection: "column",
                   border: "2px solid var(--accent)",
                   background: "var(--bg-card)",
-                  boxShadow: "0 0 40px rgba(6,182,212,0.15)",
-                  transform: isMobile ? "none" : "scale(1.03)",
-                  boxSizing: "border-box"
+                  boxShadow: "0 0 40px rgba(6,182,212,0.15)"
                 }}
               >
                 <span
@@ -1848,18 +1883,7 @@ export default function LandingPage() {
                 >
                   PRO
                 </span>
-                <div
-                  style={{
-                    marginTop: 12,
-                    fontSize: "3.5rem",
-                    fontWeight: 900,
-                    color: "var(--accent)",
-                    lineHeight: 1,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
-                  }}
-                >
-                  $49
-                </div>
+                <div className="pricing-price">$49</div>
                 <p
                   style={{
                     margin: "8px 0 0",
@@ -1933,14 +1957,10 @@ export default function LandingPage() {
 
               {/* SCALE */}
               <div
+                className="pricing-card"
                 style={{
-                  borderRadius: 20,
-                  padding: "40px 36px",
-                  display: "flex",
-                  flexDirection: "column",
                   border: "1px solid var(--border-primary)",
-                  background: "var(--bg-card)",
-                  boxSizing: "border-box"
+                  background: "var(--bg-card)"
                 }}
               >
                 <span
@@ -1956,18 +1976,7 @@ export default function LandingPage() {
                 >
                   SCALE
                 </span>
-                <div
-                  style={{
-                    marginTop: 12,
-                    fontSize: "3.5rem",
-                    fontWeight: 900,
-                    color: "var(--accent)",
-                    lineHeight: 1,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
-                  }}
-                >
-                  $99
-                </div>
+                <div className="pricing-price">$99</div>
                 <p
                   style={{
                     margin: "8px 0 0",

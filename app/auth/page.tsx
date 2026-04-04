@@ -77,13 +77,15 @@ export default function AuthPage() {
         minHeight: "100vh",
         background: "var(--bg-primary)",
         color: "var(--text-primary)",
-        padding: "40px 24px",
+        padding: "24px max(24px, 5vw)",
         display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
         alignItems: "center",
-        justifyContent: "center"
+        boxSizing: "border-box"
       }}
     >
-      <section style={{ width: "100%", maxWidth: 560 }}>
+      <section style={{ width: "100%", maxWidth: 560, flexShrink: 0 }}>
         <Link
           href="/"
           style={{
@@ -99,7 +101,7 @@ export default function AuthPage() {
         </Link>
         <p
           style={{
-            margin: "14px 0 0",
+            margin: "10px 0 0",
             fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 12,
             letterSpacing: "0.3em",
@@ -110,10 +112,10 @@ export default function AuthPage() {
         </p>
         <h1
           style={{
-            margin: "24px 0 0",
+            margin: "14px 0 0",
             fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-            fontSize: "clamp(64px,10vw,110px)",
-            lineHeight: 0.95
+            fontSize: "clamp(2rem, 6vw, 3.5rem)",
+            lineHeight: 1.12
           }}
         >
           <span style={{ display: "block", color: "var(--text-primary)" }}>YOUR SALES MACHINE</span>
@@ -128,7 +130,7 @@ export default function AuthPage() {
               disabled={loading}
               style={{
                 width: "100%",
-                marginTop: 26,
+                marginTop: 20,
                 border: "1px solid var(--border-secondary)",
                 background: "#ffffff",
                 color: "#000000",
@@ -172,7 +174,7 @@ export default function AuthPage() {
 
             <div
               style={{
-                marginTop: 18,
+                marginTop: 14,
                 display: "flex",
                 alignItems: "center",
                 gap: 10
@@ -193,7 +195,7 @@ export default function AuthPage() {
               <div style={{ flex: 1, height: 1, background: "var(--border-secondary)" }} />
             </div>
 
-            <div style={{ marginTop: 26, display: "flex", gap: 24 }}>
+            <div style={{ marginTop: 18, display: "flex", gap: 24 }}>
               {[
                 { key: "signup", label: "SIGN UP" },
                 { key: "signin", label: "SIGN IN" }
@@ -219,7 +221,7 @@ export default function AuthPage() {
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} style={{ marginTop: 28 }}>
+            <form onSubmit={handleSubmit} style={{ marginTop: 20 }}>
               <input
                 type="email"
                 value={email}
