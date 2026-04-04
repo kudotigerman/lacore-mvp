@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 
@@ -23,6 +24,18 @@ const REGENERATE_VIBE_OPTIONS = [
   "💎 Luxury & premium",
   "🤝 Warm & approachable"
 ] as const;
+
+type PublicStripeSettings = {
+  publishable_key: string;
+  price_id: string | null;
+  payment_type: string;
+  button_text: string;
+  checkout_ready: boolean;
+};
+
+type StripeWithRedirect = {
+  redirectToCheckout: (options: { sessionId: string }) => Promise<{ error?: { message?: string } }>;
+};
 
 function buildLandingIframeSrcDoc(compiledJs: string): string {
   return `<!DOCTYPE html>
@@ -121,6 +134,8 @@ export default function PublicLandingPage() {
   const [regenError, setRegenError] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [publicStripe, setPublicStripe] = useState<PublicStripeSettings | null>(null);
+  const [stripePayLoading, setStripePayLoading] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("lacore-theme") ?? "dark";
@@ -162,6 +177,23 @@ export default function PublicLandingPage() {
   }, [fetchHtml]);
 
   useEffect(() => {
+    if (editMode || !slug) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/stripe/settings?slug=${encodeURIComponent(slug)}`);
+        const json = (await res.json()) as { stripe: PublicStripeSettings | null };
+        if (!cancelled) setPublicStripe(json.stripe);
+      } catch {
+        if (!cancelled) setPublicStripe(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, editMode]);
+
+  useEffect(() => {
     if (!updating) return;
     setUpdateMessageIndex(0);
     const id = setInterval(() => {
@@ -178,6 +210,38 @@ export default function PublicLandingPage() {
     await navigator.clipboard.writeText(pageUrl);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleStripeCheckout() {
+    if (!slug || stripePayLoading || !publicStripe?.checkout_ready) return;
+    setStripePayLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug })
+      });
+      const data = (await res.json()) as {
+        sessionId?: string;
+        publishableKey?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.sessionId || !data.publishableKey) {
+        window.alert(data.error ?? "Could not start checkout.");
+        return;
+      }
+      const stripe = await loadStripe(data.publishableKey);
+      if (!stripe) {
+        window.alert("Stripe failed to load.");
+        return;
+      }
+      const { error } = await (stripe as unknown as StripeWithRedirect).redirectToCheckout({
+        sessionId: data.sessionId
+      });
+      if (error?.message) window.alert(error.message);
+    } finally {
+      setStripePayLoading(false);
+    }
   }
 
   function openRegenerateModal() {
@@ -854,6 +918,33 @@ export default function PublicLandingPage() {
               >
                 ⚡ Built with LACORE
               </button>
+              {publicStripe?.checkout_ready ? (
+                <button
+                  type="button"
+                  onClick={() => void handleStripeCheckout()}
+                  disabled={stripePayLoading}
+                  style={{
+                    position: "fixed",
+                    bottom: 20,
+                    left: 20,
+                    zIndex: 9999,
+                    border: "none",
+                    background: "var(--accent)",
+                    color: "var(--on-accent, #000)",
+                    borderRadius: 6,
+                    padding: "14px 22px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    letterSpacing: "0.06em",
+                    cursor: stripePayLoading ? "wait" : "pointer",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+                    opacity: stripePayLoading ? 0.85 : 1
+                  }}
+                >
+                  {stripePayLoading ? "…" : publicStripe.button_text}
+                </button>
+              ) : null}
             </>
           ) : (
             <>
@@ -893,6 +984,33 @@ export default function PublicLandingPage() {
               >
                 ⚡ Built with LACORE
               </button>
+              {publicStripe?.checkout_ready ? (
+                <button
+                  type="button"
+                  onClick={() => void handleStripeCheckout()}
+                  disabled={stripePayLoading}
+                  style={{
+                    position: "fixed",
+                    bottom: 20,
+                    left: 20,
+                    zIndex: 9999,
+                    border: "none",
+                    background: "var(--accent)",
+                    color: "var(--on-accent, #000)",
+                    borderRadius: 6,
+                    padding: "14px 22px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    letterSpacing: "0.06em",
+                    cursor: stripePayLoading ? "wait" : "pointer",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+                    opacity: stripePayLoading ? 0.85 : 1
+                  }}
+                >
+                  {stripePayLoading ? "…" : publicStripe.button_text}
+                </button>
+              ) : null}
             </>
           )}
         </main>

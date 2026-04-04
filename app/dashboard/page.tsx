@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import DomainConnect from "@/components/DomainConnect";
+import StripeConnect from "@/components/StripeConnect";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Offer = {
@@ -2272,9 +2273,14 @@ export default function DashboardPage() {
                         </a>
                       </div>
                       {userId ? (
-                        <div style={{ marginTop: 12 }}>
-                          <DomainConnect slug={landingSlug} userId={userId} />
-                        </div>
+                        <>
+                          <div style={{ marginTop: 12 }}>
+                            <DomainConnect slug={landingSlug} userId={userId} />
+                          </div>
+                          <div style={{ marginTop: 12 }}>
+                            <StripeConnect userId={userId} />
+                          </div>
+                        </>
                       ) : null}
                       {regenerateConfirm ? (
                         <div style={{ marginTop: 12 }}>
@@ -3038,9 +3044,14 @@ export default function DashboardPage() {
                       </a>
                     </div>
                     {userId ? (
-                      <div style={{ marginTop: 16 }}>
-                        <DomainConnect slug={landingSlug} userId={userId} />
-                      </div>
+                      <>
+                        <div style={{ marginTop: 16 }}>
+                          <DomainConnect slug={landingSlug} userId={userId} />
+                        </div>
+                        <div style={{ marginTop: 16 }}>
+                          <StripeConnect userId={userId} />
+                        </div>
+                      </>
                     ) : null}
                     {regenerateConfirm ? (
                       <div style={{ marginTop: 14 }}>
