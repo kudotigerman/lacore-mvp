@@ -7,10 +7,11 @@ import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 
 const wellStyle = {
   minHeight: 80,
-  background: "rgba(255,255,255,0.02)",
+  background: "rgba(255,255,255,0.015)",
   borderRadius: 6,
-  padding: 14,
-  boxSizing: "border-box" as const
+  padding: "14px 16px",
+  boxSizing: "border-box" as const,
+  marginTop: 12
 };
 
 export default function DashboardClosingPage() {
@@ -66,8 +67,8 @@ export default function DashboardClosingPage() {
     prompt: string
   ) => (
     <div style={{ ...dash.card }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
-        <p style={{ ...dash.sectionTitle, margin: 0 }}>{title}</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <p style={{ ...dash.sectionTitle, marginBottom: 0 }}>{title}</p>
         <button
           type="button"
           disabled={loading || !d.sessionToken}
@@ -88,8 +89,8 @@ export default function DashboardClosingPage() {
                 whiteSpace: "pre-wrap",
                 fontFamily: "inherit",
                 fontSize: 13,
-                lineHeight: 1.7,
-                color: "var(--text-secondary)"
+                lineHeight: 1.75,
+                color: "#A1A1AA"
               }}
             >
               {out}
@@ -103,7 +104,7 @@ export default function DashboardClosingPage() {
             </button>
           </>
         ) : (
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>—</span>
+          <span style={{ fontSize: 20, color: "#3F3F46" }}>—</span>
         )}
       </div>
     </div>
@@ -114,7 +115,7 @@ export default function DashboardClosingPage() {
       <DashPageHeader title="Closing System" subtitle="Scripts and sequences to convert leads into clients" />
       {err ? <p style={{ color: "var(--danger)", fontSize: 13, margin: "0 0 16px" }}>{err}</p> : null}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {renderClosingCard(
           "DM SCRIPTS",
           dmOut,

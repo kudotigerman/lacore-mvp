@@ -71,7 +71,7 @@ export default function DashboardOfferPage() {
             setDraft({ ...offer });
             setEditing(true);
           }}
-          style={dash.btnGhost}
+          style={dash.btnGhostEdit}
         >
           Edit
         </button>
@@ -95,11 +95,16 @@ export default function DashboardOfferPage() {
             {fields.map((item, idx) => {
               const src = editing && draft ? draft : offer;
               const value = src[item.key];
+              const last = idx === fields.length - 1;
               return (
-                <div key={item.key}>
-                  {idx > 0 ? (
-                    <div style={{ borderBottom: "1px solid var(--border)", margin: "16px 0" }} />
-                  ) : null}
+                <div
+                  key={item.key}
+                  style={{
+                    paddingTop: 16,
+                    paddingBottom: 16,
+                    borderBottom: last ? "none" : "1px solid #1C1C22"
+                  }}
+                >
                   <p style={dash.sectionTitle}>{item.label}</p>
                   {editing && draft ? (
                     item.multiline ? (
@@ -120,7 +125,7 @@ export default function DashboardOfferPage() {
                       />
                     )
                   ) : (
-                    <div style={{ fontSize: 15, color: "var(--text-primary)", marginTop: 4, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    <div style={{ fontSize: 15, color: "#FFFFFF", marginTop: 4, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
                       {value}
                     </div>
                   )}

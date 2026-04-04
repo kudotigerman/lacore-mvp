@@ -4,16 +4,16 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg-primary: #09090b;
-  --bg-secondary: #0f0f12;
-  --bg-card: #111115;
-  --bg-input: #0c0c0e;
+  --bg-primary: #0a0a0d;
+  --bg-secondary: #060608;
+  --bg-card: #111116;
+  --bg-input: #16161c;
   --bg-surface: #060608;
-  --text-primary: #f4f4f5;
+  --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   --text-muted: #52525b;
-  --border-primary: #1c1c1f;
-  --border-secondary: #27272a;
+  --border-primary: #1c1c22;
+  --border-secondary: #27272e;
   --accent: #06b6d4;
   --on-accent: #09090b;
   --success: #22c55e;

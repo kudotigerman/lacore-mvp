@@ -50,10 +50,10 @@ export default function DashboardLandingPage() {
             ) : (
               <div
                 style={{
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
+                  border: "1px solid #1C1C22",
+                  borderRadius: 8,
                   overflow: "hidden",
-                  background: "var(--card-bg)"
+                  background: "#111116"
                 }}
               >
                 <iframe
@@ -62,7 +62,7 @@ export default function DashboardLandingPage() {
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                   style={{
                     width: "100%",
-                    height: 500,
+                    height: 480,
                     border: "none",
                     display: "block",
                     pointerEvents: "none"
@@ -72,55 +72,48 @@ export default function DashboardLandingPage() {
             )}
           </div>
 
-          <div style={{ flex: "1 1 280px", minWidth: 260, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ flex: "1 1 280px", minWidth: 260, display: "flex", flexDirection: "column", gap: 12 }}>
             {d.landingSlug ? (
               <>
-                <div style={{ ...dash.card }}>
-                  <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Public URL</p>
+                <div style={{ ...dash.cardPanel }}>
+                  <p style={{ ...dash.sectionTitle, marginBottom: 10 }}>Public URL</p>
                   <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-                    <input
-                      readOnly
-                      value={url}
-                      className="dash-focusable"
-                      style={{ ...dash.input, flex: 1, minWidth: 0, fontSize: 13 }}
-                    />
-                    <button type="button" onClick={() => void copyUrl()} style={{ ...dash.btnGhost, flexShrink: 0 }}>
+                    <input readOnly value={url} className="dash-focusable" style={{ ...dash.inputUrl, flex: 1, minWidth: 0 }} />
+                    <button type="button" onClick={() => void copyUrl()} style={dash.btnCopyAccent}>
                       Copy
                     </button>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-                    <a
-                      href={`/p/${d.landingSlug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ ...dash.btnGhost, textAlign: "center", textDecoration: "none", display: "block" }}
-                    >
-                      Preview →
-                    </a>
-                    <a
-                      href={`/p/${d.landingSlug}?edit=true`}
-                      style={{ ...dash.btnGhost, textAlign: "center", textDecoration: "none", display: "block" }}
-                    >
-                      Edit Page →
-                    </a>
-                  </div>
+                  <a
+                    href={`/p/${d.landingSlug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ ...dash.btnGhostBlock, marginTop: 6, textDecoration: "none", display: "block" }}
+                  >
+                    Preview →
+                  </a>
+                  <a
+                    href={`/p/${d.landingSlug}?edit=true`}
+                    style={{ ...dash.btnGhostBlock, marginTop: 6, textDecoration: "none", display: "block" }}
+                  >
+                    Edit Page →
+                  </a>
                 </div>
 
                 {d.userId ? (
-                  <div style={{ ...dash.card }}>
-                    <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Custom Domain</p>
+                  <div style={{ ...dash.cardPanel }}>
+                    <p style={{ ...dash.sectionTitle, marginBottom: 10 }}>Custom Domain</p>
                     <DomainConnect slug={d.landingSlug} userId={d.userId} />
                   </div>
                 ) : null}
 
                 {d.userId ? (
-                  <div style={{ ...dash.card }}>
-                    <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Payments</p>
+                  <div style={{ ...dash.cardPanel }}>
+                    <p style={{ ...dash.sectionTitle, marginBottom: 10 }}>Payments</p>
                     <StripeConnect userId={d.userId} />
                   </div>
                 ) : null}
 
-                <div style={{ ...dash.card }}>
+                <div style={{ ...dash.cardPanel }}>
                   {d.regenerateConfirm ? (
                     <div>
                       <p style={{ ...dash.small, margin: "0 0 12px" }}>Are you sure? This will replace your current site.</p>

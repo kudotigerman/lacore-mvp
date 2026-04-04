@@ -8,13 +8,13 @@ export default function DashboardSettingsPage() {
   const d = useDashboardData();
 
   const toggleActive = (on: boolean) => ({
-    borderColor: on ? "rgba(6,182,212,0.4)" : "var(--border)",
+    borderColor: on ? "rgba(6,182,212,0.4)" : "#1C1C22",
     background: on ? "rgba(6,182,212,0.15)" : "transparent",
-    color: on ? "var(--accent)" : "var(--text-secondary)"
+    color: on ? "#06B6D4" : "var(--text-secondary)"
   });
 
   return (
-    <div style={{ ...dash.pageShell, maxWidth: 560 }}>
+    <div style={{ ...dash.pageShell, maxWidth: 520 }}>
       <DashPageHeader title="Settings" subtitle="Manage your account and preferences" />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -22,7 +22,7 @@ export default function DashboardSettingsPage() {
           <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Profile</p>
           <div style={{ display: "grid", gap: 16 }}>
             <div>
-              <p style={{ ...dash.sectionTitle, marginBottom: 8 }}>Display name</p>
+              <p style={dash.sectionTitle}>Display name</p>
               <input
                 className="dash-focusable"
                 type="text"
@@ -32,11 +32,17 @@ export default function DashboardSettingsPage() {
               />
             </div>
             <div>
-              <p style={{ ...dash.sectionTitle, marginBottom: 8 }}>Email</p>
-              <input className="dash-focusable" type="text" readOnly value={d.email || "—"} style={{ ...dash.input, color: "var(--text-muted)" }} />
+              <p style={dash.sectionTitle}>Email</p>
+              <input
+                className="dash-focusable"
+                type="text"
+                readOnly
+                value={d.email || "—"}
+                style={{ ...dash.input, color: "#52525B" }}
+              />
             </div>
             <div>
-              <p style={{ ...dash.sectionTitle, marginBottom: 8 }}>Telegram</p>
+              <p style={dash.sectionTitle}>Telegram</p>
               <input
                 className="dash-focusable"
                 type="text"
@@ -47,7 +53,7 @@ export default function DashboardSettingsPage() {
               />
             </div>
             <div>
-              <p style={{ ...dash.sectionTitle, marginBottom: 8 }}>WhatsApp</p>
+              <p style={dash.sectionTitle}>WhatsApp</p>
               <input
                 className="dash-focusable"
                 type="text"
@@ -62,7 +68,7 @@ export default function DashboardSettingsPage() {
               type="button"
               disabled={d.profileSaving}
               onClick={() => void d.handleSaveProfile()}
-              style={{ ...dash.btnPrimary, alignSelf: "flex-start", opacity: d.profileSaving ? 0.6 : 1 }}
+              style={{ ...dash.btnSettingsSave, alignSelf: "flex-start", opacity: d.profileSaving ? 0.6 : 1 }}
             >
               {d.profileSaving ? "Saving…" : "Save"}
             </button>
@@ -71,7 +77,7 @@ export default function DashboardSettingsPage() {
 
         <div style={{ ...dash.card }}>
           <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Notifications</p>
-          <p style={{ ...dash.sectionTitle, marginBottom: 8 }}>Email</p>
+          <p style={dash.sectionTitle}>Email</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
             <button
               type="button"
@@ -96,7 +102,7 @@ export default function DashboardSettingsPage() {
               Off
             </button>
           </div>
-          <p style={{ ...dash.sectionTitle, marginBottom: 8 }}>Telegram chat ID</p>
+          <p style={dash.sectionTitle}>Telegram chat ID</p>
           <input
             className="dash-focusable"
             type="text"

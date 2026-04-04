@@ -41,7 +41,10 @@ const replyLinkStyle: CSSProperties = {
   textDecoration: "none",
   display: "inline-flex",
   alignItems: "center",
-  flexShrink: 0
+  flexShrink: 0,
+  marginLeft: "auto",
+  fontSize: 11,
+  padding: "5px 12px"
 };
 
 type LeadsListProps = {
@@ -140,15 +143,15 @@ export default function LeadsList({
         <div
           style={{
             textAlign: "center",
-            padding: "56px 16px",
-            color: "var(--text-muted)"
+            padding: "80px 0",
+            color: "#52525B"
           }}
         >
-          <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 16, color: "var(--text-muted)" }} aria-hidden>
+          <div style={{ fontSize: 40, lineHeight: 1, marginBottom: 16, color: "#27272E" }} aria-hidden>
             ◎
           </div>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>No leads yet</p>
-          <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#52525B" }}>No leads yet</p>
+          <p style={{ margin: "6px 0 0", fontSize: 13, color: "#3F3F46", lineHeight: 1.5 }}>
             Share your landing page to start receiving leads
           </p>
         </div>
@@ -160,44 +163,50 @@ export default function LeadsList({
               style={{
                 ...dash.cardCompact,
                 display: "flex",
+                flexDirection: "row",
                 justifyContent: "space-between",
-                gap: 16,
                 alignItems: "flex-start",
+                gap: 16,
                 flexWrap: "wrap"
               }}
             >
               <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   {isNewLead(lead.created_at) ? (
-                    <span style={{ color: "var(--success)", fontSize: 10, lineHeight: 1 }} aria-hidden>
-                      ●
-                    </span>
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "#22c55e",
+                        flexShrink: 0
+                      }}
+                      aria-hidden
+                    />
                   ) : null}
-                  <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-                    {lead.name?.trim() || "—"}
-                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: "#FFFFFF" }}>{lead.name?.trim() || "—"}</span>
                 </div>
                 <p
                   style={{
                     margin: "6px 0 0",
                     fontSize: 12,
-                    color: "var(--text-muted)",
+                    color: "#52525B",
                     wordBreak: "break-all",
                     lineHeight: 1.5
                   }}
                 >
                   {lead.email}
-                  <span style={{ color: "var(--text-muted)" }}> · </span>
+                  <span> · </span>
                   {formatRelativeTime(lead.created_at)}
-                  <span style={{ color: "var(--text-muted)" }}> · </span>
-                  <span style={{ color: "var(--text-muted)" }}>/p/{lead.slug}</span>
+                  <span> · </span>
+                  <span>/p/{lead.slug}</span>
                 </p>
                 {lead.message?.trim() ? (
                   <p
                     style={{
                       margin: "6px 0 0",
                       fontSize: 13,
-                      color: "var(--text-secondary)",
+                      color: "#A1A1AA",
                       lineHeight: 1.6,
                       whiteSpace: "pre-wrap"
                     }}
@@ -221,7 +230,7 @@ export default function LeadsList({
             <li
               key={lead.id}
               style={{
-                borderBottom: "1px solid var(--border)",
+                borderBottom: "1px solid #1C1C22",
                 padding: "16px 0",
                 display: "flex",
                 justifyContent: "space-between",

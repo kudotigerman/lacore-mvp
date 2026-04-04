@@ -69,9 +69,9 @@ export default function DashboardAnalyticsPage() {
 
   const metric = (label: string, value: string | number, sub?: string) => (
     <div style={{ ...dash.card }}>
-      <p style={{ ...dash.sectionTitle, margin: 0 }}>{label}</p>
+      <p style={{ ...dash.sectionTitle, marginBottom: 0 }}>{label}</p>
       <div style={{ ...dash.metricNumber, marginTop: 8 }}>{value}</div>
-      {sub ? <p style={{ ...dash.small, margin: "8px 0 0", lineHeight: 1.5 }}>{sub}</p> : null}
+      {sub ? <p style={dash.metricCaption}>{sub}</p> : null}
     </div>
   );
 
@@ -87,7 +87,7 @@ export default function DashboardAnalyticsPage() {
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              gap: 16,
+              gap: 12,
               marginBottom: 24
             }}
             className="dash-analytics-metrics"
@@ -117,16 +117,16 @@ export default function DashboardAnalyticsPage() {
                     key={r.id}
                     style={{
                       padding: "10px 0",
-                      borderBottom: i === recent.length - 1 ? "none" : "1px solid var(--border)",
+                      borderBottom: i === recent.length - 1 ? "none" : "1px solid #1C1C22",
                       fontSize: 13,
-                      color: "var(--text-secondary)"
+                      color: "#A1A1AA"
                     }}
                   >
-                    <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{r.name?.trim() || "—"}</span>
+                    <span style={{ color: "#FFFFFF", fontWeight: 500 }}>{r.name?.trim() || "—"}</span>
                     {" · "}
                     {r.email}
                     {" · "}
-                    <span style={{ color: "var(--text-muted)" }}>{formatRelativeTime(r.created_at)}</span>
+                    <span style={{ color: "#52525B" }}>{formatRelativeTime(r.created_at)}</span>
                   </div>
                 ))}
               </div>
