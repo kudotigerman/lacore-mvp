@@ -2560,10 +2560,8 @@ export default function LandingPage() {
               style={{
                 marginTop: 32,
                 display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                justifyContent: isMobile ? "center" : "space-between",
+                justifyContent: isMobile ? "center" : "flex-start",
                 alignItems: "center",
-                gap: isMobile ? 8 : 0,
                 textAlign: isMobile ? "center" : "left"
               }}
             >
@@ -2576,16 +2574,6 @@ export default function LandingPage() {
                 }}
               >
                 © 2026 LACORE. All rights reserved.
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 13,
-                  color: "#52525B"
-                }}
-              >
-                Built by Stan + Claude ⚡
               </p>
             </div>
           </div>
