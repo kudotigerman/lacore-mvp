@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import DomainConnect from "@/components/DomainConnect";
+import ContentMachine from "@/components/ContentMachine";
 import StripeConnect from "@/components/StripeConnect";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -1439,7 +1440,7 @@ export default function DashboardPage() {
                 [
                   { id: "01" as const, num: "01", title: "OFFER", soon: false, badge: offer ? "✓ DONE" : "—" },
                   { id: "02" as const, num: "02", title: "LANDING PAGE", soon: false, badge: landingSlug ? "✓ LIVE" : "NEXT" },
-                  { id: "03" as const, num: "03", title: "CONTENT", soon: true, badge: "SOON" },
+                  { id: "03" as const, num: "03", title: "CONTENT", soon: false, badge: "✓ LIVE" },
                   { id: "04" as const, num: "04", title: "LEADS", soon: true, badge: "SOON" },
                   { id: "05" as const, num: "05", title: "CLOSING", soon: true, badge: "SOON" },
                   { id: "06" as const, num: "06", title: "ANALYTICS", soon: true, badge: "SOON" }
@@ -3140,10 +3141,10 @@ export default function DashboardPage() {
             ) : null}
 
             {activeDesktopView === "03" ? (
-              <div style={{ maxWidth: 560 }}>
+              <div style={{ maxWidth: 720 }}>
                 <h2
                   style={{
-                    margin: "0 0 12px",
+                    margin: "0 0 16px",
                     fontFamily: "inherit",
                     fontWeight: 800,
                     fontSize: 28,
@@ -3154,28 +3155,13 @@ export default function DashboardPage() {
                 >
                   CONTENT MACHINE
                 </h2>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    fontFamily: "inherit",
-                    fontSize: 9,
-                    letterSpacing: "0.14em",
-                    color: "var(--text-muted)",
-                    border: "1px solid var(--border-primary)",
-                    padding: "4px 10px",
-                    marginBottom: 16
-                  }}
-                >
-                  COMING SOON
-                </span>
-                <p style={{ margin: "16px 0 0", fontFamily: "inherit", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                  Automated posts for Instagram, X, LinkedIn and Threads — coming soon.
-                </p>
-                <ul style={{ margin: "20px 0 0", paddingLeft: 20, fontFamily: "inherit", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-                  <li>Daily posts on autopilot</li>
-                  <li>Platform-specific adaptation</li>
-                  <li>AI-generated visuals</li>
-                </ul>
+                {userId ? (
+                  <ContentMachine
+                    offer={offer?.offer ?? ""}
+                    audience={offer?.audience ?? ""}
+                    userId={userId}
+                  />
+                ) : null}
               </div>
             ) : null}
 
