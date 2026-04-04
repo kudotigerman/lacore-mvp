@@ -423,17 +423,24 @@ export default function DashboardPage() {
       const { error } = await supabase.from("profiles").upsert(
         {
           user_id: userId,
-          display_name: profileDisplayName.trim() || null,
-          telegram: profileTelegram.trim() || null,
-          whatsapp: profileWhatsapp.trim() || null,
+          display_name: profileDisplayName.trim(),
+          telegram: profileTelegram.trim(),
+          whatsapp: profileWhatsapp.trim(),
           updated_at: new Date().toISOString()
         } as never,
-        { onConflict: "user_id" }
+        {
+          onConflict: "user_id",
+          ignoreDuplicates: false
+        }
       );
-      if (error) throw error;
+
+      if (error) {
+        console.error("Profile save error:", JSON.stringify(error));
+        setProfileSaveError("Could not save: " + error.message);
+        return;
+      }
+
       setSavedProfileDisplayName(profileDisplayName.trim() || null);
-    } catch (e) {
-      setProfileSaveError(e instanceof Error ? e.message : "Could not save profile.");
     } finally {
       setProfileSaving(false);
     }

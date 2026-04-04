@@ -402,18 +402,21 @@ export default function LandingPage() {
                 >
                   WHAT YOU GET
                 </button>
-                <Link
-                  href="/auth"
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("pricing")}
                   style={{
+                    border: "none",
+                    background: "transparent",
                     fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 11,
                     letterSpacing: "0.15em",
                     color: "var(--text-muted)",
-                    textDecoration: "none"
+                    cursor: "pointer"
                   }}
                 >
                   PRICING
-                </Link>
+                </button>
               </div>
             )}
             <Link
@@ -872,6 +875,399 @@ export default function LandingPage() {
                 {item}
               </div>
             ))}
+          </div>
+        </section>
+
+        <section
+          id="pricing"
+          style={{
+            background: "var(--bg-primary)",
+            padding: isMobile ? "60px 0" : "120px 0"
+          }}
+        >
+          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}>
+            <h2
+              style={{
+                margin: 0,
+                textAlign: "center",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontWeight: 800,
+                fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+                letterSpacing: "-0.02em",
+                color: "var(--text-primary)"
+              }}
+            >
+              Simple pricing. No surprises.
+            </h2>
+            <p
+              style={{
+                margin: "16px 0 0",
+                textAlign: "center",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontSize: 16,
+                color: "var(--text-muted)",
+                lineHeight: 1.6
+              }}
+            >
+              Start free. Upgrade when you&apos;re ready to scale.
+            </p>
+
+            <div
+              style={{
+                marginTop: 48,
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                gap: isMobile ? 28 : 24,
+                alignItems: isMobile ? "stretch" : "center"
+              }}
+            >
+              {/* STARTER */}
+              <div
+                style={{
+                  borderRadius: 20,
+                  padding: "40px 36px",
+                  display: "flex",
+                  flexDirection: "column",
+                  border: "1px solid var(--border-primary)",
+                  background: "var(--bg-card)",
+                  boxSizing: "border-box"
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    opacity: 0.5,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  STARTER
+                </span>
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: "3.5rem",
+                    fontWeight: 900,
+                    color: "var(--accent)",
+                    lineHeight: 1,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                  }}
+                >
+                  FREE
+                </div>
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 14,
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  During beta
+                </p>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    margin: "28px 0",
+                    padding: 0,
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 14
+                  }}
+                >
+                  {[
+                    "AI offer generation",
+                    "Landing page (lacore.ai/p/yourname)",
+                    "AI visual editor",
+                    "Lead capture form",
+                    "Sales Builder AI chat",
+                    "1 active landing page"
+                  ].map((text) => (
+                    <li
+                      key={text}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        fontSize: "0.94rem",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        color: "var(--text-secondary)",
+                        lineHeight: 1.45
+                      }}
+                    >
+                      <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/auth"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 16,
+                    fontWeight: 700,
+                    borderRadius: 12,
+                    marginTop: "auto",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 13,
+                    letterSpacing: "0.06em",
+                    border: "2px solid var(--accent)",
+                    background: "transparent",
+                    color: "var(--accent)",
+                    display: "block"
+                  }}
+                >
+                  START FOR FREE →
+                </Link>
+              </div>
+
+              {/* PRO */}
+              <div
+                style={{
+                  position: "relative",
+                  borderRadius: 20,
+                  padding: "40px 36px",
+                  paddingTop: 44,
+                  display: "flex",
+                  flexDirection: "column",
+                  border: "2px solid var(--accent)",
+                  background: "var(--bg-card)",
+                  boxShadow: "0 0 40px rgba(6,182,212,0.15)",
+                  transform: isMobile ? "none" : "scale(1.03)",
+                  boxSizing: "border-box"
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -16,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "var(--accent)",
+                    color: "#ffffff",
+                    borderRadius: 999,
+                    padding: "6px 20px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    letterSpacing: "0.08em",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  MOST POPULAR
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    opacity: 0.5,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  PRO
+                </span>
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: "3.5rem",
+                    fontWeight: 900,
+                    color: "var(--accent)",
+                    lineHeight: 1,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                  }}
+                >
+                  $49
+                </div>
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 14,
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  /month
+                </p>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    margin: "28px 0",
+                    padding: 0,
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 14
+                  }}
+                >
+                  {[
+                    "Everything in Starter",
+                    "Custom domain connection",
+                    "Content machine — daily posts to Instagram, X, Threads, LinkedIn",
+                    "AI writes in your voice",
+                    "Lead notifications (email + Telegram)",
+                    "3 active landing pages",
+                    "Analytics dashboard",
+                    "Priority support"
+                  ].map((text) => (
+                    <li
+                      key={text}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        fontSize: "0.94rem",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        color: "var(--text-secondary)",
+                        lineHeight: 1.45
+                      }}
+                    >
+                      <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/auth"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 16,
+                    fontWeight: 700,
+                    borderRadius: 12,
+                    marginTop: "auto",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 13,
+                    letterSpacing: "0.06em",
+                    border: "none",
+                    background: "var(--accent)",
+                    color: "#ffffff",
+                    display: "block"
+                  }}
+                >
+                  GET PRO →
+                </Link>
+              </div>
+
+              {/* SCALE */}
+              <div
+                style={{
+                  borderRadius: 20,
+                  padding: "40px 36px",
+                  display: "flex",
+                  flexDirection: "column",
+                  border: "1px solid var(--border-primary)",
+                  background: "var(--bg-card)",
+                  boxSizing: "border-box"
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    opacity: 0.5,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  SCALE
+                </span>
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: "3.5rem",
+                    fontWeight: 900,
+                    color: "var(--accent)",
+                    lineHeight: 1,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                  }}
+                >
+                  $99
+                </div>
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 14,
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  /month
+                </p>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    margin: "28px 0",
+                    padding: 0,
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 14
+                  }}
+                >
+                  {[
+                    "Everything in Pro",
+                    "All social platforms (TikTok, YouTube Shorts, Pinterest, Telegram)",
+                    "AI closing scripts — personalized for every lead",
+                    "Auto follow-up sequences",
+                    "WhatsApp & Telegram lead bot",
+                    "Stripe payments on landing page",
+                    "Unlimited landing pages",
+                    "CRM — full lead pipeline view",
+                    "Dedicated AI sales agent",
+                    "White-label option"
+                  ].map((text) => (
+                    <li
+                      key={text}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        fontSize: "0.94rem",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        color: "var(--text-secondary)",
+                        lineHeight: 1.45
+                      }}
+                    >
+                      <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/auth"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 16,
+                    fontWeight: 700,
+                    borderRadius: 12,
+                    marginTop: "auto",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 13,
+                    letterSpacing: "0.06em",
+                    border: "2px solid var(--accent)",
+                    background: "transparent",
+                    color: "var(--accent)",
+                    display: "block"
+                  }}
+                >
+                  GET SCALE →
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
 

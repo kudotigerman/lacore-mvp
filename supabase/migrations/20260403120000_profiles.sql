@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS profiles (
-  user_id uuid PRIMARY KEY REFERENCES auth.users (id),
+  user_id uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
   display_name text,
   telegram text,
   whatsapp text,
@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "own profile" ON profiles FOR ALL
+DROP POLICY IF EXISTS "own profile" ON profiles;
+
+CREATE POLICY "own profile" ON profiles
+  FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
