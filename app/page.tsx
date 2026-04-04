@@ -1,6 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bebas_Neue } from "next/font/google";
@@ -20,6 +26,8 @@ type OfferVariant = {
   positioning: string;
   headline: string;
 };
+
+const ff = "var(--font-geist-sans), system-ui, sans-serif" as const;
 
 export default function LandingPage() {
   const router = useRouter();
@@ -56,47 +64,7 @@ export default function LandingPage() {
       "OFFER GENERATION · LANDING PAGE · LEAD CAPTURE · AUTO CONTENT · DEAL CLOSING · ANALYTICS · ",
     []
   );
-  const layers = useMemo(
-    () => [
-      {
-        number: "01",
-        title: "OFFER & POSITIONING",
-        description:
-          "A sharp offer, target audience, pricing, and competitive positioning. Generated in seconds."
-      },
-      {
-        number: "02",
-        title: "YOUR PRESENCE",
-        description:
-          "Landing page live in minutes. Social profiles optimized. Stripe connected. Ready to take money."
-      },
-      {
-        number: "03",
-        title: "CONTENT MACHINE",
-        description:
-          "Posts published daily to Instagram, X, Threads, LinkedIn. AI-generated visuals. No effort from you."
-      },
-      {
-        number: "04",
-        title: "LEAD CAPTURE",
-        description:
-          "Every DM, comment, and form captured. Leads qualified automatically. Hot ones flagged in real time."
-      },
-      {
-        number: "05",
-        title: "CLOSING SYSTEM",
-        description:
-          "Scripts tailored to your offer. Auto follow-up sequences. Step-by-step guidance to close every deal."
-      },
-      {
-        number: "06",
-        title: "ANALYTICS BOARD",
-        description:
-          "Your entire business on one visual board. Revenue. Leads. What's working. What to do next."
-      }
-    ],
-    []
-  );
+
   const animatedExamples = useMemo(
     () => [
       "real estate in Dubai",
@@ -112,6 +80,26 @@ export default function LandingPage() {
     ],
     []
   );
+
+  const container: CSSProperties = {
+    maxWidth: 1200,
+    margin: "0 auto",
+    padding: `0 ${isMobile ? 20 : 32}px`,
+    boxSizing: "border-box"
+  };
+
+  const sectionY = isMobile ? "72px" : "120px";
+
+  const sectionTitle: CSSProperties = {
+    margin: 0,
+    fontFamily: ff,
+    fontWeight: 800,
+    fontSize: "clamp(2rem, 4vw, 3.5rem)",
+    lineHeight: 1.08,
+    letterSpacing: "-0.02em",
+    color: "var(--text-primary)",
+    textAlign: "center"
+  };
 
   useEffect(() => {
     const updateViewport = () => setIsMobile(window.innerWidth < 768);
@@ -188,6 +176,26 @@ export default function LandingPage() {
 
     return () => clearTimeout(timeoutId);
   }, [animatedExamples, exampleIndex, input.length, isFocused, isTyping, animatedText]);
+
+  useEffect(() => {
+    const nodes = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    if (nodes.length === 0) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.setAttribute("data-reveal-visible", "true");
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.06 }
+    );
+
+    nodes.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -283,6 +291,13 @@ export default function LandingPage() {
     }
   }
 
+  const cardBase: CSSProperties = {
+    borderRadius: 20,
+    border: "1px solid var(--border-primary)",
+    background: "var(--bg-card)",
+    boxSizing: "border-box"
+  };
+
   return (
     <>
       <style>{`
@@ -290,17 +305,9 @@ export default function LandingPage() {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-50%); }
         }
-        @keyframes dot-pulse {
-          0%, 100% { opacity: 0.3; transform: translateY(0); }
-          50% { opacity: 1; transform: translateY(-2px); }
-        }
         @keyframes offer-enter {
           0% { opacity: 0; transform: translateY(20px); }
           100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 0.45; transform: scale(0.9); }
-          50% { opacity: 1; transform: scale(1.2); }
         }
         @keyframes cursor-blink {
           0%, 49% { opacity: 1; }
@@ -315,21 +322,33 @@ export default function LandingPage() {
           0%, 100% { opacity: 0.5; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.08); }
         }
-        .hero-mock-line-1 {
-          animation: hero-mock-line-show 14s ease-in-out infinite;
+        @keyframes notif-slide {
+          from { opacity: 0; transform: translateX(-12px); }
+          to { opacity: 1; transform: translateX(0); }
         }
-        .hero-mock-line-2 {
-          animation: hero-mock-line-show 14s ease-in-out infinite 3.1s;
+        .lacore-card {
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
-        .hero-mock-line-3 {
-          animation: hero-mock-line-show 14s ease-in-out infinite 6.2s;
+        [data-theme="dark"] .lacore-card {
+          box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35);
         }
-        .hero-mock-line-4 {
-          animation: hero-mock-line-show 14s ease-in-out infinite 9.3s;
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(18px);
+          transition: opacity 0.7s ease, transform 0.7s ease;
         }
-        .hero-mock-dot {
-          animation: hero-mock-dot-pulse 2s ease-in-out infinite;
+        [data-reveal][data-reveal-visible="true"] {
+          opacity: 1;
+          transform: translateY(0);
         }
+        .hero-mock-line-1 { animation: hero-mock-line-show 14s ease-in-out infinite; }
+        .hero-mock-line-2 { animation: hero-mock-line-show 14s ease-in-out infinite 3.1s; }
+        .hero-mock-line-3 { animation: hero-mock-line-show 14s ease-in-out infinite 6.2s; }
+        .hero-mock-line-4 { animation: hero-mock-line-show 14s ease-in-out infinite 9.3s; }
+        .hero-mock-dot { animation: hero-mock-dot-pulse 2s ease-in-out infinite; }
+        .home-notif-1 { animation: notif-slide 0.55s ease forwards 0.15s; opacity: 0; }
+        .home-notif-2 { animation: notif-slide 0.55s ease forwards 0.65s; opacity: 0; }
+        .home-notif-3 { animation: notif-slide 0.55s ease forwards 1.15s; opacity: 0; }
       `}</style>
       <main
         style={{
@@ -338,7 +357,7 @@ export default function LandingPage() {
           color: "var(--text-primary)",
           display: "flex",
           flexDirection: "column",
-          padding: "0 20px"
+          padding: 0
         }}
       >
         <nav
@@ -362,7 +381,7 @@ export default function LandingPage() {
           <div
             style={{
               width: "100%",
-              maxWidth: 1300,
+              maxWidth: 1200,
               display: "grid",
               gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr auto 1fr",
               alignItems: "center",
@@ -374,7 +393,7 @@ export default function LandingPage() {
               style={{
                 margin: 0,
                 justifySelf: "start",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontFamily: ff,
                 fontWeight: 800,
                 letterSpacing: "-0.02em",
                 fontSize: 22,
@@ -400,11 +419,10 @@ export default function LandingPage() {
                   style={{
                     border: "none",
                     background: "transparent",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontFamily: ff,
                     fontSize: 11,
                     letterSpacing: "0.15em",
                     color: "var(--text-muted)",
-                    textDecoration: "none",
                     cursor: "pointer"
                   }}
                 >
@@ -416,28 +434,30 @@ export default function LandingPage() {
                   style={{
                     border: "none",
                     background: "transparent",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontFamily: ff,
                     fontSize: 11,
                     letterSpacing: "0.15em",
                     color: "var(--text-muted)",
-                    textDecoration: "none",
                     cursor: "pointer"
                   }}
                 >
                   WHAT YOU GET
                 </button>
-                <Link
-                  href="/auth"
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("pricing")}
                   style={{
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    border: "none",
+                    background: "transparent",
+                    fontFamily: ff,
                     fontSize: 11,
                     letterSpacing: "0.15em",
                     color: "var(--text-muted)",
-                    textDecoration: "none"
+                    cursor: "pointer"
                   }}
                 >
                   PRICING
-                </Link>
+                </button>
               </div>
             )}
             <Link
@@ -447,7 +467,7 @@ export default function LandingPage() {
                 border: "1px solid var(--accent)",
                 background: "transparent",
                 color: "var(--accent)",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontFamily: ff,
                 fontSize: isMobile ? 10 : 11,
                 letterSpacing: "0.15em",
                 padding: isMobile ? "8px 16px" : "10px 14px",
@@ -462,995 +482,976 @@ export default function LandingPage() {
 
         <div style={{ height: 68 }} />
 
+        {/* ——— HERO ——— */}
         <section
           style={{
-            minHeight: "60vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
+            padding: `${isMobile ? "48px" : "64px"} 0 ${sectionY}`,
             textAlign: "center"
           }}
         >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              textTransform: "uppercase",
-              color: "var(--accent)"
-            }}
-          >
-            LACORE
-          </p>
-
-          <h1
-            className={landingHeroBebas.className}
-            style={{
-              margin: "20px 0 0",
-              fontSize: isMobile ? "clamp(48px, 12vw, 72px)" : "clamp(72px, 12vw, 160px)",
-              lineHeight: 0.95,
-              letterSpacing: "0.02em",
-              textTransform: "uppercase"
-            }}
-          >
-            <span style={{ display: "block", color: "var(--text-primary)" }}>YOU SAY WHAT YOU SELL.</span>
-            <span style={{ display: "block", color: "var(--accent)" }}>LACORE DOES THE REST.</span>
-          </h1>
-          <p
-            style={{
-              margin: "24px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 12,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)"
-            }}
-          >
-            FROM IDEA TO FIRST CLIENT. AUTOMATICALLY.
-          </p>
-        </section>
-
-        <section
-          style={{
-            minHeight: "40vh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingBottom: "20px"
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 1280,
-              margin: "0 auto",
-              padding: isMobile ? "0 16px" : "0 24px",
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: "stretch",
-              gap: isMobile ? 28 : 40,
-              boxSizing: "border-box"
-            }}
-          >
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                flex: "1 1 0",
-                minWidth: 0,
-                maxWidth: isMobile ? "100%" : 720,
-                margin: isMobile ? "0" : undefined
-              }}
-            >
-              <div
-                style={{
-                  background: "var(--bg-input)",
-                  padding: isMobile ? "24px 20px" : "32px 28px",
-                  position: "relative",
-                  width: "100%",
-                  boxSizing: "border-box"
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 11,
-                    letterSpacing: "4px",
-                    textTransform: "uppercase",
-                    color: "var(--text-secondary)"
-                  }}
-                >
-                  ASK LACORE HOW TO SELL
-                </p>
-                <div style={{ position: "relative", marginTop: 20 }}>
-                  <textarea
-                    value={textareaDisplayValue}
-                    onChange={(event) => setInput(event.target.value)}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
-                    style={{
-                      width: "100%",
-                      minHeight: 100,
-                      border: "none",
-                      outline: "none",
-                      background: "var(--bg-input)",
-                      color: showAnimatedPlaceholder ? "var(--text-muted)" : "var(--text-primary)",
-                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                      fontSize: isMobile ? 15 : 16,
-                      lineHeight: 1.5,
-                      fontStyle: showAnimatedPlaceholder ? "italic" : "normal",
-                      resize: "vertical",
-                      padding: 0,
-                      display: "block",
-                      caretColor: showAnimatedPlaceholder ? "transparent" : "var(--accent)"
-                    }}
-                  />
-                  {showAnimatedPlaceholder && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        left: `${Math.max(animatedText.length * (isMobile ? 8.2 : 8.6), 1)}px`,
-                        top: 0,
-                        color: "var(--text-muted)",
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                        fontSize: isMobile ? 15 : 16,
-                        fontStyle: "italic",
-                        lineHeight: 1.5,
-                        pointerEvents: "none",
-                        animation: "cursor-blink 500ms infinite"
-                      }}
-                    >
-                      |
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  aria-label="Generate offer"
-                  onMouseEnter={() => setSubmitHover(true)}
-                  onMouseLeave={() => setSubmitHover(false)}
-                  style={{
-                    marginTop: 20,
-                    width: "100%",
-                    border: "none",
-                    background: canSubmit ? (submitHover ? "var(--accent)" : "var(--accent)") : "var(--text-muted)",
-                    color: "#000000",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    letterSpacing: "0.15em",
-                    fontWeight: 700,
-                    cursor: canSubmit ? "pointer" : "not-allowed",
-                    padding: "14px 28px",
-                    transition: "background 180ms ease"
-                  }}
-                >
-                  GENERATE MY OFFER →
-                </button>
-              </div>
-            </form>
-
-            <div
-              aria-hidden
-              style={{
-                width: isMobile ? "100%" : 480,
-                maxWidth: "100%",
-                height: 320,
-                flexShrink: 0,
-                margin: isMobile ? "0 auto" : undefined,
-                border: "1px solid var(--border-primary)",
-                borderRadius: 12,
-                background: "var(--bg-card)",
-                boxSizing: "border-box",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-                alignSelf: isMobile ? "center" : "flex-start"
-              }}
-            >
-              <div
-                style={{
-                  flexShrink: 0,
-                  padding: "14px 16px",
-                  borderBottom: "1px solid var(--border-primary)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8
-                }}
-              >
-                <span
-                  className="hero-mock-dot"
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    background: "#22C55E",
-                    flexShrink: 0
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 10,
-                    letterSpacing: "0.18em",
-                    color: "var(--accent)",
-                    fontWeight: 600
-                  }}
-                >
-                  ● SALES BUILDER
-                </span>
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  padding: "14px 16px 10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  minHeight: 0
-                }}
-              >
-                <p
-                  className="hero-mock-line-1"
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                    color: "var(--text-secondary)",
-                    opacity: 0
-                  }}
-                >
-                  Analyzing your offer...
-                </p>
-                <p
-                  className="hero-mock-line-2"
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                    color: "var(--text-secondary)",
-                    opacity: 0
-                  }}
-                >
-                  Detecting niche: Design / Creative
-                </p>
-                <p
-                  className="hero-mock-line-3"
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                    color: "var(--text-secondary)",
-                    opacity: 0
-                  }}
-                >
-                  Building your landing page...
-                </p>
-                <p
-                  className="hero-mock-line-4"
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                    color: "var(--accent)",
-                    fontWeight: 600,
-                    opacity: 0
-                  }}
-                >
-                  ✓ Landing page live — kudotigerman.lacore.ai
-                </p>
-              </div>
-              <div
-                style={{
-                  flexShrink: 0,
-                  margin: "0 16px 14px",
-                  height: 56,
-                  borderRadius: 8,
-                  background:
-                    "linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, var(--bg-input)) 0%, var(--bg-secondary) 45%, color-mix(in srgb, var(--accent) 22%, var(--bg-card)) 100%)",
-                  border: "1px solid var(--border-primary)"
-                }}
-              />
-            </div>
-          </div>
-
-          {loading && (
-            <div
-              style={{
-                width: "100%",
-                maxWidth: 720,
-                marginTop: 28,
-                marginLeft: "auto",
-                marginRight: "auto",
-                padding: "32px 24px",
-                textAlign: "center"
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontWeight: 800,
-                  fontSize: isMobile ? 42 : 56,
-                  lineHeight: 1.05,
-                  color: "var(--accent)",
-                  letterSpacing: "0.02em"
-                }}
-              >
-                {loadingMessages[loadingMsgIndex]}
-              </h2>
-            </div>
-          )}
-
-          {error && (
+          <div style={container}>
             <p
               style={{
-                width: "100%",
-                maxWidth: 720,
-                margin: "12px auto 0",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 12,
-                color: "#f87171"
+                margin: 0,
+                fontFamily: ff,
+                fontSize: 11,
+                letterSpacing: "0.3em",
+                textTransform: "uppercase",
+                color: "var(--accent)"
               }}
             >
-              {error}
+              LACORE
             </p>
-          )}
+            <h1
+              className={landingHeroBebas.className}
+              style={{
+                margin: "20px 0 0",
+                fontSize: isMobile ? "clamp(48px, 12vw, 72px)" : "clamp(72px, 12vw, 160px)",
+                lineHeight: 0.95,
+                letterSpacing: "0.02em",
+                textTransform: "uppercase"
+              }}
+            >
+              <span style={{ display: "block", color: "var(--text-primary)" }}>YOU SAY WHAT YOU SELL.</span>
+              <span style={{ display: "block", color: "var(--accent)" }}>LACORE DOES THE REST.</span>
+            </h1>
+            <p
+              style={{
+                margin: "24px 0 0",
+                fontFamily: ff,
+                fontSize: 12,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "var(--text-muted)"
+              }}
+            >
+              FROM IDEA TO FIRST CLIENT. AUTOMATICALLY.
+            </p>
 
-          {variants && variants.length === 3 && (
             <div
               style={{
-                width: "100%",
-                maxWidth: 1100,
-                marginTop: 24,
-                marginLeft: "auto",
-                marginRight: "auto",
-                animation: "offer-enter 400ms ease"
+                marginTop: 40,
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: "stretch",
+                gap: isMobile ? 28 : 36,
+                textAlign: "left"
               }}
             >
-              <div
+              <form
+                onSubmit={handleSubmit}
                 style={{
-                  display: "flex",
-                  flexDirection: isMobile ? "column" : "row",
-                  gap: 16,
-                  alignItems: "stretch",
-                  justifyContent: "center"
+                  flex: "1 1 0",
+                  minWidth: 0,
+                  maxWidth: isMobile ? "100%" : 640
                 }}
               >
-                {[...variants]
-                  .sort((a, b) => a.variant.localeCompare(b.variant))
-                  .map((v) => {
-                    const isSelected = selectedVariantLetter === v.variant;
-                    return (
-                      <article
-                        key={v.variant}
-                        style={{
-                          flex: isMobile ? "none" : "1 1 0",
-                          minWidth: isMobile ? "100%" : 0,
-                          maxWidth: isMobile ? "100%" : 360,
-                          boxSizing: "border-box",
-                          background: isSelected
-                            ? "color-mix(in srgb, var(--accent) 6%, transparent)"
-                            : "var(--bg-input)",
-                          border: isSelected ? "2px solid var(--accent)" : "1px solid var(--border-primary)",
-                          padding: "20px 18px 18px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 12
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                            fontWeight: 800,
-                            fontSize: 48,
-                            lineHeight: 1,
-                            color: "var(--accent)",
-                            letterSpacing: "0.02em"
-                          }}
-                        >
-                          {v.variant}
-                        </span>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                            fontSize: 10,
-                            letterSpacing: "3px",
-                            textTransform: "uppercase",
-                            color: "var(--text-muted)"
-                          }}
-                        >
-                          {v.label}
-                        </p>
-                        <h3
-                          style={{
-                            margin: 0,
-                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                            fontWeight: 800,
-                            fontSize: 28,
-                            lineHeight: 1.1,
-                            color: "var(--text-primary)",
-                            letterSpacing: "0.02em"
-                          }}
-                        >
-                          {v.headline}
-                        </h3>
-                        <div>
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                              fontSize: 9,
-                              letterSpacing: "0.2em",
-                              color: "var(--text-muted)",
-                              textTransform: "uppercase"
-                            }}
-                          >
-                            FOR{" "}
-                          </span>
-                          <span
-                            style={{
-                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                              fontSize: 13,
-                              lineHeight: 1.5,
-                              color: "var(--text-secondary)"
-                            }}
-                          >
-                            {v.audience}
-                          </span>
-                        </div>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                            fontSize: 14,
-                            lineHeight: 1.5,
-                            color: "var(--accent)",
-                            fontWeight: 700
-                          }}
-                        >
-                          {v.pricing}
-                        </p>
-                        <button
-                          type="button"
-                          disabled={savingChoice}
-                          onClick={() => void handleChooseStrategy(v)}
-                          style={{
-                            marginTop: "auto",
-                            width: "100%",
-                            border: "none",
-                            background: savingChoice && isSelected ? "var(--accent)" : "var(--accent)",
-                            color: "#000000",
-                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                            fontSize: 11,
-                            letterSpacing: "0.12em",
-                            fontWeight: 700,
-                            padding: "12px 14px",
-                            cursor: savingChoice ? "wait" : "pointer",
-                            opacity: savingChoice && !isSelected ? 0.45 : 1
-                          }}
-                        >
-                          {savingChoice && isSelected
-                            ? "SAVING..."
-                            : "CHOOSE THIS STRATEGY →"}
-                        </button>
-                      </article>
-                    );
-                  })}
-              </div>
-
-              {guestNeedsAuth && (
                 <div
                   style={{
-                    marginTop: 20,
-                    padding: "16px 18px",
-                    border: "1px solid var(--border-secondary)",
                     background: "var(--bg-input)",
-                    maxWidth: 520,
-                    marginLeft: "auto",
-                    marginRight: "auto"
+                    padding: isMobile ? "24px 20px" : "28px 26px",
+                    border: "1px solid var(--border-primary)",
+                    borderRadius: 12,
+                    boxSizing: "border-box"
                   }}
                 >
                   <p
                     style={{
                       margin: 0,
-                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                      fontSize: 12,
-                      color: "var(--text-secondary)",
-                      lineHeight: 1.5
-                    }}
-                  >
-                    Sign in to save your chosen strategy and open your dashboard.
-                  </p>
-                  <Link
-                    href="/auth"
-                    style={{
-                      display: "inline-block",
-                      marginTop: 10,
-                      border: "1px solid var(--accent)",
-                      color: "var(--accent)",
-                      background: "transparent",
-                      textDecoration: "none",
-                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontFamily: ff,
                       fontSize: 11,
-                      letterSpacing: "0.14em",
-                      padding: "8px 12px"
+                      letterSpacing: "4px",
+                      textTransform: "uppercase",
+                      color: "var(--text-secondary)"
                     }}
                   >
-                    CREATE FREE ACCOUNT →
-                  </Link>
+                    ASK LACORE HOW TO SELL
+                  </p>
+                  <div style={{ position: "relative", marginTop: 18 }}>
+                    <textarea
+                      value={textareaDisplayValue}
+                      onChange={(event) => setInput(event.target.value)}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      style={{
+                        width: "100%",
+                        minHeight: 100,
+                        border: "none",
+                        outline: "none",
+                        background: "var(--bg-input)",
+                        color: showAnimatedPlaceholder ? "var(--text-muted)" : "var(--text-primary)",
+                        fontFamily: ff,
+                        fontSize: isMobile ? 15 : 16,
+                        lineHeight: 1.5,
+                        fontStyle: showAnimatedPlaceholder ? "italic" : "normal",
+                        resize: "vertical",
+                        padding: 0,
+                        display: "block",
+                        caretColor: showAnimatedPlaceholder ? "transparent" : "var(--accent)"
+                      }}
+                    />
+                    {showAnimatedPlaceholder && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          left: `${Math.max(animatedText.length * (isMobile ? 8.2 : 8.6), 1)}px`,
+                          top: 0,
+                          color: "var(--text-muted)",
+                          fontFamily: ff,
+                          fontSize: isMobile ? 15 : 16,
+                          fontStyle: "italic",
+                          lineHeight: 1.5,
+                          pointerEvents: "none",
+                          animation: "cursor-blink 500ms infinite"
+                        }}
+                      >
+                        |
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    aria-label="Generate offer"
+                    onMouseEnter={() => setSubmitHover(true)}
+                    onMouseLeave={() => setSubmitHover(false)}
+                    style={{
+                      marginTop: 18,
+                      width: "100%",
+                      border: "none",
+                      background: canSubmit ? "var(--accent)" : "var(--text-muted)",
+                      color: "#000000",
+                      fontFamily: ff,
+                      fontSize: 12,
+                      letterSpacing: "0.15em",
+                      fontWeight: 700,
+                      cursor: canSubmit ? "pointer" : "not-allowed",
+                      padding: "14px 28px",
+                      borderRadius: 8,
+                      transition: "opacity 180ms ease"
+                    }}
+                  >
+                    GENERATE MY OFFER →
+                  </button>
                 </div>
-              )}
 
-              {chooseError && (
-                <p
+                <div
                   style={{
-                    margin: "14px 0 0",
-                    textAlign: "center",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    color: "#f87171"
+                    marginTop: 14,
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    flexWrap: "wrap",
+                    gap: 8
                   }}
                 >
-                  {chooseError}
-                </p>
-              )}
-            </div>
-          )}
+                  {["< 60 SEC SETUP", "SYSTEM LIVE IN 60 MIN", "NO MARKETING SKILLS NEEDED"].map((item) => (
+                    <div
+                      key={item}
+                      style={{
+                        border: "1px solid var(--border-primary)",
+                        borderRadius: 999,
+                        padding: "8px 14px",
+                        color: "var(--text-muted)",
+                        fontFamily: ff,
+                        fontSize: 10,
+                        letterSpacing: "0.12em",
+                        background: "var(--bg-secondary)"
+                      }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </form>
 
-          <div
-            style={{
-              marginTop: 18,
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              flexWrap: isMobile ? "nowrap" : "wrap",
-              justifyContent: "center",
-              gap: 8,
-              width: "100%",
-              maxWidth: isMobile ? 720 : undefined
-            }}
-          >
-            {[
-              "< 60 SEC SETUP",
-              "SYSTEM LIVE IN 60 MIN",
-              "NO MARKETING SKILLS NEEDED"
-            ].map((item) => (
               <div
-                key={item}
+                aria-hidden
+                className="lacore-card"
                 style={{
+                  width: isMobile ? "100%" : 480,
+                  maxWidth: "100%",
+                  height: 340,
+                  flexShrink: 0,
+                  margin: isMobile ? "0 auto" : undefined,
+                  alignSelf: isMobile ? "center" : "flex-start",
                   border: "1px solid var(--border-primary)",
-                  padding: "6px 14px",
-                  color: "var(--text-muted)",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 10,
-                  letterSpacing: "0.12em",
-                  width: isMobile ? "100%" : "auto",
+                  borderRadius: 12,
+                  background: "var(--bg-card)",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden"
+                }}
+              >
+                <div
+                  style={{
+                    height: 32,
+                    flexShrink: 0,
+                    background: "var(--bg-card)",
+                    borderBottom: "1px solid var(--border-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "0 12px"
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#FF5F57" }} />
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#FFBD2E" }} />
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#28C840" }} />
+                  </div>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 22,
+                      borderRadius: 6,
+                      background: "var(--bg-input)",
+                      border: "1px solid var(--border-primary)",
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "0 10px",
+                      fontFamily: ff,
+                      fontSize: 10,
+                      color: "var(--text-muted)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    yourname.lacore.ai
+                  </div>
+                </div>
+                <div
+                  style={{
+                    flexShrink: 0,
+                    padding: "12px 14px",
+                    borderBottom: "1px solid var(--border-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8
+                  }}
+                >
+                  <span
+                    className="hero-mock-dot"
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: "#22C55E",
+                      flexShrink: 0
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: ff,
+                      fontSize: 10,
+                      letterSpacing: "0.18em",
+                      color: "var(--accent)",
+                      fontWeight: 600
+                    }}
+                  >
+                    SALES BUILDER
+                  </span>
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: "12px 14px 8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    minHeight: 0,
+                    background: "var(--bg-secondary)"
+                  }}
+                >
+                  <p
+                    className="hero-mock-line-1"
+                    style={{
+                      margin: 0,
+                      fontFamily: ff,
+                      fontSize: 12,
+                      lineHeight: 1.45,
+                      color: "var(--text-secondary)",
+                      opacity: 0
+                    }}
+                  >
+                    Analyzing your offer...
+                  </p>
+                  <p
+                    className="hero-mock-line-2"
+                    style={{
+                      margin: 0,
+                      fontFamily: ff,
+                      fontSize: 12,
+                      lineHeight: 1.45,
+                      color: "var(--text-secondary)",
+                      opacity: 0
+                    }}
+                  >
+                    Detecting niche: Design / Creative
+                  </p>
+                  <p
+                    className="hero-mock-line-3"
+                    style={{
+                      margin: 0,
+                      fontFamily: ff,
+                      fontSize: 12,
+                      lineHeight: 1.45,
+                      color: "var(--text-secondary)",
+                      opacity: 0
+                    }}
+                  >
+                    Building your landing page...
+                  </p>
+                  <p
+                    className="hero-mock-line-4"
+                    style={{
+                      margin: 0,
+                      fontFamily: ff,
+                      fontSize: 12,
+                      lineHeight: 1.45,
+                      color: "var(--accent)",
+                      fontWeight: 600,
+                      opacity: 0
+                    }}
+                  >
+                    ✓ Live — yourname.lacore.ai
+                  </p>
+                </div>
+                <div
+                  style={{
+                    flexShrink: 0,
+                    margin: "0 12px 12px",
+                    height: 64,
+                    borderRadius: 8,
+                    background:
+                      "linear-gradient(145deg, color-mix(in srgb, var(--accent) 40%, var(--bg-input)), var(--bg-card) 55%, color-mix(in srgb, var(--accent) 18%, var(--bg-secondary)))",
+                    border: "1px solid var(--border-primary)"
+                  }}
+                />
+              </div>
+            </div>
+
+            {loading && (
+              <div style={{ marginTop: 32, textAlign: "center" }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontFamily: ff,
+                    fontWeight: 800,
+                    fontSize: isMobile ? 36 : 48,
+                    lineHeight: 1.05,
+                    color: "var(--accent)",
+                    letterSpacing: "0.02em"
+                  }}
+                >
+                  {loadingMessages[loadingMsgIndex]}
+                </h2>
+              </div>
+            )}
+
+            {error && (
+              <p
+                style={{
+                  margin: "16px 0 0",
+                  fontFamily: ff,
+                  fontSize: 13,
+                  color: "#f87171",
                   textAlign: "center"
                 }}
               >
-                {item}
-              </div>
-            ))}
-          </div>
-        </section>
+                {error}
+              </p>
+            )}
 
-        <section
-          style={{
-            width: "100%",
-            padding: isMobile ? "60px 24px" : "120px 0",
-            textAlign: "center"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              color: "var(--accent)"
-            }}
-          >
-            THE PROBLEM
-          </p>
-          <h2
-            style={{
-              margin: "24px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(48px, 6vw, 96px)",
-              lineHeight: 0.95,
-              color: "var(--text-primary)"
-            }}
-          >
-            <span style={{ display: "block" }}>MOST PEOPLE WHO HAVE SOMETHING TO SELL</span>
-            <span style={{ display: "block" }}>NEVER MAKE REAL MONEY FROM IT.</span>
-          </h2>
-          <p
-            style={{
-              margin: "24px auto 0",
-              maxWidth: 560,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 14,
-              lineHeight: 1.8,
-              color: "var(--text-muted)"
-            }}
-          >
-            Not because they&apos;re bad at what they do. Because they don&apos;t have a system.
-            LACORE is that system.
-          </p>
-          <div style={{ width: "100%", height: 1, background: "var(--border-primary)", marginTop: 56 }} />
-        </section>
-
-        <section
-          id="how-it-works"
-          style={{
-            background: "var(--bg-input)",
-            padding: isMobile ? "60px 24px" : "120px 48px"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              color: "var(--accent)"
-            }}
-          >
-            HOW IT WORKS
-          </p>
-          <h2
-            style={{
-              margin: "18px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(56px, 7vw, 112px)",
-              lineHeight: 0.95
-            }}
-          >
-            <span style={{ display: "block", color: "var(--text-primary)" }}>ONE INPUT.</span>
-            <span style={{ display: "block", color: "var(--accent)" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
-          </h2>
-          <div
-            id="what-you-get"
-            style={{
-              marginTop: 48,
-              display: "grid",
-              gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))",
-              gap: 20
-            }}
-          >
-            {layers.map((layer) => (
-              <div
-                key={layer.number}
-                style={{
-                  border: "1px solid var(--border-primary)",
-                  padding: 32,
-                  background: "transparent"
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-                    fontSize: 48,
-                    lineHeight: 1,
-                    color: "var(--border-primary)"
-                  }}
-                >
-                  {layer.number}
-                </p>
-                <h3
-                  style={{
-                    margin: "10px 0 0",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontWeight: 800,
-                    fontSize: 28,
-                    letterSpacing: "0.02em",
-                    color: "var(--text-primary)"
-                  }}
-                >
-                  {layer.title}
-                </h3>
-                <p
-                  style={{
-                    margin: "12px 0 0",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.8,
-                    color: "var(--text-muted)"
-                  }}
-                >
-                  {layer.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section
-          id="magic-moment"
-          style={{
-            width: "100%",
-            padding: isMobile ? "60px 24px" : "120px 48px",
-            background: "var(--bg-primary)"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              textAlign: "center",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              color: "var(--accent)"
-            }}
-          >
-            THE MAGIC MOMENT
-          </p>
-          <div
-            style={{
-              marginTop: 36,
-              maxWidth: 1100,
-              marginLeft: "auto",
-              marginRight: "auto",
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "stretch" : "flex-start",
-              gap: isMobile ? 40 : 56,
-              textAlign: "left"
-            }}
-          >
-            <div
-              style={{
-                flex: isMobile ? "none" : "0 0 340px",
-                width: isMobile ? "100%" : undefined,
-                position: "relative",
-                paddingLeft: isMobile ? 0 : 8
-              }}
-            >
-              {[
-                {
-                  num: "01",
-                  title: "Offer generated",
-                  desc: "Positioning, audience, and pricing locked in."
-                },
-                {
-                  num: "02",
-                  title: "Landing page live",
-                  desc: "Shareable URL and on-brand layout, ready to ship."
-                },
-                {
-                  num: "03",
-                  title: "First post published",
-                  desc: "Content pipeline starts without manual busywork."
-                },
-                {
-                  num: "04",
-                  title: "System running",
-                  desc: "Background workflows keep everything in sync."
-                },
-                {
-                  num: "05",
-                  title: "NEW LEAD arrives",
-                  desc: "Inbound interest lands where you can act on it."
-                },
-                {
-                  num: "06",
-                  title: "You close the deal",
-                  desc: "Scripts and next steps so you know what to say."
-                }
-              ].map((step, idx, arr) => (
+            {variants && variants.length === 3 && (
+              <div style={{ marginTop: 32, animation: "offer-enter 400ms ease" }}>
                 <div
-                  key={step.num}
                   style={{
                     display: "flex",
-                    gap: 14,
-                    position: "relative",
-                    paddingBottom: idx < arr.length - 1 ? 20 : 0
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: 16,
+                    justifyContent: "center",
+                    flexWrap: "wrap"
                   }}
                 >
+                  {[...variants]
+                    .sort((a, b) => a.variant.localeCompare(b.variant))
+                    .map((v) => {
+                      const isSelected = selectedVariantLetter === v.variant;
+                      return (
+                        <article
+                          key={v.variant}
+                          className="lacore-card"
+                          style={{
+                            ...cardBase,
+                            flex: isMobile ? "none" : "1 1 280px",
+                            maxWidth: isMobile ? "100%" : 360,
+                            padding: "20px 18px",
+                            background: isSelected
+                              ? "color-mix(in srgb, var(--accent) 8%, var(--bg-card))"
+                              : "var(--bg-card)",
+                            border: isSelected ? "2px solid var(--accent)" : cardBase.border
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: ff,
+                              fontWeight: 800,
+                              fontSize: 44,
+                              color: "var(--accent)"
+                            }}
+                          >
+                            {v.variant}
+                          </span>
+                          <p
+                            style={{
+                              margin: "6px 0 0",
+                              fontFamily: ff,
+                              fontSize: 10,
+                              letterSpacing: "3px",
+                              textTransform: "uppercase",
+                              color: "var(--text-muted)"
+                            }}
+                          >
+                            {v.label}
+                          </p>
+                          <h3
+                            style={{
+                              margin: "10px 0 0",
+                              fontFamily: ff,
+                              fontWeight: 800,
+                              fontSize: 24,
+                              lineHeight: 1.15,
+                              color: "var(--text-primary)"
+                            }}
+                          >
+                            {v.headline}
+                          </h3>
+                          <p style={{ margin: "10px 0 0", fontFamily: ff, fontSize: 13, color: "var(--accent)", fontWeight: 700 }}>
+                            {v.pricing}
+                          </p>
+                          <button
+                            type="button"
+                            disabled={savingChoice}
+                            onClick={() => void handleChooseStrategy(v)}
+                            style={{
+                              marginTop: 14,
+                              width: "100%",
+                              border: "none",
+                              background: "var(--accent)",
+                              color: "#000000",
+                              fontFamily: ff,
+                              fontSize: 11,
+                              letterSpacing: "0.12em",
+                              fontWeight: 700,
+                              padding: "12px 14px",
+                              borderRadius: 8,
+                              cursor: savingChoice ? "wait" : "pointer",
+                              opacity: savingChoice && !isSelected ? 0.45 : 1
+                            }}
+                          >
+                            {savingChoice && isSelected ? "SAVING..." : "CHOOSE THIS STRATEGY →"}
+                          </button>
+                        </article>
+                      );
+                    })}
+                </div>
+                {guestNeedsAuth && (
                   <div
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      flexShrink: 0,
-                      width: 40
+                      marginTop: 20,
+                      padding: 16,
+                      border: "1px solid var(--border-secondary)",
+                      borderRadius: 12,
+                      background: "var(--bg-input)",
+                      maxWidth: 520,
+                      marginLeft: "auto",
+                      marginRight: "auto"
+                    }}
+                  >
+                    <p style={{ margin: 0, fontFamily: ff, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                      Sign in to save your chosen strategy and open your dashboard.
+                    </p>
+                    <Link
+                      href="/auth"
+                      style={{
+                        display: "inline-block",
+                        marginTop: 10,
+                        border: "1px solid var(--accent)",
+                        color: "var(--accent)",
+                        textDecoration: "none",
+                        fontFamily: ff,
+                        fontSize: 11,
+                        letterSpacing: "0.14em",
+                        padding: "8px 12px",
+                        borderRadius: 8
+                      }}
+                    >
+                      CREATE FREE ACCOUNT →
+                    </Link>
+                  </div>
+                )}
+                {chooseError && (
+                  <p style={{ margin: "14px 0 0", textAlign: "center", fontFamily: ff, fontSize: 12, color: "#f87171" }}>
+                    {chooseError}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ——— WHAT YOU GET ——— */}
+        <section
+          id="what-you-get"
+          style={{ padding: `${sectionY} 0`, background: "var(--bg-secondary)" }}
+        >
+          <div style={container}>
+            <div data-reveal>
+              <h2 style={{ ...sectionTitle, marginBottom: 12 }}>Here&apos;s what you get in 60 minutes</h2>
+              <p
+                style={{
+                  margin: "0 auto 48px",
+                  maxWidth: 640,
+                  textAlign: "center",
+                  fontFamily: ff,
+                  fontSize: 16,
+                  lineHeight: 1.6,
+                  color: "var(--text-secondary)"
+                }}
+              >
+                Three pillars working together — so you look legit, stay visible, and never miss a buyer.
+              </p>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                  gap: 24
+                }}
+              >
+                {/* Card 1 — Landing */}
+                <div className="lacore-card" style={{ ...cardBase, padding: 24, display: "flex", flexDirection: "column" }}>
+                  <div
+                    style={{
+                      borderRadius: 12,
+                      border: "1px solid var(--border-primary)",
+                      overflow: "hidden",
+                      marginBottom: 20
                     }}
                   >
                     <div
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        border: "2px solid var(--accent)",
+                        height: 32,
                         background: "var(--bg-card)",
-                        color: "var(--accent)",
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                        fontSize: 11,
-                        fontWeight: 800,
+                        borderBottom: "1px solid var(--border-primary)",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 1
+                        gap: 8,
+                        padding: "0 10px"
                       }}
                     >
-                      {step.num}
-                    </div>
-                    {idx < arr.length - 1 ? (
-                      <div
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#FF5F57" }} />
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#FFBD2E" }} />
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#28C840" }} />
+                      <span
                         style={{
-                          width: 2,
-                          height: 22,
-                          marginTop: 4,
-                          background: "var(--border-primary)",
-                          borderRadius: 1
+                          flex: 1,
+                          marginLeft: 6,
+                          fontFamily: ff,
+                          fontSize: 9,
+                          color: "var(--text-muted)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
                         }}
-                      />
-                    ) : null}
-                  </div>
-                  <div style={{ minWidth: 0, paddingTop: 6 }}>
-                    <p
+                      >
+                        yourname.lacore.ai
+                      </span>
+                    </div>
+                    <div
                       style={{
-                        margin: 0,
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                        fontWeight: 700,
-                        fontSize: 14,
-                        letterSpacing: "0.06em",
-                        color: "var(--text-primary)",
-                        textTransform: "uppercase"
+                        height: 120,
+                        background:
+                          "linear-gradient(160deg, color-mix(in srgb, var(--accent) 45%, var(--bg-input)), var(--bg-secondary))",
+                        padding: 14,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "flex-end"
                       }}
                     >
-                      {step.title}
-                    </p>
-                    <p
-                      style={{
-                        margin: "6px 0 0",
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                        fontSize: 13,
-                        lineHeight: 1.5,
-                        color: "var(--text-muted)"
-                      }}
-                    >
-                      {step.desc}
-                    </p>
+                      <span style={{ fontFamily: ff, fontWeight: 800, fontSize: 14, color: "var(--text-primary)" }}>
+                        Your brand. Live today.
+                      </span>
+                    </div>
                   </div>
+                  <h3 style={{ margin: 0, fontFamily: ff, fontWeight: 800, fontSize: 20, color: "var(--text-primary)" }}>
+                    Your landing page
+                  </h3>
+                  <p style={{ margin: "10px 0 0", fontFamily: ff, fontSize: 14, lineHeight: 1.55, color: "var(--text-muted)" }}>
+                    Live in 60 seconds. Looks like $10,000. Connected to your domain.
+                  </p>
                 </div>
-              ))}
-            </div>
 
-            <div style={{ flex: "1 1 0", minWidth: 0, textAlign: isMobile ? "center" : "left" }}>
-              <h2
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontWeight: 800,
-                  fontSize: "clamp(36px, 5vw, 56px)",
-                  lineHeight: 1.08,
-                  letterSpacing: "-0.02em",
-                  color: "var(--text-primary)"
-                }}
-              >
-                Your sales system — live in{" "}
-                <span style={{ color: "var(--accent)" }}>60 minutes.</span>
-              </h2>
-              <p
-                style={{
-                  margin: "20px 0 0",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: isMobile ? 14 : 16,
-                  lineHeight: 1.65,
-                  color: "var(--text-secondary)",
-                  maxWidth: 520,
-                  marginLeft: isMobile ? "auto" : undefined,
-                  marginRight: isMobile ? "auto" : undefined
-                }}
-              >
-                Landing page live. Content running. Leads captured. All automatic.
-              </p>
-              <p
-                style={{
-                  margin: "24px 0 0",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 13,
-                  color: "var(--text-muted)",
-                  maxWidth: 480,
-                  marginLeft: isMobile ? "auto" : undefined,
-                  marginRight: isMobile ? "auto" : undefined
-                }}
-              >
-                One flow from offer to funnel — without juggling a dozen tools.
-              </p>
+                {/* Card 2 — Content */}
+                <div className="lacore-card" style={{ ...cardBase, padding: 24, display: "flex", flexDirection: "column" }}>
+                  <div
+                    style={{
+                      alignSelf: "center",
+                      width: isMobile ? "100%" : 200,
+                      maxWidth: 220,
+                      borderRadius: 32,
+                      border: "3px solid var(--border-primary)",
+                      background: "var(--bg-input)",
+                      padding: "14px 12px",
+                      marginBottom: 20,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    {[
+                      { icon: "📸", line: "New carousel: your offer, clear CTA." },
+                      { icon: "𝕏", line: "Thread breakdown — why you, why now." },
+                      { icon: "in", line: "Founder story + link to book." }
+                    ].map((post) => (
+                      <div
+                        key={post.icon}
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          alignItems: "flex-start",
+                          padding: "10px 0",
+                          borderBottom: "1px solid var(--border-primary)"
+                        }}
+                      >
+                        <span style={{ fontSize: 18, lineHeight: 1 }}>{post.icon}</span>
+                        <p style={{ margin: 0, fontFamily: ff, fontSize: 11, lineHeight: 1.45, color: "var(--text-secondary)" }}>
+                          {post.line}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <h3 style={{ margin: 0, fontFamily: ff, fontWeight: 800, fontSize: 20, color: "var(--text-primary)" }}>
+                    Your content
+                  </h3>
+                  <p style={{ margin: "10px 0 0", fontFamily: ff, fontSize: 14, lineHeight: 1.55, color: "var(--text-muted)" }}>
+                    Posts go out daily to Instagram, X, LinkedIn. Written in your voice. Zero effort.
+                  </p>
+                </div>
+
+                {/* Card 3 — Leads */}
+                <div className="lacore-card" style={{ ...cardBase, padding: 24, display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, minHeight: 168 }}>
+                    <div
+                      className="home-notif-1"
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: 10,
+                        background: "var(--bg-input)",
+                        borderLeft: "3px solid var(--accent)",
+                        fontFamily: ff,
+                        fontSize: 12,
+                        lineHeight: 1.45,
+                        color: "var(--text-primary)"
+                      }}
+                    >
+                      🔔 New lead: Maria S. wants to book a call
+                    </div>
+                    <div
+                      className="home-notif-2"
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: 10,
+                        background: "var(--bg-input)",
+                        borderLeft: "3px solid var(--accent)",
+                        fontFamily: ff,
+                        fontSize: 12,
+                        lineHeight: 1.45,
+                        color: "var(--text-primary)"
+                      }}
+                    >
+                      💬 Hot lead: Alex M. replied to your post
+                    </div>
+                    <div
+                      className="home-notif-3"
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: 10,
+                        background: "var(--bg-input)",
+                        borderLeft: "3px solid var(--accent)",
+                        fontFamily: ff,
+                        fontSize: 12,
+                        lineHeight: 1.45,
+                        color: "var(--text-primary)"
+                      }}
+                    >
+                      💰 Payment received: $2,500
+                    </div>
+                  </div>
+                  <h3 style={{ margin: 0, fontFamily: ff, fontWeight: 800, fontSize: 20, color: "var(--text-primary)" }}>
+                    Your clients
+                  </h3>
+                  <p style={{ margin: "10px 0 0", fontFamily: ff, fontSize: 14, lineHeight: 1.55, color: "var(--text-muted)" }}>
+                    Leads captured automatically. You get notified. LACORE tells you exactly what to say.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section
-          style={{
-            background: "var(--bg-input)",
-            padding: isMobile ? "60px 24px" : "80px 48px",
-            textAlign: "center"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 12,
-              color: "var(--text-muted)"
-            }}
-          >
-            NOT A LANDING PAGE BUILDER · NOT A SOCIAL MEDIA SCHEDULER · NOT A CRM · NOT AN AI
-            CONTENT TOOL
-          </p>
-          <p
-            style={{
-              margin: "20px auto 0",
-              maxWidth: 1100,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: 36,
-              lineHeight: 1.1,
-              color: "var(--text-primary)"
-            }}
-          >
-            LACORE IS WHAT HAPPENS WHEN ALL OF THESE WORK TOGETHER TOWARD ONE GOAL: YOUR FIRST
-            SALE.
-          </p>
+        {/* ——— HOW IT WORKS ——— */}
+        <section id="how-it-works" style={{ padding: `${sectionY} 0` }}>
+          <div style={container}>
+            <div data-reveal>
+              <h2 style={{ ...sectionTitle, marginBottom: 48 }}>How it works</h2>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: isMobile ? "column" : "row",
+                  alignItems: isMobile ? "stretch" : "flex-start",
+                  justifyContent: "center",
+                  gap: isMobile ? 28 : 16
+                }}
+              >
+                {[
+                  {
+                    n: "1",
+                    icon: "✏️",
+                    title: "You type one sentence",
+                    desc: "What do you sell? That's all we need."
+                  },
+                  {
+                    n: "2",
+                    icon: "⚡",
+                    title: "LACORE builds everything",
+                    desc: "Landing page. Content. Lead system. All automatic."
+                  },
+                  {
+                    n: "3",
+                    icon: "💰",
+                    title: "Clients find you",
+                    desc: "You wake up to leads, messages, and payments."
+                  }
+                ].map((step, idx) => (
+                  <div key={step.n} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: "center", flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: 1, textAlign: isMobile ? "left" : "center", maxWidth: isMobile ? "100%" : 280 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: ff,
+                          fontWeight: 800,
+                          fontSize: "clamp(3rem, 8vw, 4.5rem)",
+                          lineHeight: 1,
+                          color: "color-mix(in srgb, var(--accent) 35%, var(--border-primary))"
+                        }}
+                      >
+                        {step.n}
+                      </p>
+                      <p style={{ margin: "12px 0 0", fontSize: 28, lineHeight: 1 }}>{step.icon}</p>
+                      <h3 style={{ margin: "12px 0 0", fontFamily: ff, fontWeight: 800, fontSize: 18, color: "var(--text-primary)" }}>
+                        {step.title}
+                      </h3>
+                      <p style={{ margin: "8px 0 0", fontFamily: ff, fontSize: 14, lineHeight: 1.55, color: "var(--text-muted)" }}>
+                        {step.desc}
+                      </p>
+                    </div>
+                    {!isMobile && idx < 2 ? (
+                      <div
+                        style={{
+                          fontFamily: ff,
+                          fontSize: 22,
+                          color: "var(--accent)",
+                          padding: "0 8px",
+                          marginTop: 48,
+                          flexShrink: 0
+                        }}
+                        aria-hidden
+                      >
+                        →
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section
-          id="pricing"
-          style={{
-            width: "100%",
-            padding: isMobile ? "60px 24px" : "160px 48px",
-            textAlign: "center"
-          }}
-        >
-          <h2
-            className={landingHeroBebas.className}
-            style={{
-              margin: 0,
-              fontSize: "clamp(64px, 8vw, 120px)",
-              lineHeight: 0.94
-            }}
-          >
-            <span style={{ display: "block", color: "var(--text-primary)" }}>YOU SAY WHAT YOU SELL.</span>
-            <span style={{ display: "block", color: "var(--accent)" }}>LACORE DOES THE REST.</span>
-          </h2>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/auth"}
-            style={{
-              display: "inline-block",
-              marginTop: 24,
-              border: "1px solid var(--accent)",
-              background: "transparent",
-              color: "var(--accent)",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 12,
-              letterSpacing: "0.2em",
-              padding: "12px 20px",
-              cursor: "pointer",
-              textDecoration: "none"
-            }}
-          >
-            {isLoggedIn ? "GO TO DASHBOARD →" : "START FOR FREE →"}
-          </Link>
-          <p
-            style={{
-              margin: "16px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 12,
-              color: "var(--text-muted)"
-            }}
-          >
-            Free to start. No marketing skills needed. No agency. No team.
-          </p>
+        {/* ——— SOCIAL PROOF ——— */}
+        <section style={{ padding: `${sectionY} 0`, background: "var(--bg-secondary)" }}>
+          <div style={container}>
+            <div data-reveal>
+              <h2 style={{ ...sectionTitle, marginBottom: 48 }}>Real businesses. Real results.</h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                  gap: 24
+                }}
+              >
+                {[
+                  {
+                    quote:
+                      "Finally have a website that looks professional. Got 3 inquiries in the first week.",
+                    name: "Sarah K.",
+                    role: "Interior Designer"
+                  },
+                  {
+                    quote:
+                      "I had no idea how to market myself. LACORE built my entire system in minutes.",
+                    name: "David M.",
+                    role: "Business Consultant"
+                  },
+                  {
+                    quote: "My landing page looks better than my competitors who paid agencies $8,000.",
+                    name: "Anna R.",
+                    role: "Marketing Coach"
+                  }
+                ].map((t) => (
+                  <div key={t.name} className="lacore-card" style={{ ...cardBase, padding: 28 }}>
+                    <p style={{ margin: 0, fontFamily: ff, fontSize: 15, lineHeight: 1.65, color: "var(--text-primary)" }}>
+                      &ldquo;{t.quote}&rdquo;
+                    </p>
+                    <p style={{ margin: "18px 0 0", fontFamily: ff, fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                      {t.name}
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontFamily: ff, fontSize: 12, color: "var(--text-muted)" }}>{t.role}</p>
+                    <p style={{ margin: "14px 0 0", fontSize: 14, letterSpacing: 2, color: "var(--accent)" }}>★★★★★</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ——— PRICING ——— */}
+        <section id="pricing" style={{ padding: `${sectionY} 0` }}>
+          <div style={container}>
+            <div data-reveal>
+              <h2 style={{ ...sectionTitle, marginBottom: 48 }}>One price. Everything included.</h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
+                  gap: 24,
+                  maxWidth: 900,
+                  margin: "0 auto"
+                }}
+              >
+                <div className="lacore-card" style={{ ...cardBase, padding: 32 }}>
+                  <p style={{ margin: 0, fontFamily: ff, fontSize: 11, letterSpacing: "0.2em", color: "var(--accent)" }}>
+                    STARTER
+                  </p>
+                  <p style={{ margin: "12px 0 0", fontFamily: ff, fontWeight: 800, fontSize: 40, color: "var(--text-primary)" }}>
+                    $49<span style={{ fontSize: 18, fontWeight: 600, color: "var(--text-muted)" }}>/mo</span>
+                  </p>
+                  <ul
+                    style={{
+                      margin: "20px 0 0",
+                      paddingLeft: 18,
+                      fontFamily: ff,
+                      fontSize: 14,
+                      lineHeight: 1.8,
+                      color: "var(--text-secondary)"
+                    }}
+                  >
+                    <li>Landing page + AI editor</li>
+                    <li>Lead capture</li>
+                    <li>1 social channel</li>
+                  </ul>
+                  <p style={{ margin: "24px 0 0", fontFamily: ff, fontSize: 12, color: "var(--text-muted)" }}>
+                    Start free — no credit card needed
+                  </p>
+                </div>
+                <div
+                  className="lacore-card"
+                  style={{
+                    ...cardBase,
+                    padding: 32,
+                    border: "2px solid var(--accent)",
+                    background: "color-mix(in srgb, var(--accent) 6%, var(--bg-card))"
+                  }}
+                >
+                  <p style={{ margin: 0, fontFamily: ff, fontSize: 11, letterSpacing: "0.2em", color: "var(--accent)" }}>PRO</p>
+                  <p style={{ margin: "12px 0 0", fontFamily: ff, fontWeight: 800, fontSize: 40, color: "var(--text-primary)" }}>
+                    $99<span style={{ fontSize: 18, fontWeight: 600, color: "var(--text-muted)" }}>/mo</span>
+                  </p>
+                  <ul
+                    style={{
+                      margin: "20px 0 0",
+                      paddingLeft: 18,
+                      fontFamily: ff,
+                      fontSize: 14,
+                      lineHeight: 1.8,
+                      color: "var(--text-secondary)"
+                    }}
+                  >
+                    <li>Everything in Starter</li>
+                    <li>All social channels</li>
+                    <li>AI content daily</li>
+                    <li>Analytics + priority support</li>
+                  </ul>
+                  <p style={{ margin: "24px 0 0", fontFamily: ff, fontSize: 12, color: "var(--text-muted)" }}>
+                    Start free — no credit card needed
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ——— FINAL CTA ——— */}
+        <section style={{ padding: `${sectionY} 0`, background: "var(--bg-secondary)", textAlign: "center" }}>
+          <div style={container}>
+            <div data-reveal>
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: ff,
+                  fontWeight: 800,
+                  fontSize: "clamp(2.25rem, 6vw, 4rem)",
+                  lineHeight: 1.05,
+                  color: "var(--text-primary)"
+                }}
+              >
+                Your first client is waiting.
+              </h2>
+              <p
+                style={{
+                  margin: "20px auto 0",
+                  maxWidth: 520,
+                  fontFamily: ff,
+                  fontSize: isMobile ? 16 : 18,
+                  lineHeight: 1.55,
+                  color: "var(--text-secondary)"
+                }}
+              >
+                It takes 60 seconds to start. Everything else is automatic.
+              </p>
+              <Link
+                href={isLoggedIn ? "/dashboard" : "/auth"}
+                style={{
+                  display: "inline-block",
+                  marginTop: 32,
+                  border: "none",
+                  background: "var(--accent)",
+                  color: "#000000",
+                  fontFamily: ff,
+                  fontSize: 14,
+                  letterSpacing: "0.12em",
+                  fontWeight: 700,
+                  padding: "18px 36px",
+                  borderRadius: 12,
+                  textDecoration: "none"
+                }}
+              >
+                START FOR FREE →
+              </Link>
+              <p style={{ margin: "16px 0 0", fontFamily: ff, fontSize: 13, color: "var(--text-muted)" }}>
+                No credit card. No design skills. No agency.
+              </p>
+            </div>
+          </div>
         </section>
 
         <div
@@ -1458,9 +1459,8 @@ export default function LandingPage() {
             marginTop: "auto",
             width: "100%",
             overflow: "hidden",
-            borderTop: "1px solid rgba(6,182,212,0.2)",
-            borderBottom: "1px solid rgba(6,182,212,0.2)",
-            padding: "10px 0"
+            borderTop: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
+            padding: "12px 0"
           }}
         >
           <div
@@ -1469,7 +1469,7 @@ export default function LandingPage() {
               display: "inline-flex",
               whiteSpace: "nowrap",
               animation: "ticker-scroll 24s linear infinite",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontFamily: ff,
               fontSize: 11,
               color: "var(--text-muted)",
               letterSpacing: "0.12em"
