@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent
+} from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -11,6 +19,11 @@ type Offer = {
   positioning: string;
   headline: string;
 };
+
+type DashChatMessage = { role: "user" | "assistant"; text: string };
+
+const DASHBOARD_ASSISTANT_INTRO =
+  "Hi! I'm your LACORE assistant. I can help you optimize your offer, understand your dashboard, set up integrations, and grow your business. What would you like to work on?";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -34,7 +47,21 @@ export default function DashboardPage() {
   const [offerSaveError, setOfferSaveError] = useState<string | null>(null);
   const [regenerateConfirm, setRegenerateConfirm] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([
+    { role: "assistant", text: DASHBOARD_ASSISTANT_INTRO }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  const offerContext = useMemo(() => {
+    if (!offer) {
+      return "No offer saved yet. The user can generate an offer from the home page.";
+    }
+    return `OFFER: ${offer.offer}\nAUDIENCE: ${offer.audience}\nPRICING: ${offer.pricing}\nPOSITIONING: ${offer.positioning}\nHEADLINE: ${offer.headline}`;
+  }, [offer]);
 
   const offerTextareaStyle: CSSProperties = {
     background: "#111115",
@@ -196,6 +223,57 @@ export default function DashboardPage() {
     buildLogEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [buildingLanding, buildLogVisible]);
 
+  useEffect(() => {
+    if (!chatOpen) return;
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatOpen, chatMessages, chatLoading]);
+
+  async function handleDashboardChatSend(e?: FormEvent) {
+    e?.preventDefault();
+    const text = chatInput.trim();
+    if (!text || chatLoading || !sessionToken) return;
+    setChatInput("");
+    const thread: DashChatMessage[] = [...chatMessages, { role: "user", text }];
+    setChatMessages(thread);
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/dashboard-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({
+          messages: thread.map((m) => ({ role: m.role, content: m.text })),
+          offerContext
+        })
+      });
+      const data = (await res.json()) as { reply?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error || "Chat failed.");
+      }
+      if (!data.reply?.trim()) {
+        throw new Error("Empty response.");
+      }
+      setChatMessages((prev) => [...prev, { role: "assistant", text: data.reply!.trim() }]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: `Sorry — ${msg} Try again in a moment.` }
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function handleChatKeyDown(ev: KeyboardEvent<HTMLTextAreaElement>) {
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      ev.preventDefault();
+      void handleDashboardChatSend();
+    }
+  }
+
   async function handleCopyUrl() {
     if (!landingSlug) return;
     await navigator.clipboard.writeText(`https://www.lacore.ai/p/${landingSlug}`);
@@ -235,7 +313,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", background: "#09090B", color: "#F4F4F5", padding: 24 }}>
+    <main style={{ minHeight: "100vh", background: "#09090B", color: "#F4F4F5", padding: 24, position: "relative" }}>
+
+      <style>{`
+        @keyframes dash-chat-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.45; transform: scale(0.92); }
+        }
+        @keyframes dash-chat-dot {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+          40% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
 
       {/* LOADING OVERLAY */}
       {buildingLanding && (
@@ -353,7 +442,23 @@ export default function DashboardPage() {
 
       {/* NAV */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #1C1C1F", paddingBottom: 16 }}>
-        <p style={{ margin: 0, fontFamily: "var(--font-bebas-neue), sans-serif", fontSize: 28, color: "#06B6D4" }}>LACORE</p>
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          style={{
+            margin: 0,
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontSize: 28,
+            color: "#06B6D4",
+            padding: 0,
+            letterSpacing: "0.02em"
+          }}
+        >
+          ← LACORE
+        </button>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <p style={{ margin: 0, fontFamily: "var(--font-space-mono), monospace", fontSize: 12, color: "#A1A1AA" }}>{email}</p>
           <button type="button" onClick={handleSignOut}
@@ -520,6 +625,228 @@ export default function DashboardPage() {
           </div>
         </aside>
       </section>
+
+      {!chatOpen ? (
+        <button
+          type="button"
+          aria-label="Open assistant chat"
+          onClick={() => setChatOpen(true)}
+          style={{
+            position: "fixed",
+            right: 20,
+            bottom: 20,
+            zIndex: 9996,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            border: "none",
+            background: "#06B6D4",
+            color: "#000000",
+            fontSize: 26,
+            lineHeight: 1,
+            cursor: "pointer",
+            boxShadow: "0 12px 40px rgba(6,182,212,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          💬
+        </button>
+      ) : null}
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="LACORE Assistant"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          zIndex: 9997,
+          width: isMobile ? "100%" : 380,
+          maxWidth: "100%",
+          height: "100vh",
+          background: "#09090B",
+          borderLeft: isMobile ? "none" : "1px solid #1C1C1F",
+          boxShadow: isMobile ? "none" : "-12px 0 48px rgba(0,0,0,0.45)",
+          display: "flex",
+          flexDirection: "column",
+          transform: chatOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.32s ease",
+          pointerEvents: chatOpen ? "auto" : "none"
+        }}
+      >
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "16px 18px",
+            borderBottom: "1px solid #1C1C1F",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#22C55E",
+                flexShrink: 0,
+                animation: "dash-chat-pulse 2s ease-in-out infinite"
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontSize: 22,
+                color: "#F4F4F5",
+                letterSpacing: "0.04em"
+              }}
+            >
+              LACORE ASSISTANT
+            </span>
+          </div>
+          <button
+            type="button"
+            aria-label="Close chat"
+            onClick={() => setChatOpen(false)}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "#06B6D4",
+              fontSize: 28,
+              lineHeight: 1,
+              cursor: "pointer",
+              padding: 4,
+              flexShrink: 0
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "16px 18px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            minHeight: 0
+          }}
+        >
+          {chatMessages.map((m, idx) => (
+            <div
+              key={`${idx}-${m.role}-${m.text.slice(0, 24)}`}
+              style={{
+                alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                maxWidth: "92%",
+                borderRadius: 8,
+                padding: "10px 14px",
+                background: m.role === "user" ? "#1C1C1F" : "#111115",
+                border: m.role === "user" ? "1px solid #27272A" : "1px solid #1C1C1F"
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-space-mono), monospace",
+                  fontSize: 12,
+                  color: "#E4E4E7",
+                  lineHeight: 1.65,
+                  whiteSpace: "pre-wrap"
+                }}
+              >
+                {m.text}
+              </p>
+            </div>
+          ))}
+          {chatLoading ? (
+            <div
+              style={{
+                alignSelf: "flex-start",
+                display: "flex",
+                gap: 5,
+                padding: "12px 16px",
+                background: "#111115",
+                border: "1px solid #1C1C1F",
+                borderRadius: 8
+              }}
+            >
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#06B6D4",
+                    animation: "dash-chat-dot 1s ease-in-out infinite",
+                    animationDelay: `${i * 0.15}s`
+                  }}
+                />
+              ))}
+            </div>
+          ) : null}
+          <div ref={chatEndRef} />
+        </div>
+
+        <form
+          onSubmit={handleDashboardChatSend}
+          style={{
+            flexShrink: 0,
+            borderTop: "1px solid #1C1C1F",
+            padding: "12px 14px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10
+          }}
+        >
+          <textarea
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={handleChatKeyDown}
+            placeholder="Ask anything…"
+            rows={3}
+            disabled={chatLoading}
+            style={{
+              width: "100%",
+              resize: "none",
+              border: "1px solid #1C1C1F",
+              background: "#0F0F12",
+              color: "#F4F4F5",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 12,
+              padding: "10px 12px",
+              outline: "none",
+              borderRadius: 6,
+              boxSizing: "border-box"
+            }}
+          />
+          <button
+            type="submit"
+            disabled={chatLoading || !chatInput.trim()}
+            style={{
+              alignSelf: "flex-end",
+              border: "none",
+              background: chatLoading || !chatInput.trim() ? "#1C1C1F" : "#06B6D4",
+              color: chatLoading || !chatInput.trim() ? "#52525B" : "#000000",
+              fontFamily: "var(--font-space-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.14em",
+              padding: "10px 20px",
+              cursor: chatLoading || !chatInput.trim() ? "not-allowed" : "pointer"
+            }}
+          >
+            SEND
+          </button>
+        </form>
+      </div>
     </main>
   );
 }
