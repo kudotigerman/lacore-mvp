@@ -16,6 +16,7 @@ CREATE POLICY "Users can view own leads" ON leads FOR SELECT USING (auth.uid() =
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { runLeadNotifications } from "@/lib/notifyLeadOwner";
 
 export async function POST(request: Request) {
   try {
@@ -56,20 +57,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const { error } = await supabase.from("leads").insert({
-      user_id: page.user_id,
-      slug,
-      name: name || null,
-      email,
-      message: message || null,
-      created_at: new Date().toISOString()
-    } as never);
+    const userId = page.user_id as string;
+
+    const { data: lead, error } = await supabase
+      .from("leads")
+      .insert({
+        user_id: userId,
+        slug,
+        name: name || null,
+        email,
+        message: message || null,
+        created_at: new Date().toISOString()
+      } as never)
+      .select()
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    void runLeadNotifications({
+      userId,
+      name,
+      email,
+      message,
+      slug
+    }).catch((err) => console.error("lead notify:", err));
+
+    return NextResponse.json({ success: true, lead, userId });
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }

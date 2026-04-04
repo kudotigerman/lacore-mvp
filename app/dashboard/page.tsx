@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import DomainConnect from "@/components/DomainConnect";
 import ContentMachine from "@/components/ContentMachine";
+import LeadsList from "@/components/LeadsList";
 import StripeConnect from "@/components/StripeConnect";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -29,6 +30,8 @@ type ProfileRow = {
   display_name: string | null;
   telegram: string | null;
   whatsapp: string | null;
+  email_notifications: boolean | null;
+  telegram_chat_id: string | null;
 };
 
 type UiLocale = "en" | "ru";
@@ -61,6 +64,12 @@ const DASH_COPY: Record<
     signOutShort: string;
     domainHeading: string;
     domainNeedLanding: string;
+    notificationsHeading: string;
+    emailNotificationsLabel: string;
+    telegramChatIdLabel: string;
+    telegramChatIdHint: string;
+    onLabel: string;
+    offLabel: string;
   }
 > = {
   en: {
@@ -83,7 +92,14 @@ const DASH_COPY: Record<
     salesBuilderTagline: "Your AI system for getting clients",
     signOutShort: "SIGN OUT",
     domainHeading: "DOMAIN",
-    domainNeedLanding: "Publish your landing page first to connect a custom domain."
+    domainNeedLanding: "Publish your landing page first to connect a custom domain.",
+    notificationsHeading: "NOTIFICATIONS",
+    emailNotificationsLabel: "EMAIL NOTIFICATIONS",
+    telegramChatIdLabel: "TELEGRAM CHAT ID",
+    telegramChatIdHint:
+      "To get your Chat ID: open Telegram → find @lacorebot → send /start → bot will reply with your Chat ID",
+    onLabel: "ON",
+    offLabel: "OFF"
   },
   ru: {
     settingsTitle: "НАСТРОЙКИ",
@@ -105,7 +121,14 @@ const DASH_COPY: Record<
     salesBuilderTagline: "Ваш ИИ для привлечения клиентов",
     signOutShort: "ВЫЙТИ",
     domainHeading: "ДОМЕН",
-    domainNeedLanding: "Сначала опубликуйте лендинг, чтобы подключить свой домен."
+    domainNeedLanding: "Сначала опубликуйте лендинг, чтобы подключить свой домен.",
+    notificationsHeading: "УВЕДОМЛЕНИЯ",
+    emailNotificationsLabel: "EMAIL-УВЕДОМЛЕНИЯ",
+    telegramChatIdLabel: "TELEGRAM CHAT ID",
+    telegramChatIdHint:
+      "Чтобы получить Chat ID: откройте Telegram → найдите @lacorebot → отправьте /start → бот пришлёт ваш Chat ID",
+    onLabel: "ВКЛ",
+    offLabel: "ВЫКЛ"
   }
 };
 
@@ -189,6 +212,8 @@ export default function DashboardPage() {
   const [savedProfileDisplayName, setSavedProfileDisplayName] = useState<string | null>(null);
   const [profileTelegram, setProfileTelegram] = useState("");
   const [profileWhatsapp, setProfileWhatsapp] = useState("");
+  const [profileEmailNotifications, setProfileEmailNotifications] = useState(true);
+  const [profileTelegramChatId, setProfileTelegramChatId] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -297,9 +322,9 @@ export default function DashboardPage() {
       {
         number: "04",
         title: "LEAD CAPTURE",
-        status: "locked" as const,
-        description: "COMING SOON",
-        detail: "Forms, CRM hooks, and follow-up sequences — shipping after core funnel is stable."
+        status: "completed" as const,
+        description: "LIVE",
+        detail: "Landing form submissions are saved as leads. Get email and Telegram alerts when someone reaches out."
       },
       {
         number: "05",
@@ -383,7 +408,7 @@ export default function DashboardPage() {
 
       const profileRow = await supabase
         .from("profiles")
-        .select("display_name, telegram, whatsapp")
+        .select("display_name, telegram, whatsapp, email_notifications, telegram_chat_id")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
@@ -395,10 +420,14 @@ export default function DashboardPage() {
         setProfileDisplayName(dbDisplayName ?? defaultDisplayName);
         setProfileTelegram(profileData.telegram ?? "");
         setProfileWhatsapp(profileData.whatsapp ?? "");
+        setProfileEmailNotifications(profileData.email_notifications !== false);
+        setProfileTelegramChatId(profileData.telegram_chat_id?.trim() ?? "");
       } else {
         setProfileDisplayName(defaultDisplayName);
         setProfileTelegram("");
         setProfileWhatsapp("");
+        setProfileEmailNotifications(true);
+        setProfileTelegramChatId("");
       }
 
       setChatMessages([{ role: "assistant", text: buildSalesBuilderIntro(dbDisplayName) }]);
@@ -446,6 +475,8 @@ export default function DashboardPage() {
           display_name: profileDisplayName.trim(),
           telegram: profileTelegram.trim(),
           whatsapp: profileWhatsapp.trim(),
+          email_notifications: profileEmailNotifications,
+          telegram_chat_id: profileTelegramChatId.trim() || null,
           updated_at: new Date().toISOString()
         } as never,
         {
@@ -1441,7 +1472,7 @@ export default function DashboardPage() {
                   { id: "01" as const, num: "01", title: "OFFER", soon: false, badge: offer ? "✓ DONE" : "—" },
                   { id: "02" as const, num: "02", title: "LANDING PAGE", soon: false, badge: landingSlug ? "✓ LIVE" : "NEXT" },
                   { id: "03" as const, num: "03", title: "CONTENT", soon: false, badge: "✓ LIVE" },
-                  { id: "04" as const, num: "04", title: "LEADS", soon: true, badge: "SOON" },
+                  { id: "04" as const, num: "04", title: "LEADS", soon: false, badge: "LIVE" },
                   { id: "05" as const, num: "05", title: "CLOSING", soon: true, badge: "SOON" },
                   { id: "06" as const, num: "06", title: "ANALYTICS", soon: true, badge: "SOON" }
                 ] as const
@@ -2544,6 +2575,110 @@ export default function DashboardPage() {
                           autoComplete="tel"
                         />
                       </div>
+                      <div style={{ marginTop: 8 }}>
+                        <p
+                          style={{
+                            margin: "0 0 10px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.2em",
+                            color: "var(--accent)"
+                          }}
+                        >
+                          {t.notificationsHeading}
+                        </p>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          {t.emailNotificationsLabel}
+                        </p>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                          <button
+                            type="button"
+                            onClick={() => setProfileEmailNotifications(true)}
+                            style={{
+                              border:
+                                profileEmailNotifications === true
+                                  ? "1px solid var(--accent)"
+                                  : "1px solid var(--border-primary)",
+                              background:
+                                profileEmailNotifications === true
+                                  ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                                  : "var(--bg-card)",
+                              color:
+                                profileEmailNotifications === true ? "var(--accent)" : "var(--text-secondary)",
+                              fontFamily: "inherit",
+                              fontSize: 11,
+                              letterSpacing: "0.1em",
+                              padding: "8px 14px",
+                              cursor: "pointer",
+                              borderRadius: 4
+                            }}
+                          >
+                            {t.onLabel}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProfileEmailNotifications(false)}
+                            style={{
+                              border:
+                                profileEmailNotifications === false
+                                  ? "1px solid var(--accent)"
+                                  : "1px solid var(--border-primary)",
+                              background:
+                                profileEmailNotifications === false
+                                  ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                                  : "var(--bg-card)",
+                              color:
+                                profileEmailNotifications === false ? "var(--accent)" : "var(--text-secondary)",
+                              fontFamily: "inherit",
+                              fontSize: 11,
+                              letterSpacing: "0.1em",
+                              padding: "8px 14px",
+                              cursor: "pointer",
+                              borderRadius: 4
+                            }}
+                          >
+                            {t.offLabel}
+                          </button>
+                        </div>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          {t.telegramChatIdLabel}
+                        </p>
+                        <input
+                          type="text"
+                          value={profileTelegramChatId}
+                          onChange={(e) => setProfileTelegramChatId(e.target.value)}
+                          placeholder="123456789"
+                          style={profileFieldStyle}
+                          autoComplete="off"
+                        />
+                        <p
+                          style={{
+                            margin: "8px 0 0",
+                            fontFamily: "inherit",
+                            fontSize: 11,
+                            color: "var(--text-muted)",
+                            lineHeight: 1.5
+                          }}
+                        >
+                          {t.telegramChatIdHint}
+                        </p>
+                      </div>
                       {profileSaveError ? (
                         <p style={{ margin: 0, fontFamily: "inherit", fontSize: 11, color: "#f87171" }}>{profileSaveError}</p>
                       ) : null}
@@ -3166,36 +3301,8 @@ export default function DashboardPage() {
             ) : null}
 
             {activeDesktopView === "04" ? (
-              <div style={{ maxWidth: 560 }}>
-                <h2
-                  style={{
-                    margin: "0 0 12px",
-                    fontFamily: "inherit",
-                    fontWeight: 800,
-                    fontSize: 24,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: "var(--text-primary)"
-                  }}
-                >
-                  LEAD CAPTURE
-                </h2>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    fontFamily: "inherit",
-                    fontSize: 9,
-                    letterSpacing: "0.14em",
-                    color: "var(--text-muted)",
-                    border: "1px solid var(--border-primary)",
-                    padding: "4px 10px"
-                  }}
-                >
-                  COMING SOON
-                </span>
-                <p style={{ margin: "20px 0 0", fontFamily: "inherit", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65 }}>
-                  Every form submission captured. Qualify leads automatically. See who&apos;s interested in real time.
-                </p>
+              <div style={{ maxWidth: 640 }}>
+                {userId ? <LeadsList userId={userId} /> : null}
               </div>
             ) : null}
 
@@ -3473,6 +3580,110 @@ export default function DashboardPage() {
                         style={profileFieldStyle}
                         autoComplete="tel"
                       />
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <p
+                        style={{
+                          margin: "0 0 10px",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontSize: 10,
+                          letterSpacing: "0.2em",
+                          color: "var(--accent)"
+                        }}
+                      >
+                        {t.notificationsHeading}
+                      </p>
+                      <p
+                        style={{
+                          margin: "0 0 8px",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontSize: 10,
+                          letterSpacing: "0.18em",
+                          color: "var(--text-muted)"
+                        }}
+                      >
+                        {t.emailNotificationsLabel}
+                      </p>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                        <button
+                          type="button"
+                          onClick={() => setProfileEmailNotifications(true)}
+                          style={{
+                            border:
+                              profileEmailNotifications === true
+                                ? "1px solid var(--accent)"
+                                : "1px solid var(--border-primary)",
+                            background:
+                              profileEmailNotifications === true
+                                ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                                : "var(--bg-card)",
+                            color:
+                              profileEmailNotifications === true ? "var(--accent)" : "var(--text-secondary)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                            fontSize: 11,
+                            letterSpacing: "0.1em",
+                            padding: "8px 14px",
+                            cursor: "pointer",
+                            borderRadius: 4
+                          }}
+                        >
+                          {t.onLabel}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProfileEmailNotifications(false)}
+                          style={{
+                            border:
+                              profileEmailNotifications === false
+                                ? "1px solid var(--accent)"
+                                : "1px solid var(--border-primary)",
+                            background:
+                              profileEmailNotifications === false
+                                ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                                : "var(--bg-card)",
+                            color:
+                              profileEmailNotifications === false ? "var(--accent)" : "var(--text-secondary)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                            fontSize: 11,
+                            letterSpacing: "0.1em",
+                            padding: "8px 14px",
+                            cursor: "pointer",
+                            borderRadius: 4
+                          }}
+                        >
+                          {t.offLabel}
+                        </button>
+                      </div>
+                      <p
+                        style={{
+                          margin: "0 0 6px",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontSize: 10,
+                          letterSpacing: "0.18em",
+                          color: "var(--text-muted)"
+                        }}
+                      >
+                        {t.telegramChatIdLabel}
+                      </p>
+                      <input
+                        type="text"
+                        value={profileTelegramChatId}
+                        onChange={(e) => setProfileTelegramChatId(e.target.value)}
+                        placeholder="123456789"
+                        style={profileFieldStyle}
+                        autoComplete="off"
+                      />
+                      <p
+                        style={{
+                          margin: "8px 0 0",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          lineHeight: 1.5
+                        }}
+                      >
+                        {t.telegramChatIdHint}
+                      </p>
                     </div>
                     {profileSaveError ? (
                       <p
