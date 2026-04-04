@@ -56,7 +56,7 @@ const generateImageBtnStyle: CSSProperties = {
   padding: "8px 14px",
   cursor: "pointer",
   fontFamily: "inherit",
-  borderRadius: 4
+  borderRadius: 0
 };
 
 function downloadImageViaProxy(url: string) {
@@ -78,12 +78,12 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     border: "1px solid var(--border-primary)",
     color: "var(--text-secondary)",
     background: "transparent",
-    padding: "8px 12px",
-    fontSize: "12px",
+    padding: "6px 10px",
+    fontSize: "11px",
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
-    borderRadius: 4
+    borderRadius: 0
   };
 
   const btnActive: CSSProperties = {
@@ -104,7 +104,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
       return;
     }
     if (!offer.trim()) {
-      setError("Add your offer in Layer 01 first.");
+      setError("Add your offer on the Offer page first.");
       return;
     }
 
@@ -285,10 +285,16 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               key={p.id}
               type="button"
               onClick={() => setPlatform(p.id)}
-              style={platform === p.id ? btnActive : btnBase}
+              style={{
+                ...(platform === p.id ? btnActive : btnBase),
+                minWidth: 40,
+                padding: "6px 8px",
+                fontSize: 16,
+                lineHeight: 1
+              }}
               title={p.label}
             >
-              {p.short} {p.label}
+              {p.short}
             </button>
           ))}
         </div>
@@ -327,10 +333,10 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
             border: "none",
             background: loading || !offer.trim() ? "var(--border-primary)" : "#06B6D4",
             color: loading || !offer.trim() ? "var(--text-muted)" : "#000",
-            fontSize: "13px",
+            fontSize: "15px",
             fontWeight: 800,
             letterSpacing: "0.1em",
-            padding: "16px",
+            padding: "18px 20px",
             cursor: loading || !offer.trim() ? "not-allowed" : "pointer",
             fontFamily: "inherit"
           }}
@@ -379,11 +385,11 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                 </div>
                 <div
                   style={{
-                    fontSize: "14px",
-                    lineHeight: 1.7,
+                    fontSize: "15px",
+                    lineHeight: 1.75,
                     color: "var(--text-primary)",
                     whiteSpace: "pre-wrap",
-                    marginBottom: 14
+                    marginBottom: 16
                   }}
                 >
                   {post.text}
@@ -416,7 +422,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                         aspectRatio: "1",
                         objectFit: "cover",
                         marginTop: 12,
-                        borderRadius: 4,
+                        borderRadius: 0,
                         border: "1px solid var(--border-primary)",
                         display: "block"
                       }}
