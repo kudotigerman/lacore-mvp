@@ -189,6 +189,30 @@ export default function LandingPage() {
     return () => clearTimeout(timeoutId);
   }, [animatedExamples, exampleIndex, input.length, isFocused, isTyping, animatedText]);
 
+  const SALES_MACHINE_MS = 2800;
+  const [salesMachineStage, setSalesMachineStage] = useState(0);
+  const [salesMachinePaused, setSalesMachinePaused] = useState(false);
+  const [salesMachineCycleKey, setSalesMachineCycleKey] = useState(0);
+
+  useEffect(() => {
+    if (salesMachinePaused) return;
+    const id = window.setInterval(() => {
+      setSalesMachineStage((s) => (s + 1) % 5);
+    }, SALES_MACHINE_MS);
+    return () => clearInterval(id);
+  }, [salesMachinePaused, salesMachineCycleKey]);
+
+  const salesMachineNextLabels = useMemo(
+    () => [
+      "Next: Page live →",
+      "Next: Posts live →",
+      "Next: Lead capture →",
+      "Next: Close deal →",
+      "Next: Offer input →"
+    ],
+    []
+  );
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = input.trim();
@@ -305,6 +329,14 @@ export default function LandingPage() {
         @keyframes cursor-blink {
           0%, 49% { opacity: 1; }
           50%, 100% { opacity: 0; }
+        }
+        @keyframes sales-machine-slide-in {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes sales-machine-bar-fill {
+          from { width: 0%; }
+          to { width: 100%; }
         }
       `}</style>
       <main
@@ -1042,27 +1074,513 @@ export default function LandingPage() {
             <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
             <span style={{ display: "block", color: "var(--accent)" }}>YOUR FIRST LEAD ARRIVES.</span>
           </h2>
-          <div
+          <p
             style={{
-              margin: "34px auto 0",
-              maxWidth: 600,
-              textAlign: "left",
-              background: "var(--bg-input)",
-              border: "1px solid var(--accent)",
-              padding: isMobile ? 20 : 32,
+              margin: "12px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: isMobile ? 11 : 13,
-              lineHeight: 1.9,
-              color: "var(--text-primary)"
+              fontSize: 12,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)"
             }}
           >
-            <p style={{ margin: 0 }}>&gt; Offer generated ✓</p>
-            <p style={{ margin: 0 }}>&gt; Landing page live ✓</p>
-            <p style={{ margin: 0 }}>&gt; First post published ✓</p>
-            <p style={{ margin: 0 }}>&gt; System running in background ✓</p>
-            <p style={{ margin: 0 }}>&gt; NEW LEAD: Someone is interested.</p>
-            <p style={{ margin: 0 }}>&gt; &quot;Here&apos;s exactly what to say.&quot; →</p>
+            The machine in action
+          </p>
+
+          <div
+            onMouseEnter={() => setSalesMachinePaused(true)}
+            onMouseLeave={() => {
+              if (salesMachinePaused) setSalesMachineCycleKey((k) => k + 1);
+              setSalesMachinePaused(false);
+            }}
+            style={{
+              margin: "60px auto 0",
+              maxWidth: 1100,
+              background: "#0A0A0F",
+              border: "1px solid #1C1C1F",
+              borderRadius: 24,
+              overflow: "hidden",
+              textAlign: "left"
+            }}
+          >
+            <div
+              style={{
+                height: 44,
+                background: "#111115",
+                borderBottom: "1px solid #1C1C1F",
+                display: "flex",
+                alignItems: "center",
+                padding: "0 20px",
+                gap: 8
+              }}
+            >
+              <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#FF5F57", flexShrink: 0 }} />
+              <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#FEBC2E", flexShrink: 0 }} />
+              <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#28C840", flexShrink: 0 }} />
+              <span
+                style={{
+                  marginLeft: 16,
+                  fontSize: 13,
+                  color: "#52525B",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                }}
+              >
+                lacore.ai — Sales Machine
+              </span>
+              <span style={{ flex: 1 }} />
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 11,
+                  color: "#22C55E",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontWeight: 600
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
+                LIVE
+              </span>
+            </div>
+
+            <div style={{ height: 2, background: "#1C1C1F", width: "100%" }}>
+              <div
+                key={`${salesMachineStage}-${salesMachineCycleKey}`}
+                style={{
+                  height: "100%",
+                  width: "0%",
+                  background: "#06B6D4",
+                  animation: `sales-machine-bar-fill ${SALES_MACHINE_MS}ms linear forwards`,
+                  animationPlayState: salesMachinePaused ? "paused" : "running"
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "repeat(5, minmax(148px, 1fr))" : "repeat(5, 1fr)",
+                borderBottom: "1px solid #1C1C1F",
+                overflowX: isMobile ? "auto" : undefined
+              }}
+            >
+              {[
+                {
+                  label: "01 / INPUT",
+                  title: "Your offer",
+                  key: "offer"
+                },
+                {
+                  label: "02 / BUILD",
+                  title: "Page live",
+                  key: "landing"
+                },
+                {
+                  label: "03 / PUBLISH",
+                  title: "Posts live",
+                  key: "content"
+                },
+                {
+                  label: "04 / CAPTURE",
+                  title: "Leads in",
+                  key: "leads"
+                },
+                {
+                  label: "05 / CLOSE",
+                  title: "Deal closed",
+                  key: "close"
+                }
+              ].map((stage, idx) => {
+                const active = salesMachineStage === idx;
+                return (
+                  <button
+                    key={stage.key}
+                    type="button"
+                    onClick={() => {
+                      setSalesMachineStage(idx);
+                      setSalesMachineCycleKey((k) => k + 1);
+                    }}
+                    style={{
+                      margin: 0,
+                      padding: "24px 20px",
+                      border: "none",
+                      borderBottom: active ? "2px solid #06B6D4" : "2px solid transparent",
+                      background: active ? "rgba(6,182,212,0.06)" : "transparent",
+                      opacity: active ? 1 : 0.45,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      boxSizing: "border-box",
+                      font: "inherit",
+                      color: "inherit"
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.2em",
+                        textTransform: "uppercase",
+                        color: active ? "#06B6D4" : "#52525B",
+                        marginBottom: 12,
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                      }}
+                    >
+                      {stage.label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "#F4F4F5",
+                        marginBottom: 16,
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                      }}
+                    >
+                      {stage.title}
+                    </div>
+
+                    {idx === 0 && (
+                      <div>
+                        <div
+                          style={{
+                            background: "#1A1A1F",
+                            borderRadius: 8,
+                            padding: 12,
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                          }}
+                        >
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: 11,
+                              fontStyle: "italic",
+                              color: "#71717A"
+                            }}
+                          >
+                            I sell legal consulting...
+                          </p>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                            {["Legal", "B2B", "Consulting"].map((tag) => (
+                              <span
+                                key={tag}
+                                style={{
+                                  padding: "3px 8px",
+                                  background: "rgba(6,182,212,0.1)",
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                  color: "#06B6D4",
+                                  fontWeight: 600
+                                }}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {idx === 1 && (
+                      <div>
+                        <div
+                          style={{
+                            borderRadius: 8,
+                            overflow: "hidden",
+                            border: "1px solid #1C1C1F"
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: 20,
+                              background: "#1A1A1F",
+                              display: "flex",
+                              alignItems: "center",
+                              padding: "0 8px",
+                              gap: 4
+                            }}
+                          >
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FF5F57" }} />
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FEBC2E" }} />
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#28C840" }} />
+                          </div>
+                          <div
+                            style={{
+                              height: 80,
+                              background: "linear-gradient(135deg, #0A0C10 0%, #1a1040 100%)",
+                              padding: "12px 14px",
+                              boxSizing: "border-box"
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "60%",
+                                height: 8,
+                                borderRadius: 4,
+                                background: "rgba(255,255,255,0.7)"
+                              }}
+                            />
+                            <div
+                              style={{
+                                width: "40%",
+                                height: 6,
+                                borderRadius: 4,
+                                background: "rgba(255,255,255,0.28)",
+                                marginTop: 8
+                              }}
+                            />
+                            <div
+                              style={{
+                                width: 50,
+                                height: 18,
+                                background: "#06B6D4",
+                                borderRadius: 4,
+                                marginTop: 8
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <p
+                          style={{
+                            margin: "8px 0 0",
+                            fontSize: 10,
+                            color: "#06B6D4",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                          }}
+                        >
+                          yourname.lacore.ai
+                        </p>
+                      </div>
+                    )}
+
+                    {idx === 2 && (
+                      <div>
+                        {[
+                          { icon: "𝕏", iconStyle: { color: "#fff", fontSize: 14 }, text: "Why I stopped charging per hour..." },
+                          {
+                            icon: "in",
+                            iconStyle: { color: "#0A66C2", fontSize: 14, fontWeight: 900 },
+                            text: "3 mistakes consultants make..."
+                          },
+                          {
+                            icon: "ig",
+                            iconStyle: {},
+                            text: "My client got 5 leads from...",
+                            ig: true
+                          }
+                        ].map((post, pi) => (
+                          <div
+                            key={pi}
+                            style={{
+                              background: "#1A1A1F",
+                              borderRadius: 6,
+                              padding: "8px 10px",
+                              marginBottom: 6,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8
+                            }}
+                          >
+                            {post.ig ? (
+                              <span
+                                style={{
+                                  width: 14,
+                                  height: 14,
+                                  borderRadius: 4,
+                                  flexShrink: 0,
+                                  background:
+                                    "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)"
+                                }}
+                              />
+                            ) : (
+                              <span style={{ ...post.iconStyle, flexShrink: 0, lineHeight: 1 }}>{post.icon}</span>
+                            )}
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: "#A1A1AA",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                              }}
+                            >
+                              {post.text}
+                            </span>
+                          </div>
+                        ))}
+                        <p
+                          style={{
+                            margin: "4px 0 0",
+                            fontSize: 10,
+                            color: "#52525B",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                          }}
+                        >
+                          Published automatically
+                        </p>
+                      </div>
+                    )}
+
+                    {idx === 3 && (
+                      <div>
+                        {[
+                          {
+                            top: "🔔 New lead",
+                            topColor: "#22C55E",
+                            border: "#22C55E",
+                            sub: "Maria S. — wants to book a call",
+                            delay: "0s"
+                          },
+                          {
+                            top: "💬 Hot lead",
+                            topColor: "#F59E0B",
+                            border: "#F59E0B",
+                            sub: "Alex M. — replied to your post",
+                            delay: "0.12s"
+                          },
+                          {
+                            top: "💰 Payment",
+                            topColor: "#06B6D4",
+                            border: "#06B6D4",
+                            sub: "$2,500 received via Stripe",
+                            delay: "0.24s"
+                          }
+                        ].map((n, ni) => (
+                          <div
+                            key={ni}
+                            style={{
+                              background: "#1A1A1F",
+                              borderLeft: `2px solid ${n.border}`,
+                              borderRadius: "0 6px 6px 0",
+                              padding: "8px 10px",
+                              marginBottom: 6,
+                              animation:
+                                salesMachineStage === 3
+                                  ? `sales-machine-slide-in 0.3s ease ${n.delay} both`
+                                  : undefined,
+                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                            }}
+                          >
+                            <div style={{ fontSize: 10, color: n.topColor, fontWeight: 700 }}>{n.top}</div>
+                            <div style={{ fontSize: 10, color: "#A1A1AA", marginTop: 2 }}>{n.sub}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {idx === 4 && (
+                      <div>
+                        <div style={{ textAlign: "center" }}>
+                          <div
+                            style={{
+                              fontSize: "2rem",
+                              fontWeight: 900,
+                              color: "#22C55E",
+                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                              lineHeight: 1
+                            }}
+                          >
+                            $2,500
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#52525B",
+                              marginTop: 4,
+                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                            }}
+                          >
+                            New client closed
+                          </div>
+                        </div>
+                        <div style={{ height: 1, background: "#1C1C1F", margin: "12px 0" }} />
+                        <div
+                          style={{
+                            background: "#1A1A1F",
+                            borderRadius: 6,
+                            padding: "8px 10px",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                          }}
+                        >
+                          <div style={{ fontSize: 10, color: "#52525B" }}>AI suggested reply:</div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#A1A1AA",
+                              marginTop: 4,
+                              fontStyle: "italic",
+                              lineHeight: 1.4
+                            }}
+                          >
+                            &quot;Hi Maria, thank you for reaching out...&quot;
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              style={{
+                height: 40,
+                background: "#0A0A0F",
+                borderTop: "1px solid #1C1C1F",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0 20px"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {[0, 1, 2, 3, 4].map((dot) => (
+                  <button
+                    key={dot}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSalesMachineStage(dot);
+                      setSalesMachineCycleKey((k) => k + 1);
+                    }}
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      background: salesMachineStage === dot ? "#FAFAFA" : "#3F3F46"
+                    }}
+                    aria-label={`Stage ${dot + 1}`}
+                  />
+                ))}
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#52525B",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                }}
+              >
+                {salesMachineNextLabels[salesMachineStage]}
+              </span>
+            </div>
           </div>
+
+          <p
+            style={{
+              margin: "24px auto 0",
+              maxWidth: 1100,
+              textAlign: "center",
+              fontSize: 14,
+              color: "#52525B",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+            }}
+          >
+            This runs automatically. 24/7. While you sleep.
+          </p>
           <p
             style={{
               margin: "18px 0 0",
