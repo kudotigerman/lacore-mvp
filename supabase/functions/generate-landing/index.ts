@@ -7,6 +7,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function escapeHtmlTitleText(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function injectDocumentTitle(html: string, rawTitle: string): string {
+  const normalized = rawTitle.replace(/\s+/g, " ").trim();
+  const inner = escapeHtmlTitleText(normalized.length > 0 ? normalized : "Landing");
+  if (/<title[^>]*>[\s\S]*?<\/title>/i.test(html)) {
+    return html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${inner}</title>`);
+  }
+  return html.replace(/<head[^>]*>/i, (open) => `${open}<title>${inner}</title>`);
+}
+
 const systemPrompt = `You are the creative director at a world-class agency. You have designed $10,000+ landing pages for top freelancers, consultants, coaches, agencies, and service businesses. Every page you create wins awards and converts visitors into paying clients.
 
 ABSOLUTE RULE: Return ONLY a complete HTML document starting with <!DOCTYPE html>. Zero markdown. Zero explanation. Zero backticks.
@@ -158,7 +175,7 @@ MANDATORY HTML HEAD:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>[Business Name] — [Short powerful tagline]</title>
+<title>[Use the exact Page title string from the user message — the client headline, one line. Never use LACORE or a generic agency name.]</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&display=swap" rel="stylesheet">
 <style>
@@ -425,6 +442,7 @@ COPY RULES — CRITICAL
 7. Trust line under CTA: always add a short reassurance ("No credit card • Cancel anytime" or "Free consultation • No obligations")
 8. The niche floating element (trust strip, rotated tag, speech bubble, terminal, property card, etc.) must be niche-specific and impressive.
 9. Add class="scroll-reveal" to section headings, cards, and key content for scroll animations.
+10. The HTML <title> element must contain exactly the Page title line from the user message (the offer headline). Never use "LACORE", "Untitled", or your own branding as the document title.
 `;
 
 
@@ -464,6 +482,10 @@ serve(async (req) => {
     );
 
     const displayName = body.businessName || body.userEmail.split("@")[0];
+    const headlineRaw =
+      typeof body.headline === "string" && body.headline.trim().length > 0
+        ? body.headline.trim()
+        : displayName;
     const userMessage = `Generate a premium landing page for this business:
 
 Business name: ${displayName}
@@ -472,6 +494,7 @@ Target audience: ${body.audience}
 Pricing: ${body.pricing}
 Positioning: ${body.positioning}
 Suggested headline: ${body.headline}
+Page title (exact inner text for the HTML <title> element — use verbatim, single line): ${headlineRaw}
 Primary CTA goal: ${body.primaryGoal || "Book a call"}
 Site vibe: ${body.siteVibe || "Professional"}
 
@@ -587,6 +610,7 @@ Return the complete HTML document only.`;
       `${emailBase}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     html = html.replaceAll("SLUG_VALUE", slug);
+    html = injectDocumentTitle(html, headlineRaw);
 
     const { error: upsertError } = await supabase.from("landing_pages").upsert(
       { user_id: userId, slug, html_content: html, jsx_content: null },
