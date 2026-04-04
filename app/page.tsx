@@ -402,6 +402,52 @@ export default function LandingPage() {
             transform: scale(1.03);
           }
         }
+        .lacore-footer-heading {
+          margin: 0 0 20px;
+          font-family: var(--font-geist-sans), system-ui, sans-serif;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          color: #52525b;
+        }
+        .lacore-footer-link {
+          display: block;
+          margin-bottom: 12px;
+          font-family: var(--font-geist-sans), system-ui, sans-serif;
+          font-size: 14px;
+          color: #a1a1aa;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .lacore-footer-link:hover {
+          color: #f4f4f5;
+        }
+        .lacore-footer-scroll {
+          display: block;
+          margin-bottom: 12px;
+          padding: 0;
+          border: none;
+          background: none;
+          cursor: pointer;
+          text-align: left;
+          font-family: var(--font-geist-sans), system-ui, sans-serif;
+          font-size: 14px;
+          color: #a1a1aa;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .lacore-footer-scroll:hover {
+          color: #f4f4f5;
+        }
+        .lacore-footer-social {
+          color: #52525b;
+          font-size: 13px;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .lacore-footer-social:hover {
+          color: #f4f4f5;
+        }
       `}</style>
       <main
         style={{
@@ -2127,6 +2173,388 @@ export default function LandingPage() {
             <span>{tickerText.repeat(2)}</span>
           </div>
         </div>
+
+        <footer
+          style={{
+            width: "100%",
+            marginLeft: -20,
+            marginRight: -20,
+            boxSizing: "border-box",
+            background: "#060608",
+            borderTop: "1px solid #1C1C1F",
+            padding: "80px 0 40px"
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1200,
+              margin: "0 auto",
+              padding: "0 32px"
+            }}
+          >
+            {isMobile ? (
+              <>
+                <div style={{ marginBottom: 40 }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: "#06B6D4"
+                    }}
+                  >
+                    LACORE
+                  </div>
+                  <p
+                    style={{
+                      margin: "12px 0 0",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 14,
+                      color: "#52525B",
+                      lineHeight: 1.5,
+                      maxWidth: 280
+                    }}
+                  >
+                    From idea to first client. Automatically.
+                  </p>
+                  <div
+                    style={{
+                      marginTop: 24,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 16
+                    }}
+                  >
+                    <a
+                      href="https://x.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-social"
+                    >
+                      𝕏
+                    </a>
+                    <a
+                      href="https://threads.net"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-social"
+                    >
+                      Threads
+                    </a>
+                    <a
+                      href="https://instagram.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-social"
+                    >
+                      Instagram
+                    </a>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 32
+                  }}
+                >
+                  <div>
+                    <p className="lacore-footer-heading">PRODUCT</p>
+                    <button
+                      type="button"
+                      className="lacore-footer-scroll"
+                      onClick={() => scrollToSection("how-it-works")}
+                    >
+                      How it works
+                    </button>
+                    <button
+                      type="button"
+                      className="lacore-footer-scroll"
+                      onClick={() => scrollToSection("pricing")}
+                    >
+                      Pricing
+                    </button>
+                    <Link href="/dashboard" className="lacore-footer-link">
+                      Dashboard
+                    </Link>
+                    <button
+                      type="button"
+                      className="lacore-footer-scroll"
+                      onClick={() => scrollToSection("what-you-get")}
+                    >
+                      What you get
+                    </button>
+                  </div>
+                  <div>
+                    <p className="lacore-footer-heading">RESOURCES</p>
+                    <span
+                      style={{
+                        display: "block",
+                        marginBottom: 12,
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontSize: 14,
+                        color: "#52525B"
+                      }}
+                    >
+                      Documentation
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        marginBottom: 12,
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontSize: 14,
+                        color: "#52525B"
+                      }}
+                    >
+                      Blog
+                    </span>
+                    <a href="#" className="lacore-footer-link" onClick={(e) => e.preventDefault()}>
+                      Changelog
+                    </a>
+                  </div>
+                  <div>
+                    <p className="lacore-footer-heading">LEGAL</p>
+                    <Link href="/privacy" className="lacore-footer-link">
+                      Privacy Policy
+                    </Link>
+                    <Link href="/terms" className="lacore-footer-link">
+                      Terms of Service
+                    </Link>
+                    <Link href="/cookies" className="lacore-footer-link">
+                      Cookie Policy
+                    </Link>
+                  </div>
+                  <div>
+                    <p className="lacore-footer-heading">CONNECT</p>
+                    <a
+                      href="https://x.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-link"
+                    >
+                      X / Twitter
+                    </a>
+                    <a
+                      href="https://threads.net"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-link"
+                    >
+                      Threads
+                    </a>
+                    <a
+                      href="https://instagram.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-link"
+                    >
+                      Instagram
+                    </a>
+                    <a href="mailto:contact@lacore.ai" className="lacore-footer-link">
+                      contact@lacore.ai
+                    </a>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+                  gap: 48
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: "#06B6D4"
+                    }}
+                  >
+                    LACORE
+                  </div>
+                  <p
+                    style={{
+                      margin: "12px 0 0",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 14,
+                      color: "#52525B",
+                      lineHeight: 1.5,
+                      maxWidth: 200
+                    }}
+                  >
+                    From idea to first client. Automatically.
+                  </p>
+                  <div style={{ marginTop: 24, display: "flex", gap: 16 }}>
+                    <a
+                      href="https://x.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-social"
+                    >
+                      𝕏
+                    </a>
+                    <a
+                      href="https://threads.net"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-social"
+                    >
+                      Threads
+                    </a>
+                    <a
+                      href="https://instagram.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lacore-footer-social"
+                    >
+                      Instagram
+                    </a>
+                  </div>
+                </div>
+                <div>
+                  <p className="lacore-footer-heading">PRODUCT</p>
+                  <button
+                    type="button"
+                    className="lacore-footer-scroll"
+                    onClick={() => scrollToSection("how-it-works")}
+                  >
+                    How it works
+                  </button>
+                  <button
+                    type="button"
+                    className="lacore-footer-scroll"
+                    onClick={() => scrollToSection("pricing")}
+                  >
+                    Pricing
+                  </button>
+                  <Link href="/dashboard" className="lacore-footer-link">
+                    Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    className="lacore-footer-scroll"
+                    onClick={() => scrollToSection("what-you-get")}
+                  >
+                    What you get
+                  </button>
+                </div>
+                <div>
+                  <p className="lacore-footer-heading">RESOURCES</p>
+                  <span
+                    style={{
+                      display: "block",
+                      marginBottom: 12,
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 14,
+                      color: "#52525B"
+                    }}
+                  >
+                    Documentation
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      marginBottom: 12,
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 14,
+                      color: "#52525B"
+                    }}
+                  >
+                    Blog
+                  </span>
+                  <a href="#" className="lacore-footer-link" onClick={(e) => e.preventDefault()}>
+                    Changelog
+                  </a>
+                </div>
+                <div>
+                  <p className="lacore-footer-heading">LEGAL</p>
+                  <Link href="/privacy" className="lacore-footer-link">
+                    Privacy Policy
+                  </Link>
+                  <Link href="/terms" className="lacore-footer-link">
+                    Terms of Service
+                  </Link>
+                  <Link href="/cookies" className="lacore-footer-link">
+                    Cookie Policy
+                  </Link>
+                </div>
+                <div>
+                  <p className="lacore-footer-heading">CONNECT</p>
+                  <a
+                    href="https://x.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="lacore-footer-link"
+                  >
+                    X / Twitter
+                  </a>
+                  <a
+                    href="https://threads.net"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="lacore-footer-link"
+                  >
+                    Threads
+                  </a>
+                  <a
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="lacore-footer-link"
+                  >
+                    Instagram
+                  </a>
+                  <a href="mailto:contact@lacore.ai" className="lacore-footer-link">
+                    contact@lacore.ai
+                  </a>
+                </div>
+              </div>
+            )}
+
+            <div
+              style={{
+                marginTop: 64,
+                borderTop: "1px solid #1C1C1F"
+              }}
+            />
+            <div
+              style={{
+                marginTop: 32,
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                justifyContent: isMobile ? "center" : "space-between",
+                alignItems: "center",
+                gap: isMobile ? 8 : 0,
+                textAlign: isMobile ? "center" : "left"
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: 13,
+                  color: "#52525B"
+                }}
+              >
+                © 2026 LACORE. All rights reserved.
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: 13,
+                  color: "#52525B"
+                }}
+              >
+                Built by Stan + Claude ⚡
+              </p>
+            </div>
+          </div>
+        </footer>
       </main>
     </>
   );
