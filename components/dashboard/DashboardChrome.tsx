@@ -276,6 +276,13 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           border-color: rgba(6,182,212,0.2) !important;
           color: #06B6D4 !important;
         }
+        .dash-sb-chat-close {
+          transition: background 0.15s ease, color 0.15s ease;
+        }
+        .dash-sb-chat-close:hover {
+          background: rgba(255,255,255,0.1) !important;
+          color: #FFFFFF !important;
+        }
         @media (max-width: 900px) {
           .dash-shell-root {
             flex-direction: column;
@@ -721,6 +728,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           ) : null}
 
           <aside
+            id="dash-sales-builder-panel"
             aria-hidden={!chatOpen}
             style={{
               position: "fixed",
@@ -743,8 +751,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             }}
           >
             <div style={{ padding: 20, borderBottom: "1px solid #1C1C22", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 auto" }}>
                   <span
                     style={{
                       width: 6,
@@ -758,18 +766,44 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                 </div>
                 <span
                   style={{
-                    marginLeft: "auto",
                     fontSize: 9,
                     fontWeight: 600,
                     background: "rgba(6,182,212,0.15)",
                     color: "#06B6D4",
                     padding: "2px 6px",
                     borderRadius: 4,
-                    border: "1px solid rgba(6,182,212,0.2)"
+                    border: "1px solid rgba(6,182,212,0.2)",
+                    flexShrink: 0
                   }}
                 >
                   AI
                 </span>
+                <button
+                  type="button"
+                  className="dash-sb-chat-close"
+                  aria-label="Close Sales Builder"
+                  onClick={() => setChatOpen(false)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    marginLeft: "auto",
+                    padding: 0,
+                    background: "rgba(255,255,255,0.06)",
+                    borderRadius: 6,
+                    border: "none",
+                    color: "#71717A",
+                    fontSize: 16,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "inherit",
+                    flexShrink: 0,
+                    lineHeight: 1
+                  }}
+                >
+                  ✕
+                </button>
               </div>
               <p style={{ margin: "6px 0 0", fontSize: 11, color: "#52525B" }}>Your AI sales assistant</p>
             </div>
@@ -892,44 +926,32 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             </form>
           </aside>
 
-          <button
-            type="button"
-            onClick={() => setChatOpen((o) => !o)}
-            className={`dash-sb-fab ${chatOpen ? "dash-sb-fab--open" : "dash-sb-fab--closed"}`}
-            aria-expanded={chatOpen}
-            style={{
-              position: "fixed",
-              bottom: 32,
-              right: 32,
-              zIndex: 1000,
-              padding: "14px 22px",
-              borderRadius: 14,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              cursor: "pointer",
-              border: "1px solid rgba(255,255,255,0.15)",
-              fontFamily: "inherit",
-              boxShadow: chatOpen
-                ? "0 4px 16px rgba(0,0,0,0.4)"
-                : "0 8px 32px rgba(6,182,212,0.35), 0 2px 8px rgba(0,0,0,0.4)",
-              background: chatOpen
-                ? "linear-gradient(135deg, #1C1C22 0%, #111116 100%)"
-                : "linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
-            }}
-          >
-            <span style={{ fontSize: 16, lineHeight: 1, color: chatOpen ? "#FFFFFF" : "#000" }}>{chatOpen ? "✕" : "⚡"}</span>
-            <span
+          {!chatOpen ? (
+            <button
+              type="button"
+              onClick={() => setChatOpen(true)}
+              className="dash-sb-fab dash-sb-fab--closed"
+              aria-expanded={false}
+              aria-controls="dash-sales-builder-panel"
               style={{
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                color: chatOpen ? "#FFFFFF" : "#000"
+                position: "fixed",
+                bottom: 32,
+                right: 32,
+                zIndex: 1000,
+                padding: "14px 22px",
+                borderRadius: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
+                border: "1px solid rgba(255,255,255,0.15)",
+                fontFamily: "inherit",
+                boxShadow: "0 8px 32px rgba(6,182,212,0.35), 0 2px 8px rgba(0,0,0,0.4)",
+                background: "linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
               }}
             >
-              {chatOpen ? "Close" : "Sales Builder"}
-            </span>
-            {!chatOpen ? (
+              <span style={{ fontSize: 16, lineHeight: 1, color: "#000" }}>⚡</span>
+              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.05em", color: "#000" }}>Sales Builder</span>
               <span
                 className="dash-sb-live-dot"
                 style={{
@@ -941,8 +963,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                   flexShrink: 0
                 }}
               />
-            ) : null}
-          </button>
+            </button>
+          ) : null}
         </>
       ) : null}
     </main>
