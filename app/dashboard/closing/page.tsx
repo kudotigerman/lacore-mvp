@@ -1,8 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+
+const wellStyle = {
+  minHeight: 80,
+  background: "rgba(255,255,255,0.02)",
+  borderRadius: 6,
+  padding: 14,
+  boxSizing: "border-box" as const
+};
 
 export default function DashboardClosingPage() {
   const d = useDashboardData();
@@ -41,127 +50,96 @@ export default function DashboardClosingPage() {
     }
   }
 
+  async function copyText(text: string) {
+    await navigator.clipboard.writeText(text);
+  }
+
   const offer = d.offer?.offer ?? "your offer";
   const audience = d.offer?.audience ?? "your audience";
 
+  const renderClosingCard = (
+    title: string,
+    out: string,
+    loading: boolean,
+    setOut: (s: string) => void,
+    setLoad: (b: boolean) => void,
+    prompt: string
+  ) => (
+    <div style={{ ...dash.card }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
+        <p style={{ ...dash.sectionTitle, margin: 0 }}>{title}</p>
+        <button
+          type="button"
+          disabled={loading || !d.sessionToken}
+          onClick={() => void runPrompt(prompt, setOut, setLoad)}
+          style={{ ...dash.btnPrimarySm, opacity: loading ? 0.6 : 1, cursor: loading ? "not-allowed" : "pointer" }}
+        >
+          Generate
+        </button>
+      </div>
+      <div style={wellStyle}>
+        {loading ? (
+          <p style={{ ...dash.small, margin: 0 }}>Generating…</p>
+        ) : out ? (
+          <>
+            <pre
+              style={{
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                fontFamily: "inherit",
+                fontSize: 13,
+                lineHeight: 1.7,
+                color: "var(--text-secondary)"
+              }}
+            >
+              {out}
+            </pre>
+            <button
+              type="button"
+              onClick={() => void copyText(out)}
+              style={{ ...dash.btnGhostSm, marginTop: 12 }}
+            >
+              Copy
+            </button>
+          </>
+        ) : (
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>—</span>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ padding: 48, maxWidth: 900, boxSizing: "border-box" }}>
-      <h1 style={{ ...dash.pageTitle, marginBottom: 32 }}>CLOSING SYSTEM</h1>
-      {err ? <p style={{ color: "#ef4444", fontSize: 13, marginBottom: 16 }}>{err}</p> : null}
+    <div style={dash.pageShell}>
+      <DashPageHeader title="Closing System" subtitle="Scripts and sequences to convert leads into clients" />
+      {err ? <p style={{ color: "var(--danger)", fontSize: 13, margin: "0 0 16px" }}>{err}</p> : null}
 
-      <section style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-          <p style={dash.sectionLabel}>DM SCRIPTS</p>
-          <button
-            type="button"
-            disabled={dmLoad || !d.sessionToken}
-            onClick={() =>
-              void runPrompt(
-                `Generate 3 cold DM scripts for ${offer} targeting ${audience}. Each script: opener, value prop, CTA. Format clearly.`,
-                setDmOut,
-                setDmLoad
-              )
-            }
-            style={{ ...dash.btnPrimary, opacity: dmLoad ? 0.6 : 1 }}
-          >
-            ⚡ GENERATE SCRIPTS
-          </button>
-        </div>
-        <div style={{ ...dash.card, minHeight: 80 }}>
-          {dmLoad ? (
-            <p style={dash.small}>Generating…</p>
-          ) : (
-            <pre
-              style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                fontFamily: "inherit",
-                fontSize: 14,
-                lineHeight: 1.6,
-                color: "var(--text-secondary)"
-              }}
-            >
-              {dmOut || "—"}
-            </pre>
-          )}
-        </div>
-      </section>
-
-      <section style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-          <p style={dash.sectionLabel}>OBJECTION HANDLING</p>
-          <button
-            type="button"
-            disabled={objLoad || !d.sessionToken}
-            onClick={() =>
-              void runPrompt(
-                `Generate responses to top 5 objections for ${offer}. Format: Objection → Response`,
-                setObjOut,
-                setObjLoad
-              )
-            }
-            style={{ ...dash.btnPrimary, opacity: objLoad ? 0.6 : 1 }}
-          >
-            ⚡ GENERATE OBJECTIONS
-          </button>
-        </div>
-        <div style={{ ...dash.card, minHeight: 80 }}>
-          {objLoad ? (
-            <p style={dash.small}>Generating…</p>
-          ) : (
-            <pre
-              style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                fontFamily: "inherit",
-                fontSize: 14,
-                lineHeight: 1.6,
-                color: "var(--text-secondary)"
-              }}
-            >
-              {objOut || "—"}
-            </pre>
-          )}
-        </div>
-      </section>
-
-      <section>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-          <p style={dash.sectionLabel}>FOLLOW-UP SEQUENCES</p>
-          <button
-            type="button"
-            disabled={fuLoad || !d.sessionToken}
-            onClick={() =>
-              void runPrompt(
-                `Generate a 5-message follow-up sequence for ${offer} prospects who didn't respond.`,
-                setFuOut,
-                setFuLoad
-              )
-            }
-            style={{ ...dash.btnPrimary, opacity: fuLoad ? 0.6 : 1 }}
-          >
-            ⚡ GENERATE FOLLOW-UPS
-          </button>
-        </div>
-        <div style={{ ...dash.card, minHeight: 80 }}>
-          {fuLoad ? (
-            <p style={dash.small}>Generating…</p>
-          ) : (
-            <pre
-              style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                fontFamily: "inherit",
-                fontSize: 14,
-                lineHeight: 1.6,
-                color: "var(--text-secondary)"
-              }}
-            >
-              {fuOut || "—"}
-            </pre>
-          )}
-        </div>
-      </section>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {renderClosingCard(
+          "DM SCRIPTS",
+          dmOut,
+          dmLoad,
+          setDmOut,
+          setDmLoad,
+          `Generate 3 cold DM scripts for ${offer} targeting ${audience}. Each script: opener, value prop, CTA. Format clearly.`
+        )}
+        {renderClosingCard(
+          "OBJECTION HANDLING",
+          objOut,
+          objLoad,
+          setObjOut,
+          setObjLoad,
+          `Generate responses to top 5 objections for ${offer}. Format: Objection → Response`
+        )}
+        {renderClosingCard(
+          "FOLLOW-UP SEQUENCES",
+          fuOut,
+          fuLoad,
+          setFuOut,
+          setFuLoad,
+          `Generate a 5-message follow-up sequence for ${offer} prospects who didn't respond.`
+        )}
+      </div>
     </div>
   );
 }

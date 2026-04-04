@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import type { DashboardOffer } from "@/components/dashboard/DashboardDataContext";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
@@ -56,57 +57,54 @@ export default function DashboardOfferPage() {
     ...dash.input,
     resize: "vertical" as const,
     minHeight: 100,
-    marginTop: 8
+    marginTop: 4
   };
 
-  return (
-    <div style={{ padding: 48, maxWidth: 800, boxSizing: "border-box" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 32 }}>
-        <h1 style={dash.pageTitle}>YOUR OFFER</h1>
-        {offer ? (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              color: "#22c55e"
-            }}
-          >
-            <span style={{ width: 6, height: 6, background: "#22c55e" }} />
-            ACTIVE
-          </span>
-        ) : null}
+  const headerRight =
+    offer && !editing ? (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span style={dash.badgeSuccess}>Active</span>
+        <button
+          type="button"
+          onClick={() => {
+            setSaveErr(null);
+            setDraft({ ...offer });
+            setEditing(true);
+          }}
+          style={dash.btnGhost}
+        >
+          Edit
+        </button>
       </div>
+    ) : null;
+
+  return (
+    <div style={dash.pageShell}>
+      <DashPageHeader title="Your Offer" subtitle="Your core positioning and value proposition" right={headerRight} />
 
       {!offer ? (
         <div style={{ ...dash.card }}>
           <p style={{ ...dash.body, margin: "0 0 16px" }}>You don&apos;t have an offer saved yet.</p>
           <Link href="/" style={{ ...dash.btnPrimary, display: "inline-block", textDecoration: "none" }}>
-            GENERATE YOUR OFFER →
+            Generate your offer →
           </Link>
         </div>
       ) : (
         <>
-          <div style={{ ...dash.card, marginBottom: 16 }}>
+          <div style={{ ...dash.card }}>
             {fields.map((item, idx) => {
               const src = editing && draft ? draft : offer;
               const value = src[item.key];
               return (
-                <div
-                  key={item.key}
-                  style={{
-                    borderBottom: idx === fields.length - 1 ? "none" : "1px solid var(--border-primary)",
-                    paddingBottom: idx === fields.length - 1 ? 0 : 20,
-                    marginBottom: idx === fields.length - 1 ? 0 : 20
-                  }}
-                >
-                  <p style={{ ...dash.sectionLabel, marginBottom: 8 }}>{item.label}</p>
+                <div key={item.key}>
+                  {idx > 0 ? (
+                    <div style={{ borderBottom: "1px solid var(--border)", margin: "16px 0" }} />
+                  ) : null}
+                  <p style={dash.sectionTitle}>{item.label}</p>
                   {editing && draft ? (
                     item.multiline ? (
                       <textarea
+                        className="dash-focusable"
                         value={draft[item.key]}
                         onChange={(e) => setDraft({ ...draft, [item.key]: e.target.value })}
                         style={textareaStyle}
@@ -114,14 +112,17 @@ export default function DashboardOfferPage() {
                       />
                     ) : (
                       <input
+                        className="dash-focusable"
                         type="text"
                         value={draft[item.key]}
                         onChange={(e) => setDraft({ ...draft, [item.key]: e.target.value })}
-                        style={{ ...dash.input, marginTop: 8 }}
+                        style={{ ...dash.input, marginTop: 4 }}
                       />
                     )
                   ) : (
-                    <p style={{ ...dash.body, margin: 0, color: "var(--text-primary)" }}>{value}</p>
+                    <div style={{ fontSize: 15, color: "var(--text-primary)", marginTop: 4, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {value}
+                    </div>
                   )}
                 </div>
               );
@@ -129,15 +130,15 @@ export default function DashboardOfferPage() {
           </div>
 
           {editing ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {saveErr ? <p style={{ margin: 0, fontSize: 12, color: "#ef4444" }}>{saveErr}</p> : null}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+              {saveErr ? <p style={{ margin: 0, fontSize: 12, color: "var(--danger)" }}>{saveErr}</p> : null}
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => void save()}
-                style={{ ...dash.btnPrimary, opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer" }}
+                style={{ ...dash.btnPrimary, opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
               >
-                SAVE
+                Save
               </button>
               <button
                 type="button"
@@ -146,24 +147,12 @@ export default function DashboardOfferPage() {
                   setDraft(null);
                   setSaveErr(null);
                 }}
-                style={dash.btnGhost}
+                style={{ ...dash.btnGhost, alignSelf: "flex-start" }}
               >
-                CANCEL
+                Cancel
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setSaveErr(null);
-                setDraft({ ...offer });
-                setEditing(true);
-              }}
-              style={dash.btnGhost}
-            >
-              EDIT OFFER
-            </button>
-          )}
+          ) : null}
         </>
       )}
     </div>

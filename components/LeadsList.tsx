@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { dash } from "@/components/dashboard/dashTokens";
 import { getSupabaseClient } from "@/lib/supabase";
 
 export type LeadRow = {
@@ -35,17 +36,12 @@ function isNewLead(createdAt: string): boolean {
   return Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000;
 }
 
-const btnGhost: CSSProperties = {
-  border: "1px solid var(--border-primary)",
-  background: "transparent",
-  color: "var(--text-secondary)",
-  fontSize: "12px",
-  fontWeight: 600,
-  letterSpacing: "0.1em",
-  padding: "12px 24px",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  borderRadius: 0
+const replyLinkStyle: CSSProperties = {
+  ...dash.btnGhostSm,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  flexShrink: 0
 };
 
 type LeadsListProps = {
@@ -111,19 +107,6 @@ export default function LeadsList({
 
   const badgeText = `${count} lead${count === 1 ? "" : "s"}`;
 
-  const replyStyle: CSSProperties = {
-    fontSize: 12,
-    fontWeight: 600,
-    letterSpacing: "0.08em",
-    color: "var(--accent)",
-    textDecoration: "none",
-    border: "1px solid var(--border-primary)",
-    padding: "8px 14px",
-    borderRadius: 0,
-    whiteSpace: "nowrap",
-    alignSelf: "flex-start"
-  };
-
   return (
     <div style={{ fontFamily: "inherit", maxWidth: variant === "cards" ? 900 : 640 }}>
       {showToolbar ? (
@@ -138,37 +121,17 @@ export default function LeadsList({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 18,
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--text-primary)"
-              }}
-            >
-              LEADS
-            </h2>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.06em",
-                color: "var(--accent)"
-              }}
-            >
-              {badgeText}
-            </span>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "var(--text-primary)" }}>Leads</h2>
+            <span style={{ ...dash.badgeLive, textTransform: "none", letterSpacing: "normal" }}>{badgeText}</span>
           </div>
-          <button type="button" onClick={() => void load()} disabled={loading} style={btnGhost}>
-            REFRESH
+          <button type="button" onClick={() => void load()} disabled={loading} style={dash.btnGhost}>
+            Refresh
           </button>
         </div>
       ) : null}
 
       {error ? (
-        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#f87171" }}>{error}</p>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--danger)" }}>{error}</p>
       ) : null}
 
       {loading ? (
@@ -177,25 +140,25 @@ export default function LeadsList({
         <div
           style={{
             textAlign: "center",
-            padding: "48px 16px",
-            color: "var(--text-muted)",
-            fontSize: 14,
-            lineHeight: 1.6
+            padding: "56px 16px",
+            color: "var(--text-muted)"
           }}
         >
-          No leads yet.
-          <br />
-          Share your landing page to start getting leads.
+          <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 16, color: "var(--text-muted)" }} aria-hidden>
+            ◎
+          </div>
+          <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>No leads yet</p>
+          <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
+            Share your landing page to start receiving leads
+          </p>
         </div>
       ) : variant === "cards" ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 16 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
           {leads.map((lead) => (
             <li
               key={lead.id}
               style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-primary)",
-                padding: 20,
+                ...dash.cardCompact,
                 display: "flex",
                 justifyContent: "space-between",
                 gap: 16,
@@ -204,40 +167,38 @@ export default function LeadsList({
               }}
             >
               <div style={{ flex: "1 1 200px", minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   {isNewLead(lead.created_at) ? (
-                    <span style={{ color: "#22c55e", fontSize: 10 }} aria-hidden>
+                    <span style={{ color: "var(--success)", fontSize: 10, lineHeight: 1 }} aria-hidden>
                       ●
                     </span>
                   ) : null}
-                  <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
                     {lead.name?.trim() || "—"}
                   </span>
                 </div>
-                <div
+                <p
                   style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                    gap: 8,
+                    margin: "6px 0 0",
                     fontSize: 12,
                     color: "var(--text-muted)",
-                    marginBottom: lead.message?.trim() ? 8 : 0
+                    wordBreak: "break-all",
+                    lineHeight: 1.5
                   }}
                 >
-                  <span style={{ color: "var(--text-secondary)", wordBreak: "break-all" }}>{lead.email}</span>
-                  <span style={{ color: "var(--text-muted)" }}>·</span>
-                  <span>{formatRelativeTime(lead.created_at)}</span>
-                  <span style={{ color: "var(--text-muted)" }}>·</span>
-                  <span>/p/{lead.slug}</span>
-                </div>
+                  {lead.email}
+                  <span style={{ color: "var(--text-muted)" }}> · </span>
+                  {formatRelativeTime(lead.created_at)}
+                  <span style={{ color: "var(--text-muted)" }}> · </span>
+                  <span style={{ color: "var(--text-muted)" }}>/p/{lead.slug}</span>
+                </p>
                 {lead.message?.trim() ? (
                   <p
                     style={{
-                      margin: 0,
-                      fontSize: 14,
-                      lineHeight: 1.6,
+                      margin: "6px 0 0",
+                      fontSize: 13,
                       color: "var(--text-secondary)",
+                      lineHeight: 1.6,
                       whiteSpace: "pre-wrap"
                     }}
                   >
@@ -247,9 +208,9 @@ export default function LeadsList({
               </div>
               <a
                 href={`mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent("Re: your inquiry")}`}
-                style={replyStyle}
+                style={replyLinkStyle}
               >
-                REPLY →
+                Reply →
               </a>
             </li>
           ))}
@@ -260,7 +221,7 @@ export default function LeadsList({
             <li
               key={lead.id}
               style={{
-                borderBottom: "1px solid var(--border-primary)",
+                borderBottom: "1px solid var(--border)",
                 padding: "16px 0",
                 display: "flex",
                 justifyContent: "space-between",
@@ -272,7 +233,7 @@ export default function LeadsList({
               <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   {isNewLead(lead.created_at) ? (
-                    <span style={{ color: "#22c55e", fontSize: 10, lineHeight: 1 }} aria-hidden>
+                    <span style={{ color: "var(--success)", fontSize: 10, lineHeight: 1 }} aria-hidden>
                       ●
                     </span>
                   ) : null}
@@ -314,9 +275,9 @@ export default function LeadsList({
                 </span>
                 <a
                   href={`mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent("Re: your inquiry")}`}
-                  style={replyStyle}
+                  style={replyLinkStyle}
                 >
-                  REPLY →
+                  Reply →
                 </a>
               </div>
             </li>

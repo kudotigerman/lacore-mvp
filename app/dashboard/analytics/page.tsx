@@ -1,11 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Row = { id: string; created_at: string; name: string | null; email: string };
+
+function formatRelativeTime(iso: string): string {
+  const seconds = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const abs = Math.abs(seconds);
+  if (abs < 60) return rtf.format(seconds, "second");
+  const minutes = Math.round(seconds / 60);
+  if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute");
+  const hours = Math.round(seconds / 3600);
+  if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
+  const days = Math.round(seconds / 86400);
+  if (Math.abs(days) < 7) return rtf.format(days, "day");
+  const weeks = Math.round(seconds / 604800);
+  if (Math.abs(weeks) < 5) return rtf.format(weeks, "week");
+  const months = Math.round(seconds / 2629800);
+  if (Math.abs(months) < 12) return rtf.format(months, "month");
+  return rtf.format(Math.round(seconds / 31557600), "year");
+}
 
 export default function DashboardAnalyticsPage() {
   const d = useDashboardData();
@@ -48,51 +67,69 @@ export default function DashboardAnalyticsPage() {
     };
   }, [d.userId]);
 
-  const metric = (value: string | number, label: string, sub?: string) => (
-    <div style={{ ...dash.card, flex: "1 1 160px", minWidth: 140 }}>
-      <div style={{ fontSize: 48, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>{value}</div>
-      <p style={{ ...dash.sectionLabel, marginTop: 12 }}>{label}</p>
-      {sub ? (
-        <p style={{ ...dash.small, margin: "8px 0 0" }}>{sub}</p>
-      ) : null}
+  const metric = (label: string, value: string | number, sub?: string) => (
+    <div style={{ ...dash.card }}>
+      <p style={{ ...dash.sectionTitle, margin: 0 }}>{label}</p>
+      <div style={{ ...dash.metricNumber, marginTop: 8 }}>{value}</div>
+      {sub ? <p style={{ ...dash.small, margin: "8px 0 0", lineHeight: 1.5 }}>{sub}</p> : null}
     </div>
   );
 
   return (
-    <div style={{ padding: 48, boxSizing: "border-box" }}>
-      <h1 style={{ ...dash.pageTitle, marginBottom: 32 }}>ANALYTICS</h1>
+    <div style={dash.pageShell}>
+      <DashPageHeader title="Analytics" subtitle="Track your growth and performance" />
 
       {loading ? (
         <p style={dash.body}>Loading…</p>
       ) : (
         <>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 40 }}>
-            {metric(total, "LEADS TOTAL")}
-            {metric(weekCount, "THIS WEEK")}
-            {metric(0, "LANDING VIEWS", "Coming soon")}
-            {metric("0%", "CONVERSION", "Coming soon")}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: 16,
+              marginBottom: 24
+            }}
+            className="dash-analytics-metrics"
+          >
+            <style>{`
+              @media (max-width: 900px) {
+                .dash-analytics-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+              }
+              @media (max-width: 480px) {
+                .dash-analytics-metrics { grid-template-columns: 1fr !important; }
+              }
+            `}</style>
+            {metric("LEADS TOTAL", total)}
+            {metric("THIS WEEK", weekCount)}
+            {metric("LANDING VIEWS", 0, "Coming soon")}
+            {metric("CONVERSION", "0%", "Coming soon")}
           </div>
 
-          <p style={{ ...dash.sectionLabel, marginBottom: 16 }}>RECENT LEADS</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ ...dash.card }}>
+            <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Recent Leads</p>
             {recent.length === 0 ? (
-              <p style={dash.body}>No leads yet.</p>
+              <p style={{ ...dash.body, margin: 0 }}>No leads yet.</p>
             ) : (
-              recent.map((r) => (
-                <div
-                  key={r.id}
-                  style={{
-                    padding: "14px 0",
-                    borderBottom: "1px solid var(--border-primary)",
-                    fontSize: 13,
-                    color: "var(--text-secondary)"
-                  }}
-                >
-                  <strong style={{ color: "var(--text-primary)" }}>{r.name?.trim() || "—"}</strong>
-                  {" · "}
-                  {r.email}
-                </div>
-              ))
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {recent.map((r, i) => (
+                  <div
+                    key={r.id}
+                    style={{
+                      padding: "10px 0",
+                      borderBottom: i === recent.length - 1 ? "none" : "1px solid var(--border)",
+                      fontSize: 13,
+                      color: "var(--text-secondary)"
+                    }}
+                  >
+                    <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{r.name?.trim() || "—"}</span>
+                    {" · "}
+                    {r.email}
+                    {" · "}
+                    <span style={{ color: "var(--text-muted)" }}>{formatRelativeTime(r.created_at)}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </>

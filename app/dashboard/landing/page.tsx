@@ -1,6 +1,7 @@
 "use client";
 
 import DomainConnect from "@/components/DomainConnect";
+import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import StripeConnect from "@/components/StripeConnect";
@@ -13,15 +14,17 @@ export default function DashboardLandingPage() {
     await navigator.clipboard.writeText(`https://www.lacore.ai/p/${d.landingSlug}`);
   }
 
+  const url = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
+
   return (
-    <div style={{ padding: 48, boxSizing: "border-box" }}>
-      <h1 style={{ ...dash.pageTitle, marginBottom: 32 }}>LANDING PAGE</h1>
+    <div style={dash.pageShell}>
+      <DashPageHeader title="Landing Page" subtitle="Your public-facing sales page" />
 
       {!d.offer ? (
         <p style={dash.body}>Add your offer first on the Offer page.</p>
       ) : (
-        <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div style={{ flex: "1 1 360px", minWidth: 280 }}>
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div style={{ flex: "1.4 1 320px", minWidth: 280 }}>
             {!d.landingSlug ? (
               <div style={{ ...dash.card }}>
                 <p style={{ ...dash.body, margin: "0 0 16px" }}>
@@ -38,18 +41,19 @@ export default function DashboardLandingPage() {
                     opacity: d.buildingLanding ? 0.6 : 1
                   }}
                 >
-                  BUILD MY LANDING PAGE →
+                  Build my landing page →
                 </button>
                 {d.buildError ? (
-                  <p style={{ margin: "12px 0 0", fontSize: 12, color: "#ef4444" }}>{d.buildError}</p>
+                  <p style={{ margin: "12px 0 0", fontSize: 12, color: "var(--danger)" }}>{d.buildError}</p>
                 ) : null}
               </div>
             ) : (
               <div
                 style={{
-                  border: "1px solid var(--border-primary)",
-                  background: "var(--bg-card)",
-                  overflow: "hidden"
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  background: "var(--card-bg)"
                 }}
               >
                 <iframe
@@ -58,7 +62,7 @@ export default function DashboardLandingPage() {
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                   style={{
                     width: "100%",
-                    height: 420,
+                    height: 500,
                     border: "none",
                     display: "block",
                     pointerEvents: "none"
@@ -68,66 +72,60 @@ export default function DashboardLandingPage() {
             )}
           </div>
 
-          <div style={{ width: 320, flexShrink: 0, display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ flex: "1 1 280px", minWidth: 260, display: "flex", flexDirection: "column", gap: 16 }}>
             {d.landingSlug ? (
               <>
-                <div style={{ paddingBottom: 24, borderBottom: "1px solid var(--border-primary)" }}>
-                  <p style={{ ...dash.sectionLabel, marginBottom: 12 }}>URL</p>
-                  <div
-                    style={{
-                      border: "1px solid var(--border-primary)",
-                      padding: "10px 12px",
-                      fontSize: 12,
-                      color: "var(--text-secondary)",
-                      wordBreak: "break-all",
-                      marginBottom: 12,
-                      background: "var(--bg-card)"
-                    }}
-                  >
-                    https://www.lacore.ai/p/{d.landingSlug}
+                <div style={{ ...dash.card }}>
+                  <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Public URL</p>
+                  <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                    <input
+                      readOnly
+                      value={url}
+                      className="dash-focusable"
+                      style={{ ...dash.input, flex: 1, minWidth: 0, fontSize: 13 }}
+                    />
+                    <button type="button" onClick={() => void copyUrl()} style={{ ...dash.btnGhost, flexShrink: 0 }}>
+                      Copy
+                    </button>
                   </div>
-                  <button type="button" onClick={() => void copyUrl()} style={{ ...dash.btnGhost, width: "100%", marginBottom: 12 }}>
-                    COPY
-                  </button>
-                  <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
                     <a
                       href={`/p/${d.landingSlug}`}
                       target="_blank"
                       rel="noreferrer"
                       style={{ ...dash.btnGhost, textAlign: "center", textDecoration: "none", display: "block" }}
                     >
-                      PREVIEW →
+                      Preview →
                     </a>
                     <a
                       href={`/p/${d.landingSlug}?edit=true`}
                       style={{ ...dash.btnGhost, textAlign: "center", textDecoration: "none", display: "block" }}
                     >
-                      EDIT PAGE →
+                      Edit Page →
                     </a>
                   </div>
                 </div>
 
                 {d.userId ? (
-                  <div style={{ padding: "24px 0", borderBottom: "1px solid var(--border-primary)" }}>
-                    <p style={{ ...dash.sectionLabel, marginBottom: 12 }}>DOMAIN</p>
+                  <div style={{ ...dash.card }}>
+                    <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Custom Domain</p>
                     <DomainConnect slug={d.landingSlug} userId={d.userId} />
                   </div>
                 ) : null}
 
                 {d.userId ? (
-                  <div style={{ padding: "24px 0", borderBottom: "1px solid var(--border-primary)" }}>
-                    <p style={{ ...dash.sectionLabel, marginBottom: 12 }}>PAYMENT</p>
+                  <div style={{ ...dash.card }}>
+                    <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Payments</p>
                     <StripeConnect userId={d.userId} />
                   </div>
                 ) : null}
 
-                <div style={{ paddingTop: 24 }}>
-                  <p style={{ ...dash.sectionLabel, marginBottom: 12 }}>REGENERATE</p>
+                <div style={{ ...dash.card }}>
                   {d.regenerateConfirm ? (
                     <div>
                       <p style={{ ...dash.small, margin: "0 0 12px" }}>Are you sure? This will replace your current site.</p>
                       {d.regenerateError ? (
-                        <p style={{ margin: "0 0 8px", fontSize: 12, color: "#ef4444" }}>{d.regenerateError}</p>
+                        <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--danger)" }}>{d.regenerateError}</p>
                       ) : null}
                       <div style={{ display: "flex", gap: 8 }}>
                         <button
@@ -139,7 +137,7 @@ export default function DashboardLandingPage() {
                           disabled={d.buildingLanding}
                           style={{ ...dash.btnPrimary, flex: 1, opacity: d.buildingLanding ? 0.6 : 1 }}
                         >
-                          YES
+                          Yes
                         </button>
                         <button
                           type="button"
@@ -149,7 +147,7 @@ export default function DashboardLandingPage() {
                           }}
                           style={{ ...dash.btnGhost, flex: 1 }}
                         >
-                          NO
+                          No
                         </button>
                       </div>
                     </div>
@@ -169,10 +167,10 @@ export default function DashboardLandingPage() {
                           cursor: d.buildingLanding ? "not-allowed" : "pointer"
                         }}
                       >
-                        REGENERATE SITE →
+                        Regenerate Site →
                       </button>
-                      <p style={{ ...dash.small, margin: "12px 0 0", lineHeight: 1.5 }}>
-                        Generate a new version of your landing page
+                      <p style={{ ...dash.small, margin: "10px 0 0", lineHeight: 1.5 }}>
+                        Create a fresh version of your landing page
                       </p>
                     </>
                   )}

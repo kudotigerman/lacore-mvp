@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import LeadsList from "@/components/LeadsList";
+import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 
@@ -12,22 +13,36 @@ export default function DashboardLeadsPage() {
 
   const onLeadsLoaded = useCallback((n: number) => setLeadCount(n), []);
 
-  return (
-    <div style={{ padding: 48, boxSizing: "border-box" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 8 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
-          <h1 style={dash.pageTitle}>LEADS</h1>
-          {leadCount !== null ? (
-            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)" }}>
-              {leadCount} lead{leadCount === 1 ? "" : "s"}
-            </span>
-          ) : null}
-        </div>
+  const headerRight =
+    leadCount !== null ? (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            color: "var(--accent)",
+            background: "rgba(6,182,212,0.1)",
+            padding: "4px 10px",
+            borderRadius: 6,
+            border: "1px solid rgba(6,182,212,0.25)"
+          }}
+        >
+          {leadCount} lead{leadCount === 1 ? "" : "s"}
+        </span>
         <button type="button" onClick={() => setRefreshNonce((n) => n + 1)} style={dash.btnGhost}>
-          REFRESH
+          Refresh
         </button>
       </div>
-      <p style={{ ...dash.small, margin: "0 0 24px" }}>Live leads from your landing page forms.</p>
+    ) : (
+      <button type="button" onClick={() => setRefreshNonce((n) => n + 1)} style={dash.btnGhost}>
+        Refresh
+      </button>
+    );
+
+  return (
+    <div style={dash.pageShell}>
+      <DashPageHeader title="Leads" subtitle="People who filled your landing page form" right={headerRight} />
       {d.userId ? (
         <LeadsList
           userId={d.userId}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, type CSSProperties } from "react";
+import { dash } from "@/components/dashboard/dashTokens";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Platform = "instagram" | "x" | "linkedin" | "threads" | "telegram";
@@ -46,17 +47,23 @@ function modelLabel(m: ModelId): string {
   return m.toUpperCase();
 }
 
-const generateImageBtnStyle: CSSProperties = {
-  border: "1px solid var(--border-primary)",
-  background: "transparent",
-  color: "var(--text-secondary)",
-  fontSize: "11px",
-  fontWeight: 600,
-  letterSpacing: "0.08em",
-  padding: "8px 14px",
+const pillBase: CSSProperties = {
+  borderRadius: 20,
+  padding: "6px 14px",
+  fontSize: 12,
+  fontWeight: 500,
   cursor: "pointer",
   fontFamily: "inherit",
-  borderRadius: 0
+  border: "1px solid var(--border)",
+  background: "rgba(255,255,255,0.04)",
+  color: "var(--text-muted)"
+};
+
+const pillActive: CSSProperties = {
+  ...pillBase,
+  background: "rgba(6,182,212,0.15)",
+  border: "1px solid rgba(6,182,212,0.4)",
+  color: "#06B6D4"
 };
 
 function downloadImageViaProxy(url: string) {
@@ -73,25 +80,6 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
   const [error, setError] = useState("");
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
   const [postImages, setPostImages] = useState<Record<number, PostImageState>>({});
-
-  const btnBase: CSSProperties = {
-    border: "1px solid var(--border-primary)",
-    color: "var(--text-secondary)",
-    background: "transparent",
-    padding: "6px 10px",
-    fontSize: "11px",
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    borderRadius: 0
-  };
-
-  const btnActive: CSSProperties = {
-    ...btnBase,
-    background: "#06B6D4",
-    color: "#000",
-    border: "1px solid #06B6D4"
-  };
 
   const runGenerate = useCallback(async () => {
     setError("");
@@ -263,11 +251,11 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     display: "flex",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 12
+    marginBottom: 10
   };
 
   return (
-    <div style={{ fontFamily: "inherit", maxWidth: 640 }}>
+    <div style={{ fontFamily: "inherit", maxWidth: 720 }}>
       <style>{`
         @keyframes content-machine-pulse {
           0%, 100% { opacity: 1; }
@@ -285,16 +273,10 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               key={p.id}
               type="button"
               onClick={() => setPlatform(p.id)}
-              style={{
-                ...(platform === p.id ? btnActive : btnBase),
-                minWidth: 40,
-                padding: "6px 8px",
-                fontSize: 16,
-                lineHeight: 1
-              }}
+              style={platform === p.id ? pillActive : pillBase}
               title={p.label}
             >
-              {p.short}
+              {p.label}
             </button>
           ))}
         </div>
@@ -304,7 +286,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               key={pt.id}
               type="button"
               onClick={() => setPostType(pt.id)}
-              style={postType === pt.id ? btnActive : btnBase}
+              style={postType === pt.id ? pillActive : pillBase}
             >
               {pt.label}
             </button>
@@ -316,7 +298,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               key={m.id}
               type="button"
               onClick={() => setModel(m.id)}
-              style={model === m.id ? btnActive : btnBase}
+              style={model === m.id ? pillActive : pillBase}
             >
               {m.label}
             </button>
@@ -331,17 +313,17 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           style={{
             width: "100%",
             border: "none",
-            background: loading || !offer.trim() ? "var(--border-primary)" : "#06B6D4",
+            background: loading || !offer.trim() ? "var(--border)" : "#06B6D4",
             color: loading || !offer.trim() ? "var(--text-muted)" : "#000",
-            fontSize: "15px",
-            fontWeight: 800,
-            letterSpacing: "0.1em",
-            padding: "18px 20px",
+            fontSize: 13,
+            fontWeight: 700,
+            padding: 12,
+            borderRadius: 8,
             cursor: loading || !offer.trim() ? "not-allowed" : "pointer",
             fontFamily: "inherit"
           }}
         >
-          {loading ? "GENERATING..." : "⚡ GENERATE 5 POSTS"}
+          {loading ? "Generating…" : "GENERATE"}
         </button>
         {error ? (
           <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#ef4444" }}>{error}</p>
@@ -422,8 +404,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                         aspectRatio: "1",
                         objectFit: "cover",
                         marginTop: 12,
-                        borderRadius: 0,
-                        border: "1px solid var(--border-primary)",
+                        borderRadius: 8,
+                        border: "1px solid var(--border)",
                         display: "block"
                       }}
                     />
@@ -431,22 +413,20 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                       <button
                         type="button"
                         onClick={() => downloadImageViaProxy(img.url!)}
-                        style={{ ...btnBase, fontSize: "11px", letterSpacing: "0.06em" }}
+                        style={dash.btnGhostSm}
                       >
-                        ⬇ DOWNLOAD
+                        Download
                       </button>
                       <button
                         type="button"
                         disabled={img.loading}
                         onClick={() => void generatePostImage(post.id, post.text)}
                         style={{
-                          ...btnBase,
-                          fontSize: "11px",
-                          letterSpacing: "0.06em",
+                          ...dash.btnGhostSm,
                           opacity: img.loading ? 0.5 : 1
                         }}
                       >
-                        ↺ NEW IMAGE
+                        New image
                       </button>
                     </div>
                   </div>
@@ -456,37 +436,31 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                   <button
                     type="button"
                     onClick={() => void handleCopy(post.text, post.id)}
-                    style={{
-                      ...btnBase,
-                      fontSize: "11px",
-                      letterSpacing: "0.08em"
-                    }}
+                    style={dash.btnGhostSm}
                   >
-                    {copiedId === post.id ? "✓ COPIED" : "COPY"}
+                    {copiedId === post.id ? "Copied" : "Copy"}
                   </button>
                   <button
                     type="button"
                     disabled={regeneratingId !== null || loading}
                     onClick={() => void handleRegeneratePost(post.id)}
                     style={{
-                      ...btnBase,
-                      fontSize: "11px",
-                      letterSpacing: "0.06em",
+                      ...dash.btnGhostSm,
                       opacity: regeneratingId !== null || loading ? 0.5 : 1
                     }}
                   >
-                    {regeneratingId === post.id ? "…" : "↺ REGENERATE"}
+                    {regeneratingId === post.id ? "…" : "Regenerate"}
                   </button>
                   <button
                     type="button"
                     disabled={img?.loading || loading || !offer.trim()}
                     onClick={() => void generatePostImage(post.id, post.text)}
                     style={{
-                      ...generateImageBtnStyle,
+                      ...dash.btnGhostSm,
                       opacity: img?.loading || loading || !offer.trim() ? 0.5 : 1
                     }}
                   >
-                    🖼 GENERATE IMAGE
+                    Generate image
                   </button>
                 </div>
               </div>
