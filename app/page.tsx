@@ -404,7 +404,9 @@ export default function LandingPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => scrollToSection("pricing")}
+                  onClick={() =>
+                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+                  }
                   style={{
                     border: "none",
                     background: "transparent",
@@ -443,12 +445,12 @@ export default function LandingPage() {
 
         <section
           style={{
-            minHeight: "60vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            textAlign: "center"
+            textAlign: "center",
+            padding: isMobile ? "24px 0 16px" : "32px 0 20px"
           }}
         >
           <p
@@ -493,12 +495,11 @@ export default function LandingPage() {
 
         <section
           style={{
-            minHeight: "40vh",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            paddingBottom: "20px"
+            justifyContent: "flex-start",
+            paddingBottom: isMobile ? 16 : 24
           }}
         >
           <form
@@ -876,6 +877,235 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section
+          style={{
+            width: "100%",
+            padding: isMobile ? "60px 24px" : "120px 0",
+            textAlign: "center"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "var(--accent)"
+            }}
+          >
+            THE PROBLEM
+          </p>
+          <h2
+            style={{
+              margin: "24px 0 0",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
+              fontSize: "clamp(48px, 6vw, 96px)",
+              lineHeight: 0.95,
+              color: "var(--text-primary)"
+            }}
+          >
+            <span style={{ display: "block" }}>MOST PEOPLE WHO HAVE SOMETHING TO SELL</span>
+            <span style={{ display: "block" }}>NEVER MAKE REAL MONEY FROM IT.</span>
+          </h2>
+          <p
+            style={{
+              margin: "24px auto 0",
+              maxWidth: 560,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 14,
+              lineHeight: 1.8,
+              color: "var(--text-muted)"
+            }}
+          >
+            Not because they&apos;re bad at what they do. Because they don&apos;t have a system.
+            LACORE is that system.
+          </p>
+          <div style={{ width: "100%", height: 1, background: "var(--border-primary)", marginTop: 56 }} />
+        </section>
+
+        <section
+          id="how-it-works"
+          style={{
+            background: "var(--bg-input)",
+            padding: isMobile ? "60px 24px" : "120px 48px"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "var(--accent)"
+            }}
+          >
+            HOW IT WORKS
+          </p>
+          <h2
+            style={{
+              margin: "18px 0 0",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
+              fontSize: "clamp(56px, 7vw, 112px)",
+              lineHeight: 0.95
+            }}
+          >
+            <span style={{ display: "block", color: "var(--text-primary)" }}>ONE INPUT.</span>
+            <span style={{ display: "block", color: "var(--accent)" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
+          </h2>
+          <div
+            id="what-you-get"
+            style={{
+              marginTop: 48,
+              display: "grid",
+              gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))",
+              gap: 20
+            }}
+          >
+            {layers.map((layer) => (
+              <div
+                key={layer.number}
+                style={{
+                  border: "1px solid var(--border-primary)",
+                  padding: 32,
+                  background: "transparent"
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
+                    fontSize: 48,
+                    lineHeight: 1,
+                    color: "var(--border-primary)"
+                  }}
+                >
+                  {layer.number}
+                </p>
+                <h3
+                  style={{
+                    margin: "10px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontWeight: 800,
+                    fontSize: 28,
+                    letterSpacing: "0.02em",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  {layer.title}
+                </h3>
+                <p
+                  style={{
+                    margin: "12px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 12,
+                    lineHeight: 1.8,
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  {layer.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="magic-moment"
+          style={{
+            width: "100%",
+            padding: isMobile ? "60px 24px" : "120px 48px",
+            background: "var(--bg-primary)",
+            textAlign: "center"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 11,
+              letterSpacing: "0.3em",
+              color: "var(--accent)"
+            }}
+          >
+            THE MAGIC MOMENT
+          </p>
+          <h2
+            style={{
+              margin: "20px 0 0",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
+              fontSize: "clamp(64px, 8vw, 128px)",
+              lineHeight: 0.94
+            }}
+          >
+            <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
+            <span style={{ display: "block", color: "var(--accent)" }}>YOUR FIRST LEAD ARRIVES.</span>
+          </h2>
+          <div
+            style={{
+              margin: "34px auto 0",
+              maxWidth: 600,
+              textAlign: "left",
+              background: "var(--bg-input)",
+              border: "1px solid var(--accent)",
+              padding: isMobile ? 20 : 32,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: isMobile ? 11 : 13,
+              lineHeight: 1.9,
+              color: "var(--text-primary)"
+            }}
+          >
+            <p style={{ margin: 0 }}>&gt; Offer generated ✓</p>
+            <p style={{ margin: 0 }}>&gt; Landing page live ✓</p>
+            <p style={{ margin: 0 }}>&gt; First post published ✓</p>
+            <p style={{ margin: 0 }}>&gt; System running in background ✓</p>
+            <p style={{ margin: 0 }}>&gt; NEW LEAD: Someone is interested.</p>
+            <p style={{ margin: 0 }}>&gt; &quot;Here&apos;s exactly what to say.&quot; →</p>
+          </div>
+          <p
+            style={{
+              margin: "18px 0 0",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 13,
+              color: "var(--text-muted)"
+            }}
+          >
+            That&apos;s the moment. That&apos;s what nobody else delivers.
+          </p>
+        </section>
+
+        <section
+          style={{
+            background: "var(--bg-input)",
+            padding: isMobile ? "60px 24px" : "80px 48px",
+            textAlign: "center"
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 12,
+              color: "var(--text-muted)"
+            }}
+          >
+            NOT A LANDING PAGE BUILDER · NOT A SOCIAL MEDIA SCHEDULER · NOT A CRM · NOT AN AI
+            CONTENT TOOL
+          </p>
+          <p
+            style={{
+              margin: "20px auto 0",
+              maxWidth: 1100,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
+              fontSize: 36,
+              lineHeight: 1.1,
+              color: "var(--text-primary)"
+            }}
+          >
+            LACORE IS WHAT HAPPENS WHEN ALL OF THESE WORK TOGETHER TOWARD ONE GOAL: YOUR FIRST
+            SALE.
+          </p>
         </section>
 
         <section
@@ -1272,236 +1502,6 @@ export default function LandingPage() {
         </section>
 
         <section
-          style={{
-            width: "100%",
-            padding: isMobile ? "60px 24px" : "120px 0",
-            textAlign: "center"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              color: "var(--accent)"
-            }}
-          >
-            THE PROBLEM
-          </p>
-          <h2
-            style={{
-              margin: "24px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(48px, 6vw, 96px)",
-              lineHeight: 0.95,
-              color: "var(--text-primary)"
-            }}
-          >
-            <span style={{ display: "block" }}>MOST PEOPLE WHO HAVE SOMETHING TO SELL</span>
-            <span style={{ display: "block" }}>NEVER MAKE REAL MONEY FROM IT.</span>
-          </h2>
-          <p
-            style={{
-              margin: "24px auto 0",
-              maxWidth: 560,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 14,
-              lineHeight: 1.8,
-              color: "var(--text-muted)"
-            }}
-          >
-            Not because they&apos;re bad at what they do. Because they don&apos;t have a system.
-            LACORE is that system.
-          </p>
-          <div style={{ width: "100%", height: 1, background: "var(--border-primary)", marginTop: 56 }} />
-        </section>
-
-        <section
-          id="how-it-works"
-          style={{
-            background: "var(--bg-input)",
-            padding: isMobile ? "60px 24px" : "120px 48px"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              color: "var(--accent)"
-            }}
-          >
-            HOW IT WORKS
-          </p>
-          <h2
-            style={{
-              margin: "18px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(56px, 7vw, 112px)",
-              lineHeight: 0.95
-            }}
-          >
-            <span style={{ display: "block", color: "var(--text-primary)" }}>ONE INPUT.</span>
-            <span style={{ display: "block", color: "var(--accent)" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
-          </h2>
-          <div
-            id="what-you-get"
-            style={{
-              marginTop: 48,
-              display: "grid",
-              gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))",
-              gap: 20
-            }}
-          >
-            {layers.map((layer) => (
-              <div
-                key={layer.number}
-                style={{
-                  border: "1px solid var(--border-primary)",
-                  padding: 32,
-                  background: "transparent"
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-                    fontSize: 48,
-                    lineHeight: 1,
-                    color: "var(--border-primary)"
-                  }}
-                >
-                  {layer.number}
-                </p>
-                <h3
-                  style={{
-                    margin: "10px 0 0",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontWeight: 800,
-                    fontSize: 28,
-                    letterSpacing: "0.02em",
-                    color: "var(--text-primary)"
-                  }}
-                >
-                  {layer.title}
-                </h3>
-                <p
-                  style={{
-                    margin: "12px 0 0",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.8,
-                    color: "var(--text-muted)"
-                  }}
-                >
-                  {layer.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section
-          id="magic-moment"
-          style={{
-            width: "100%",
-            padding: isMobile ? "60px 24px" : "120px 48px",
-            background: "var(--bg-primary)",
-            textAlign: "center"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.3em",
-              color: "var(--accent)"
-            }}
-          >
-            THE MAGIC MOMENT
-          </p>
-          <h2
-            style={{
-              margin: "20px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(64px, 8vw, 128px)",
-              lineHeight: 0.94
-            }}
-          >
-            <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
-            <span style={{ display: "block", color: "var(--accent)" }}>YOUR FIRST LEAD ARRIVES.</span>
-          </h2>
-          <div
-            style={{
-              margin: "34px auto 0",
-              maxWidth: 600,
-              textAlign: "left",
-              background: "var(--bg-input)",
-              border: "1px solid var(--accent)",
-              padding: isMobile ? 20 : 32,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: isMobile ? 11 : 13,
-              lineHeight: 1.9,
-              color: "var(--text-primary)"
-            }}
-          >
-            <p style={{ margin: 0 }}>&gt; Offer generated ✓</p>
-            <p style={{ margin: 0 }}>&gt; Landing page live ✓</p>
-            <p style={{ margin: 0 }}>&gt; First post published ✓</p>
-            <p style={{ margin: 0 }}>&gt; System running in background ✓</p>
-            <p style={{ margin: 0 }}>&gt; NEW LEAD: Someone is interested.</p>
-            <p style={{ margin: 0 }}>&gt; &quot;Here&apos;s exactly what to say.&quot; →</p>
-          </div>
-          <p
-            style={{
-              margin: "18px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 13,
-              color: "var(--text-muted)"
-            }}
-          >
-            That&apos;s the moment. That&apos;s what nobody else delivers.
-          </p>
-        </section>
-
-        <section
-          style={{
-            background: "var(--bg-input)",
-            padding: isMobile ? "60px 24px" : "80px 48px",
-            textAlign: "center"
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 12,
-              color: "var(--text-muted)"
-            }}
-          >
-            NOT A LANDING PAGE BUILDER · NOT A SOCIAL MEDIA SCHEDULER · NOT A CRM · NOT AN AI
-            CONTENT TOOL
-          </p>
-          <p
-            style={{
-              margin: "20px auto 0",
-              maxWidth: 1100,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: 36,
-              lineHeight: 1.1,
-              color: "var(--text-primary)"
-            }}
-          >
-            LACORE IS WHAT HAPPENS WHEN ALL OF THESE WORK TOGETHER TOWARD ONE GOAL: YOUR FIRST
-            SALE.
-          </p>
-        </section>
-
-        <section
-          id="pricing"
           style={{
             width: "100%",
             padding: isMobile ? "60px 24px" : "160px 48px",
