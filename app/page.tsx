@@ -448,6 +448,42 @@ export default function LandingPage() {
         .lacore-footer-social:hover {
           color: #f4f4f5;
         }
+        .sales-pipeline {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          border-bottom: 1px solid #1c1c1f;
+        }
+        @media (max-width: 768px) {
+          .sales-pipeline {
+            display: block !important;
+          }
+          .pipeline-stage {
+            display: none !important;
+          }
+          .pipeline-stage.active {
+            display: block !important;
+            opacity: 1 !important;
+            padding: 24px 20px !important;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .sales-machine-demo-shell {
+            border-radius: 16px !important;
+            margin: 32px 16px 0 !important;
+            max-width: none !important;
+          }
+          .lacore-sales-machine-cta {
+            width: calc(100% - 32px) !important;
+            margin: 32px 16px !important;
+            font-size: 14px !important;
+            padding: 16px 24px !important;
+            box-sizing: border-box;
+          }
+          .lacore-sales-machine-tagline {
+            font-size: 14px !important;
+            padding: 0 24px !important;
+          }
+        }
       `}</style>
       <main
         style={{
@@ -1177,8 +1213,10 @@ export default function LandingPage() {
             style={{
               margin: "20px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(2.5rem, 5vw, 4rem)",
-              lineHeight: 1.1
+              fontSize: "clamp(1.8rem, 6vw, 4rem)",
+              lineHeight: 1.1,
+              textAlign: "center",
+              padding: "0 16px"
             }}
           >
             <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
@@ -1198,6 +1236,7 @@ export default function LandingPage() {
           </p>
 
           <div
+            className="sales-machine-demo-shell"
             onMouseEnter={() => setSalesMachinePaused(true)}
             onMouseLeave={() => {
               if (salesMachinePaused) setSalesMachineCycleKey((k) => k + 1);
@@ -1268,14 +1307,7 @@ export default function LandingPage() {
               />
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "repeat(5, minmax(148px, 1fr))" : "repeat(5, 1fr)",
-                borderBottom: "1px solid #1C1C1F",
-                overflowX: isMobile ? "auto" : undefined
-              }}
-            >
+            <div className="sales-pipeline">
               {[
                 {
                   label: "01 / INPUT",
@@ -1308,6 +1340,7 @@ export default function LandingPage() {
                   <button
                     key={stage.key}
                     type="button"
+                    className={`pipeline-stage${active ? " active" : ""}`}
                     onClick={() => {
                       setSalesMachineStage(idx);
                       setSalesMachineCycleKey((k) => k + 1);
@@ -1684,6 +1717,7 @@ export default function LandingPage() {
 
           <Link
             href="/auth"
+            className="lacore-sales-machine-cta"
             style={{
               marginTop: 48,
               display: "block",
@@ -1705,6 +1739,7 @@ export default function LandingPage() {
           </Link>
 
           <p
+            className="lacore-sales-machine-tagline"
             style={{
               margin: "24px auto 0",
               maxWidth: 1100,
