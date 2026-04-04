@@ -15,6 +15,9 @@
   --border-primary: #1c1c1f;
   --border-secondary: #27272a;
   --accent: #06b6d4;
+  --on-accent: #09090b;
+  --success: #22c55e;
+  --error: #f87171;
   --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
   --lacore-bg: var(--bg-primary);
   --lacore-cyan: var(--accent);
@@ -35,6 +38,9 @@
   --border-primary: #e4e2dc;
   --border-secondary: #d4d2cc;
   --accent: #0891b2;
+  --on-accent: #09090b;
+  --success: #22c55e;
+  --error: #f87171;
   --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
   --lacore-bg: var(--bg-primary);
   --lacore-cyan: var(--accent);

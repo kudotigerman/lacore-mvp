@@ -122,6 +122,11 @@ export default function PublicLandingPage() {
   const [previewKey, setPreviewKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("lacore-theme") ?? "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
+
   const pageUrl = useMemo(() => `https://www.lacore.ai/p/${slug}`, [slug]);
 
   const updateStatusMessages = useMemo(
@@ -522,7 +527,7 @@ export default function PublicLandingPage() {
             textAlign: "center",
             textDecoration: "none",
             background: "var(--accent)",
-            color: "#000000",
+            color: "var(--on-accent)",
             fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontWeight: 800,
             fontSize: 24,
@@ -662,7 +667,7 @@ export default function PublicLandingPage() {
                     style={{
                       border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
                       background: selected ? "var(--accent)" : "transparent",
-                      color: selected ? "#000000" : "var(--text-secondary)",
+                      color: selected ? "var(--on-accent)" : "var(--text-secondary)",
                       fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       lineHeight: 1.4,
@@ -713,7 +718,7 @@ export default function PublicLandingPage() {
                     style={{
                       border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
                       background: selected ? "var(--accent)" : "transparent",
-                      color: selected ? "#000000" : "var(--text-secondary)",
+                      color: selected ? "var(--on-accent)" : "var(--text-secondary)",
                       fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       lineHeight: 1.4,
@@ -737,7 +742,7 @@ export default function PublicLandingPage() {
               margin: "12px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
-              color: "#f87171"
+              color: "var(--error)"
             }}
           >
             {regenError}
@@ -780,7 +785,7 @@ export default function PublicLandingPage() {
               color:
                 regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
                   ? "var(--text-muted)"
-                  : "#000000",
+                  : "var(--on-accent)",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.12em",
@@ -1060,7 +1065,7 @@ export default function PublicLandingPage() {
                     width: 8,
                     height: 8,
                     borderRadius: "50%",
-                    background: "#22C55E",
+                    background: "var(--success)",
                     animation: "pulse 2s ease-in-out infinite",
                     flexShrink: 0
                   }}
@@ -1296,7 +1301,7 @@ export default function PublicLandingPage() {
                   disabled={updating || !chatInput.trim()}
                   style={{
                     background: updating || !chatInput.trim() ? "var(--border-primary)" : "var(--accent)",
-                    color: updating || !chatInput.trim() ? "var(--text-muted)" : "#000000",
+                    color: updating || !chatInput.trim() ? "var(--text-muted)" : "var(--on-accent)",
                     fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontWeight: 800,
                     fontSize: 16,
@@ -1324,7 +1329,8 @@ export default function PublicLandingPage() {
                   fontSize: 9,
                   letterSpacing: "0.08em",
                   cursor: "pointer",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.35)"
+                  boxShadow:
+                    "0 8px 32px color-mix(in srgb, var(--text-primary) 14%, transparent)"
                 }}
               >
                 ⚡ Built with LACORE
