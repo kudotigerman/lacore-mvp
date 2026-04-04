@@ -353,7 +353,7 @@ export default function PublicLandingPage() {
         position: "fixed",
         inset: 0,
         zIndex: 10000,
-        background: "rgba(9,9,11,0.96)",
+        background: "color-mix(in srgb, var(--bg-primary) 96%, transparent)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         display: "flex",
@@ -368,8 +368,8 @@ export default function PublicLandingPage() {
           position: "relative",
           width: "100%",
           maxWidth: 560,
-          background: "#09090B",
-          border: "1px solid #1C1C1F",
+          background: "var(--bg-primary)",
+          border: "1px solid var(--border-primary)",
           padding: "48px 40px 40px",
           boxShadow: "0 0 0 1px rgba(6,182,212,0.08), 0 24px 80px rgba(0,0,0,0.55)"
         }}
@@ -384,12 +384,12 @@ export default function PublicLandingPage() {
             right: 16,
             border: "none",
             background: "transparent",
-            color: "#06B6D4",
+            color: "var(--accent)",
             fontSize: 28,
             lineHeight: 1,
             cursor: "pointer",
             padding: 4,
-            fontFamily: "var(--font-space-mono), monospace"
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
           }}
         >
           ×
@@ -398,10 +398,10 @@ export default function PublicLandingPage() {
         <p
           style={{
             margin: 0,
-            fontFamily: "var(--font-space-mono), monospace",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 10,
             letterSpacing: "4px",
-            color: "#06B6D4",
+            color: "var(--accent)",
             textTransform: "uppercase"
           }}
         >
@@ -411,10 +411,11 @@ export default function PublicLandingPage() {
           id="lacore-promo-title"
           style={{
             margin: "12px 0 0",
-            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+            fontWeight: 800,
             fontSize: "clamp(72px, 22vw, 120px)",
             lineHeight: 0.9,
-            color: "#F4F4F5",
+            color: "var(--text-primary)",
             letterSpacing: "-0.02em"
           }}
         >
@@ -423,10 +424,10 @@ export default function PublicLandingPage() {
         <p
           style={{
             margin: "8px 0 0",
-            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
             fontSize: "clamp(32px, 8vw, 48px)",
             lineHeight: 0.95,
-            color: "#06B6D4"
+            color: "var(--accent)"
           }}
         >
           From idea to first client.
@@ -434,10 +435,10 @@ export default function PublicLandingPage() {
         <p
           style={{
             margin: "20px 0 0",
-            fontFamily: "var(--font-space-mono), monospace",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 14,
             lineHeight: 1.65,
-            color: "#A1A1AA"
+            color: "var(--text-secondary)"
           }}
         >
           One sentence. 60 minutes. A working sales machine.
@@ -446,7 +447,7 @@ export default function PublicLandingPage() {
           style={{
             marginTop: 28,
             height: 1,
-            background: "linear-gradient(90deg, transparent, #06B6D4, transparent)",
+            background: "linear-gradient(90deg, transparent, var(--accent), transparent)",
             opacity: 0.6
           }}
         />
@@ -463,10 +464,10 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
                 fontSize: 42,
                 lineHeight: 1,
-                color: "#F4F4F5"
+                color: "var(--text-primary)"
               }}
             >
               60 min
@@ -474,10 +475,10 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: "10px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
                 letterSpacing: "0.06em",
-                color: "#71717A",
+                color: "var(--text-muted)",
                 textTransform: "uppercase"
               }}
             >
@@ -488,10 +489,10 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
                 fontSize: 42,
                 lineHeight: 1,
-                color: "#06B6D4"
+                color: "var(--accent)"
               }}
             >
               0
@@ -499,10 +500,10 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: "10px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
                 letterSpacing: "0.06em",
-                color: "#71717A",
+                color: "var(--text-muted)",
                 textTransform: "uppercase"
               }}
             >
@@ -520,9 +521,10 @@ export default function PublicLandingPage() {
             width: "100%",
             textAlign: "center",
             textDecoration: "none",
-            background: "#06B6D4",
+            background: "var(--accent)",
             color: "#000000",
-            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+            fontWeight: 800,
             fontSize: 24,
             letterSpacing: "0.04em",
             padding: "18px 24px",
@@ -537,9 +539,9 @@ export default function PublicLandingPage() {
           style={{
             margin: "14px 0 0",
             textAlign: "center",
-            fontFamily: "var(--font-space-mono), monospace",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 11,
-            color: "#52525B",
+            color: "var(--text-muted)",
             letterSpacing: "0.04em"
           }}
         >
@@ -555,7 +557,7 @@ export default function PublicLandingPage() {
         position: "fixed",
         inset: 0,
         zIndex: 10001,
-        background: "rgba(9,9,11,0.9)",
+        background: "color-mix(in srgb, var(--bg-primary) 90%, transparent)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -566,8 +568,8 @@ export default function PublicLandingPage() {
         style={{
           width: "100%",
           maxWidth: 480,
-          border: "1px solid #1C1C1F",
-          background: "#09090B",
+          border: "1px solid var(--border-primary)",
+          background: "var(--bg-primary)",
           padding: 20,
           position: "relative"
         }}
@@ -577,7 +579,7 @@ export default function PublicLandingPage() {
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(9,9,11,0.82)",
+              background: "color-mix(in srgb, var(--bg-primary) 82%, transparent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -588,9 +590,9 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 12,
-                color: "#06B6D4",
+                color: "var(--accent)",
                 textAlign: "center",
                 padding: "0 16px"
               }}
@@ -602,9 +604,9 @@ export default function PublicLandingPage() {
         <h3
           style={{
             margin: 0,
-            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
             fontSize: 36,
-            color: "#F4F4F5",
+            color: "var(--text-primary)",
             lineHeight: 1
           }}
         >
@@ -613,9 +615,9 @@ export default function PublicLandingPage() {
         <p
           style={{
             margin: "8px 0 0",
-            fontFamily: "var(--font-space-mono), monospace",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 11,
-            color: "#A1A1AA"
+            color: "var(--text-secondary)"
           }}
         >
           Pick a new vibe and goals. Your offer stays the same.
@@ -626,10 +628,10 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
                 letterSpacing: "0.14em",
-                color: "#06B6D4"
+                color: "var(--accent)"
               }}
             >
               PRIMARY GOAL
@@ -637,9 +639,9 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: "6px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
-                color: "#71717A"
+                color: "var(--text-muted)"
               }}
             >
               What should visitors do? Select all that apply.
@@ -658,10 +660,10 @@ export default function PublicLandingPage() {
                       )
                     }
                     style={{
-                      border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
-                      background: selected ? "#06B6D4" : "transparent",
-                      color: selected ? "#000000" : "#A1A1AA",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
+                      background: selected ? "var(--accent)" : "transparent",
+                      color: selected ? "#000000" : "var(--text-secondary)",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       lineHeight: 1.4,
                       textAlign: "left",
@@ -681,10 +683,10 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
                 letterSpacing: "0.14em",
-                color: "#06B6D4"
+                color: "var(--accent)"
               }}
             >
               SITE VIBE
@@ -692,9 +694,9 @@ export default function PublicLandingPage() {
             <p
               style={{
                 margin: "6px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
-                color: "#71717A"
+                color: "var(--text-muted)"
               }}
             >
               How should your site feel?
@@ -709,10 +711,10 @@ export default function PublicLandingPage() {
                     disabled={regenerating}
                     onClick={() => setRegenSiteVibe(vibe)}
                     style={{
-                      border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
-                      background: selected ? "#06B6D4" : "transparent",
-                      color: selected ? "#000000" : "#A1A1AA",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
+                      background: selected ? "var(--accent)" : "transparent",
+                      color: selected ? "#000000" : "var(--text-secondary)",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       lineHeight: 1.4,
                       textAlign: "left",
@@ -733,7 +735,7 @@ export default function PublicLandingPage() {
           <p
             style={{
               margin: "12px 0 0",
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               color: "#f87171"
             }}
@@ -749,10 +751,10 @@ export default function PublicLandingPage() {
             onClick={() => setShowRegenerateModal(false)}
             style={{
               flex: 1,
-              border: "1px solid #06B6D4",
+              border: "1px solid var(--accent)",
               background: "transparent",
-              color: "#06B6D4",
-              fontFamily: "var(--font-space-mono), monospace",
+              color: "var(--accent)",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.12em",
               padding: "10px 12px",
@@ -773,13 +775,13 @@ export default function PublicLandingPage() {
               border: "none",
               background:
                 regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
-                  ? "#1C1C1F"
-                  : "#06B6D4",
+                  ? "var(--border-primary)"
+                  : "var(--accent)",
               color:
                 regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
-                  ? "#52525B"
+                  ? "var(--text-muted)"
                   : "#000000",
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.12em",
               padding: "10px 12px",
@@ -804,12 +806,12 @@ export default function PublicLandingPage() {
             <div
               style={{
                 minHeight: "100vh",
-                background: "#09090B",
-                color: "#A1A1AA",
+                background: "var(--bg-primary)",
+                color: "var(--text-secondary)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: "var(--font-space-mono), monospace"
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
               }}
             >
               Loading page...
@@ -831,14 +833,14 @@ export default function PublicLandingPage() {
                   bottom: 20,
                   right: 20,
                   zIndex: 9998,
-                  border: "1px solid #06B6D4",
-                  background: "rgba(9,9,11,0.92)",
+                  border: "1px solid var(--accent)",
+                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
                   backdropFilter: "blur(10px)",
                   WebkitBackdropFilter: "blur(10px)",
-                  color: "#06B6D4",
+                  color: "var(--accent)",
                   borderRadius: 4,
                   padding: "8px 14px",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 9,
                   letterSpacing: "0.08em",
                   cursor: "pointer",
@@ -870,14 +872,14 @@ export default function PublicLandingPage() {
                   bottom: 20,
                   right: 20,
                   zIndex: 9998,
-                  border: "1px solid #06B6D4",
-                  background: "rgba(9,9,11,0.92)",
+                  border: "1px solid var(--accent)",
+                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
                   backdropFilter: "blur(10px)",
                   WebkitBackdropFilter: "blur(10px)",
-                  color: "#06B6D4",
+                  color: "var(--accent)",
                   borderRadius: 4,
                   padding: "8px 14px",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 9,
                   letterSpacing: "0.08em",
                   cursor: "pointer",
@@ -918,7 +920,7 @@ export default function PublicLandingPage() {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          background: "#09090B"
+          background: "var(--bg-primary)"
         }}
       >
         <header
@@ -927,8 +929,8 @@ export default function PublicLandingPage() {
             flexShrink: 0,
             position: "relative",
             zIndex: 100,
-            background: "#09090B",
-            borderBottom: "1px solid #1C1C1F",
+            background: "var(--bg-primary)",
+            borderBottom: "1px solid var(--border-primary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -946,8 +948,8 @@ export default function PublicLandingPage() {
               style={{
                 border: "none",
                 background: "transparent",
-                color: "#06B6D4",
-                fontFamily: "var(--font-space-mono), monospace",
+                color: "var(--accent)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
                 letterSpacing: "2px",
                 cursor: "pointer",
@@ -957,13 +959,13 @@ export default function PublicLandingPage() {
             >
               ← DASHBOARD
             </button>
-            <div style={{ width: 1, height: 20, background: "#1C1C1F" }} />
+            <div style={{ width: 1, height: 20, background: "var(--border-primary)" }} />
             <span
               style={{
-                background: "#111115",
-                border: "1px solid #1C1C1F",
-                color: "#A1A1AA",
-                fontFamily: "var(--font-space-mono), monospace",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-primary)",
+                color: "var(--text-secondary)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
                 padding: "5px 12px",
                 borderRadius: 4
@@ -977,10 +979,10 @@ export default function PublicLandingPage() {
               type="button"
               onClick={() => void handleShare()}
               style={{
-                border: "1px solid #1C1C1F",
+                border: "1px solid var(--border-primary)",
                 background: "transparent",
-                color: copied ? "#06B6D4" : "#A1A1AA",
-                fontFamily: "var(--font-space-mono), monospace",
+                color: copied ? "var(--accent)" : "var(--text-secondary)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
                 letterSpacing: "2px",
                 padding: "7px 14px",
@@ -993,10 +995,10 @@ export default function PublicLandingPage() {
               type="button"
               onClick={() => window.open(`/p/${slug}`, "_blank")}
               style={{
-                border: "1px solid #1C1C1F",
+                border: "1px solid var(--border-primary)",
                 background: "transparent",
-                color: "#A1A1AA",
-                fontFamily: "var(--font-space-mono), monospace",
+                color: "var(--text-secondary)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
                 letterSpacing: "2px",
                 padding: "7px 14px",
@@ -1009,10 +1011,10 @@ export default function PublicLandingPage() {
               type="button"
               onClick={() => openRegenerateModal()}
               style={{
-                border: "1px solid #1C1C1F",
+                border: "1px solid var(--border-primary)",
                 background: "transparent",
-                color: "#A1A1AA",
-                fontFamily: "var(--font-space-mono), monospace",
+                color: "var(--text-secondary)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 10,
                 padding: "7px 14px",
                 cursor: "pointer"
@@ -1038,8 +1040,8 @@ export default function PublicLandingPage() {
               flexShrink: 0,
               height: "100%",
               overflow: "hidden",
-              background: "#09090B",
-              borderRight: "1px solid #1C1C1F",
+              background: "var(--bg-primary)",
+              borderRight: "1px solid var(--border-primary)",
               display: "flex",
               flexDirection: "column",
               minHeight: 0
@@ -1049,7 +1051,7 @@ export default function PublicLandingPage() {
               style={{
                 flexShrink: 0,
                 padding: "20px 20px 16px",
-                borderBottom: "1px solid #1C1C1F"
+                borderBottom: "1px solid var(--border-primary)"
               }}
             >
               <div style={{ display: "flex", alignItems: "center" }}>
@@ -1066,9 +1068,10 @@ export default function PublicLandingPage() {
                 <span
                   style={{
                     marginLeft: 10,
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontWeight: 800,
                     fontSize: 22,
-                    color: "#F4F4F5",
+                    color: "var(--text-primary)",
                     letterSpacing: "1px"
                   }}
                 >
@@ -1078,9 +1081,9 @@ export default function PublicLandingPage() {
               <p
                 style={{
                   margin: "6px 0 0",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 10,
-                  color: "#52525B",
+                  color: "var(--text-muted)",
                   lineHeight: 1.6
                 }}
               >
@@ -1104,8 +1107,8 @@ export default function PublicLandingPage() {
                   <div
                     key={`${message.role}-${idx}`}
                     style={{
-                      background: "#111115",
-                      borderLeft: "3px solid #06B6D4",
+                      background: "var(--bg-card)",
+                      borderLeft: "3px solid var(--accent)",
                       padding: "12px 14px",
                       borderRadius: "0 4px 4px 0",
                       alignSelf: "stretch"
@@ -1114,9 +1117,9 @@ export default function PublicLandingPage() {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "var(--font-space-mono), monospace",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 12,
-                        color: "#E4E4E7",
+                        color: "var(--text-primary)",
                         lineHeight: 1.7
                       }}
                     >
@@ -1126,9 +1129,9 @@ export default function PublicLandingPage() {
                       <p
                         style={{
                           margin: "6px 0 0",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 9,
-                          color: "#3F3F46"
+                          color: "var(--text-muted)"
                         }}
                       >
                         {message.time}
@@ -1139,8 +1142,8 @@ export default function PublicLandingPage() {
                   <div
                     key={`${message.role}-${idx}`}
                     style={{
-                      background: "#0C0C0E",
-                      border: "1px solid #1C1C1F",
+                      background: "var(--bg-input)",
+                      border: "1px solid var(--border-primary)",
                       padding: "12px 14px",
                       borderRadius: 4,
                       alignSelf: "flex-end",
@@ -1150,9 +1153,9 @@ export default function PublicLandingPage() {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "var(--font-space-mono), monospace",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 12,
-                        color: "#A1A1AA",
+                        color: "var(--text-secondary)",
                         lineHeight: 1.7
                       }}
                     >
@@ -1162,9 +1165,9 @@ export default function PublicLandingPage() {
                       <p
                         style={{
                           margin: "6px 0 0",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 9,
-                          color: "#3F3F46",
+                          color: "var(--text-muted)",
                           textAlign: "right"
                         }}
                       >
@@ -1181,8 +1184,8 @@ export default function PublicLandingPage() {
                     alignItems: "center",
                     gap: 10,
                     padding: "12px 14px",
-                    background: "#111115",
-                    borderLeft: "3px solid #06B6D4"
+                    background: "var(--bg-card)",
+                    borderLeft: "3px solid var(--accent)"
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1191,7 +1194,7 @@ export default function PublicLandingPage() {
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        background: "#06B6D4",
+                        background: "var(--accent)",
                         animation: "bounce 1.2s ease-in-out infinite",
                         animationDelay: "0s"
                       }}
@@ -1201,7 +1204,7 @@ export default function PublicLandingPage() {
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        background: "#06B6D4",
+                        background: "var(--accent)",
                         animation: "bounce 1.2s ease-in-out infinite",
                         animationDelay: "0.2s"
                       }}
@@ -1211,7 +1214,7 @@ export default function PublicLandingPage() {
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        background: "#06B6D4",
+                        background: "var(--accent)",
                         animation: "bounce 1.2s ease-in-out infinite",
                         animationDelay: "0.4s"
                       }}
@@ -1220,9 +1223,9 @@ export default function PublicLandingPage() {
                   <span
                     key={updateMessageIndex}
                     style={{
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
-                      color: "#06B6D4",
+                      color: "var(--accent)",
                       marginLeft: 4,
                       animation: "lacoreEditStatusFade 0.45s ease-out"
                     }}
@@ -1238,7 +1241,7 @@ export default function PublicLandingPage() {
               onSubmit={handleEdit}
               style={{
                 flexShrink: 0,
-                borderTop: "1px solid #1C1C1F",
+                borderTop: "1px solid var(--border-primary)",
                 padding: 16,
                 margin: 0
               }}
@@ -1259,10 +1262,10 @@ export default function PublicLandingPage() {
                 disabled={updating}
                 style={{
                   width: "100%",
-                  background: "#0C0C0E",
-                  border: `1px solid ${chatInputFocused ? "#06B6D4" : "#1C1C1F"}`,
-                  color: "#F4F4F5",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  background: "var(--bg-input)",
+                  border: `1px solid ${chatInputFocused ? "var(--accent)" : "var(--border-primary)"}`,
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 12,
                   padding: 12,
                   resize: "none",
@@ -1281,9 +1284,9 @@ export default function PublicLandingPage() {
               >
                 <span
                   style={{
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 9,
-                    color: "#3F3F46"
+                    color: "var(--text-muted)"
                   }}
                 >
                   ⏎ send &nbsp; ⇧⏎ newline
@@ -1292,9 +1295,10 @@ export default function PublicLandingPage() {
                   type="submit"
                   disabled={updating || !chatInput.trim()}
                   style={{
-                    background: updating || !chatInput.trim() ? "#1C1C1F" : "#06B6D4",
-                    color: updating || !chatInput.trim() ? "#3F3F46" : "#000000",
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    background: updating || !chatInput.trim() ? "var(--border-primary)" : "var(--accent)",
+                    color: updating || !chatInput.trim() ? "var(--text-muted)" : "#000000",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontWeight: 800,
                     fontSize: 16,
                     letterSpacing: "1px",
                     border: "none",
@@ -1311,12 +1315,12 @@ export default function PublicLandingPage() {
                 style={{
                   marginTop: 12,
                   width: "100%",
-                  border: "1px solid #06B6D4",
-                  background: "rgba(9,9,11,0.92)",
-                  color: "#06B6D4",
+                  border: "1px solid var(--accent)",
+                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+                  color: "var(--accent)",
                   borderRadius: 4,
                   padding: "8px 14px",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 9,
                   letterSpacing: "0.08em",
                   cursor: "pointer",
@@ -1333,7 +1337,7 @@ export default function PublicLandingPage() {
               flex: 1,
               height: "100%",
               overflow: "hidden",
-              background: "#06080d",
+              background: "var(--bg-primary)",
               minWidth: 0,
               minHeight: 0,
               display: "flex",
@@ -1348,8 +1352,8 @@ export default function PublicLandingPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#A1A1AA",
-                    fontFamily: "var(--font-space-mono), monospace"
+                    color: "var(--text-secondary)",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
                   }}
                 >
                   Loading page...

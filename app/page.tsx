@@ -3,7 +3,13 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Bebas_Neue } from "next/font/google";
 import { getSupabaseClient } from "@/lib/supabase";
+
+const landingHeroBebas = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"]
+});
 
 type OfferVariant = {
   variant: "A" | "B" | "C";
@@ -304,8 +310,8 @@ export default function LandingPage() {
       <main
         style={{
           minHeight: "100vh",
-          background: "#09090B",
-          color: "#F4F4F5",
+          background: "var(--bg-primary)",
+          color: "var(--text-primary)",
           display: "flex",
           flexDirection: "column",
           padding: "0 20px"
@@ -319,10 +325,10 @@ export default function LandingPage() {
             right: 0,
             zIndex: 1000,
             height: 68,
-            background: "rgba(9,9,11,0.9)",
+            background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
-            borderBottom: "1px solid #1C1C1F",
+            borderBottom: "1px solid var(--border-primary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -344,10 +350,11 @@ export default function LandingPage() {
               style={{
                 margin: 0,
                 justifySelf: "start",
-                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontWeight: 800,
+                letterSpacing: "-0.02em",
                 fontSize: 22,
-                letterSpacing: "0.06em",
-                color: "#06B6D4",
+                color: "var(--accent)",
                 textDecoration: "none"
               }}
             >
@@ -369,10 +376,10 @@ export default function LandingPage() {
                   style={{
                     border: "none",
                     background: "transparent",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 11,
                     letterSpacing: "0.15em",
-                    color: "#52525B",
+                    color: "var(--text-muted)",
                     textDecoration: "none",
                     cursor: "pointer"
                   }}
@@ -385,10 +392,10 @@ export default function LandingPage() {
                   style={{
                     border: "none",
                     background: "transparent",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 11,
                     letterSpacing: "0.15em",
-                    color: "#52525B",
+                    color: "var(--text-muted)",
                     textDecoration: "none",
                     cursor: "pointer"
                   }}
@@ -398,10 +405,10 @@ export default function LandingPage() {
                 <Link
                   href="/auth"
                   style={{
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 11,
                     letterSpacing: "0.15em",
-                    color: "#52525B",
+                    color: "var(--text-muted)",
                     textDecoration: "none"
                   }}
                 >
@@ -413,10 +420,10 @@ export default function LandingPage() {
               href={isLoggedIn ? "/dashboard" : "/auth"}
               style={{
                 justifySelf: "end",
-                border: "1px solid #06B6D4",
+                border: "1px solid var(--accent)",
                 background: "transparent",
-                color: "#06B6D4",
-                fontFamily: "var(--font-space-mono), monospace",
+                color: "var(--accent)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: isMobile ? 10 : 11,
                 letterSpacing: "0.15em",
                 padding: isMobile ? "8px 16px" : "10px 14px",
@@ -444,37 +451,37 @@ export default function LandingPage() {
           <p
             style={{
               margin: 0,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.3em",
               textTransform: "uppercase",
-              color: "#06B6D4"
+              color: "var(--accent)"
             }}
           >
             LACORE
           </p>
 
           <h1
+            className={landingHeroBebas.className}
             style={{
               margin: "20px 0 0",
-              fontFamily: "var(--font-bebas-neue), sans-serif",
               fontSize: isMobile ? "clamp(48px, 12vw, 72px)" : "clamp(72px, 12vw, 160px)",
               lineHeight: 0.95,
               letterSpacing: "0.02em",
               textTransform: "uppercase"
             }}
           >
-            <span style={{ display: "block", color: "#F4F4F5" }}>YOU SAY WHAT YOU SELL.</span>
-            <span style={{ display: "block", color: "#06B6D4" }}>LACORE DOES THE REST.</span>
+            <span style={{ display: "block", color: "var(--text-primary)" }}>YOU SAY WHAT YOU SELL.</span>
+            <span style={{ display: "block", color: "var(--accent)" }}>LACORE DOES THE REST.</span>
           </h1>
           <p
             style={{
               margin: "24px 0 0",
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 12,
               letterSpacing: "0.15em",
               textTransform: "uppercase",
-              color: "#52525B"
+              color: "var(--text-muted)"
             }}
           >
             FROM IDEA TO FIRST CLIENT. AUTOMATICALLY.
@@ -501,7 +508,7 @@ export default function LandingPage() {
           >
             <div
               style={{
-                background: "#000000",
+                background: "var(--bg-input)",
                 padding: isMobile ? "24px 20px" : "32px 28px",
                 position: "relative",
                 width: "100%",
@@ -511,11 +518,11 @@ export default function LandingPage() {
               <p
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 11,
                   letterSpacing: "4px",
                   textTransform: "uppercase",
-                  color: "#A1A1AA"
+                  color: "var(--text-secondary)"
                 }}
               >
                 ASK LACORE HOW TO SELL
@@ -531,16 +538,16 @@ export default function LandingPage() {
                     minHeight: 100,
                     border: "none",
                     outline: "none",
-                    background: "#000000",
-                    color: showAnimatedPlaceholder ? "#3A3A3F" : "#F4F4F5",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    background: "var(--bg-input)",
+                    color: showAnimatedPlaceholder ? "var(--text-muted)" : "var(--text-primary)",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: isMobile ? 15 : 16,
                     lineHeight: 1.5,
                     fontStyle: showAnimatedPlaceholder ? "italic" : "normal",
                     resize: "vertical",
                     padding: 0,
                     display: "block",
-                    caretColor: showAnimatedPlaceholder ? "transparent" : "#06B6D4"
+                    caretColor: showAnimatedPlaceholder ? "transparent" : "var(--accent)"
                   }}
                 />
                 {showAnimatedPlaceholder && (
@@ -549,8 +556,8 @@ export default function LandingPage() {
                       position: "absolute",
                       left: `${Math.max(animatedText.length * (isMobile ? 8.2 : 8.6), 1)}px`,
                       top: 0,
-                      color: "#3A3A3F",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      color: "var(--text-muted)",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: isMobile ? 15 : 16,
                       fontStyle: "italic",
                       lineHeight: 1.5,
@@ -572,9 +579,9 @@ export default function LandingPage() {
                   marginTop: 20,
                   width: "100%",
                   border: "none",
-                  background: canSubmit ? (submitHover ? "#0891B2" : "#06B6D4") : "#3F3F46",
+                  background: canSubmit ? (submitHover ? "var(--accent)" : "var(--accent)") : "var(--text-muted)",
                   color: "#000000",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 12,
                   letterSpacing: "0.15em",
                   fontWeight: 700,
@@ -603,10 +610,11 @@ export default function LandingPage() {
               <h2
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-bebas-neue), sans-serif",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontWeight: 800,
                   fontSize: isMobile ? 42 : 56,
                   lineHeight: 1.05,
-                  color: "#06B6D4",
+                  color: "var(--accent)",
                   letterSpacing: "0.02em"
                 }}
               >
@@ -621,7 +629,7 @@ export default function LandingPage() {
                 width: "100%",
                 maxWidth: 720,
                 margin: "12px auto 0",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 12,
                 color: "#f87171"
               }}
@@ -663,9 +671,9 @@ export default function LandingPage() {
                           maxWidth: isMobile ? "100%" : 360,
                           boxSizing: "border-box",
                           background: isSelected
-                            ? "rgba(6, 182, 212, 0.05)"
-                            : "#0C0C0E",
-                          border: isSelected ? "2px solid #06B6D4" : "1px solid #1C1C1F",
+                            ? "color-mix(in srgb, var(--accent) 6%, transparent)"
+                            : "var(--bg-input)",
+                          border: isSelected ? "2px solid var(--accent)" : "1px solid var(--border-primary)",
                           padding: "20px 18px 18px",
                           display: "flex",
                           flexDirection: "column",
@@ -674,10 +682,11 @@ export default function LandingPage() {
                       >
                         <span
                           style={{
-                            fontFamily: "var(--font-bebas-neue), sans-serif",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                            fontWeight: 800,
                             fontSize: 48,
                             lineHeight: 1,
-                            color: "#06B6D4",
+                            color: "var(--accent)",
                             letterSpacing: "0.02em"
                           }}
                         >
@@ -686,11 +695,11 @@ export default function LandingPage() {
                         <p
                           style={{
                             margin: 0,
-                            fontFamily: "var(--font-space-mono), monospace",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 10,
                             letterSpacing: "3px",
                             textTransform: "uppercase",
-                            color: "#71717A"
+                            color: "var(--text-muted)"
                           }}
                         >
                           {v.label}
@@ -698,10 +707,11 @@ export default function LandingPage() {
                         <h3
                           style={{
                             margin: 0,
-                            fontFamily: "var(--font-bebas-neue), sans-serif",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                            fontWeight: 800,
                             fontSize: 28,
                             lineHeight: 1.1,
-                            color: "#F4F4F5",
+                            color: "var(--text-primary)",
                             letterSpacing: "0.02em"
                           }}
                         >
@@ -710,10 +720,10 @@ export default function LandingPage() {
                         <div>
                           <span
                             style={{
-                              fontFamily: "var(--font-space-mono), monospace",
+                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                               fontSize: 9,
                               letterSpacing: "0.2em",
-                              color: "#52525B",
+                              color: "var(--text-muted)",
                               textTransform: "uppercase"
                             }}
                           >
@@ -721,10 +731,10 @@ export default function LandingPage() {
                           </span>
                           <span
                             style={{
-                              fontFamily: "var(--font-space-mono), monospace",
+                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                               fontSize: 13,
                               lineHeight: 1.5,
-                              color: "#A1A1AA"
+                              color: "var(--text-secondary)"
                             }}
                           >
                             {v.audience}
@@ -733,10 +743,10 @@ export default function LandingPage() {
                         <p
                           style={{
                             margin: 0,
-                            fontFamily: "var(--font-space-mono), monospace",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 14,
                             lineHeight: 1.5,
-                            color: "#06B6D4",
+                            color: "var(--accent)",
                             fontWeight: 700
                           }}
                         >
@@ -750,9 +760,9 @@ export default function LandingPage() {
                             marginTop: "auto",
                             width: "100%",
                             border: "none",
-                            background: savingChoice && isSelected ? "#0891B2" : "#06B6D4",
+                            background: savingChoice && isSelected ? "var(--accent)" : "var(--accent)",
                             color: "#000000",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11,
                             letterSpacing: "0.12em",
                             fontWeight: 700,
@@ -775,8 +785,8 @@ export default function LandingPage() {
                   style={{
                     marginTop: 20,
                     padding: "16px 18px",
-                    border: "1px solid #27272A",
-                    background: "#0C0C0E",
+                    border: "1px solid var(--border-secondary)",
+                    background: "var(--bg-input)",
                     maxWidth: 520,
                     marginLeft: "auto",
                     marginRight: "auto"
@@ -785,9 +795,9 @@ export default function LandingPage() {
                   <p
                     style={{
                       margin: 0,
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 12,
-                      color: "#A1A1AA",
+                      color: "var(--text-secondary)",
                       lineHeight: 1.5
                     }}
                   >
@@ -798,11 +808,11 @@ export default function LandingPage() {
                     style={{
                       display: "inline-block",
                       marginTop: 10,
-                      border: "1px solid #06B6D4",
-                      color: "#06B6D4",
+                      border: "1px solid var(--accent)",
+                      color: "var(--accent)",
                       background: "transparent",
                       textDecoration: "none",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       letterSpacing: "0.14em",
                       padding: "8px 12px"
@@ -818,7 +828,7 @@ export default function LandingPage() {
                   style={{
                     margin: "14px 0 0",
                     textAlign: "center",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 12,
                     color: "#f87171"
                   }}
@@ -849,10 +859,10 @@ export default function LandingPage() {
               <div
                 key={item}
                 style={{
-                  border: "1px solid #1C1C1F",
+                  border: "1px solid var(--border-primary)",
                   padding: "6px 14px",
-                  color: "#52525B",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  color: "var(--text-muted)",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   width: isMobile ? "100%" : "auto",
@@ -875,10 +885,10 @@ export default function LandingPage() {
           <p
             style={{
               margin: 0,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.3em",
-              color: "#06B6D4"
+              color: "var(--accent)"
             }}
           >
             THE PROBLEM
@@ -886,10 +896,10 @@ export default function LandingPage() {
           <h2
             style={{
               margin: "24px 0 0",
-              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
               fontSize: "clamp(48px, 6vw, 96px)",
               lineHeight: 0.95,
-              color: "#F4F4F5"
+              color: "var(--text-primary)"
             }}
           >
             <span style={{ display: "block" }}>MOST PEOPLE WHO HAVE SOMETHING TO SELL</span>
@@ -899,32 +909,32 @@ export default function LandingPage() {
             style={{
               margin: "24px auto 0",
               maxWidth: 560,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 14,
               lineHeight: 1.8,
-              color: "#52525B"
+              color: "var(--text-muted)"
             }}
           >
             Not because they&apos;re bad at what they do. Because they don&apos;t have a system.
             LACORE is that system.
           </p>
-          <div style={{ width: "100%", height: 1, background: "#1C1C1F", marginTop: 56 }} />
+          <div style={{ width: "100%", height: 1, background: "var(--border-primary)", marginTop: 56 }} />
         </section>
 
         <section
           id="how-it-works"
           style={{
-            background: "#0C0C0E",
+            background: "var(--bg-input)",
             padding: isMobile ? "60px 24px" : "120px 48px"
           }}
         >
           <p
             style={{
               margin: 0,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.3em",
-              color: "#06B6D4"
+              color: "var(--accent)"
             }}
           >
             HOW IT WORKS
@@ -932,13 +942,13 @@ export default function LandingPage() {
           <h2
             style={{
               margin: "18px 0 0",
-              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
               fontSize: "clamp(56px, 7vw, 112px)",
               lineHeight: 0.95
             }}
           >
-            <span style={{ display: "block", color: "#F4F4F5" }}>ONE INPUT.</span>
-            <span style={{ display: "block", color: "#06B6D4" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
+            <span style={{ display: "block", color: "var(--text-primary)" }}>ONE INPUT.</span>
+            <span style={{ display: "block", color: "var(--accent)" }}>EVERYTHING ELSE IS AUTOMATIC.</span>
           </h2>
           <div
             id="what-you-get"
@@ -953,7 +963,7 @@ export default function LandingPage() {
               <div
                 key={layer.number}
                 style={{
-                  border: "1px solid #1C1C1F",
+                  border: "1px solid var(--border-primary)",
                   padding: 32,
                   background: "transparent"
                 }}
@@ -961,10 +971,10 @@ export default function LandingPage() {
                 <p
                   style={{
                     margin: 0,
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
                     fontSize: 48,
                     lineHeight: 1,
-                    color: "#1C1C1F"
+                    color: "var(--border-primary)"
                   }}
                 >
                   {layer.number}
@@ -972,10 +982,11 @@ export default function LandingPage() {
                 <h3
                   style={{
                     margin: "10px 0 0",
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontWeight: 800,
                     fontSize: 28,
                     letterSpacing: "0.02em",
-                    color: "#F4F4F5"
+                    color: "var(--text-primary)"
                   }}
                 >
                   {layer.title}
@@ -983,10 +994,10 @@ export default function LandingPage() {
                 <p
                   style={{
                     margin: "12px 0 0",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 12,
                     lineHeight: 1.8,
-                    color: "#52525B"
+                    color: "var(--text-muted)"
                   }}
                 >
                   {layer.description}
@@ -1001,17 +1012,17 @@ export default function LandingPage() {
           style={{
             width: "100%",
             padding: isMobile ? "60px 24px" : "120px 48px",
-            background: "#09090B",
+            background: "var(--bg-primary)",
             textAlign: "center"
           }}
         >
           <p
             style={{
               margin: 0,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.3em",
-              color: "#06B6D4"
+              color: "var(--accent)"
             }}
           >
             THE MAGIC MOMENT
@@ -1019,26 +1030,26 @@ export default function LandingPage() {
           <h2
             style={{
               margin: "20px 0 0",
-              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
               fontSize: "clamp(64px, 8vw, 128px)",
               lineHeight: 0.94
             }}
           >
-            <span style={{ display: "block", color: "#F4F4F5" }}>60 MINUTES AFTER SIGNING UP</span>
-            <span style={{ display: "block", color: "#06B6D4" }}>YOUR FIRST LEAD ARRIVES.</span>
+            <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
+            <span style={{ display: "block", color: "var(--accent)" }}>YOUR FIRST LEAD ARRIVES.</span>
           </h2>
           <div
             style={{
               margin: "34px auto 0",
               maxWidth: 600,
               textAlign: "left",
-              background: "#0C0C0E",
-              border: "1px solid #06B6D4",
+              background: "var(--bg-input)",
+              border: "1px solid var(--accent)",
               padding: isMobile ? 20 : 32,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: isMobile ? 11 : 13,
               lineHeight: 1.9,
-              color: "#F4F4F5"
+              color: "var(--text-primary)"
             }}
           >
             <p style={{ margin: 0 }}>&gt; Offer generated ✓</p>
@@ -1051,9 +1062,9 @@ export default function LandingPage() {
           <p
             style={{
               margin: "18px 0 0",
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 13,
-              color: "#52525B"
+              color: "var(--text-muted)"
             }}
           >
             That&apos;s the moment. That&apos;s what nobody else delivers.
@@ -1062,7 +1073,7 @@ export default function LandingPage() {
 
         <section
           style={{
-            background: "#0C0C0E",
+            background: "var(--bg-input)",
             padding: isMobile ? "60px 24px" : "80px 48px",
             textAlign: "center"
           }}
@@ -1070,9 +1081,9 @@ export default function LandingPage() {
           <p
             style={{
               margin: 0,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 12,
-              color: "#3F3F46"
+              color: "var(--text-muted)"
             }}
           >
             NOT A LANDING PAGE BUILDER · NOT A SOCIAL MEDIA SCHEDULER · NOT A CRM · NOT AN AI
@@ -1082,10 +1093,10 @@ export default function LandingPage() {
             style={{
               margin: "20px auto 0",
               maxWidth: 1100,
-              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
               fontSize: 36,
               lineHeight: 1.1,
-              color: "#F4F4F5"
+              color: "var(--text-primary)"
             }}
           >
             LACORE IS WHAT HAPPENS WHEN ALL OF THESE WORK TOGETHER TOWARD ONE GOAL: YOUR FIRST
@@ -1102,25 +1113,25 @@ export default function LandingPage() {
           }}
         >
           <h2
+            className={landingHeroBebas.className}
             style={{
               margin: 0,
-              fontFamily: "var(--font-bebas-neue), sans-serif",
               fontSize: "clamp(64px, 8vw, 120px)",
               lineHeight: 0.94
             }}
           >
-            <span style={{ display: "block", color: "#F4F4F5" }}>YOU SAY WHAT YOU SELL.</span>
-            <span style={{ display: "block", color: "#06B6D4" }}>LACORE DOES THE REST.</span>
+            <span style={{ display: "block", color: "var(--text-primary)" }}>YOU SAY WHAT YOU SELL.</span>
+            <span style={{ display: "block", color: "var(--accent)" }}>LACORE DOES THE REST.</span>
           </h2>
           <Link
             href={isLoggedIn ? "/dashboard" : "/auth"}
             style={{
               display: "inline-block",
               marginTop: 24,
-              border: "1px solid #06B6D4",
+              border: "1px solid var(--accent)",
               background: "transparent",
-              color: "#06B6D4",
-              fontFamily: "var(--font-space-mono), monospace",
+              color: "var(--accent)",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 12,
               letterSpacing: "0.2em",
               padding: "12px 20px",
@@ -1133,9 +1144,9 @@ export default function LandingPage() {
           <p
             style={{
               margin: "16px 0 0",
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 12,
-              color: "#3F3F46"
+              color: "var(--text-muted)"
             }}
           >
             Free to start. No marketing skills needed. No agency. No team.
@@ -1158,9 +1169,9 @@ export default function LandingPage() {
               display: "inline-flex",
               whiteSpace: "nowrap",
               animation: "ticker-scroll 24s linear infinite",
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
-              color: "#52525B",
+              color: "var(--text-muted)",
               letterSpacing: "0.12em"
             }}
           >

@@ -29,8 +29,10 @@ type ProfileRow = {
 };
 
 type UiLocale = "en" | "ru";
+type UiTheme = "dark" | "light";
 
 const UI_LOCALE_STORAGE_KEY = "lacore-ui-locale";
+const UI_THEME_STORAGE_KEY = "lacore-theme";
 
 const DASH_COPY: Record<
   UiLocale,
@@ -46,6 +48,7 @@ const DASH_COPY: Record<
     saveChanges: string;
     saving: string;
     interfaceLanguage: string;
+    themeLabel: string;
     signOut: string;
     deleteAccount: string;
     comingSoon: string;
@@ -66,6 +69,7 @@ const DASH_COPY: Record<
     saveChanges: "SAVE CHANGES",
     saving: "SAVING…",
     interfaceLanguage: "INTERFACE LANGUAGE",
+    themeLabel: "THEME",
     signOut: "SIGN OUT",
     deleteAccount: "DELETE ACCOUNT",
     comingSoon: "Coming soon",
@@ -85,6 +89,7 @@ const DASH_COPY: Record<
     saveChanges: "СОХРАНИТЬ",
     saving: "СОХРАНЕНИЕ…",
     interfaceLanguage: "ЯЗЫК ИНТЕРФЕЙСА",
+    themeLabel: "ТЕМА",
     signOut: "ВЫЙТИ",
     deleteAccount: "УДАЛИТЬ АККАУНТ",
     comingSoon: "Скоро",
@@ -178,6 +183,7 @@ export default function DashboardPage() {
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [uiLocale, setUiLocale] = useState<UiLocale>("en");
+  const [uiTheme, setUiTheme] = useState<UiTheme>("dark");
   const router = useRouter();
 
   const offerContext = useMemo(() => {
@@ -205,10 +211,10 @@ export default function DashboardPage() {
   );
 
   const offerTextareaStyle: CSSProperties = {
-    background: "#111115",
-    border: "1px solid #06B6D4",
-    color: "#F4F4F5",
-    fontFamily: "var(--font-space-mono), monospace",
+    background: "var(--bg-card)",
+    border: "1px solid var(--accent)",
+    color: "var(--text-primary)",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
     fontSize: 13,
     lineHeight: 1.6,
     padding: "10px 12px",
@@ -222,10 +228,10 @@ export default function DashboardPage() {
   const profileFieldStyle: CSSProperties = {
     width: "100%",
     boxSizing: "border-box",
-    border: "1px solid #1C1C1F",
-    background: "#111115",
-    color: "#F4F4F5",
-    fontFamily: "var(--font-space-mono), monospace",
+    border: "1px solid var(--border-primary)",
+    background: "var(--bg-card)",
+    color: "var(--text-primary)",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
     fontSize: 13,
     lineHeight: 1.5,
     padding: "10px 12px",
@@ -304,6 +310,18 @@ export default function DashboardPage() {
     try {
       const raw = localStorage.getItem(UI_LOCALE_STORAGE_KEY);
       if (raw === "ru" || raw === "en") setUiLocale(raw);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(UI_THEME_STORAGE_KEY);
+      if (raw === "light" || raw === "dark") {
+        setUiTheme(raw);
+        document.documentElement.setAttribute("data-theme", raw);
+      }
     } catch {
       /* ignore */
     }
@@ -425,6 +443,16 @@ export default function DashboardPage() {
     setUiLocale(next);
     try {
       localStorage.setItem(UI_LOCALE_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function setDashboardTheme(next: UiTheme) {
+    setUiTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem(UI_THEME_STORAGE_KEY, next);
     } catch {
       /* ignore */
     }
@@ -599,8 +627,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: "100vh", background: "#09090B", color: "#F4F4F5", padding: 24 }}>
-        <p style={{ fontFamily: "var(--font-space-mono), monospace", color: "#52525B" }}>Loading dashboard...</p>
+      <main style={{ minHeight: "100vh", background: "var(--bg-primary)", color: "var(--text-primary)", padding: 24 }}>
+        <p style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif", color: "var(--text-muted)" }}>Loading dashboard...</p>
       </main>
     );
   }
@@ -613,8 +641,8 @@ export default function DashboardPage() {
         minHeight: "100vh",
         maxHeight: "100vh",
         overflow: "hidden",
-        background: "#09090B",
-        color: "#F4F4F5",
+        background: "var(--bg-primary)",
+        color: "var(--text-primary)",
         position: "relative"
       }}
     >
@@ -636,7 +664,7 @@ export default function DashboardPage() {
             max-height: 520px;
             flex-shrink: 0;
             border-right: none !important;
-            border-bottom: 1px solid #1C1C1F;
+            border-bottom: 1px solid var(--border-primary);
           }
           .dash-content-panel { flex: 1; min-height: 0; overflow: visible !important; }
         }
@@ -650,7 +678,7 @@ export default function DashboardPage() {
             zIndex: 1000,
             display: "flex",
             flexDirection: isMobile ? "column" : "row",
-            background: "#09090B",
+            background: "var(--bg-primary)",
             overflow: "hidden"
           }}
         >
@@ -658,16 +686,16 @@ export default function DashboardPage() {
             style={{
               width: isMobile ? "100%" : 360,
               flexShrink: 0,
-              background: "#09090B",
-              borderRight: isMobile ? "none" : "1px solid #1C1C1F",
-              borderBottom: isMobile ? "1px solid #1C1C1F" : "none",
+              background: "var(--bg-primary)",
+              borderRight: isMobile ? "none" : "1px solid var(--border-primary)",
+              borderBottom: isMobile ? "1px solid var(--border-primary)" : "none",
               display: "flex",
               flexDirection: "column",
               maxHeight: isMobile ? "42vh" : "100%",
               minHeight: 0
             }}
           >
-            <div style={{ flexShrink: 0, padding: "20px 20px 16px", borderBottom: "1px solid #1C1C1F" }}>
+            <div style={{ flexShrink: 0, padding: "20px 20px 16px", borderBottom: "1px solid var(--border-primary)" }}>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <span
                   style={{
@@ -682,9 +710,10 @@ export default function DashboardPage() {
                 <span
                   style={{
                     marginLeft: 10,
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontWeight: 800,
                     fontSize: 22,
-                    color: "#F4F4F5",
+                    color: "var(--text-primary)",
                     letterSpacing: "1px"
                   }}
                 >
@@ -707,8 +736,8 @@ export default function DashboardPage() {
                 <div
                   key={`${idx}-${text}`}
                   style={{
-                    background: "#111115",
-                    borderLeft: "3px solid #06B6D4",
+                    background: "var(--bg-card)",
+                    borderLeft: "3px solid var(--accent)",
                     padding: "12px 14px",
                     borderRadius: "0 4px 4px 0"
                   }}
@@ -716,9 +745,9 @@ export default function DashboardPage() {
                   <p
                     style={{
                       margin: 0,
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 12,
-                      color: "#E4E4E7",
+                      color: "var(--text-primary)",
                       lineHeight: 1.7
                     }}
                   >
@@ -732,7 +761,7 @@ export default function DashboardPage() {
           <div
             style={{
               flex: 1,
-              background: "#06080d",
+              background: "var(--bg-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -745,10 +774,11 @@ export default function DashboardPage() {
               <p
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-bebas-neue), sans-serif",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontWeight: 800,
                   fontSize: 48,
                   lineHeight: 1,
-                  color: "#06B6D4",
+                  color: "var(--accent)",
                   letterSpacing: "0.02em"
                 }}
               >
@@ -759,7 +789,7 @@ export default function DashboardPage() {
                   marginTop: 28,
                   width: "100%",
                   height: 3,
-                  background: "#1C1C1F",
+                  background: "var(--border-primary)",
                   borderRadius: 1,
                   overflow: "hidden"
                 }}
@@ -768,7 +798,7 @@ export default function DashboardPage() {
                   style={{
                     height: 3,
                     width: `${buildProgressWidth}%`,
-                    background: "#06B6D4",
+                    background: "var(--accent)",
                     transition: "width 90s linear",
                     borderRadius: 1
                   }}
@@ -777,9 +807,9 @@ export default function DashboardPage() {
               <p
                 style={{
                   margin: "14px 0 0",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 11,
-                  color: "#71717A",
+                  color: "var(--text-muted)",
                   lineHeight: 1.5
                 }}
               >
@@ -788,9 +818,9 @@ export default function DashboardPage() {
               <p
                 style={{
                   margin: "10px 0 0",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 10,
-                  color: "#3F3F46",
+                  color: "var(--text-muted)",
                   lineHeight: 1.5
                 }}
               >
@@ -807,20 +837,20 @@ export default function DashboardPage() {
             position: "fixed",
             inset: 0,
             zIndex: 9998,
-            background: "rgba(9,9,11,0.9)",
+            background: "color-mix(in srgb, var(--bg-primary) 90%, transparent)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 20
           }}
         >
-          <div style={{ width: "100%", maxWidth: 480, border: "1px solid #1C1C1F", background: "#09090B", padding: 20 }}>
+          <div style={{ width: "100%", maxWidth: 480, border: "1px solid var(--border-primary)", background: "var(--bg-primary)", padding: 20 }}>
             <h3
               style={{
                 margin: 0,
-                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
                 fontSize: 36,
-                color: "#F4F4F5",
+                color: "var(--text-primary)",
                 lineHeight: 1
               }}
             >
@@ -829,9 +859,9 @@ export default function DashboardPage() {
             <p
               style={{
                 margin: "8px 0 0",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
-                color: "#A1A1AA"
+                color: "var(--text-secondary)"
               }}
             >
               3 quick questions to make your landing page 10x better
@@ -842,10 +872,10 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: 0,
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
                     letterSpacing: "0.14em",
-                    color: "#06B6D4"
+                    color: "var(--accent)"
                   }}
                 >
                   BUSINESS NAME
@@ -857,11 +887,11 @@ export default function DashboardPage() {
                   style={{
                     width: "100%",
                     marginTop: 6,
-                    border: "1px solid #1C1C1F",
-                    background: "#0F0F12",
-                    color: "#F4F4F5",
+                    border: "1px solid var(--border-primary)",
+                    background: "var(--bg-secondary)",
+                    color: "var(--text-primary)",
                     padding: "10px 12px",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 12,
                     outline: "none",
                     boxSizing: "border-box"
@@ -873,10 +903,10 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: 0,
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
                     letterSpacing: "0.14em",
-                    color: "#06B6D4"
+                    color: "var(--accent)"
                   }}
                 >
                   PRIMARY GOAL
@@ -884,9 +914,9 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: "6px 0 0",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
-                    color: "#71717A"
+                    color: "var(--text-muted)"
                   }}
                 >
                   What should visitors do? Select all that apply.
@@ -904,10 +934,10 @@ export default function DashboardPage() {
                           )
                         }
                         style={{
-                          border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
-                          background: selected ? "#06B6D4" : "transparent",
-                          color: selected ? "#000000" : "#A1A1AA",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
+                          background: selected ? "var(--accent)" : "transparent",
+                          color: selected ? "#000000" : "var(--text-secondary)",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 11,
                           lineHeight: 1.4,
                           textAlign: "left",
@@ -926,10 +956,10 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: 0,
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
                     letterSpacing: "0.14em",
-                    color: "#06B6D4"
+                    color: "var(--accent)"
                   }}
                 >
                   SITE VIBE
@@ -937,9 +967,9 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: "6px 0 0",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
-                    color: "#71717A"
+                    color: "var(--text-muted)"
                   }}
                 >
                   How should your site feel?
@@ -954,10 +984,10 @@ export default function DashboardPage() {
                           type="button"
                           onClick={() => setSiteVibe(vibe)}
                           style={{
-                            border: `1px solid ${selected ? "#06B6D4" : "#1C1C1F"}`,
-                            background: selected ? "#06B6D4" : "transparent",
-                            color: selected ? "#000000" : "#A1A1AA",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
+                            background: selected ? "var(--accent)" : "transparent",
+                            color: selected ? "#000000" : "var(--text-secondary)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11,
                             lineHeight: 1.4,
                             textAlign: "left",
@@ -983,10 +1013,10 @@ export default function DashboardPage() {
                 }}
                 style={{
                   flex: 1,
-                  border: "1px solid #06B6D4",
+                  border: "1px solid var(--accent)",
                   background: "transparent",
-                  color: "#06B6D4",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  color: "var(--accent)",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 11,
                   letterSpacing: "0.12em",
                   padding: "10px 12px",
@@ -1010,10 +1040,10 @@ export default function DashboardPage() {
                   flex: 1,
                   border: "none",
                   background:
-                    !businessName.trim() || primaryGoals.length === 0 || !siteVibe ? "#1C1C1F" : "#06B6D4",
+                    !businessName.trim() || primaryGoals.length === 0 || !siteVibe ? "var(--border-primary)" : "var(--accent)",
                   color:
-                    !businessName.trim() || primaryGoals.length === 0 || !siteVibe ? "#52525B" : "#000000",
-                  fontFamily: "var(--font-space-mono), monospace",
+                    !businessName.trim() || primaryGoals.length === 0 || !siteVibe ? "var(--text-muted)" : "#000000",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 11,
                   letterSpacing: "0.12em",
                   padding: "10px 12px",
@@ -1037,8 +1067,8 @@ export default function DashboardPage() {
           height: "100vh",
           display: "flex",
           flexDirection: "column",
-          background: "#060608",
-          borderRight: "1px solid #1C1C1F",
+          background: "var(--bg-surface)",
+          borderRight: "1px solid var(--border-primary)",
           minHeight: 0
         }}
       >
@@ -1050,9 +1080,10 @@ export default function DashboardPage() {
               border: "none",
               background: "transparent",
               cursor: "pointer",
-              fontFamily: "var(--font-bebas-neue), sans-serif",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontWeight: 800,
               fontSize: 22,
-              color: "#06B6D4",
+              color: "var(--accent)",
               padding: 0,
               letterSpacing: "0.02em",
               display: "block",
@@ -1067,15 +1098,15 @@ export default function DashboardPage() {
                 width: 40,
                 height: 40,
                 borderRadius: "50%",
-                background: "#111115",
-                border: "1px solid #1C1C1F",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-primary)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 13,
                 fontWeight: 700,
-                color: "#06B6D4",
+                color: "var(--accent)",
                 flexShrink: 0
               }}
             >
@@ -1085,9 +1116,9 @@ export default function DashboardPage() {
               <p
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 11,
-                  color: "#E4E4E7",
+                  color: "var(--text-primary)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap"
@@ -1103,8 +1134,8 @@ export default function DashboardPage() {
                   marginTop: 6,
                   border: "none",
                   background: "transparent",
-                  color: "#06B6D4",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  color: "var(--accent)",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   padding: 0,
@@ -1115,7 +1146,7 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
-          <div style={{ marginTop: 14, height: 1, background: "#1C1C1F" }} />
+          <div style={{ marginTop: 14, height: 1, background: "var(--border-primary)" }} />
         </div>
 
         <div
@@ -1143,10 +1174,10 @@ export default function DashboardPage() {
               />
               <span
                 style={{
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 10,
                   letterSpacing: "0.18em",
-                  color: "#06B6D4"
+                  color: "var(--accent)"
                 }}
               >
                 ● SALES BUILDER
@@ -1155,9 +1186,9 @@ export default function DashboardPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
-                color: "#71717A",
+                color: "var(--text-muted)",
                 lineHeight: 1.5
               }}
             >
@@ -1173,17 +1204,17 @@ export default function DashboardPage() {
                 maxWidth: "94%",
                 borderRadius: 6,
                 padding: "10px 14px",
-                background: m.role === "user" ? "#0C0C0E" : "#111115",
-                border: m.role === "user" ? "1px solid #1C1C1F" : "none",
-                borderLeft: m.role === "assistant" ? "3px solid #06B6D4" : undefined
+                background: m.role === "user" ? "var(--bg-input)" : "var(--bg-card)",
+                border: m.role === "user" ? "1px solid var(--border-primary)" : "none",
+                borderLeft: m.role === "assistant" ? "3px solid var(--accent)" : undefined
               }}
             >
               <p
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 12,
-                  color: "#E4E4E7",
+                  color: "var(--text-primary)",
                   lineHeight: 1.65,
                   whiteSpace: "pre-wrap"
                 }}
@@ -1199,8 +1230,8 @@ export default function DashboardPage() {
                 display: "flex",
                 gap: 5,
                 padding: "12px 16px",
-                background: "#111115",
-                borderLeft: "3px solid #06B6D4",
+                background: "var(--bg-card)",
+                borderLeft: "3px solid var(--accent)",
                 borderRadius: "0 6px 6px 0"
               }}
             >
@@ -1211,7 +1242,7 @@ export default function DashboardPage() {
                     width: 6,
                     height: 6,
                     borderRadius: "50%",
-                    background: "#06B6D4",
+                    background: "var(--accent)",
                     animation: "dash-chat-dot 1s ease-in-out infinite",
                     animationDelay: `${i * 0.15}s`
                   }}
@@ -1226,9 +1257,9 @@ export default function DashboardPage() {
           onSubmit={handleDashboardChatSend}
           style={{
             flexShrink: 0,
-            borderTop: "1px solid #1C1C1F",
+            borderTop: "1px solid var(--border-primary)",
             padding: "12px 14px 16px",
-            background: "#060608",
+            background: "var(--bg-surface)",
             display: "flex",
             flexDirection: "column",
             gap: 10
@@ -1244,10 +1275,10 @@ export default function DashboardPage() {
             style={{
               width: "100%",
               resize: "none",
-              border: "1px solid #1C1C1F",
-              background: "#0F0F12",
-              color: "#F4F4F5",
-              fontFamily: "var(--font-space-mono), monospace",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-secondary)",
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 12,
               padding: "10px 12px",
               outline: "none",
@@ -1261,9 +1292,9 @@ export default function DashboardPage() {
             style={{
               alignSelf: "flex-end",
               border: "none",
-              background: chatLoading || !chatInput.trim() ? "#1C1C1F" : "#06B6D4",
-              color: chatLoading || !chatInput.trim() ? "#52525B" : "#000000",
-              fontFamily: "var(--font-space-mono), monospace",
+              background: chatLoading || !chatInput.trim() ? "var(--border-primary)" : "var(--accent)",
+              color: chatLoading || !chatInput.trim() ? "var(--text-muted)" : "#000000",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.14em",
               padding: "10px 20px",
@@ -1284,7 +1315,7 @@ export default function DashboardPage() {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          background: "#09090B"
+          background: "var(--bg-primary)"
         }}
       >
         <nav
@@ -1294,16 +1325,16 @@ export default function DashboardPage() {
             alignItems: "center",
             justifyContent: "flex-end",
             gap: 12,
-            borderBottom: "1px solid #1C1C1F",
+            borderBottom: "1px solid var(--border-primary)",
             padding: "14px 24px"
           }}
         >
           <p
             style={{
               margin: 0,
-              fontFamily: "var(--font-space-mono), monospace",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 12,
-              color: "#A1A1AA",
+              color: "var(--text-secondary)",
               maxWidth: "min(50vw, 280px)",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -1321,9 +1352,9 @@ export default function DashboardPage() {
             }}
             aria-label={t.settingsTitle}
             style={{
-              border: "1px solid #1C1C1F",
-              background: "#111115",
-              color: "#A1A1AA",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
               fontSize: 18,
               lineHeight: 1,
               width: 40,
@@ -1353,14 +1384,14 @@ export default function DashboardPage() {
         >
           <div>
             {!offer ? (
-              <div style={{ border: "1px solid #1C1C1F", background: "#0C0C0E", padding: 24 }}>
+              <div style={{ border: "1px solid var(--border-primary)", background: "var(--bg-input)", padding: 24 }}>
                 <h1
                   style={{
                     margin: 0,
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
                     fontSize: 54,
                     lineHeight: 1,
-                    color: "#F4F4F5"
+                    color: "var(--text-primary)"
                   }}
                 >
                   YOUR OFFER IS WAITING
@@ -1370,10 +1401,10 @@ export default function DashboardPage() {
                   onClick={() => router.push("/")}
                   style={{
                     marginTop: 16,
-                    border: "1px solid #06B6D4",
+                    border: "1px solid var(--accent)",
                     background: "transparent",
-                    color: "#06B6D4",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    color: "var(--accent)",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 12,
                     letterSpacing: "0.16em",
                     padding: "10px 16px",
@@ -1386,8 +1417,8 @@ export default function DashboardPage() {
             ) : (
               <section
                 style={{
-                  border: "1px solid #06B6D4",
-                  background: "#0C0C0E",
+                  border: "1px solid var(--accent)",
+                  background: "var(--bg-input)",
                   padding: 20,
                   borderRadius: 4
                 }}
@@ -1406,11 +1437,12 @@ export default function DashboardPage() {
                     <h2
                       style={{
                         margin: 0,
-                        fontFamily: "var(--font-bebas-neue), sans-serif",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontWeight: 800,
                         fontSize: 38,
                         lineHeight: 1,
                         letterSpacing: "0.04em",
-                        color: "#06B6D4"
+                        color: "var(--accent)"
                       }}
                     >
                       YOUR OFFER
@@ -1420,7 +1452,7 @@ export default function DashboardPage() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 6,
-                        fontFamily: "var(--font-space-mono), monospace",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 10,
                         letterSpacing: "0.12em",
                         color: "#22C55E",
@@ -1443,9 +1475,9 @@ export default function DashboardPage() {
                       }}
                       style={{
                         background: "transparent",
-                        border: "1px solid #1C1C1F",
-                        color: "#A1A1AA",
-                        fontFamily: "var(--font-space-mono), monospace",
+                        border: "1px solid var(--border-primary)",
+                        color: "var(--text-secondary)",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 10,
                         letterSpacing: "2px",
                         padding: "6px 12px",
@@ -1472,17 +1504,17 @@ export default function DashboardPage() {
                     <div
                       key={item.label}
                       style={{
-                        borderBottom: idx === 4 ? "none" : "1px solid #27272A",
+                        borderBottom: idx === 4 ? "none" : "1px solid var(--border-secondary)",
                         padding: "14px 0"
                       }}
                     >
                       <p
                         style={{
                           margin: 0,
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 10,
                           letterSpacing: "0.2em",
-                          color: "#06B6D4"
+                          color: "var(--accent)"
                         }}
                       >
                         {item.label}
@@ -1511,10 +1543,10 @@ export default function DashboardPage() {
                         <p
                           style={{
                             margin: "8px 0 0",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 14,
                             lineHeight: 1.6,
-                            color: "#F4F4F5"
+                            color: "var(--text-primary)"
                           }}
                         >
                           {value}
@@ -1530,7 +1562,7 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: 0,
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 11,
                           color: "#f87171"
                         }}
@@ -1544,9 +1576,10 @@ export default function DashboardPage() {
                       style={{
                         width: "100%",
                         border: "none",
-                        background: "#06B6D4",
+                        background: "var(--accent)",
                         color: "#000000",
-                        fontFamily: "var(--font-bebas-neue), sans-serif",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontWeight: 800,
                         fontSize: 18,
                         letterSpacing: "0.05em",
                         padding: "14px 24px",
@@ -1564,10 +1597,10 @@ export default function DashboardPage() {
                       }}
                       style={{
                         width: "100%",
-                        border: "1px solid #06B6D4",
+                        border: "1px solid var(--accent)",
                         background: "transparent",
-                        color: "#06B6D4",
-                        fontFamily: "var(--font-space-mono), monospace",
+                        color: "var(--accent)",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 11,
                         letterSpacing: "0.12em",
                         padding: "12px 16px",
@@ -1584,8 +1617,8 @@ export default function DashboardPage() {
 
           <aside
             style={{
-              border: "1px solid #1C1C1F",
-              background: "#0F0F12",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-secondary)",
               padding: 18,
               borderRadius: 4
             }}
@@ -1593,9 +1626,10 @@ export default function DashboardPage() {
             <h3
               style={{
                 margin: 0,
-                fontFamily: "var(--font-bebas-neue), sans-serif",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontWeight: 800,
                 fontSize: 32,
-                color: "#F4F4F5",
+                color: "var(--text-primary)",
                 letterSpacing: "0.02em"
               }}
             >
@@ -1604,9 +1638,9 @@ export default function DashboardPage() {
             <p
               style={{
                 margin: "6px 0 14px",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
-                color: "#52525B",
+                color: "var(--text-muted)",
                 lineHeight: 1.5
               }}
             >
@@ -1619,14 +1653,14 @@ export default function DashboardPage() {
                   style={{
                     border:
                       layer.status === "completed"
-                        ? "1px solid #06B6D4"
+                        ? "1px solid var(--accent)"
                         : layer.status === "next"
-                          ? "1px solid rgba(6,182,212,0.55)"
-                          : "1px solid #1C1C1F",
+                          ? "1px solid color-mix(in srgb, var(--accent) 55%, var(--border-primary))"
+                          : "1px solid var(--border-primary)",
                     background:
                       layer.status === "next"
-                        ? "linear-gradient(180deg, rgba(6,182,212,0.08), rgba(6,182,212,0.01))"
-                        : "#111115",
+                        ? "linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, transparent), color-mix(in srgb, var(--accent) 1%, transparent))"
+                        : "var(--bg-card)",
                     padding: 14,
                     borderRadius: 4
                   }}
@@ -1642,20 +1676,20 @@ export default function DashboardPage() {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "var(--font-space-mono), monospace",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 10,
                         letterSpacing: "0.14em",
-                        color: "#52525B"
+                        color: "var(--text-muted)"
                       }}
                     >
                       LAYER {layer.number}
                     </p>
                     <span
                       style={{
-                        fontFamily: "var(--font-space-mono), monospace",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 9,
                         letterSpacing: "0.12em",
-                        color: layer.status === "locked" ? "#52525B" : "#06B6D4"
+                        color: layer.status === "locked" ? "var(--text-muted)" : "var(--accent)"
                       }}
                     >
                       {layer.number === "02" && layer.status === "completed"
@@ -1670,14 +1704,16 @@ export default function DashboardPage() {
                   <p
                     style={{
                       margin: "10px 0 0",
-                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontWeight: 800,
                       fontSize: 22,
+                      letterSpacing: "-0.02em",
                       color:
                         layer.status === "completed"
-                          ? "#06B6D4"
+                          ? "var(--accent)"
                           : layer.status === "next"
-                            ? "#F4F4F5"
-                            : "#A1A1AA"
+                            ? "var(--text-primary)"
+                            : "var(--text-secondary)"
                     }}
                   >
                     {layer.title}
@@ -1685,10 +1721,10 @@ export default function DashboardPage() {
                   <p
                     style={{
                       margin: "6px 0 0",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       lineHeight: 1.55,
-                      color: layer.status === "next" ? "#A1A1AA" : "#71717A"
+                      color: layer.status === "next" ? "var(--text-secondary)" : "var(--text-muted)"
                     }}
                   >
                     {layer.description}
@@ -1696,10 +1732,10 @@ export default function DashboardPage() {
                   <p
                     style={{
                       margin: "8px 0 0",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 10,
                       lineHeight: 1.6,
-                      color: "#52525B"
+                      color: "var(--text-muted)"
                     }}
                   >
                     {layer.detail}
@@ -1711,8 +1747,8 @@ export default function DashboardPage() {
                         marginTop: 12,
                         borderRadius: 6,
                         overflow: "hidden",
-                        border: "1px solid #1C1C1F",
-                        background: "#060608"
+                        border: "1px solid var(--border-primary)",
+                        background: "var(--bg-surface)"
                       }}
                     >
                       <iframe
@@ -1739,9 +1775,10 @@ export default function DashboardPage() {
                         style={{
                           width: "100%",
                           border: "none",
-                          background: "#06B6D4",
+                          background: "var(--accent)",
                           color: "#000000",
-                          fontFamily: "var(--font-bebas-neue), sans-serif",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontWeight: 800,
                           fontSize: 18,
                           letterSpacing: "0.05em",
                           padding: "16px 32px",
@@ -1753,9 +1790,9 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: "8px 0 0",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 11,
-                          color: "#52525B"
+                          color: "var(--text-muted)"
                         }}
                       >
                         No design skills needed.
@@ -1764,7 +1801,7 @@ export default function DashboardPage() {
                         <p
                           style={{
                             margin: "8px 0 0",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11,
                             color: "#f87171"
                           }}
@@ -1780,7 +1817,7 @@ export default function DashboardPage() {
                       <div
                         style={{
                           marginTop: 8,
-                          border: "1px solid #06B6D4",
+                          border: "1px solid var(--accent)",
                           padding: "8px 10px",
                           display: "flex",
                           alignItems: "center",
@@ -1793,9 +1830,9 @@ export default function DashboardPage() {
                           target="_blank"
                           rel="noreferrer"
                           style={{
-                            color: "#06B6D4",
+                            color: "var(--accent)",
                             textDecoration: "none",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11
                           }}
                         >
@@ -1805,10 +1842,10 @@ export default function DashboardPage() {
                           type="button"
                           onClick={handleCopyUrl}
                           style={{
-                            border: "1px solid #1C1C1F",
+                            border: "1px solid var(--border-primary)",
                             background: "transparent",
-                            color: "#A1A1AA",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            color: "var(--text-secondary)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 10,
                             padding: "4px 8px",
                             cursor: "pointer"
@@ -1827,9 +1864,9 @@ export default function DashboardPage() {
                             minWidth: 100,
                             textAlign: "center",
                             textDecoration: "none",
-                            border: "1px solid #06B6D4",
-                            color: "#06B6D4",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            border: "1px solid var(--accent)",
+                            color: "var(--accent)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11,
                             padding: "8px 12px"
                           }}
@@ -1843,9 +1880,9 @@ export default function DashboardPage() {
                             minWidth: 100,
                             textAlign: "center",
                             textDecoration: "none",
-                            border: "1px solid #06B6D4",
-                            color: "#06B6D4",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            border: "1px solid var(--accent)",
+                            color: "var(--accent)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11,
                             padding: "8px 12px"
                           }}
@@ -1859,10 +1896,10 @@ export default function DashboardPage() {
                           style={{
                             flex: 1,
                             minWidth: 100,
-                            border: "1px solid #1C1C1F",
+                            border: "1px solid var(--border-primary)",
                             background: "transparent",
-                            color: "#52525B",
-                            fontFamily: "var(--font-space-mono), monospace",
+                            color: "var(--text-muted)",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                             fontSize: 11,
                             padding: "8px 12px",
                             cursor: "not-allowed"
@@ -1876,9 +1913,9 @@ export default function DashboardPage() {
                           <p
                             style={{
                               margin: 0,
-                              fontFamily: "var(--font-space-mono), monospace",
+                              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                               fontSize: 11,
-                              color: "#A1A1AA",
+                              color: "var(--text-secondary)",
                               lineHeight: 1.5
                             }}
                           >
@@ -1888,7 +1925,7 @@ export default function DashboardPage() {
                             <p
                               style={{
                                 margin: "8px 0 0",
-                                fontFamily: "var(--font-space-mono), monospace",
+                                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                                 fontSize: 11,
                                 color: "#f87171"
                               }}
@@ -1907,9 +1944,9 @@ export default function DashboardPage() {
                               style={{
                                 flex: 1,
                                 border: "none",
-                                background: "#06B6D4",
+                                background: "var(--accent)",
                                 color: "#000000",
-                                fontFamily: "var(--font-space-mono), monospace",
+                                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                                 fontSize: 11,
                                 letterSpacing: "0.1em",
                                 padding: "10px 12px",
@@ -1927,10 +1964,10 @@ export default function DashboardPage() {
                               disabled={buildingLanding}
                               style={{
                                 flex: 1,
-                                border: "1px solid #06B6D4",
+                                border: "1px solid var(--accent)",
                                 background: "transparent",
-                                color: "#06B6D4",
-                                fontFamily: "var(--font-space-mono), monospace",
+                                color: "var(--accent)",
+                                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                                 fontSize: 11,
                                 letterSpacing: "0.1em",
                                 padding: "10px 12px",
@@ -1953,9 +1990,10 @@ export default function DashboardPage() {
                             marginTop: 12,
                             width: "100%",
                             border: "none",
-                            background: "#06B6D4",
+                            background: "var(--accent)",
                             color: "#000000",
-                            fontFamily: "var(--font-bebas-neue), sans-serif",
+                            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                            fontWeight: 800,
                             fontSize: 14,
                             letterSpacing: "0.05em",
                             padding: "12px 20px",
@@ -1968,9 +2006,9 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: "8px 0 0",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 10,
-                          color: "#52525B"
+                          color: "var(--text-muted)"
                         }}
                       >
                         Share this link with potential clients
@@ -2006,8 +2044,8 @@ export default function DashboardPage() {
             style={{
               width: "min(100vw, 420px)",
               height: "100%",
-              background: "#0C0C0E",
-              borderLeft: "1px solid #1C1C1F",
+              background: "var(--bg-input)",
+              borderLeft: "1px solid var(--border-primary)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
@@ -2022,16 +2060,17 @@ export default function DashboardPage() {
                 justifyContent: "space-between",
                 gap: 12,
                 padding: "16px 18px",
-                borderBottom: "1px solid #1C1C1F"
+                borderBottom: "1px solid var(--border-primary)"
               }}
             >
               <h2
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-bebas-neue), sans-serif",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontWeight: 800,
                   fontSize: 28,
                   letterSpacing: "0.06em",
-                  color: "#06B6D4"
+                  color: "var(--accent)"
                 }}
               >
                 {t.settingsTitle}
@@ -2041,9 +2080,9 @@ export default function DashboardPage() {
                 onClick={() => setSettingsOpen(false)}
                 aria-label={t.closeSettings}
                 style={{
-                  border: "1px solid #1C1C1F",
-                  background: "#111115",
-                  color: "#A1A1AA",
+                  border: "1px solid var(--border-primary)",
+                  background: "var(--bg-card)",
+                  color: "var(--text-secondary)",
                   width: 36,
                   height: 36,
                   borderRadius: 8,
@@ -2071,10 +2110,10 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: "0 0 14px",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
                     letterSpacing: "0.2em",
-                    color: "#06B6D4"
+                    color: "var(--accent)"
                   }}
                 >
                   {t.profileHeading}
@@ -2085,12 +2124,13 @@ export default function DashboardPage() {
                       width: 72,
                       height: 72,
                       borderRadius: "50%",
-                      background: "#06B6D4",
+                      background: "var(--accent)",
                       color: "#000000",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontWeight: 800,
                       fontSize: 26,
                       letterSpacing: "0.02em",
                       flexShrink: 0
@@ -2104,10 +2144,10 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: "0 0 6px",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 10,
                           letterSpacing: "0.18em",
-                          color: "#71717A"
+                          color: "var(--text-muted)"
                         }}
                       >
                         {t.displayName}
@@ -2124,10 +2164,10 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: "0 0 6px",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 10,
                           letterSpacing: "0.18em",
-                          color: "#71717A"
+                          color: "var(--text-muted)"
                         }}
                       >
                         {t.email}
@@ -2135,9 +2175,9 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: 0,
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 13,
-                          color: "#A1A1AA",
+                          color: "var(--text-secondary)",
                           wordBreak: "break-all"
                         }}
                       >
@@ -2148,10 +2188,10 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: "0 0 6px",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 10,
                           letterSpacing: "0.18em",
-                          color: "#71717A"
+                          color: "var(--text-muted)"
                         }}
                       >
                         {t.telegram}
@@ -2169,10 +2209,10 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: "0 0 6px",
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 10,
                           letterSpacing: "0.18em",
-                          color: "#71717A"
+                          color: "var(--text-muted)"
                         }}
                       >
                         {t.whatsapp}
@@ -2190,7 +2230,7 @@ export default function DashboardPage() {
                       <p
                         style={{
                           margin: 0,
-                          fontFamily: "var(--font-space-mono), monospace",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                           fontSize: 11,
                           color: "#f87171"
                         }}
@@ -2204,9 +2244,9 @@ export default function DashboardPage() {
                       onClick={() => void handleSaveProfile()}
                       style={{
                         border: "none",
-                        background: profileSaving ? "#1C1C1F" : "#06B6D4",
-                        color: profileSaving ? "#52525B" : "#000000",
-                        fontFamily: "var(--font-space-mono), monospace",
+                        background: profileSaving ? "var(--border-primary)" : "var(--accent)",
+                        color: profileSaving ? "var(--text-muted)" : "#000000",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 11,
                         letterSpacing: "0.14em",
                         padding: "12px 20px",
@@ -2220,16 +2260,16 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-              <div style={{ height: 1, background: "#1C1C1F" }} />
+              <div style={{ height: 1, background: "var(--border-primary)" }} />
 
               <section>
                 <p
                   style={{
                     margin: "0 0 12px",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
                     letterSpacing: "0.2em",
-                    color: "#06B6D4"
+                    color: "var(--accent)"
                   }}
                 >
                   {t.appearanceHeading}
@@ -2237,9 +2277,47 @@ export default function DashboardPage() {
                 <p
                   style={{
                     margin: "0 0 10px",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 11,
-                    color: "#71717A"
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  {t.themeLabel}
+                </p>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {(["dark", "light"] as const).map((theme) => (
+                    <button
+                      key={theme}
+                      type="button"
+                      onClick={() => setDashboardTheme(theme)}
+                      style={{
+                        flex: 1,
+                        border:
+                          uiTheme === theme
+                            ? "1px solid var(--accent)"
+                            : "1px solid var(--border-primary)",
+                        background:
+                          uiTheme === theme
+                            ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                            : "var(--bg-card)",
+                        color: uiTheme === theme ? "var(--accent)" : "var(--text-secondary)",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontSize: 12,
+                        letterSpacing: "0.1em",
+                        padding: "10px 12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {theme === "dark" ? "● DARK" : "◐ LIGHT"}
+                    </button>
+                  ))}
+                </div>
+                <p
+                  style={{
+                    margin: "0 0 10px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 11,
+                    color: "var(--text-muted)"
                   }}
                 >
                   {t.interfaceLanguage}
@@ -2253,10 +2331,13 @@ export default function DashboardPage() {
                       style={{
                         flex: 1,
                         border:
-                          uiLocale === code ? "1px solid #06B6D4" : "1px solid #1C1C1F",
-                        background: uiLocale === code ? "rgba(6,182,212,0.12)" : "#111115",
-                        color: uiLocale === code ? "#06B6D4" : "#A1A1AA",
-                        fontFamily: "var(--font-space-mono), monospace",
+                          uiLocale === code ? "1px solid var(--accent)" : "1px solid var(--border-primary)",
+                        background:
+                          uiLocale === code
+                            ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                            : "var(--bg-card)",
+                        color: uiLocale === code ? "var(--accent)" : "var(--text-secondary)",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                         fontSize: 12,
                         letterSpacing: "0.14em",
                         padding: "10px 12px",
@@ -2269,16 +2350,16 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-              <div style={{ height: 1, background: "#1C1C1F" }} />
+              <div style={{ height: 1, background: "var(--border-primary)" }} />
 
               <section>
                 <p
                   style={{
                     margin: "0 0 14px",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 10,
                     letterSpacing: "0.2em",
-                    color: "#06B6D4"
+                    color: "var(--accent)"
                   }}
                 >
                   {t.accountHeading}
@@ -2291,7 +2372,7 @@ export default function DashboardPage() {
                       border: "1px solid #DC2626",
                       background: "rgba(220,38,38,0.15)",
                       color: "#FCA5A5",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       letterSpacing: "0.12em",
                       padding: "12px 16px",
@@ -2305,10 +2386,10 @@ export default function DashboardPage() {
                     disabled
                     title={t.comingSoon}
                     style={{
-                      border: "1px solid #27272A",
-                      background: "#111115",
-                      color: "#52525B",
-                      fontFamily: "var(--font-space-mono), monospace",
+                      border: "1px solid var(--border-secondary)",
+                      background: "var(--bg-card)",
+                      color: "var(--text-muted)",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
                       letterSpacing: "0.12em",
                       padding: "12px 16px",

@@ -2,20 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --lacore-bg: #09090b;
-  --lacore-cyan: #06b6d4;
-  --lacore-text: #f4f4f5;
-  --lacore-muted: #52525b;
-  --font-heading: var(--font-bebas-neue);
-  --font-mono: var(--font-space-mono);
+  --bg-primary: #09090b;
+  --bg-secondary: #0f0f12;
+  --bg-card: #111115;
+  --bg-input: #0c0c0e;
+  --bg-surface: #060608;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+  --border-primary: #1c1c1f;
+  --border-secondary: #27272a;
+  --accent: #06b6d4;
+  --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+  --lacore-bg: var(--bg-primary);
+  --lacore-cyan: var(--accent);
+  --lacore-text: var(--text-primary);
+  --lacore-muted: var(--text-muted);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-primary: #f8f7f5;
+  --bg-secondary: #efede9;
+  --bg-card: #ffffff;
+  --bg-input: #f0eee9;
+  --bg-surface: #ebe9e4;
+  --text-primary: #0a0a0b;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
+  --border-primary: #e4e2dc;
+  --border-secondary: #d4d2cc;
+  --accent: #0891b2;
+  --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+  --lacore-bg: var(--bg-primary);
+  --lacore-cyan: var(--accent);
+  --lacore-text: var(--text-primary);
+  --lacore-muted: var(--text-muted);
+}
+
+html {
+  font-family: var(--font-sans);
 }
 
 body {
-  background: var(--lacore-bg);
-  color: var(--lacore-text);
-  font-family: var(--font-heading), sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   position: relative;
 }
 
@@ -31,18 +65,20 @@ body::before {
 }
 
 .font-heading {
-  font-family: var(--font-heading), sans-serif;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .font-mono {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans);
 }
 
 .signal-dot {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: var(--lacore-cyan);
+  background: var(--accent);
   animation: signal-pulse 1.1s ease-in-out infinite;
 }
 
@@ -92,7 +128,7 @@ body::before {
   width: 8px;
   height: 8px;
   border-radius: 9999px;
-  background: var(--lacore-cyan);
+  background: var(--accent);
   animation: pulse-dot 1s ease-in-out infinite;
 }
 

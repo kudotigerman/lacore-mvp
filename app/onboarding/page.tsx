@@ -81,10 +81,10 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#09090B] text-[#F4F4F5]">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <div className="mx-auto flex h-screen w-full max-w-5xl flex-col px-4 py-6 sm:px-6">
         <div className="mb-5">
-          <p className="font-mono text-xs uppercase tracking-[0.34em] text-cyan-400">LACORE</p>
+          <p className="font-sans text-xs font-semibold uppercase tracking-[0.34em] text-accent">LACORE</p>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-2">
@@ -93,12 +93,12 @@ export default function OnboardingPage() {
               key={`${message.role}-${idx}`}
               className={`text-sm leading-relaxed sm:text-base ${
                 message.role === "assistant"
-                  ? "w-full border-l-2 border-cyan-400 pl-5 pr-2 py-2 text-[#F4F4F5]"
-                  : "ml-auto max-w-[80%] bg-[#18181B] px-4 py-3 font-mono text-[#F4F4F5]"
+                  ? "w-full border-l-2 border-accent pl-5 pr-2 py-2 text-[var(--text-primary)]"
+                  : "ml-auto max-w-[80%] bg-[var(--bg-card)] px-4 py-3 font-sans text-[var(--text-primary)]"
               }`}
             >
               {message.role === "assistant" ? (
-                <p className="font-mono text-sm leading-relaxed text-[#F4F4F5]">{message.text}</p>
+                <p className="font-sans text-sm leading-relaxed text-[var(--text-primary)]">{message.text}</p>
               ) : (
                 message.text
               )}
@@ -106,19 +106,19 @@ export default function OnboardingPage() {
           ))}
 
           {loading && (
-            <div className="flex w-full items-center gap-2 border-l-2 border-cyan-400 pl-5 py-3">
+            <div className="flex w-full items-center gap-2 border-l-2 border-accent pl-5 py-3">
               <span className="signal-dot" />
               <span className="signal-dot" />
               <span className="signal-dot" />
             </div>
           )}
 
-          {error && <p className="font-mono text-sm text-red-400">{error}</p>}
+          {error && <p className="font-sans text-sm text-red-400">{error}</p>}
 
           {offer && (
-            <section className="offer-card-enter mt-6 w-full border border-cyan-500 bg-[#0C0C0E] p-5">
+            <section className="offer-card-enter mt-6 w-full border border-accent bg-[var(--bg-input)] p-5">
               <div className="mb-4 flex items-center gap-2">
-                <h2 className="font-heading text-4xl uppercase leading-none tracking-[0.04em] text-cyan-400">
+                <h2 className="font-heading text-4xl uppercase leading-none tracking-[0.04em] text-accent">
                   YOUR OFFER
                 </h2>
                 <span className="pulse-dot" />
@@ -131,11 +131,14 @@ export default function OnboardingPage() {
                   { label: "Positioning", value: offer.positioning },
                   { label: "Headline", value: offer.headline }
                 ].map((item) => (
-                  <div key={item.label} className="border-b border-[#27272A] py-4 last:border-b-0">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-400">
+                  <div
+                    key={item.label}
+                    className="border-b border-[var(--border-secondary)] py-4 last:border-b-0"
+                  >
+                    <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-accent">
                       {item.label.toUpperCase()}
                     </p>
-                    <p className="font-mono mt-2 text-sm text-[#F4F4F5] sm:text-base">{item.value}</p>
+                    <p className="font-sans mt-2 text-sm text-[var(--text-primary)] sm:text-base">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -143,7 +146,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 disabled
-                className="font-mono mt-6 inline-flex cursor-not-allowed items-center border border-cyan-500/30 px-4 py-2 text-xs uppercase tracking-[0.16em] text-[#52525B]"
+                className="font-sans mt-6 inline-flex cursor-not-allowed items-center border border-accent/30 px-4 py-2 text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]"
               >
                 Continue →
               </button>
@@ -151,18 +154,21 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 flex items-center gap-3 border-t border-cyan-500/20 pt-4">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-4 flex items-center gap-3 border-t border-accent/20 pt-4"
+        >
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
             placeholder="Type your business in one paragraph..."
-            className="font-mono flex-1 border-0 border-b border-transparent bg-transparent px-1 py-3 text-sm text-[#F4F4F5] outline-none transition placeholder:text-[#52525B] focus:border-cyan-400"
+            className="font-sans flex-1 border-0 border-b border-transparent bg-transparent px-1 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-accent"
           />
           <button
             type="submit"
             disabled={!canSubmit}
             aria-label="Send"
-            className="font-mono px-1 py-2 text-2xl text-cyan-400 transition hover:text-cyan-300 disabled:cursor-not-allowed disabled:text-[#52525B]"
+            className="font-sans px-1 py-2 text-2xl text-accent transition hover:opacity-80 disabled:cursor-not-allowed disabled:text-[var(--text-muted)]"
           >
             →
           </button>

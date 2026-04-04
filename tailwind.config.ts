@@ -8,7 +8,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        lacoreCyan: "#06B6D4"
+        lacoreCyan: "var(--accent)",
+        accent: "var(--accent)"
+      },
+      fontFamily: {
+        sans: ["var(--font-geist-sans)", "Inter", "system-ui", "sans-serif"]
       }
     }
   },

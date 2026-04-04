@@ -75,8 +75,8 @@ export default function AuthPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#09090B",
-        color: "#F4F4F5",
+        background: "var(--bg-primary)",
+        color: "var(--text-primary)",
         padding: "40px 24px",
         display: "flex",
         alignItems: "center",
@@ -88,10 +88,10 @@ export default function AuthPage() {
           href="/"
           style={{
             display: "inline-block",
-            fontFamily: "var(--font-space-mono), monospace",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 11,
             letterSpacing: "0.14em",
-            color: "#06B6D4",
+            color: "var(--accent)",
             textDecoration: "none"
           }}
         >
@@ -100,10 +100,10 @@ export default function AuthPage() {
         <p
           style={{
             margin: "14px 0 0",
-            fontFamily: "var(--font-space-mono), monospace",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             fontSize: 12,
             letterSpacing: "0.3em",
-            color: "#06B6D4"
+            color: "var(--accent)"
           }}
         >
           LACORE
@@ -111,13 +111,13 @@ export default function AuthPage() {
         <h1
           style={{
             margin: "24px 0 0",
-            fontFamily: "var(--font-bebas-neue), sans-serif",
+            fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
             fontSize: "clamp(64px,10vw,110px)",
             lineHeight: 0.95
           }}
         >
-          <span style={{ display: "block", color: "#F4F4F5" }}>YOUR SALES MACHINE</span>
-          <span style={{ display: "block", color: "#06B6D4" }}>STARTS HERE.</span>
+          <span style={{ display: "block", color: "var(--text-primary)" }}>YOUR SALES MACHINE</span>
+          <span style={{ display: "block", color: "var(--accent)" }}>STARTS HERE.</span>
         </h1>
 
         {!emailConfirmationSent ? (
@@ -129,10 +129,10 @@ export default function AuthPage() {
               style={{
                 width: "100%",
                 marginTop: 26,
-                border: "1px solid #27272A",
+                border: "1px solid var(--border-secondary)",
                 background: "#ffffff",
                 color: "#000000",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 12,
                 letterSpacing: "0.1em",
                 padding: "14px",
@@ -143,7 +143,7 @@ export default function AuthPage() {
                 gap: 10
               }}
               onMouseEnter={(event) => {
-                if (!loading) event.currentTarget.style.background = "#F4F4F5";
+                if (!loading) event.currentTarget.style.background = "var(--text-primary)";
               }}
               onMouseLeave={(event) => {
                 event.currentTarget.style.background = "#ffffff";
@@ -178,19 +178,19 @@ export default function AuthPage() {
                 gap: 10
               }}
             >
-              <div style={{ flex: 1, height: 1, background: "#27272A" }} />
+              <div style={{ flex: 1, height: 1, background: "var(--border-secondary)" }} />
               <p
                 style={{
                   margin: 0,
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 10,
-                  color: "#52525B",
+                  color: "var(--text-muted)",
                   letterSpacing: "0.14em"
                 }}
               >
                 OR
               </p>
-              <div style={{ flex: 1, height: 1, background: "#27272A" }} />
+              <div style={{ flex: 1, height: 1, background: "var(--border-secondary)" }} />
             </div>
 
             <div style={{ marginTop: 26, display: "flex", gap: 24 }}>
@@ -206,9 +206,9 @@ export default function AuthPage() {
                     border: "none",
                     background: "transparent",
                     padding: "0 0 8px",
-                    color: mode === tab.key ? "#06B6D4" : "#52525B",
-                    borderBottom: mode === tab.key ? "1px solid #06B6D4" : "1px solid transparent",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    color: mode === tab.key ? "var(--accent)" : "var(--text-muted)",
+                    borderBottom: mode === tab.key ? "1px solid var(--accent)" : "1px solid transparent",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     fontSize: 12,
                     letterSpacing: "0.15em",
                     cursor: "pointer"
@@ -228,12 +228,12 @@ export default function AuthPage() {
                 style={{
                   width: "100%",
                   border: "none",
-                  borderBottom: "1px solid #1C1C1F",
+                  borderBottom: "1px solid var(--border-primary)",
                   background: "transparent",
-                  color: "#F4F4F5",
+                  color: "var(--text-primary)",
                   padding: "12px 4px",
                   outline: "none",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 14
                 }}
               />
@@ -246,12 +246,12 @@ export default function AuthPage() {
                   width: "100%",
                   marginTop: 18,
                   border: "none",
-                  borderBottom: "1px solid #1C1C1F",
+                  borderBottom: "1px solid var(--border-primary)",
                   background: "transparent",
-                  color: "#F4F4F5",
+                  color: "var(--text-primary)",
                   padding: "12px 4px",
                   outline: "none",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 14
                 }}
               />
@@ -259,7 +259,7 @@ export default function AuthPage() {
                 <p
                   style={{
                     margin: "14px 0 0",
-                    fontFamily: "var(--font-space-mono), monospace",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                     color: "#f87171",
                     fontSize: 12
                   }}
@@ -272,10 +272,10 @@ export default function AuthPage() {
                 disabled={loading}
                 style={{
                   marginTop: 22,
-                  border: "1px solid #06B6D4",
+                  border: "1px solid var(--accent)",
                   background: "transparent",
-                  color: "#06B6D4",
-                  fontFamily: "var(--font-space-mono), monospace",
+                  color: "var(--accent)",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                   fontSize: 12,
                   letterSpacing: "0.18em",
                   padding: "12px 20px",
@@ -297,8 +297,8 @@ export default function AuthPage() {
             <p
               style={{
                 margin: 0,
-                fontFamily: "var(--font-space-mono), monospace",
-                color: "#06B6D4",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                color: "var(--accent)",
                 fontSize: 13,
                 lineHeight: 1.8
               }}
@@ -311,10 +311,10 @@ export default function AuthPage() {
               style={{
                 display: "inline-block",
                 marginTop: 14,
-                border: "1px solid #06B6D4",
-                color: "#06B6D4",
+                border: "1px solid var(--accent)",
+                color: "var(--accent)",
                 textDecoration: "none",
-                fontFamily: "var(--font-space-mono), monospace",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                 fontSize: 11,
                 letterSpacing: "0.14em",
                 padding: "8px 12px"
