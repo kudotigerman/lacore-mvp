@@ -306,6 +306,30 @@ export default function LandingPage() {
           0%, 49% { opacity: 1; }
           50%, 100% { opacity: 0; }
         }
+        @keyframes hero-mock-line-show {
+          0%, 5% { opacity: 0; transform: translateY(6px); }
+          10%, 78% { opacity: 1; transform: translateY(0); }
+          85%, 100% { opacity: 0.4; transform: translateY(0); }
+        }
+        @keyframes hero-mock-dot-pulse {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.08); }
+        }
+        .hero-mock-line-1 {
+          animation: hero-mock-line-show 14s ease-in-out infinite;
+        }
+        .hero-mock-line-2 {
+          animation: hero-mock-line-show 14s ease-in-out infinite 3.1s;
+        }
+        .hero-mock-line-3 {
+          animation: hero-mock-line-show 14s ease-in-out infinite 6.2s;
+        }
+        .hero-mock-line-4 {
+          animation: hero-mock-line-show 14s ease-in-out infinite 9.3s;
+        }
+        .hero-mock-dot {
+          animation: hero-mock-dot-pulse 2s ease-in-out infinite;
+        }
       `}</style>
       <main
         style={{
@@ -498,102 +522,244 @@ export default function LandingPage() {
             paddingBottom: "20px"
           }}
         >
-          <form
-            onSubmit={handleSubmit}
+          <div
             style={{
               width: "100%",
-              maxWidth: 720,
-              margin: isMobile ? "0 16px" : "0 auto"
+              maxWidth: 1280,
+              margin: "0 auto",
+              padding: isMobile ? "0 16px" : "0 24px",
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: "stretch",
+              gap: isMobile ? 28 : 40,
+              boxSizing: "border-box"
             }}
           >
-            <div
+            <form
+              onSubmit={handleSubmit}
               style={{
-                background: "var(--bg-input)",
-                padding: isMobile ? "24px 20px" : "32px 28px",
-                position: "relative",
-                width: "100%",
-                boxSizing: "border-box"
+                flex: "1 1 0",
+                minWidth: 0,
+                maxWidth: isMobile ? "100%" : 720,
+                margin: isMobile ? "0" : undefined
               }}
             >
-              <p
+              <div
                 style={{
-                  margin: 0,
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 11,
-                  letterSpacing: "4px",
-                  textTransform: "uppercase",
-                  color: "var(--text-secondary)"
+                  background: "var(--bg-input)",
+                  padding: isMobile ? "24px 20px" : "32px 28px",
+                  position: "relative",
+                  width: "100%",
+                  boxSizing: "border-box"
                 }}
               >
-                ASK LACORE HOW TO SELL
-              </p>
-              <div style={{ position: "relative", marginTop: 20 }}>
-                <textarea
-                  value={textareaDisplayValue}
-                  onChange={(event) => setInput(event.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
+                <p
                   style={{
-                    width: "100%",
-                    minHeight: 100,
-                    border: "none",
-                    outline: "none",
-                    background: "var(--bg-input)",
-                    color: showAnimatedPlaceholder ? "var(--text-muted)" : "var(--text-primary)",
+                    margin: 0,
                     fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: isMobile ? 15 : 16,
-                    lineHeight: 1.5,
-                    fontStyle: showAnimatedPlaceholder ? "italic" : "normal",
-                    resize: "vertical",
-                    padding: 0,
-                    display: "block",
-                    caretColor: showAnimatedPlaceholder ? "transparent" : "var(--accent)"
+                    fontSize: 11,
+                    letterSpacing: "4px",
+                    textTransform: "uppercase",
+                    color: "var(--text-secondary)"
                   }}
-                />
-                {showAnimatedPlaceholder && (
-                  <span
+                >
+                  ASK LACORE HOW TO SELL
+                </p>
+                <div style={{ position: "relative", marginTop: 20 }}>
+                  <textarea
+                    value={textareaDisplayValue}
+                    onChange={(event) => setInput(event.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     style={{
-                      position: "absolute",
-                      left: `${Math.max(animatedText.length * (isMobile ? 8.2 : 8.6), 1)}px`,
-                      top: 0,
-                      color: "var(--text-muted)",
+                      width: "100%",
+                      minHeight: 100,
+                      border: "none",
+                      outline: "none",
+                      background: "var(--bg-input)",
+                      color: showAnimatedPlaceholder ? "var(--text-muted)" : "var(--text-primary)",
                       fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: isMobile ? 15 : 16,
-                      fontStyle: "italic",
                       lineHeight: 1.5,
-                      pointerEvents: "none",
-                      animation: "cursor-blink 500ms infinite"
+                      fontStyle: showAnimatedPlaceholder ? "italic" : "normal",
+                      resize: "vertical",
+                      padding: 0,
+                      display: "block",
+                      caretColor: showAnimatedPlaceholder ? "transparent" : "var(--accent)"
                     }}
-                  >
-                    |
-                  </span>
-                )}
+                  />
+                  {showAnimatedPlaceholder && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        left: `${Math.max(animatedText.length * (isMobile ? 8.2 : 8.6), 1)}px`,
+                        top: 0,
+                        color: "var(--text-muted)",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontSize: isMobile ? 15 : 16,
+                        fontStyle: "italic",
+                        lineHeight: 1.5,
+                        pointerEvents: "none",
+                        animation: "cursor-blink 500ms infinite"
+                      }}
+                    >
+                      |
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  aria-label="Generate offer"
+                  onMouseEnter={() => setSubmitHover(true)}
+                  onMouseLeave={() => setSubmitHover(false)}
+                  style={{
+                    marginTop: 20,
+                    width: "100%",
+                    border: "none",
+                    background: canSubmit ? (submitHover ? "var(--accent)" : "var(--accent)") : "var(--text-muted)",
+                    color: "#000000",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 12,
+                    letterSpacing: "0.15em",
+                    fontWeight: 700,
+                    cursor: canSubmit ? "pointer" : "not-allowed",
+                    padding: "14px 28px",
+                    transition: "background 180ms ease"
+                  }}
+                >
+                  GENERATE MY OFFER →
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                aria-label="Generate offer"
-                onMouseEnter={() => setSubmitHover(true)}
-                onMouseLeave={() => setSubmitHover(false)}
+            </form>
+
+            <div
+              aria-hidden
+              style={{
+                width: isMobile ? "100%" : 480,
+                maxWidth: "100%",
+                height: 320,
+                flexShrink: 0,
+                margin: isMobile ? "0 auto" : undefined,
+                border: "1px solid var(--border-primary)",
+                borderRadius: 12,
+                background: "var(--bg-card)",
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                alignSelf: isMobile ? "center" : "flex-start"
+              }}
+            >
+              <div
                 style={{
-                  marginTop: 20,
-                  width: "100%",
-                  border: "none",
-                  background: canSubmit ? (submitHover ? "var(--accent)" : "var(--accent)") : "var(--text-muted)",
-                  color: "#000000",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 12,
-                  letterSpacing: "0.15em",
-                  fontWeight: 700,
-                  cursor: canSubmit ? "pointer" : "not-allowed",
-                  padding: "14px 28px",
-                  transition: "background 180ms ease"
+                  flexShrink: 0,
+                  padding: "14px 16px",
+                  borderBottom: "1px solid var(--border-primary)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8
                 }}
               >
-                GENERATE MY OFFER →
-              </button>
+                <span
+                  className="hero-mock-dot"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: "#22C55E",
+                    flexShrink: 0
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    color: "var(--accent)",
+                    fontWeight: 600
+                  }}
+                >
+                  ● SALES BUILDER
+                </span>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  padding: "14px 16px 10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  minHeight: 0
+                }}
+              >
+                <p
+                  className="hero-mock-line-1"
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    color: "var(--text-secondary)",
+                    opacity: 0
+                  }}
+                >
+                  Analyzing your offer...
+                </p>
+                <p
+                  className="hero-mock-line-2"
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    color: "var(--text-secondary)",
+                    opacity: 0
+                  }}
+                >
+                  Detecting niche: Design / Creative
+                </p>
+                <p
+                  className="hero-mock-line-3"
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    color: "var(--text-secondary)",
+                    opacity: 0
+                  }}
+                >
+                  Building your landing page...
+                </p>
+                <p
+                  className="hero-mock-line-4"
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                    color: "var(--accent)",
+                    fontWeight: 600,
+                    opacity: 0
+                  }}
+                >
+                  ✓ Landing page live — kudotigerman.lacore.ai
+                </p>
+              </div>
+              <div
+                style={{
+                  flexShrink: 0,
+                  margin: "0 16px 14px",
+                  height: 56,
+                  borderRadius: 8,
+                  background:
+                    "linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, var(--bg-input)) 0%, var(--bg-secondary) 45%, color-mix(in srgb, var(--accent) 22%, var(--bg-card)) 100%)",
+                  border: "1px solid var(--border-primary)"
+                }}
+              />
             </div>
-          </form>
+          </div>
 
           {loading && (
             <div
@@ -853,7 +1019,7 @@ export default function LandingPage() {
           >
             {[
               "< 60 SEC SETUP",
-              "FIRST LEAD IN 24H",
+              "SYSTEM LIVE IN 60 MIN",
               "NO MARKETING SKILLS NEEDED"
             ].map((item) => (
               <div
@@ -1012,13 +1178,13 @@ export default function LandingPage() {
           style={{
             width: "100%",
             padding: isMobile ? "60px 24px" : "120px 48px",
-            background: "var(--bg-primary)",
-            textAlign: "center"
+            background: "var(--bg-primary)"
           }}
         >
           <p
             style={{
               margin: 0,
+              textAlign: "center",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
               fontSize: 11,
               letterSpacing: "0.3em",
@@ -1027,48 +1193,182 @@ export default function LandingPage() {
           >
             THE MAGIC MOMENT
           </p>
-          <h2
-            style={{
-              margin: "20px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(64px, 8vw, 128px)",
-              lineHeight: 0.94
-            }}
-          >
-            <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
-            <span style={{ display: "block", color: "var(--accent)" }}>YOUR FIRST LEAD ARRIVES.</span>
-          </h2>
           <div
             style={{
-              margin: "34px auto 0",
-              maxWidth: 600,
-              textAlign: "left",
-              background: "var(--bg-input)",
-              border: "1px solid var(--accent)",
-              padding: isMobile ? 20 : 32,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: isMobile ? 11 : 13,
-              lineHeight: 1.9,
-              color: "var(--text-primary)"
+              marginTop: 36,
+              maxWidth: 1100,
+              marginLeft: "auto",
+              marginRight: "auto",
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "stretch" : "flex-start",
+              gap: isMobile ? 40 : 56,
+              textAlign: "left"
             }}
           >
-            <p style={{ margin: 0 }}>&gt; Offer generated ✓</p>
-            <p style={{ margin: 0 }}>&gt; Landing page live ✓</p>
-            <p style={{ margin: 0 }}>&gt; First post published ✓</p>
-            <p style={{ margin: 0 }}>&gt; System running in background ✓</p>
-            <p style={{ margin: 0 }}>&gt; NEW LEAD: Someone is interested.</p>
-            <p style={{ margin: 0 }}>&gt; &quot;Here&apos;s exactly what to say.&quot; →</p>
+            <div
+              style={{
+                flex: isMobile ? "none" : "0 0 340px",
+                width: isMobile ? "100%" : undefined,
+                position: "relative",
+                paddingLeft: isMobile ? 0 : 8
+              }}
+            >
+              {[
+                {
+                  num: "01",
+                  title: "Offer generated",
+                  desc: "Positioning, audience, and pricing locked in."
+                },
+                {
+                  num: "02",
+                  title: "Landing page live",
+                  desc: "Shareable URL and on-brand layout, ready to ship."
+                },
+                {
+                  num: "03",
+                  title: "First post published",
+                  desc: "Content pipeline starts without manual busywork."
+                },
+                {
+                  num: "04",
+                  title: "System running",
+                  desc: "Background workflows keep everything in sync."
+                },
+                {
+                  num: "05",
+                  title: "NEW LEAD arrives",
+                  desc: "Inbound interest lands where you can act on it."
+                },
+                {
+                  num: "06",
+                  title: "You close the deal",
+                  desc: "Scripts and next steps so you know what to say."
+                }
+              ].map((step, idx, arr) => (
+                <div
+                  key={step.num}
+                  style={{
+                    display: "flex",
+                    gap: 14,
+                    position: "relative",
+                    paddingBottom: idx < arr.length - 1 ? 20 : 0
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      flexShrink: 0,
+                      width: 40
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        border: "2px solid var(--accent)",
+                        background: "var(--bg-card)",
+                        color: "var(--accent)",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1
+                      }}
+                    >
+                      {step.num}
+                    </div>
+                    {idx < arr.length - 1 ? (
+                      <div
+                        style={{
+                          width: 2,
+                          height: 22,
+                          marginTop: 4,
+                          background: "var(--border-primary)",
+                          borderRadius: 1
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                  <div style={{ minWidth: 0, paddingTop: 6 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        letterSpacing: "0.06em",
+                        color: "var(--text-primary)",
+                        textTransform: "uppercase"
+                      }}
+                    >
+                      {step.title}
+                    </p>
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        color: "var(--text-muted)"
+                      }}
+                    >
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ flex: "1 1 0", minWidth: 0, textAlign: isMobile ? "center" : "left" }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontWeight: 800,
+                  fontSize: "clamp(36px, 5vw, 56px)",
+                  lineHeight: 1.08,
+                  letterSpacing: "-0.02em",
+                  color: "var(--text-primary)"
+                }}
+              >
+                Your sales system — live in{" "}
+                <span style={{ color: "var(--accent)" }}>60 minutes.</span>
+              </h2>
+              <p
+                style={{
+                  margin: "20px 0 0",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: isMobile ? 14 : 16,
+                  lineHeight: 1.65,
+                  color: "var(--text-secondary)",
+                  maxWidth: 520,
+                  marginLeft: isMobile ? "auto" : undefined,
+                  marginRight: isMobile ? "auto" : undefined
+                }}
+              >
+                Landing page live. Content running. Leads captured. All automatic.
+              </p>
+              <p
+                style={{
+                  margin: "24px 0 0",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: 13,
+                  color: "var(--text-muted)",
+                  maxWidth: 480,
+                  marginLeft: isMobile ? "auto" : undefined,
+                  marginRight: isMobile ? "auto" : undefined
+                }}
+              >
+                One flow from offer to funnel — without juggling a dozen tools.
+              </p>
+            </div>
           </div>
-          <p
-            style={{
-              margin: "18px 0 0",
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 13,
-              color: "var(--text-muted)"
-            }}
-          >
-            That&apos;s the moment. That&apos;s what nobody else delivers.
-          </p>
         </section>
 
         <section
