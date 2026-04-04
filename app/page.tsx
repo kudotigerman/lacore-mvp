@@ -1067,8 +1067,8 @@ export default function LandingPage() {
             style={{
               margin: "20px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-              fontSize: "clamp(64px, 8vw, 128px)",
-              lineHeight: 0.94
+              fontSize: "clamp(2.5rem, 5vw, 4rem)",
+              lineHeight: 1.1
             }}
           >
             <span style={{ display: "block", color: "var(--text-primary)" }}>60 MINUTES AFTER SIGNING UP</span>
@@ -1144,13 +1144,14 @@ export default function LandingPage() {
               </span>
             </div>
 
-            <div style={{ height: 2, background: "#1C1C1F", width: "100%" }}>
+            <div style={{ height: 3, background: "#1C1C1F", width: "100%" }}>
               <div
                 key={`${salesMachineStage}-${salesMachineCycleKey}`}
                 style={{
                   height: "100%",
                   width: "0%",
                   background: "#06B6D4",
+                  boxShadow: "0 0 8px rgba(6,182,212,0.6)",
                   animation: `sales-machine-bar-fill ${SALES_MACHINE_MS}ms linear forwards`,
                   animationPlayState: salesMachinePaused ? "paused" : "running"
                 }}
@@ -1212,7 +1213,8 @@ export default function LandingPage() {
                       textAlign: "left",
                       boxSizing: "border-box",
                       font: "inherit",
-                      color: "inherit"
+                      color: "inherit",
+                      transition: "all 0.4s ease"
                     }}
                   >
                     <div
@@ -1223,7 +1225,8 @@ export default function LandingPage() {
                         textTransform: "uppercase",
                         color: active ? "#06B6D4" : "#52525B",
                         marginBottom: 12,
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                        transition: "all 0.4s ease"
                       }}
                     >
                       {stage.label}
@@ -1568,6 +1571,28 @@ export default function LandingPage() {
               </span>
             </div>
           </div>
+
+          <Link
+            href="/auth"
+            style={{
+              marginTop: 48,
+              display: "block",
+              marginLeft: "auto",
+              marginRight: "auto",
+              width: "fit-content",
+              background: "#06B6D4",
+              color: "#000000",
+              padding: "18px 48px",
+              borderRadius: 12,
+              fontWeight: 800,
+              fontSize: 16,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              textDecoration: "none",
+              textAlign: "center"
+            }}
+          >
+            BUILD YOUR SALES MACHINE →
+          </Link>
 
           <p
             style={{
