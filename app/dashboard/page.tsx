@@ -31,6 +31,7 @@ type ProfileRow = {
 
 type UiLocale = "en" | "ru";
 type UiTheme = "dark" | "light";
+type DashboardLayerId = "01" | "02" | "03" | "04" | "05" | "06" | "settings";
 
 const UI_LOCALE_STORAGE_KEY = "lacore-ui-locale";
 const UI_THEME_STORAGE_KEY = "lacore-theme";
@@ -189,6 +190,8 @@ export default function DashboardPage() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeDesktopView, setActiveDesktopView] = useState<DashboardLayerId>("01");
+  const desktopViewInitRef = useRef(false);
   const [uiLocale, setUiLocale] = useState<UiLocale>("en");
   const [uiTheme, setUiTheme] = useState<UiTheme>("dark");
   const router = useRouter();
@@ -335,13 +338,21 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!settingsOpen) return;
+    if (!settingsOpen || !isMobile) return;
     function onKey(e: globalThis.KeyboardEvent) {
       if (e.key === "Escape") setSettingsOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [settingsOpen]);
+  }, [settingsOpen, isMobile]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!desktopViewInitRef.current) {
+      desktopViewInitRef.current = true;
+      setActiveDesktopView(landingSlug ? "02" : "01");
+    }
+  }, [loading, landingSlug]);
 
   useEffect(() => {
     const updateViewport = () => setIsMobile(window.innerWidth < 900);
@@ -652,12 +663,14 @@ export default function DashboardPage() {
       className="dash-root"
       style={{
         display: "flex",
+        height: "100vh",
         minHeight: "100vh",
         maxHeight: "100vh",
         overflow: "hidden",
         background: "var(--bg-primary)",
         color: "var(--text-primary)",
-        position: "relative"
+        position: "relative",
+        fontFamily: "inherit"
       }}
     >
       <style>{`
@@ -1072,7 +1085,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* LEFT: Sales Builder */}
+      {isMobile ? (
       <aside
         className="dash-sales-panel"
         style={{
@@ -1319,8 +1332,362 @@ export default function DashboardPage() {
           </button>
         </form>
       </aside>
+      ) : (
+        <>
+          <aside
+            className="dash-desktop-sidebar"
+            style={{
+              width: 280,
+              flexShrink: 0,
+              height: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              background: "var(--bg-secondary)",
+              borderRight: "1px solid var(--border-primary)",
+              minHeight: 0,
+              fontFamily: "inherit"
+            }}
+          >
+            <div style={{ flexShrink: 0, padding: "16px 16px 12px" }}>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: "var(--accent)",
+                  padding: 0,
+                  letterSpacing: "0.02em",
+                  display: "block",
+                  marginBottom: 14
+                }}
+              >
+                ← LACORE
+              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: "var(--accent)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "inherit",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#000000",
+                    flexShrink: 0
+                  }}
+                >
+                  {sidebarInitials}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "inherit",
+                      fontSize: 11,
+                      color: "var(--text-primary)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}
+                    title={email}
+                  >
+                    {email}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    style={{
+                      marginTop: 6,
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--accent)",
+                      fontFamily: "inherit",
+                      fontSize: 9,
+                      letterSpacing: "0.12em",
+                      padding: 0,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {t.signOutShort}
+                  </button>
+                </div>
+              </div>
+              <div style={{ marginTop: 14, height: 1, background: "var(--border-primary)" }} />
+            </div>
+            <nav
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "6px 0",
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2
+              }}
+            >
+              {(
+                [
+                  { id: "01" as const, num: "01", title: "OFFER", soon: false, badge: offer ? "✓ DONE" : "—" },
+                  { id: "02" as const, num: "02", title: "LANDING PAGE", soon: false, badge: landingSlug ? "✓ LIVE" : "NEXT" },
+                  { id: "03" as const, num: "03", title: "CONTENT", soon: true, badge: "SOON" },
+                  { id: "04" as const, num: "04", title: "LEADS", soon: true, badge: "SOON" },
+                  { id: "05" as const, num: "05", title: "CLOSING", soon: true, badge: "SOON" },
+                  { id: "06" as const, num: "06", title: "ANALYTICS", soon: true, badge: "SOON" }
+                ] as const
+              ).map((layerNav) => {
+                const active = activeDesktopView === layerNav.id;
+                return (
+                  <button
+                    key={layerNav.id}
+                    type="button"
+                    onClick={() => setActiveDesktopView(layerNav.id)}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      border: "none",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      padding: "10px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      borderLeft: active ? "2px solid var(--accent)" : "2px solid transparent",
+                      background: active
+                        ? "color-mix(in srgb, var(--accent) 10%, var(--bg-secondary))"
+                        : "transparent",
+                      color: active
+                        ? "var(--accent)"
+                        : layerNav.soon
+                          ? "var(--text-muted)"
+                          : "var(--text-primary)"
+                    }}
+                  >
+                    <span style={{ fontSize: 12 }}>
+                      <span style={{ opacity: 0.55, marginRight: 8 }}>{layerNav.num}</span>
+                      <span style={{ letterSpacing: "0.06em", fontSize: 11 }}>{layerNav.title}</span>
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 8,
+                        letterSpacing: "0.08em",
+                        color: active ? "var(--accent)" : "var(--text-muted)",
+                        flexShrink: 0
+                      }}
+                    >
+                      [{layerNav.badge}]
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+            <div style={{ flexShrink: 0, padding: "12px 10px 16px", borderTop: "1px solid var(--border-primary)" }}>
+              <button
+                type="button"
+                onClick={() => setActiveDesktopView("settings")}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  border: "none",
+                  background:
+                    activeDesktopView === "settings"
+                      ? "color-mix(in srgb, var(--accent) 10%, var(--bg-secondary))"
+                      : "transparent",
+                  borderLeft: activeDesktopView === "settings" ? "2px solid var(--accent)" : "2px solid transparent",
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: 10,
+                  letterSpacing: "0.1em",
+                  color: activeDesktopView === "settings" ? "var(--accent)" : "var(--text-secondary)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10
+                }}
+              >
+                <span aria-hidden>⚙️</span>
+                {t.settingsTitle}
+              </button>
+            </div>
+          </aside>
+
+          <aside
+            className="dash-desktop-chat"
+            style={{
+              width: 400,
+              flexShrink: 0,
+              height: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              background: "var(--bg-primary)",
+              borderRight: "1px solid var(--border-primary)",
+              minHeight: 0,
+              fontFamily: "inherit"
+            }}
+          >
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "14px 16px",
+                borderBottom: "1px solid var(--border-primary)"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: "#22C55E",
+                    flexShrink: 0,
+                    animation: "dash-chat-pulse 2s ease-in-out infinite"
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: "inherit",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    color: "var(--accent)"
+                  }}
+                >
+                  ● SALES BUILDER
+                </span>
+              </div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "12px 16px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                minHeight: 0
+              }}
+            >
+              {chatMessages.map((m, idx) => (
+                <div
+                  key={`d-${idx}-${m.role}-${m.text.slice(0, 24)}`}
+                  style={{
+                    alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                    maxWidth: "94%",
+                    borderRadius: 6,
+                    padding: "10px 14px",
+                    background: m.role === "user" ? "var(--bg-input)" : "var(--bg-card)",
+                    border: m.role === "user" ? "1px solid var(--border-primary)" : "none",
+                    borderLeft: m.role === "assistant" ? "3px solid var(--accent)" : undefined
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: "inherit",
+                      fontSize: 12,
+                      color: "var(--text-primary)",
+                      lineHeight: 1.65,
+                      whiteSpace: "pre-wrap"
+                    }}
+                  >
+                    {m.text}
+                  </p>
+                </div>
+              ))}
+              {chatLoading ? (
+                <div
+                  style={{
+                    alignSelf: "flex-start",
+                    display: "flex",
+                    gap: 5,
+                    padding: "12px 16px",
+                    background: "var(--bg-card)",
+                    borderLeft: "3px solid var(--accent)",
+                    borderRadius: "0 6px 6px 0"
+                  }}
+                >
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: "var(--accent)",
+                        animation: "dash-chat-dot 1s ease-in-out infinite",
+                        animationDelay: `${i * 0.15}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <div ref={chatEndRef} />
+            </div>
+            <form
+              onSubmit={handleDashboardChatSend}
+              style={{
+                flexShrink: 0,
+                borderTop: "1px solid var(--border-primary)",
+                padding: "12px 14px 16px",
+                background: "var(--bg-primary)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10
+              }}
+            >
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder="Ask your Sales Builder..."
+                rows={3}
+                disabled={chatLoading}
+                style={{
+                  width: "100%",
+                  resize: "none",
+                  border: "1px solid var(--border-primary)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  fontFamily: "inherit",
+                  fontSize: 12,
+                  padding: "10px 12px",
+                  outline: "none",
+                  borderRadius: 6,
+                  boxSizing: "border-box"
+                }}
+              />
+              <button
+                type="submit"
+                disabled={chatLoading || !chatInput.trim()}
+                style={{
+                  alignSelf: "flex-end",
+                  border: "none",
+                  background: chatLoading || !chatInput.trim() ? "var(--border-primary)" : "var(--accent)",
+                  color: chatLoading || !chatInput.trim() ? "var(--text-muted)" : "#000000",
+                  fontFamily: "inherit",
+                  fontSize: 11,
+                  letterSpacing: "0.14em",
+                  padding: "10px 20px",
+                  cursor: chatLoading || !chatInput.trim() ? "not-allowed" : "pointer"
+                }}
+              >
+                SEND
+              </button>
+            </form>
+          </aside>
+        </>
+      )}
 
       {/* RIGHT: main content */}
+      {isMobile ? (
       <div
         className="dash-content-panel"
         style={{
@@ -2022,8 +2389,891 @@ export default function DashboardPage() {
           </aside>
         </section>
       </div>
+      ) : (
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            background: "var(--bg-primary)",
+            fontFamily: "inherit"
+          }}
+        >
+          <div style={{ flex: 1, overflowY: "auto", padding: 24, minHeight: 0 }}>
+            {activeDesktopView === "settings" ? (
+              <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: 28 }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    fontSize: 22,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--accent)"
+                  }}
+                >
+                  {t.settingsTitle}
+                </h2>
+                <section>
+                  <p
+                    style={{
+                      margin: "0 0 14px",
+                      fontFamily: "inherit",
+                      fontSize: 10,
+                      letterSpacing: "0.2em",
+                      color: "var(--accent)"
+                    }}
+                  >
+                    {t.profileHeading}
+                  </p>
+                  <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: "50%",
+                        background: "var(--accent)",
+                        color: "#000000",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: "inherit",
+                        fontWeight: 800,
+                        fontSize: 18,
+                        flexShrink: 0
+                      }}
+                      aria-hidden
+                    >
+                      {profileAvatarInitials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 12 }}>
+                      <div>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          {t.displayName}
+                        </p>
+                        <input
+                          type="text"
+                          value={profileDisplayName}
+                          onChange={(e) => setProfileDisplayName(e.target.value)}
+                          style={profileFieldStyle}
+                          autoComplete="name"
+                        />
+                      </div>
+                      <div>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          {t.email}
+                        </p>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: "inherit",
+                            fontSize: 13,
+                            color: "var(--text-secondary)",
+                            wordBreak: "break-all"
+                          }}
+                        >
+                          {email || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          {t.telegram}
+                        </p>
+                        <input
+                          type="text"
+                          value={profileTelegram}
+                          onChange={(e) => setProfileTelegram(e.target.value)}
+                          placeholder="@username"
+                          style={profileFieldStyle}
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          {t.whatsapp}
+                        </p>
+                        <input
+                          type="text"
+                          value={profileWhatsapp}
+                          onChange={(e) => setProfileWhatsapp(e.target.value)}
+                          placeholder="+995..."
+                          style={profileFieldStyle}
+                          autoComplete="tel"
+                        />
+                      </div>
+                      {profileSaveError ? (
+                        <p style={{ margin: 0, fontFamily: "inherit", fontSize: 11, color: "#f87171" }}>{profileSaveError}</p>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={profileSaving}
+                        onClick={() => void handleSaveProfile()}
+                        style={{
+                          border: "none",
+                          background: profileSaving ? "var(--border-primary)" : "var(--accent)",
+                          color: profileSaving ? "var(--text-muted)" : "#000000",
+                          fontFamily: "inherit",
+                          fontSize: 11,
+                          letterSpacing: "0.14em",
+                          padding: "12px 20px",
+                          cursor: profileSaving ? "not-allowed" : "pointer",
+                          justifySelf: "start"
+                        }}
+                      >
+                        {profileSaving ? t.saving : t.saveChanges}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+                <div style={{ height: 1, background: "var(--border-primary)" }} />
+                <section>
+                  <p
+                    style={{
+                      margin: "0 0 12px",
+                      fontFamily: "inherit",
+                      fontSize: 10,
+                      letterSpacing: "0.2em",
+                      color: "var(--accent)"
+                    }}
+                  >
+                    {t.appearanceHeading}
+                  </p>
+                  <p style={{ margin: "0 0 10px", fontFamily: "inherit", fontSize: 11, color: "var(--text-muted)" }}>
+                    {t.themeLabel}
+                  </p>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                    {(["dark", "light"] as const).map((theme) => (
+                      <button
+                        key={theme}
+                        type="button"
+                        onClick={() => setDashboardTheme(theme)}
+                        style={{
+                          flex: 1,
+                          border:
+                            uiTheme === theme ? "1px solid var(--accent)" : "1px solid var(--border-primary)",
+                          background:
+                            uiTheme === theme
+                              ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                              : "var(--bg-card)",
+                          color: uiTheme === theme ? "var(--accent)" : "var(--text-secondary)",
+                          fontFamily: "inherit",
+                          fontSize: 12,
+                          letterSpacing: "0.1em",
+                          padding: "10px 12px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {theme === "dark" ? "● DARK" : "◐ LIGHT"}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ margin: "0 0 10px", fontFamily: "inherit", fontSize: 11, color: "var(--text-muted)" }}>
+                    {t.interfaceLanguage}
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {(["en", "ru"] as const).map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => setDashboardLocale(code)}
+                        style={{
+                          flex: 1,
+                          border:
+                            uiLocale === code ? "1px solid var(--accent)" : "1px solid var(--border-primary)",
+                          background:
+                            uiLocale === code
+                              ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                              : "var(--bg-card)",
+                          color: uiLocale === code ? "var(--accent)" : "var(--text-secondary)",
+                          fontFamily: "inherit",
+                          fontSize: 12,
+                          letterSpacing: "0.14em",
+                          padding: "10px 12px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {code.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+                <div style={{ height: 1, background: "var(--border-primary)" }} />
+                <section>
+                  <p
+                    style={{
+                      margin: "0 0 14px",
+                      fontFamily: "inherit",
+                      fontSize: 10,
+                      letterSpacing: "0.2em",
+                      color: "var(--accent)"
+                    }}
+                  >
+                    {t.accountHeading}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    style={{
+                      border: "1px solid #DC2626",
+                      background: "rgba(220,38,38,0.15)",
+                      color: "#FCA5A5",
+                      fontFamily: "inherit",
+                      fontSize: 11,
+                      letterSpacing: "0.12em",
+                      padding: "12px 16px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {t.signOut}
+                  </button>
+                </section>
+              </div>
+            ) : null}
 
-      {settingsOpen ? (
+            {activeDesktopView === "01" ? (
+              <div>
+                {!offer ? (
+                  <div style={{ border: "1px solid var(--border-primary)", background: "var(--bg-card)", padding: 24 }}>
+                    <h1
+                      style={{
+                        margin: 0,
+                        fontFamily: "inherit",
+                        fontWeight: 800,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        fontSize: 28,
+                        color: "var(--text-primary)"
+                      }}
+                    >
+                      YOUR OFFER IS WAITING
+                    </h1>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/")}
+                      style={{
+                        marginTop: 16,
+                        border: "1px solid var(--accent)",
+                        background: "transparent",
+                        color: "var(--accent)",
+                        fontFamily: "inherit",
+                        fontSize: 11,
+                        letterSpacing: "0.16em",
+                        padding: "10px 16px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      GENERATE YOUR OFFER →
+                    </button>
+                  </div>
+                ) : (
+                  <section
+                    style={{
+                      border: "1px solid var(--accent)",
+                      background: "var(--bg-card)",
+                      padding: 20,
+                      borderRadius: 4
+                    }}
+                  >
+                    <div
+                      style={{
+                        marginBottom: 16,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        flexWrap: "wrap"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontFamily: "inherit",
+                            fontWeight: 800,
+                            fontSize: 22,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: "var(--accent)"
+                          }}
+                        >
+                          YOUR OFFER
+                        </h2>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontFamily: "inherit",
+                            fontSize: 9,
+                            letterSpacing: "0.12em",
+                            color: "#22C55E",
+                            border: "1px solid rgba(34,197,94,0.45)",
+                            padding: "4px 10px",
+                            borderRadius: 999
+                          }}
+                        >
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
+                          ACTIVE
+                        </span>
+                      </div>
+                      {!editingOffer && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOfferSaveError(null);
+                            setOfferDraft({ ...offer });
+                            setEditingOffer(true);
+                          }}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--border-primary)",
+                            color: "var(--text-secondary)",
+                            fontFamily: "inherit",
+                            fontSize: 10,
+                            letterSpacing: "2px",
+                            padding: "6px 12px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          EDIT →
+                        </button>
+                      )}
+                    </div>
+                    {(
+                      [
+                        { label: "OFFER", key: "offer" as const, multiline: true },
+                        { label: "AUDIENCE", key: "audience" as const, multiline: true },
+                        { label: "PRICING", key: "pricing" as const, multiline: true },
+                        { label: "POSITIONING", key: "positioning" as const, multiline: true },
+                        { label: "HEADLINE", key: "headline" as const, multiline: false }
+                      ] as const
+                    ).map((item, idx) => {
+                      const source = editingOffer && offerDraft ? offerDraft : offer;
+                      const value = source[item.key];
+                      return (
+                        <div
+                          key={item.label}
+                          style={{
+                            borderBottom: idx === 4 ? "none" : "1px solid var(--border-secondary)",
+                            padding: "14px 0"
+                          }}
+                        >
+                          <p
+                            style={{
+                              margin: 0,
+                              fontFamily: "inherit",
+                              fontSize: 10,
+                              letterSpacing: "0.2em",
+                              color: "var(--accent)"
+                            }}
+                          >
+                            {item.label}
+                          </p>
+                          {editingOffer && offerDraft ? (
+                            item.multiline ? (
+                              <textarea
+                                value={offerDraft[item.key]}
+                                onChange={(e) =>
+                                  setOfferDraft((d) => (d ? { ...d, [item.key]: e.target.value } : d))
+                                }
+                                rows={4}
+                                style={offerTextareaStyle}
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={offerDraft[item.key]}
+                                onChange={(e) =>
+                                  setOfferDraft((d) => (d ? { ...d, [item.key]: e.target.value } : d))
+                                }
+                                style={offerInputStyle}
+                              />
+                            )
+                          ) : (
+                            <p
+                              style={{
+                                margin: "8px 0 0",
+                                fontFamily: "inherit",
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                                color: "var(--text-primary)"
+                              }}
+                            >
+                              {value}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {editingOffer && (
+                      <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+                        {offerSaveError && (
+                          <p style={{ margin: 0, fontFamily: "inherit", fontSize: 11, color: "#f87171" }}>
+                            {offerSaveError}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void handleSaveOffer()}
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            background: "var(--accent)",
+                            color: "#000000",
+                            fontFamily: "inherit",
+                            fontWeight: 800,
+                            fontSize: 16,
+                            letterSpacing: "0.05em",
+                            padding: "14px 24px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          SAVE CHANGES →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingOffer(false);
+                            setOfferDraft(null);
+                            setOfferSaveError(null);
+                          }}
+                          style={{
+                            width: "100%",
+                            border: "1px solid var(--accent)",
+                            background: "transparent",
+                            color: "var(--accent)",
+                            fontFamily: "inherit",
+                            fontSize: 11,
+                            letterSpacing: "0.12em",
+                            padding: "12px 16px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    )}
+                  </section>
+                )}
+              </div>
+            ) : null}
+
+            {activeDesktopView === "02" ? (
+              <div style={{ maxWidth: 640 }}>
+                <h2
+                  style={{
+                    margin: "0 0 20px",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    fontSize: 22,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  LANDING PAGE
+                </h2>
+                {!landingSlug ? (
+                  <div>
+                    <p style={{ margin: "0 0 12px", fontFamily: "inherit", fontSize: 13, color: "var(--text-secondary)" }}>
+                      Build a full page from your offer — no design skills required.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowOnboarding(true)}
+                      disabled={!offer || buildingLanding}
+                      style={{
+                        width: "100%",
+                        maxWidth: 400,
+                        border: "none",
+                        background: "var(--accent)",
+                        color: "#000000",
+                        fontFamily: "inherit",
+                        fontWeight: 800,
+                        fontSize: 16,
+                        letterSpacing: "0.05em",
+                        padding: "16px 24px",
+                        cursor: !offer || buildingLanding ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      BUILD MY LANDING PAGE →
+                    </button>
+                    {buildError && (
+                      <p style={{ margin: "10px 0 0", fontFamily: "inherit", fontSize: 11, color: "#f87171" }}>{buildError}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div
+                      style={{
+                        borderRadius: 6,
+                        overflow: "hidden",
+                        border: "1px solid var(--border-primary)",
+                        background: "var(--bg-card)"
+                      }}
+                    >
+                      <iframe
+                        title="Landing preview"
+                        src={`/p/${landingSlug}`}
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                        style={{
+                          width: "100%",
+                          height: 280,
+                          border: "none",
+                          display: "block",
+                          pointerEvents: "none"
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 14,
+                        border: "1px solid var(--accent)",
+                        padding: "8px 10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8
+                      }}
+                    >
+                      <a
+                        href={`/p/${landingSlug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          color: "var(--accent)",
+                          textDecoration: "none",
+                          fontFamily: "inherit",
+                          fontSize: 11
+                        }}
+                      >
+                        lacore.ai/p/{landingSlug}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleCopyUrl}
+                        style={{
+                          border: "1px solid var(--border-primary)",
+                          background: "transparent",
+                          color: "var(--text-secondary)",
+                          fontFamily: "inherit",
+                          fontSize: 10,
+                          padding: "4px 8px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        COPY
+                      </button>
+                    </div>
+                    <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <a
+                        href={`/p/${landingSlug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          flex: 1,
+                          minWidth: 120,
+                          textAlign: "center",
+                          textDecoration: "none",
+                          border: "1px solid var(--accent)",
+                          color: "var(--accent)",
+                          fontFamily: "inherit",
+                          fontSize: 11,
+                          padding: "10px 12px"
+                        }}
+                      >
+                        PREVIEW →
+                      </a>
+                      <a
+                        href={`/p/${landingSlug}?edit=true`}
+                        style={{
+                          flex: 1,
+                          minWidth: 120,
+                          textAlign: "center",
+                          textDecoration: "none",
+                          border: "1px solid var(--accent)",
+                          color: "var(--accent)",
+                          fontFamily: "inherit",
+                          fontSize: 11,
+                          padding: "10px 12px"
+                        }}
+                      >
+                        EDIT PAGE →
+                      </a>
+                    </div>
+                    {userId ? (
+                      <div style={{ marginTop: 16 }}>
+                        <DomainConnect slug={landingSlug} userId={userId} />
+                      </div>
+                    ) : null}
+                    {regenerateConfirm ? (
+                      <div style={{ marginTop: 14 }}>
+                        <p style={{ margin: 0, fontFamily: "inherit", fontSize: 12, color: "var(--text-secondary)" }}>
+                          Are you sure? This will replace your current site.
+                        </p>
+                        {regenerateError && (
+                          <p style={{ margin: "8px 0 0", fontFamily: "inherit", fontSize: 11, color: "#f87171" }}>
+                            {regenerateError}
+                          </p>
+                        )}
+                        <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegenerateError(null);
+                              void handleRegenerateSiteConfirmed();
+                            }}
+                            disabled={buildingLanding}
+                            style={{
+                              flex: 1,
+                              border: "none",
+                              background: "var(--accent)",
+                              color: "#000000",
+                              fontFamily: "inherit",
+                              fontSize: 11,
+                              letterSpacing: "0.1em",
+                              padding: "10px 12px",
+                              cursor: buildingLanding ? "not-allowed" : "pointer"
+                            }}
+                          >
+                            YES
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegenerateConfirm(false);
+                              setRegenerateError(null);
+                            }}
+                            disabled={buildingLanding}
+                            style={{
+                              flex: 1,
+                              border: "1px solid var(--accent)",
+                              background: "transparent",
+                              color: "var(--accent)",
+                              fontFamily: "inherit",
+                              fontSize: 11,
+                              letterSpacing: "0.1em",
+                              padding: "10px 12px",
+                              cursor: buildingLanding ? "not-allowed" : "pointer"
+                            }}
+                          >
+                            NO
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRegenerateError(null);
+                          setRegenerateConfirm(true);
+                        }}
+                        disabled={buildingLanding || !offer}
+                        style={{
+                          marginTop: 14,
+                          width: "100%",
+                          maxWidth: 400,
+                          border: "none",
+                          background: "var(--accent)",
+                          color: "#000000",
+                          fontFamily: "inherit",
+                          fontWeight: 800,
+                          fontSize: 14,
+                          letterSpacing: "0.05em",
+                          padding: "12px 20px",
+                          cursor: buildingLanding || !offer ? "not-allowed" : "pointer"
+                        }}
+                      >
+                        REGENERATE SITE →
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {activeDesktopView === "03" ? (
+              <div style={{ maxWidth: 560 }}>
+                <h2
+                  style={{
+                    margin: "0 0 12px",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    fontSize: 28,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  CONTENT MACHINE
+                </h2>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    fontFamily: "inherit",
+                    fontSize: 9,
+                    letterSpacing: "0.14em",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border-primary)",
+                    padding: "4px 10px",
+                    marginBottom: 16
+                  }}
+                >
+                  COMING SOON
+                </span>
+                <p style={{ margin: "16px 0 0", fontFamily: "inherit", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                  Automated posts for Instagram, X, LinkedIn and Threads — coming soon.
+                </p>
+                <ul style={{ margin: "20px 0 0", paddingLeft: 20, fontFamily: "inherit", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                  <li>Daily posts on autopilot</li>
+                  <li>Platform-specific adaptation</li>
+                  <li>AI-generated visuals</li>
+                </ul>
+              </div>
+            ) : null}
+
+            {activeDesktopView === "04" ? (
+              <div style={{ maxWidth: 560 }}>
+                <h2
+                  style={{
+                    margin: "0 0 12px",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    fontSize: 24,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  LEAD CAPTURE
+                </h2>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    fontFamily: "inherit",
+                    fontSize: 9,
+                    letterSpacing: "0.14em",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border-primary)",
+                    padding: "4px 10px"
+                  }}
+                >
+                  COMING SOON
+                </span>
+                <p style={{ margin: "20px 0 0", fontFamily: "inherit", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                  Every form submission captured. Qualify leads automatically. See who&apos;s interested in real time.
+                </p>
+              </div>
+            ) : null}
+
+            {activeDesktopView === "05" ? (
+              <div style={{ maxWidth: 560 }}>
+                <h2
+                  style={{
+                    margin: "0 0 12px",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    fontSize: 24,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  CLOSING SYSTEM
+                </h2>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    fontFamily: "inherit",
+                    fontSize: 9,
+                    letterSpacing: "0.14em",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border-primary)",
+                    padding: "4px 10px"
+                  }}
+                >
+                  COMING SOON
+                </span>
+                <p style={{ margin: "20px 0 0", fontFamily: "inherit", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                  Scripts, follow-ups, objection handling — all automated.
+                </p>
+              </div>
+            ) : null}
+
+            {activeDesktopView === "06" ? (
+              <div style={{ maxWidth: 560 }}>
+                <h2
+                  style={{
+                    margin: "0 0 12px",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    fontSize: 24,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--text-primary)"
+                  }}
+                >
+                  ANALYTICS DASHBOARD
+                </h2>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    fontFamily: "inherit",
+                    fontSize: 9,
+                    letterSpacing: "0.14em",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border-primary)",
+                    padding: "4px 10px"
+                  }}
+                >
+                  COMING SOON
+                </span>
+                <p style={{ margin: "20px 0 0", fontFamily: "inherit", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+                  Full funnel visibility. Revenue tracking. Growth signals.
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {isMobile && settingsOpen ? (
         <div
           role="presentation"
           style={{
