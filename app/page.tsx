@@ -115,19 +115,32 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    async function getSession() {
+    const supabase = getSupabaseClient();
+    let cancelled = false;
+
+    async function syncSession() {
       try {
-        const supabase = getSupabaseClient();
         const {
           data: { session }
         } = await supabase.auth.getSession();
-        setIsLoggedIn(Boolean(session?.user));
+        if (!cancelled) setIsLoggedIn(Boolean(session?.user));
       } catch {
-        setIsLoggedIn(false);
+        if (!cancelled) setIsLoggedIn(false);
       }
     }
 
-    void getSession();
+    void syncSession();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -397,7 +410,7 @@ export default function LandingPage() {
               </div>
             )}
             <Link
-              href="/auth"
+              href={isLoggedIn ? "/dashboard" : "/auth"}
               style={{
                 justifySelf: "end",
                 border: "1px solid #06B6D4",
@@ -411,7 +424,7 @@ export default function LandingPage() {
                 textDecoration: "none"
               }}
             >
-              START FOR FREE →
+              {isLoggedIn ? "DASHBOARD →" : "START FOR FREE →"}
             </Link>
           </div>
         </nav>
@@ -1099,9 +1112,10 @@ export default function LandingPage() {
             <span style={{ display: "block", color: "#F4F4F5" }}>YOU SAY WHAT YOU SELL.</span>
             <span style={{ display: "block", color: "#06B6D4" }}>LACORE DOES THE REST.</span>
           </h2>
-          <button
-            type="button"
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/auth"}
             style={{
+              display: "inline-block",
               marginTop: 24,
               border: "1px solid #06B6D4",
               background: "transparent",
@@ -1110,11 +1124,12 @@ export default function LandingPage() {
               fontSize: 12,
               letterSpacing: "0.2em",
               padding: "12px 20px",
-              cursor: "pointer"
+              cursor: "pointer",
+              textDecoration: "none"
             }}
           >
-            START FOR FREE →
-          </button>
+            {isLoggedIn ? "DASHBOARD →" : "START FOR FREE →"}
+          </Link>
           <p
             style={{
               margin: "16px 0 0",

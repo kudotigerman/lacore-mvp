@@ -22,6 +22,12 @@ type Offer = {
 
 type DashChatMessage = { role: "user" | "assistant"; text: string };
 
+type ProfileRow = {
+  display_name: string | null;
+  telegram: string | null;
+  whatsapp: string | null;
+};
+
 const SALES_BUILDER_INTRO = `I'm building your sales machine.
 
 Here's what we can do together:
@@ -44,6 +50,19 @@ function emailToInitials(addr: string): string {
     return local.slice(0, 2).toUpperCase();
   }
   return (local[0] ?? "?").toUpperCase();
+}
+
+function profileInitialsFromName(displayName: string, emailAddr: string): string {
+  const name = displayName.trim();
+  if (name.length > 0) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0]![0] + parts[1]![0]).toUpperCase();
+    }
+    if (name.length >= 2) return name.slice(0, 2).toUpperCase();
+    return (name[0] ?? "?").toUpperCase();
+  }
+  return emailToInitials(emailAddr);
 }
 
 export default function DashboardPage() {
@@ -74,6 +93,11 @@ export default function DashboardPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState("");
+  const [profileTelegram, setProfileTelegram] = useState("");
+  const [profileWhatsapp, setProfileWhatsapp] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const router = useRouter();
 
   const offerContext = useMemo(() => {
@@ -84,6 +108,10 @@ export default function DashboardPage() {
   }, [offer]);
 
   const userInitials = useMemo(() => emailToInitials(email), [email]);
+  const profileAvatarInitials = useMemo(
+    () => profileInitialsFromName(profileDisplayName, email),
+    [profileDisplayName, email]
+  );
 
   const offerTextareaStyle: CSSProperties = {
     background: "#111115",
@@ -99,6 +127,20 @@ export default function DashboardPage() {
     boxSizing: "border-box"
   };
   const offerInputStyle: CSSProperties = { ...offerTextareaStyle, resize: "none" };
+
+  const profileFieldStyle: CSSProperties = {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #1C1C1F",
+    background: "#111115",
+    color: "#F4F4F5",
+    fontFamily: "var(--font-space-mono), monospace",
+    fontSize: 13,
+    lineHeight: 1.5,
+    padding: "10px 12px",
+    outline: "none",
+    borderRadius: 4
+  };
 
   const buildingLogMessages = useMemo(
     () => [
@@ -186,6 +228,29 @@ export default function DashboardPage() {
       setUserId(session.user.id);
       setSessionToken(session.access_token);
 
+      const metaName =
+        typeof session.user.user_metadata?.full_name === "string"
+          ? session.user.user_metadata.full_name
+          : "";
+      const defaultDisplayName = metaName || (session.user.email?.split("@")[0] ?? "");
+
+      const profileRow = await supabase
+        .from("profiles")
+        .select("display_name, telegram, whatsapp")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      const profileData = profileRow.data as ProfileRow | null;
+      if (!profileRow.error && profileData) {
+        setProfileDisplayName(profileData.display_name ?? defaultDisplayName);
+        setProfileTelegram(profileData.telegram ?? "");
+        setProfileWhatsapp(profileData.whatsapp ?? "");
+      } else {
+        setProfileDisplayName(defaultDisplayName);
+        setProfileTelegram("");
+        setProfileWhatsapp("");
+      }
+
       const { data, error } = await supabase
         .from("offers")
         .select("*")
@@ -215,6 +280,30 @@ export default function DashboardPage() {
     const supabase = getSupabaseClient();
     await supabase.auth.signOut();
     router.replace("/auth");
+  }
+
+  async function handleSaveProfile() {
+    if (!userId) return;
+    setProfileSaveError(null);
+    setProfileSaving(true);
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.from("profiles").upsert(
+        {
+          user_id: userId,
+          display_name: profileDisplayName.trim() || null,
+          telegram: profileTelegram.trim() || null,
+          whatsapp: profileWhatsapp.trim() || null,
+          updated_at: new Date().toISOString()
+        } as never,
+        { onConflict: "user_id" }
+      );
+      if (error) throw error;
+    } catch (e) {
+      setProfileSaveError(e instanceof Error ? e.message : "Could not save profile.");
+    } finally {
+      setProfileSaving(false);
+    }
   }
 
   async function handleBuildLandingPage(extra?: {
@@ -1125,6 +1214,177 @@ export default function DashboardPage() {
           }}
         >
           <div>
+            <section
+              style={{
+                marginBottom: 20,
+                border: "1px solid #1C1C1F",
+                background: "#0C0C0E",
+                padding: 20,
+                borderRadius: 4
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-bebas-neue), sans-serif",
+                  fontSize: 32,
+                  lineHeight: 1,
+                  letterSpacing: "0.04em",
+                  color: "#06B6D4"
+                }}
+              >
+                PROFILE
+              </h2>
+              <div
+                style={{
+                  marginTop: 18,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "flex-start",
+                  gap: 20
+                }}
+              >
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: "50%",
+                    background: "#06B6D4",
+                    color: "#000000",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "var(--font-bebas-neue), sans-serif",
+                    fontSize: 22,
+                    letterSpacing: "0.02em",
+                    flexShrink: 0
+                  }}
+                  aria-hidden
+                >
+                  {profileAvatarInitials}
+                </div>
+                <div style={{ flex: "1 1 220px", minWidth: 0, display: "grid", gap: 14 }}>
+                  <div>
+                    <p
+                      style={{
+                        margin: "0 0 6px",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        color: "#06B6D4"
+                      }}
+                    >
+                      DISPLAY NAME
+                    </p>
+                    <input
+                      type="text"
+                      value={profileDisplayName}
+                      onChange={(e) => setProfileDisplayName(e.target.value)}
+                      placeholder="Your name"
+                      style={profileFieldStyle}
+                      autoComplete="name"
+                    />
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        margin: "0 0 6px",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        color: "#06B6D4"
+                      }}
+                    >
+                      EMAIL
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 13,
+                        color: "#A1A1AA",
+                        wordBreak: "break-all"
+                      }}
+                    >
+                      {email || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        margin: "0 0 6px",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        color: "#06B6D4"
+                      }}
+                    >
+                      TELEGRAM (OPTIONAL)
+                    </p>
+                    <input
+                      type="text"
+                      value={profileTelegram}
+                      onChange={(e) => setProfileTelegram(e.target.value)}
+                      placeholder="@username"
+                      style={profileFieldStyle}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        margin: "0 0 6px",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        color: "#06B6D4"
+                      }}
+                    >
+                      WHATSAPP (OPTIONAL)
+                    </p>
+                    <input
+                      type="text"
+                      value={profileWhatsapp}
+                      onChange={(e) => setProfileWhatsapp(e.target.value)}
+                      placeholder="+1 …"
+                      style={profileFieldStyle}
+                      autoComplete="tel"
+                    />
+                  </div>
+                  {profileSaveError && (
+                    <p
+                      style={{
+                        margin: 0,
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 11,
+                        color: "#f87171"
+                      }}
+                    >
+                      {profileSaveError}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    disabled={profileSaving}
+                    onClick={() => void handleSaveProfile()}
+                    style={{
+                      justifySelf: "start",
+                      border: "none",
+                      background: profileSaving ? "#1C1C1F" : "#06B6D4",
+                      color: profileSaving ? "#52525B" : "#000000",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.14em",
+                      padding: "12px 20px",
+                      cursor: profileSaving ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    {profileSaving ? "SAVING…" : "SAVE PROFILE"}
+                  </button>
+                </div>
+              </div>
+            </section>
+
             {!offer ? (
               <div style={{ border: "1px solid #1C1C1F", background: "#0C0C0E", padding: 24 }}>
                 <h1
