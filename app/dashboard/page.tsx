@@ -28,9 +28,74 @@ type ProfileRow = {
   whatsapp: string | null;
 };
 
-const SALES_BUILDER_INTRO = `I'm building your sales machine.
+type UiLocale = "en" | "ru";
 
-Here's what we can do together:
+const UI_LOCALE_STORAGE_KEY = "lacore-ui-locale";
+
+const DASH_COPY: Record<
+  UiLocale,
+  {
+    settingsTitle: string;
+    profileHeading: string;
+    appearanceHeading: string;
+    accountHeading: string;
+    displayName: string;
+    email: string;
+    telegram: string;
+    whatsapp: string;
+    saveChanges: string;
+    saving: string;
+    interfaceLanguage: string;
+    signOut: string;
+    deleteAccount: string;
+    comingSoon: string;
+    closeSettings: string;
+    salesBuilderTagline: string;
+    signOutShort: string;
+  }
+> = {
+  en: {
+    settingsTitle: "SETTINGS",
+    profileHeading: "PROFILE",
+    appearanceHeading: "APPEARANCE",
+    accountHeading: "ACCOUNT",
+    displayName: "DISPLAY NAME",
+    email: "EMAIL",
+    telegram: "TELEGRAM USERNAME",
+    whatsapp: "WHATSAPP",
+    saveChanges: "SAVE CHANGES",
+    saving: "SAVING…",
+    interfaceLanguage: "INTERFACE LANGUAGE",
+    signOut: "SIGN OUT",
+    deleteAccount: "DELETE ACCOUNT",
+    comingSoon: "Coming soon",
+    closeSettings: "Close settings",
+    salesBuilderTagline: "Your AI system for getting clients",
+    signOutShort: "SIGN OUT"
+  },
+  ru: {
+    settingsTitle: "НАСТРОЙКИ",
+    profileHeading: "ПРОФИЛЬ",
+    appearanceHeading: "ОФОРМЛЕНИЕ",
+    accountHeading: "АККАУНТ",
+    displayName: "ОТОБРАЖАЕМОЕ ИМЯ",
+    email: "EMAIL",
+    telegram: "TELEGRAM",
+    whatsapp: "WHATSAPP",
+    saveChanges: "СОХРАНИТЬ",
+    saving: "СОХРАНЕНИЕ…",
+    interfaceLanguage: "ЯЗЫК ИНТЕРФЕЙСА",
+    signOut: "ВЫЙТИ",
+    deleteAccount: "УДАЛИТЬ АККАУНТ",
+    comingSoon: "Скоро",
+    closeSettings: "Закрыть настройки",
+    salesBuilderTagline: "Ваш ИИ для привлечения клиентов",
+    signOutShort: "ВЫЙТИ"
+  }
+};
+
+function buildSalesBuilderIntro(savedDisplayNameFromDb: string | null): string {
+  const bullets = `Here's what we can do together:
 → Sharpen your offer & positioning
 → Optimize your landing page copy
 → Plan your content strategy
@@ -38,6 +103,20 @@ Here's what we can do together:
 → Close more deals with scripts
 
 What's your biggest challenge right now?`;
+
+  const core = `I'm building your sales machine.
+
+${bullets}`;
+
+  const trimmed = savedDisplayNameFromDb?.trim();
+  if (!trimmed) {
+    return core;
+  }
+  const first = trimmed.split(/\s+/)[0] ?? trimmed;
+  return `Hi ${first}! I'm your LACORE Sales Builder.
+
+${core}`;
+}
 
 function emailToInitials(addr: string): string {
   const local = addr.split("@")[0] ?? "";
@@ -87,17 +166,18 @@ export default function DashboardPage() {
   const [offerSaveError, setOfferSaveError] = useState<string | null>(null);
   const [regenerateConfirm, setRegenerateConfirm] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([
-    { role: "assistant", text: SALES_BUILDER_INTRO }
-  ]);
+  const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [profileDisplayName, setProfileDisplayName] = useState("");
+  const [savedProfileDisplayName, setSavedProfileDisplayName] = useState<string | null>(null);
   const [profileTelegram, setProfileTelegram] = useState("");
   const [profileWhatsapp, setProfileWhatsapp] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [uiLocale, setUiLocale] = useState<UiLocale>("en");
   const router = useRouter();
 
   const offerContext = useMemo(() => {
@@ -107,7 +187,18 @@ export default function DashboardPage() {
     return `OFFER: ${offer.offer}\nAUDIENCE: ${offer.audience}\nPRICING: ${offer.pricing}\nPOSITIONING: ${offer.positioning}\nHEADLINE: ${offer.headline}`;
   }, [offer]);
 
-  const userInitials = useMemo(() => emailToInitials(email), [email]);
+  const t = DASH_COPY[uiLocale];
+
+  const navUserLabel = useMemo(() => {
+    const n = savedProfileDisplayName?.trim();
+    return n && n.length > 0 ? n : email;
+  }, [savedProfileDisplayName, email]);
+
+  const sidebarInitials = useMemo(
+    () => profileInitialsFromName(savedProfileDisplayName ?? profileDisplayName, email),
+    [savedProfileDisplayName, profileDisplayName, email]
+  );
+
   const profileAvatarInitials = useMemo(
     () => profileInitialsFromName(profileDisplayName, email),
     [profileDisplayName, email]
@@ -210,6 +301,24 @@ export default function DashboardPage() {
   }, [landingSlug]);
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(UI_LOCALE_STORAGE_KEY);
+      if (raw === "ru" || raw === "en") setUiLocale(raw);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    function onKey(e: globalThis.KeyboardEvent) {
+      if (e.key === "Escape") setSettingsOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [settingsOpen]);
+
+  useEffect(() => {
     const updateViewport = () => setIsMobile(window.innerWidth < 900);
     updateViewport();
     window.addEventListener("resize", updateViewport);
@@ -241,8 +350,11 @@ export default function DashboardPage() {
         .maybeSingle();
 
       const profileData = profileRow.data as ProfileRow | null;
+      const dbDisplayName = profileData?.display_name?.trim() || null;
+      setSavedProfileDisplayName(dbDisplayName);
+
       if (!profileRow.error && profileData) {
-        setProfileDisplayName(profileData.display_name ?? defaultDisplayName);
+        setProfileDisplayName(dbDisplayName ?? defaultDisplayName);
         setProfileTelegram(profileData.telegram ?? "");
         setProfileWhatsapp(profileData.whatsapp ?? "");
       } else {
@@ -250,6 +362,8 @@ export default function DashboardPage() {
         setProfileTelegram("");
         setProfileWhatsapp("");
       }
+
+      setChatMessages([{ role: "assistant", text: buildSalesBuilderIntro(dbDisplayName) }]);
 
       const { data, error } = await supabase
         .from("offers")
@@ -299,10 +413,20 @@ export default function DashboardPage() {
         { onConflict: "user_id" }
       );
       if (error) throw error;
+      setSavedProfileDisplayName(profileDisplayName.trim() || null);
     } catch (e) {
       setProfileSaveError(e instanceof Error ? e.message : "Could not save profile.");
     } finally {
       setProfileSaving(false);
+    }
+  }
+
+  function setDashboardLocale(next: UiLocale) {
+    setUiLocale(next);
+    try {
+      localStorage.setItem(UI_LOCALE_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
     }
   }
 
@@ -955,7 +1079,7 @@ export default function DashboardPage() {
                 flexShrink: 0
               }}
             >
-              {userInitials}
+              {sidebarInitials}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <p
@@ -970,7 +1094,7 @@ export default function DashboardPage() {
                 }}
                 title={email}
               >
-                {email}
+                {navUserLabel}
               </p>
               <button
                 type="button"
@@ -987,7 +1111,7 @@ export default function DashboardPage() {
                   cursor: "pointer"
                 }}
               >
-                SIGN OUT
+                {t.signOutShort}
               </button>
             </div>
           </div>
@@ -1037,7 +1161,7 @@ export default function DashboardPage() {
                 lineHeight: 1.5
               }}
             >
-              Your AI system for getting clients
+              {t.salesBuilderTagline}
             </p>
           </div>
 
@@ -1179,26 +1303,40 @@ export default function DashboardPage() {
               margin: 0,
               fontFamily: "var(--font-space-mono), monospace",
               fontSize: 12,
-              color: "#A1A1AA"
+              color: "#A1A1AA",
+              maxWidth: "min(50vw, 280px)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
             }}
+            title={email}
           >
-            {email}
+            {navUserLabel}
           </p>
           <button
             type="button"
-            onClick={handleSignOut}
+            onClick={() => {
+              setProfileSaveError(null);
+              setSettingsOpen(true);
+            }}
+            aria-label={t.settingsTitle}
             style={{
-              border: "1px solid #06B6D4",
-              background: "transparent",
-              color: "#06B6D4",
-              fontFamily: "var(--font-space-mono), monospace",
-              fontSize: 11,
-              letterSpacing: "0.12em",
-              padding: "8px 12px",
-              cursor: "pointer"
+              border: "1px solid #1C1C1F",
+              background: "#111115",
+              color: "#A1A1AA",
+              fontSize: 18,
+              lineHeight: 1,
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0
             }}
           >
-            SIGN OUT
+            ⚙️
           </button>
         </nav>
 
@@ -1214,177 +1352,6 @@ export default function DashboardPage() {
           }}
         >
           <div>
-            <section
-              style={{
-                marginBottom: 20,
-                border: "1px solid #1C1C1F",
-                background: "#0C0C0E",
-                padding: 20,
-                borderRadius: 4
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-bebas-neue), sans-serif",
-                  fontSize: 32,
-                  lineHeight: 1,
-                  letterSpacing: "0.04em",
-                  color: "#06B6D4"
-                }}
-              >
-                PROFILE
-              </h2>
-              <div
-                style={{
-                  marginTop: 18,
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "flex-start",
-                  gap: 20
-                }}
-              >
-                <div
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: "50%",
-                    background: "#06B6D4",
-                    color: "#000000",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "var(--font-bebas-neue), sans-serif",
-                    fontSize: 22,
-                    letterSpacing: "0.02em",
-                    flexShrink: 0
-                  }}
-                  aria-hidden
-                >
-                  {profileAvatarInitials}
-                </div>
-                <div style={{ flex: "1 1 220px", minWidth: 0, display: "grid", gap: 14 }}>
-                  <div>
-                    <p
-                      style={{
-                        margin: "0 0 6px",
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.2em",
-                        color: "#06B6D4"
-                      }}
-                    >
-                      DISPLAY NAME
-                    </p>
-                    <input
-                      type="text"
-                      value={profileDisplayName}
-                      onChange={(e) => setProfileDisplayName(e.target.value)}
-                      placeholder="Your name"
-                      style={profileFieldStyle}
-                      autoComplete="name"
-                    />
-                  </div>
-                  <div>
-                    <p
-                      style={{
-                        margin: "0 0 6px",
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.2em",
-                        color: "#06B6D4"
-                      }}
-                    >
-                      EMAIL
-                    </p>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 13,
-                        color: "#A1A1AA",
-                        wordBreak: "break-all"
-                      }}
-                    >
-                      {email || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p
-                      style={{
-                        margin: "0 0 6px",
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.2em",
-                        color: "#06B6D4"
-                      }}
-                    >
-                      TELEGRAM (OPTIONAL)
-                    </p>
-                    <input
-                      type="text"
-                      value={profileTelegram}
-                      onChange={(e) => setProfileTelegram(e.target.value)}
-                      placeholder="@username"
-                      style={profileFieldStyle}
-                      autoComplete="off"
-                    />
-                  </div>
-                  <div>
-                    <p
-                      style={{
-                        margin: "0 0 6px",
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.2em",
-                        color: "#06B6D4"
-                      }}
-                    >
-                      WHATSAPP (OPTIONAL)
-                    </p>
-                    <input
-                      type="text"
-                      value={profileWhatsapp}
-                      onChange={(e) => setProfileWhatsapp(e.target.value)}
-                      placeholder="+1 …"
-                      style={profileFieldStyle}
-                      autoComplete="tel"
-                    />
-                  </div>
-                  {profileSaveError && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: "var(--font-space-mono), monospace",
-                        fontSize: 11,
-                        color: "#f87171"
-                      }}
-                    >
-                      {profileSaveError}
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    disabled={profileSaving}
-                    onClick={() => void handleSaveProfile()}
-                    style={{
-                      justifySelf: "start",
-                      border: "none",
-                      background: profileSaving ? "#1C1C1F" : "#06B6D4",
-                      color: profileSaving ? "#52525B" : "#000000",
-                      fontFamily: "var(--font-space-mono), monospace",
-                      fontSize: 11,
-                      letterSpacing: "0.14em",
-                      padding: "12px 20px",
-                      cursor: profileSaving ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    {profileSaving ? "SAVING…" : "SAVE PROFILE"}
-                  </button>
-                </div>
-              </div>
-            </section>
-
             {!offer ? (
               <div style={{ border: "1px solid #1C1C1F", background: "#0C0C0E", padding: 24 }}>
                 <h1
@@ -2016,6 +1983,347 @@ export default function DashboardPage() {
           </aside>
         </section>
       </div>
+
+      {settingsOpen ? (
+        <div
+          role="presentation"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2500,
+            display: "flex",
+            justifyContent: "flex-end",
+            background: "rgba(0,0,0,0.55)"
+          }}
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.settingsTitle}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            style={{
+              width: "min(100vw, 420px)",
+              height: "100%",
+              background: "#0C0C0E",
+              borderLeft: "1px solid #1C1C1F",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              boxShadow: "-8px 0 32px rgba(0,0,0,0.45)"
+            }}
+          >
+            <div
+              style={{
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                padding: "16px 18px",
+                borderBottom: "1px solid #1C1C1F"
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-bebas-neue), sans-serif",
+                  fontSize: 28,
+                  letterSpacing: "0.06em",
+                  color: "#06B6D4"
+                }}
+              >
+                {t.settingsTitle}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                aria-label={t.closeSettings}
+                style={{
+                  border: "1px solid #1C1C1F",
+                  background: "#111115",
+                  color: "#A1A1AA",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 18,
+                  lineHeight: 1,
+                  padding: 0
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "20px 18px 28px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 28
+              }}
+            >
+              <section>
+                <p
+                  style={{
+                    margin: "0 0 14px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.2em",
+                    color: "#06B6D4"
+                  }}
+                >
+                  {t.profileHeading}
+                </p>
+                <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: "50%",
+                      background: "#06B6D4",
+                      color: "#000000",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: "var(--font-bebas-neue), sans-serif",
+                      fontSize: 26,
+                      letterSpacing: "0.02em",
+                      flexShrink: 0
+                    }}
+                    aria-hidden
+                  >
+                    {profileAvatarInitials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 12 }}>
+                    <div>
+                      <p
+                        style={{
+                          margin: "0 0 6px",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 10,
+                          letterSpacing: "0.18em",
+                          color: "#71717A"
+                        }}
+                      >
+                        {t.displayName}
+                      </p>
+                      <input
+                        type="text"
+                        value={profileDisplayName}
+                        onChange={(e) => setProfileDisplayName(e.target.value)}
+                        style={profileFieldStyle}
+                        autoComplete="name"
+                      />
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          margin: "0 0 6px",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 10,
+                          letterSpacing: "0.18em",
+                          color: "#71717A"
+                        }}
+                      >
+                        {t.email}
+                      </p>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 13,
+                          color: "#A1A1AA",
+                          wordBreak: "break-all"
+                        }}
+                      >
+                        {email || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          margin: "0 0 6px",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 10,
+                          letterSpacing: "0.18em",
+                          color: "#71717A"
+                        }}
+                      >
+                        {t.telegram}
+                      </p>
+                      <input
+                        type="text"
+                        value={profileTelegram}
+                        onChange={(e) => setProfileTelegram(e.target.value)}
+                        placeholder="@username"
+                        style={profileFieldStyle}
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          margin: "0 0 6px",
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 10,
+                          letterSpacing: "0.18em",
+                          color: "#71717A"
+                        }}
+                      >
+                        {t.whatsapp}
+                      </p>
+                      <input
+                        type="text"
+                        value={profileWhatsapp}
+                        onChange={(e) => setProfileWhatsapp(e.target.value)}
+                        placeholder="+995..."
+                        style={profileFieldStyle}
+                        autoComplete="tel"
+                      />
+                    </div>
+                    {profileSaveError ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: "var(--font-space-mono), monospace",
+                          fontSize: 11,
+                          color: "#f87171"
+                        }}
+                      >
+                        {profileSaveError}
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      disabled={profileSaving}
+                      onClick={() => void handleSaveProfile()}
+                      style={{
+                        border: "none",
+                        background: profileSaving ? "#1C1C1F" : "#06B6D4",
+                        color: profileSaving ? "#52525B" : "#000000",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 11,
+                        letterSpacing: "0.14em",
+                        padding: "12px 20px",
+                        cursor: profileSaving ? "not-allowed" : "pointer",
+                        justifySelf: "start"
+                      }}
+                    >
+                      {profileSaving ? t.saving : t.saveChanges}
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <div style={{ height: 1, background: "#1C1C1F" }} />
+
+              <section>
+                <p
+                  style={{
+                    margin: "0 0 12px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.2em",
+                    color: "#06B6D4"
+                  }}
+                >
+                  {t.appearanceHeading}
+                </p>
+                <p
+                  style={{
+                    margin: "0 0 10px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 11,
+                    color: "#71717A"
+                  }}
+                >
+                  {t.interfaceLanguage}
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(["en", "ru"] as const).map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setDashboardLocale(code)}
+                      style={{
+                        flex: 1,
+                        border:
+                          uiLocale === code ? "1px solid #06B6D4" : "1px solid #1C1C1F",
+                        background: uiLocale === code ? "rgba(6,182,212,0.12)" : "#111115",
+                        color: uiLocale === code ? "#06B6D4" : "#A1A1AA",
+                        fontFamily: "var(--font-space-mono), monospace",
+                        fontSize: 12,
+                        letterSpacing: "0.14em",
+                        padding: "10px 12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {code.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <div style={{ height: 1, background: "#1C1C1F" }} />
+
+              <section>
+                <p
+                  style={{
+                    margin: "0 0 14px",
+                    fontFamily: "var(--font-space-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.2em",
+                    color: "#06B6D4"
+                  }}
+                >
+                  {t.accountHeading}
+                </p>
+                <div style={{ display: "grid", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    style={{
+                      border: "1px solid #DC2626",
+                      background: "rgba(220,38,38,0.15)",
+                      color: "#FCA5A5",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.12em",
+                      padding: "12px 16px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {t.signOut}
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title={t.comingSoon}
+                    style={{
+                      border: "1px solid #27272A",
+                      background: "#111115",
+                      color: "#52525B",
+                      fontFamily: "var(--font-space-mono), monospace",
+                      fontSize: 11,
+                      letterSpacing: "0.12em",
+                      padding: "12px 16px",
+                      cursor: "not-allowed",
+                      opacity: 0.65
+                    }}
+                  >
+                    {t.deleteAccount}
+                  </button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

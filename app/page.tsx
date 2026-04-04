@@ -424,7 +424,7 @@ export default function LandingPage() {
                 textDecoration: "none"
               }}
             >
-              {isLoggedIn ? "DASHBOARD →" : "START FOR FREE →"}
+              {isLoggedIn ? "GO TO DASHBOARD →" : "START FOR FREE →"}
             </Link>
           </div>
         </nav>
@@ -1128,7 +1128,7 @@ export default function LandingPage() {
               textDecoration: "none"
             }}
           >
-            {isLoggedIn ? "DASHBOARD →" : "START FOR FREE →"}
+            {isLoggedIn ? "GO TO DASHBOARD →" : "START FOR FREE →"}
           </Link>
           <p
             style={{
