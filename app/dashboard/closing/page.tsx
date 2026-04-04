@@ -38,7 +38,14 @@ export default function DashboardClosingPage() {
         },
         body: JSON.stringify({
           message: prompt,
-          offerContext: d.offerContext
+          salesContext: {
+            offer: d.salesBuilderContext.offer,
+            audience: d.salesBuilderContext.audience,
+            pricing: d.salesBuilderContext.pricing,
+            positioning: d.salesBuilderContext.positioning,
+            headline: d.salesBuilderContext.headline,
+            slug: d.salesBuilderContext.landingSlug
+          }
         })
       });
       const json = (await res.json()) as { reply?: string; error?: string };

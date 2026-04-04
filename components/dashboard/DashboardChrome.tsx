@@ -25,7 +25,34 @@ const CHAT_STORAGE_KEY = "lacore-chat-history";
 type DashChatMessage = { role: "user" | "assistant"; text: string };
 
 const SIDEBAR_W = 220;
-const CHAT_W = 340;
+
+const QUICK_ACTIONS: { label: string; message: string }[] = [
+  {
+    label: "✦ Improve my offer",
+    message:
+      "Improve my offer: give 3 concrete, specific alternative versions of my offer, headlines, and positioning using my saved business context. Be sharp and conversion-focused."
+  },
+  {
+    label: "📄 Write landing copy",
+    message:
+      "Write landing page copy for me: hero headline, subheadline, 3 benefit bullets, social proof placeholder line, and a strong CTA — all specific to my offer and audience."
+  },
+  {
+    label: "📱 Generate posts",
+    message:
+      "Generate ready-to-post content for Instagram, X, LinkedIn, Threads, and Telegram based on my offer. Format each piece for the platform."
+  },
+  {
+    label: "💬 DM scripts",
+    message:
+      "Write cold DM and short outreach scripts tailored to my offer and audience (Instagram DMs and LinkedIn)."
+  },
+  {
+    label: "📊 Growth strategy",
+    message:
+      "Give me a concrete 30-day growth action plan with daily tasks specific to my offer and audience — not generic advice."
+  }
+];
 
 type NavBadgeKind = "done" | "live" | "soon" | "muted";
 
@@ -33,6 +60,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const data = useDashboardData();
+  const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -131,12 +159,22 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
     };
   };
 
-  const handleDashboardChatSend = useCallback(
-    async (e?: FormEvent) => {
-      e?.preventDefault();
-      const text = chatInput.trim();
+  const apiSalesContext = useMemo(
+    () => ({
+      offer: data.salesBuilderContext.offer,
+      audience: data.salesBuilderContext.audience,
+      pricing: data.salesBuilderContext.pricing,
+      positioning: data.salesBuilderContext.positioning,
+      headline: data.salesBuilderContext.headline,
+      slug: data.salesBuilderContext.landingSlug
+    }),
+    [data.salesBuilderContext]
+  );
+
+  const sendChatMessage = useCallback(
+    async (userText: string) => {
+      const text = userText.trim();
       if (!text || chatLoading || !data.sessionToken) return;
-      setChatInput("");
       const thread: DashChatMessage[] = [...chatMessages, { role: "user", text }];
       setChatMessages(thread);
       setChatLoading(true);
@@ -149,7 +187,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           },
           body: JSON.stringify({
             messages: thread.map((m) => ({ role: m.role, content: m.text })),
-            offerContext: data.offerContext
+            salesContext: apiSalesContext
           })
         });
         const json = (await res.json()) as { reply?: string; error?: string };
@@ -170,13 +208,21 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         setChatLoading(false);
       }
     },
-    [chatInput, chatLoading, data.sessionToken, data.offerContext, chatMessages]
+    [chatLoading, data.sessionToken, apiSalesContext, chatMessages]
   );
+
+  function handleChatSubmit(e?: FormEvent) {
+    e?.preventDefault();
+    const text = chatInput.trim();
+    if (!text || chatLoading || !data.sessionToken) return;
+    setChatInput("");
+    void sendChatMessage(text);
+  }
 
   function handleChatKeyDown(ev: KeyboardEvent<HTMLTextAreaElement>) {
     if (ev.key === "Enter" && !ev.shiftKey) {
       ev.preventDefault();
-      void handleDashboardChatSend();
+      handleChatSubmit();
     }
   }
 
@@ -214,6 +260,22 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       <style>{`
         ${dashPremiumCss}
         @keyframes dash-build-pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)} }
+        @keyframes dash-sb-dot-pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.55;transform:scale(0.9)} }
+        .dash-sb-fab {
+          transition: all 0.2s ease;
+        }
+        .dash-sb-fab--closed:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 40px rgba(6,182,212,0.45), 0 4px 12px rgba(0,0,0,0.5) !important;
+        }
+        .dash-sb-quick-pill {
+          transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+        .dash-sb-quick-pill:hover {
+          background: rgba(6,182,212,0.06) !important;
+          border-color: rgba(6,182,212,0.2) !important;
+          color: #06B6D4 !important;
+        }
         @media (max-width: 900px) {
           .dash-shell-root {
             flex-direction: column;
@@ -223,7 +285,6 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             overflow: auto;
           }
           .dash-sidebar-col { width: 100% !important; height: auto !important; border-right: none !important; border-bottom: 1px solid #1C1C22; flex-shrink: 0; }
-          .dash-chat-col { width: 100% !important; height: min(48vh, 480px) !important; max-height: 480px; border-right: none !important; border-bottom: 1px solid #1C1C22; flex-shrink: 0; }
           .dash-main-col { flex: 1; min-height: 0; overflow: visible !important; }
         }
       `}</style>
@@ -624,115 +685,6 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <aside
-        className="dash-chat-col"
-        style={{
-          width: CHAT_W,
-          flexShrink: 0,
-          height: "100vh",
-          background: "#0D0D11",
-          borderRight: "1px solid #1C1C22",
-          display: "flex",
-          flexDirection: "column",
-          boxSizing: "border-box"
-        }}
-      >
-        <div style={{ padding: "16px 18px", borderBottom: "1px solid #1C1C22", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#22c55e",
-                marginRight: 8,
-                flexShrink: 0
-              }}
-            />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#FFFFFF", letterSpacing: "0.05em" }}>Sales Builder</span>
-          </div>
-          <p style={{ margin: "1px 0 0", fontSize: 11, color: "#52525B" }}>AI sales assistant</p>
-        </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 0 }}>
-          {chatMessages.map((m, idx) => (
-            <div
-              key={`${idx}-${m.text.slice(0, 20)}`}
-              style={{
-                background: m.role === "user" ? "rgba(6,182,212,0.07)" : "#111116",
-                border: m.role === "user" ? "1px solid rgba(6,182,212,0.15)" : "1px solid #1C1C22",
-                borderRadius: m.role === "user" ? "8px 8px 2px 8px" : "8px 8px 8px 2px",
-                padding: "10px 13px",
-                marginLeft: m.role === "user" ? "auto" : 0,
-                marginRight: m.role === "user" ? 0 : "auto",
-                maxWidth: m.role === "user" ? "88%" : "100%",
-                fontSize: 13,
-                lineHeight: 1.65,
-                color: m.role === "user" ? "#E4E4E7" : "#A1A1AA",
-                boxSizing: "border-box",
-                marginBottom: 8
-              }}
-            >
-              {m.text}
-            </div>
-          ))}
-          {chatLoading ? (
-            <div style={{ fontSize: 12, color: "#52525B" }}>Thinking…</div>
-          ) : null}
-          <div ref={chatEndRef} />
-        </div>
-        <form
-          onSubmit={(e) => void handleDashboardChatSend(e)}
-          style={{
-            borderTop: "1px solid #1C1C22",
-            padding: "12px 16px",
-            flexShrink: 0
-          }}
-        >
-          <textarea
-            className="dash-chat-input"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={handleChatKeyDown}
-            rows={2}
-            placeholder="Ask anything…"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              background: "#16161C",
-              border: "1px solid #1C1C22",
-              borderRadius: 6,
-              padding: "9px 12px",
-              fontSize: 13,
-              resize: "none",
-              fontFamily: "inherit",
-              color: "#FFFFFF",
-              outline: "none"
-            }}
-          />
-          <button
-            type="submit"
-            disabled={chatLoading || !data.sessionToken}
-            style={{
-              width: "100%",
-              marginTop: 8,
-              background: "#06B6D4",
-              color: "#000",
-              border: "none",
-              padding: 9,
-              fontSize: 12,
-              fontWeight: 700,
-              borderRadius: 6,
-              letterSpacing: "0.06em",
-              cursor: chatLoading ? "not-allowed" : "pointer",
-              fontFamily: "inherit",
-              opacity: chatLoading ? 0.6 : 1
-            }}
-          >
-            SEND
-          </button>
-        </form>
-      </aside>
-
       <div
         className="dash-main-col"
         style={{
@@ -746,6 +698,253 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
+
+      {!data.buildingLanding ? (
+        <>
+          {chatOpen ? (
+            <button
+              type="button"
+              aria-label="Close Sales Builder overlay"
+              onClick={() => setChatOpen(false)}
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 998,
+                background: "rgba(0,0,0,0.3)",
+                backdropFilter: "blur(2px)",
+                WebkitBackdropFilter: "blur(2px)",
+                border: "none",
+                padding: 0,
+                cursor: "pointer"
+              }}
+            />
+          ) : null}
+
+          <aside
+            aria-hidden={!chatOpen}
+            style={{
+              position: "fixed",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 400,
+              maxWidth: "100vw",
+              zIndex: 999,
+              background: "#0D0D11",
+              borderLeft: "1px solid #1C1C22",
+              boxShadow: "-8px 0 40px rgba(0,0,0,0.5)",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              transform: chatOpen ? "translateX(0)" : "translateX(100%)",
+              transition: "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
+              pointerEvents: chatOpen ? "auto" : "none",
+              boxSizing: "border-box"
+            }}
+          >
+            <div style={{ padding: 20, borderBottom: "1px solid #1C1C22", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "#22c55e",
+                      flexShrink: 0
+                    }}
+                  />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Sales Builder</span>
+                </div>
+                <span
+                  style={{
+                    marginLeft: "auto",
+                    fontSize: 9,
+                    fontWeight: 600,
+                    background: "rgba(6,182,212,0.15)",
+                    color: "#06B6D4",
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    border: "1px solid rgba(6,182,212,0.2)"
+                  }}
+                >
+                  AI
+                </span>
+              </div>
+              <p style={{ margin: "6px 0 0", fontSize: 11, color: "#52525B" }}>Your AI sales assistant</p>
+            </div>
+
+            <div
+              style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid #1C1C22",
+                flexShrink: 0,
+                overflowX: "auto",
+                display: "flex",
+                gap: 8,
+                scrollbarWidth: "thin"
+              }}
+            >
+              {QUICK_ACTIONS.map((qa) => (
+                <button
+                  key={qa.label}
+                  type="button"
+                  disabled={chatLoading || !data.sessionToken}
+                  className="dash-sb-quick-pill"
+                  onClick={() => void sendChatMessage(qa.message)}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid #1C1C22",
+                    color: "#A1A1AA",
+                    fontSize: 11,
+                    padding: "6px 12px",
+                    borderRadius: 20,
+                    cursor: chatLoading || !data.sessionToken ? "not-allowed" : "pointer",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    fontFamily: "inherit",
+                    opacity: chatLoading || !data.sessionToken ? 0.5 : 1
+                  }}
+                >
+                  {qa.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 0, minHeight: 0 }}>
+              {chatMessages.map((m, idx) => (
+                <div
+                  key={`${idx}-${m.text.slice(0, 20)}`}
+                  style={{
+                    background: m.role === "user" ? "rgba(6,182,212,0.07)" : "#111116",
+                    border: m.role === "user" ? "1px solid rgba(6,182,212,0.15)" : "1px solid #1C1C22",
+                    borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
+                    padding: "12px 14px",
+                    marginLeft: m.role === "user" ? "auto" : 0,
+                    marginRight: m.role === "user" ? 0 : "auto",
+                    maxWidth: m.role === "user" ? "88%" : "100%",
+                    fontSize: 13,
+                    lineHeight: 1.65,
+                    color: m.role === "user" ? "#E4E4E7" : "#A1A1AA",
+                    boxSizing: "border-box",
+                    marginBottom: 10
+                  }}
+                >
+                  {m.text}
+                </div>
+              ))}
+              {chatLoading ? (
+                <div style={{ fontSize: 12, color: "#52525B" }}>Thinking…</div>
+              ) : null}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form
+              onSubmit={(e) => handleChatSubmit(e)}
+              style={{
+                borderTop: "1px solid #1C1C22",
+                padding: "14px 16px",
+                flexShrink: 0
+              }}
+            >
+              <textarea
+                className="dash-chat-input"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                rows={3}
+                placeholder="Ask anything…"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  background: "#16161C",
+                  border: "1px solid #1C1C22",
+                  borderRadius: 8,
+                  padding: "10px 13px",
+                  fontSize: 13,
+                  resize: "none",
+                  fontFamily: "inherit",
+                  color: "#FFFFFF",
+                  outline: "none"
+                }}
+              />
+              <button
+                type="submit"
+                disabled={chatLoading || !data.sessionToken}
+                style={{
+                  width: "100%",
+                  marginTop: 8,
+                  background: "#06B6D4",
+                  color: "#000",
+                  border: "none",
+                  padding: 10,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  borderRadius: 7,
+                  letterSpacing: "0.06em",
+                  cursor: chatLoading ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                  opacity: chatLoading ? 0.6 : 1
+                }}
+              >
+                SEND
+              </button>
+            </form>
+          </aside>
+
+          <button
+            type="button"
+            onClick={() => setChatOpen((o) => !o)}
+            className={`dash-sb-fab ${chatOpen ? "dash-sb-fab--open" : "dash-sb-fab--closed"}`}
+            aria-expanded={chatOpen}
+            style={{
+              position: "fixed",
+              bottom: 32,
+              right: 32,
+              zIndex: 1000,
+              padding: "14px 22px",
+              borderRadius: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              cursor: "pointer",
+              border: "1px solid rgba(255,255,255,0.15)",
+              fontFamily: "inherit",
+              boxShadow: chatOpen
+                ? "0 4px 16px rgba(0,0,0,0.4)"
+                : "0 8px 32px rgba(6,182,212,0.35), 0 2px 8px rgba(0,0,0,0.4)",
+              background: chatOpen
+                ? "linear-gradient(135deg, #1C1C22 0%, #111116 100%)"
+                : "linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
+            }}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1, color: chatOpen ? "#FFFFFF" : "#000" }}>{chatOpen ? "✕" : "⚡"}</span>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: "0.05em",
+                color: chatOpen ? "#FFFFFF" : "#000"
+              }}
+            >
+              {chatOpen ? "Close" : "Sales Builder"}
+            </span>
+            {!chatOpen ? (
+              <span
+                className="dash-sb-live-dot"
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#22c55e",
+                  animation: "dash-sb-dot-pulse 2s ease-in-out infinite",
+                  flexShrink: 0
+                }}
+              />
+            ) : null}
+          </button>
+        </>
+      ) : null}
     </main>
   );
 }

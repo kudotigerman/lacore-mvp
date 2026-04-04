@@ -5,77 +5,91 @@ export const maxDuration = 60;
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
+type SalesContextPayload = {
+  offer?: string;
+  audience?: string;
+  pricing?: string;
+  positioning?: string;
+  headline?: string;
+  slug?: string | null;
+};
+
 type Body = {
   message?: string;
   messages?: ChatTurn[];
+  /** @deprecated prefer salesContext */
   offerContext?: string;
+  salesContext?: SalesContextPayload;
 };
 
-function buildSystemPrompt(offerContext: string): string {
-  const ctx = offerContext.trim() || "No offer saved yet.";
-  return `You are LACORE Sales Builder — a world-class AI sales advisor embedded inside LACORE platform. Your job is to help freelancers, consultants, coaches and service businesses get more clients automatically.
+function normalizeSalesContext(body: Body): {
+  offer: string;
+  audience: string;
+  pricing: string;
+  positioning: string;
+  headline: string;
+  slug: string;
+} {
+  const sc = body.salesContext;
+  if (sc && typeof sc === "object") {
+    const slug = sc.slug === null || sc.slug === undefined ? "" : String(sc.slug);
+    return {
+      offer: typeof sc.offer === "string" ? sc.offer : "",
+      audience: typeof sc.audience === "string" ? sc.audience : "",
+      pricing: typeof sc.pricing === "string" ? sc.pricing : "",
+      positioning: typeof sc.positioning === "string" ? sc.positioning : "",
+      headline: typeof sc.headline === "string" ? sc.headline : "",
+      slug
+    };
+  }
+  const raw = typeof body.offerContext === "string" ? body.offerContext.trim() : "";
+  return {
+    offer: raw || "(No structured context.)",
+    audience: "",
+    pricing: "",
+    positioning: "",
+    headline: "",
+    slug: ""
+  };
+}
 
-You are proactive, specific, and action-oriented. You give real output — not advice about what to do, but the actual thing done.
+function buildSystemPrompt(ctx: ReturnType<typeof normalizeSalesContext>): string {
+  const landingLine = ctx.slug.trim()
+    ? `https://www.lacore.ai/p/${ctx.slug.trim()}`
+    : "Not published yet (no landing page slug).";
 
-CAPABILITIES — what you can do right now:
+  return `You are the LACORE Sales Builder — an elite AI sales strategist built into the LACORE platform. You have full context about the user's business.
 
-1. SHARPEN THE OFFER
-   - Analyze their current offer and find weaknesses
-   - Rewrite their headline, positioning, pricing angle
-   - Give them 3 alternative offer framings to test
+USER CONTEXT:
+- Offer: ${ctx.offer}
+- Audience: ${ctx.audience}
+- Pricing: ${ctx.pricing}
+- Positioning: ${ctx.positioning}
+- Headline: ${ctx.headline}
+- Landing page: ${landingLine}
 
-2. LANDING PAGE COPY
-   - Write specific hero headlines for their niche
-   - Suggest CTA improvements
-   - Write testimonial frameworks they can fill in
-   - Identify what sections are missing
-
-3. CONTENT — write actual posts ready to copy-paste:
-   - Instagram carousel (5 slides with text)
-   - X/Twitter thread (6 tweets)
-   - LinkedIn post (professional angle)
-   - Threads post (casual, engaging)
-   Always write in their voice based on their offer
-
-4. LEAD SCRIPTS — write complete scripts:
-   - Cold DM for Instagram/LinkedIn
-   - Response to someone who commented on their post
-   - Follow-up when someone went silent
-   - Discovery call opening script
-
-5. CLOSING SCRIPTS:
-   - Handle price objections ('too expensive')
-   - Handle timing objections ('not right now')
-   - Handle competitor objections ('I found someone cheaper')
-   - Proposal email template
-
-6. GROWTH STRATEGY:
-   - 30-day client acquisition plan for their niche
-   - Which platforms to focus on and why
-   - What type of content gets clients in their specific niche
-
-7. INTEGRATION GUIDANCE:
-   - How to connect custom domain
-   - How to set up Stripe on their landing page
-   - How to connect social accounts for auto-posting
-   - How to read their analytics
+YOUR CAPABILITIES:
+1. SHARPEN THE OFFER — Rewrite and improve their offer to be more compelling, specific, and high-converting. Give 3 concrete alternatives.
+2. LANDING PAGE COPY — Write specific headlines, subheadlines, bullet points, and CTAs for their landing page. Be specific to their offer.
+3. CONTENT — Write ready-to-post content for Instagram, X, LinkedIn, Threads, Telegram. Adapt format and tone per platform.
+4. LEAD SCRIPTS — Write cold DM scripts, email templates, LinkedIn outreach. Personalized to their offer and audience.
+5. CLOSING SCRIPTS — Handle objections, write follow-up sequences, closing techniques specific to their pricing.
+6. GROWTH STRATEGY — Give a concrete 30-day action plan with daily tasks. Be specific, not generic.
+7. PLATFORM GUIDANCE — Help them use LACORE features: how to edit their landing page, connect domain, set up Stripe, generate content.
 
 RULES:
-- Always use their offer details when writing scripts/content
-- Never say 'I suggest you write...' — just write it
-- Keep responses under 5 sentences UNLESS writing scripts/posts/plans (then write the full thing)
-- Be direct. No fluff.
-- If they ask something outside your scope — redirect to what you CAN do
-
-User's business context:
-${ctx}`;
+- Always respond in the same language the user writes in
+- Be direct, confident, specific — never generic
+- Always reference their specific offer, audience, and pricing
+- Give concrete examples, not theory
+- When suggesting content, write the actual content — not instructions on how to write it
+- Maximum response length: clear and scannable, use line breaks
+- Never say you cannot help — find a way to be useful`;
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Body;
-    const offerContext =
-      typeof body.offerContext === "string" ? body.offerContext : "";
 
     let anthropicMessages: Array<{ role: "user" | "assistant"; content: string }>;
 
@@ -112,48 +126,44 @@ export async function POST(request: Request) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: authHeader } }
     });
 
     const {
       data: { user },
-      error: userError,
+      error: userError
     } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const system = buildSystemPrompt(offerContext);
+    const system = buildSystemPrompt(normalizeSalesContext(body));
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 4096,
         system,
-        messages: anthropicMessages,
-      }),
+        messages: anthropicMessages
+      })
     });
 
     if (!anthropicResponse.ok) {
       const details = await anthropicResponse.text();
-      return NextResponse.json(
-        { error: "Assistant request failed.", details },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "Assistant request failed.", details }, { status: 502 });
     }
 
     const completion = (await anthropicResponse.json()) as {
       content?: Array<{ type: string; text?: string }>;
     };
 
-    const reply =
-      completion.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
+    const reply = completion.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
 
     if (!reply) {
       return NextResponse.json({ error: "Empty assistant response." }, { status: 502 });

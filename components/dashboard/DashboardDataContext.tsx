@@ -21,6 +21,16 @@ export type DashboardOffer = {
   headline: string;
 };
 
+/** Payload for /api/dashboard-chat — structured business context */
+export type SalesBuilderContextPayload = {
+  offer: string;
+  audience: string;
+  pricing: string;
+  positioning: string;
+  headline: string;
+  landingSlug: string | null;
+};
+
 type ProfileRow = {
   display_name: string | null;
   telegram: string | null;
@@ -87,6 +97,7 @@ type DashboardDataContextValue = {
   setLandingSlug: (s: string | null) => void;
   savedProfileDisplayName: string | null;
   offerContext: string;
+  salesBuilderContext: SalesBuilderContextPayload;
   uiTheme: UiTheme;
   setDashboardTheme: (t: UiTheme) => void;
   buildingLanding: boolean;
@@ -184,8 +195,30 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     if (!offer) {
       return "No offer saved yet. The user can generate an offer from the home page.";
     }
-    return `OFFER: ${offer.offer}\nAUDIENCE: ${offer.audience}\nPRICING: ${offer.pricing}\nPOSITIONING: ${offer.positioning}\nHEADLINE: ${offer.headline}`;
-  }, [offer]);
+    const slugLine = landingSlug ? `\nLANDING SLUG: ${landingSlug}` : "\nLANDING SLUG: (none)";
+    return `OFFER: ${offer.offer}\nAUDIENCE: ${offer.audience}\nPRICING: ${offer.pricing}\nPOSITIONING: ${offer.positioning}\nHEADLINE: ${offer.headline}${slugLine}`;
+  }, [offer, landingSlug]);
+
+  const salesBuilderContext = useMemo((): SalesBuilderContextPayload => {
+    if (!offer) {
+      return {
+        offer: "(Not saved yet — user can generate an offer from the home page.)",
+        audience: "(Not saved yet.)",
+        pricing: "(Not saved yet.)",
+        positioning: "(Not saved yet.)",
+        headline: "(Not saved yet.)",
+        landingSlug
+      };
+    }
+    return {
+      offer: offer.offer,
+      audience: offer.audience,
+      pricing: offer.pricing,
+      positioning: offer.positioning,
+      headline: offer.headline,
+      landingSlug
+    };
+  }, [offer, landingSlug]);
 
   const refreshOffer = useCallback(async () => {
     if (!userId) return;
@@ -443,6 +476,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       setLandingSlug,
       savedProfileDisplayName,
       offerContext,
+      salesBuilderContext,
       uiTheme,
       setDashboardTheme,
       buildingLanding,
@@ -490,6 +524,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       landingSlug,
       savedProfileDisplayName,
       offerContext,
+      salesBuilderContext,
       uiTheme,
       buildingLanding,
       buildError,
