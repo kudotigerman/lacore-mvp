@@ -6,7 +6,6 @@ import { getSupabaseClient } from "@/lib/supabase";
 type Platform = "instagram" | "x" | "linkedin" | "threads" | "telegram";
 type PostType = "hook" | "value" | "story" | "offer" | "case_study";
 type ModelId = "claude" | "gpt4o" | "gemini";
-type ImageStyle = "professional" | "creative" | "minimal" | "bold";
 
 interface ContentMachineProps {
   offer: string;
@@ -14,19 +13,14 @@ interface ContentMachineProps {
   userId: string;
 }
 
+type PostImageState = { url?: string; loading: boolean; error: string };
+
 const PLATFORMS: { id: Platform; label: string; short: string }[] = [
   { id: "instagram", label: "Instagram", short: "IG" },
   { id: "x", label: "X", short: "𝕏" },
   { id: "linkedin", label: "LinkedIn", short: "in" },
   { id: "threads", label: "Threads", short: "〒" },
   { id: "telegram", label: "Telegram", short: "✈️" }
-];
-
-const IMAGE_STYLES: { id: ImageStyle; label: string }[] = [
-  { id: "professional", label: "Professional" },
-  { id: "creative", label: "Creative" },
-  { id: "minimal", label: "Minimal" },
-  { id: "bold", label: "Bold" }
 ];
 
 const POST_TYPES: { id: PostType; label: string }[] = [
@@ -52,9 +46,35 @@ function modelLabel(m: ModelId): string {
   return m.toUpperCase();
 }
 
-export default function ContentMachine({ offer, audience, userId }: ContentMachineProps) {
-  const [activeTab, setActiveTab] = useState<"text" | "image">("text");
+const generateImageBtnStyle: CSSProperties = {
+  border: "1px solid var(--border-primary)",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  fontSize: "11px",
+  fontWeight: 600,
+  letterSpacing: "0.08em",
+  padding: "8px 14px",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  borderRadius: 4
+};
 
+async function downloadImageFile(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Download failed.");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = "lacore-image.jpg";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
+export default function ContentMachine({ offer, audience, userId }: ContentMachineProps) {
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [postType, setPostType] = useState<PostType>("hook");
   const [model, setModel] = useState<ModelId>("claude");
@@ -63,12 +83,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
-
-  const [imagePlatform, setImagePlatform] = useState<Platform>("instagram");
-  const [imageStyle, setImageStyle] = useState<ImageStyle>("professional");
-  const [images, setImages] = useState<{ id: number; url: string }[] | null>(null);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState("");
+  const [postImages, setPostImages] = useState<Record<number, PostImageState>>({});
 
   const btnBase: CSSProperties = {
     border: "1px solid var(--border-primary)",
@@ -86,25 +101,6 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     ...btnBase,
     background: "#06B6D4",
     color: "#000",
-    border: "1px solid #06B6D4"
-  };
-
-  const tabBase: CSSProperties = {
-    padding: "10px 24px",
-    fontSize: "12px",
-    letterSpacing: "0.08em",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    border: "1px solid var(--border-primary)",
-    color: "var(--text-secondary)",
-    background: "transparent"
-  };
-
-  const tabActive: CSSProperties = {
-    ...tabBase,
-    background: "#06B6D4",
-    color: "#000",
-    fontWeight: 700,
     border: "1px solid #06B6D4"
   };
 
@@ -150,6 +146,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         return;
       }
       setPosts(data.posts);
+      setPostImages({});
     } catch {
       setError("Network error.");
     } finally {
@@ -157,22 +154,24 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     }
   }, [audience, offer, model, platform, postType, userId]);
 
-  const runImageGenerate = useCallback(async () => {
-    setImageError("");
+  async function generatePostImage(postId: number, postText: string) {
+    setPostImages((prev) => ({
+      ...prev,
+      [postId]: { ...prev[postId], loading: true, error: "", url: prev[postId]?.url }
+    }));
+
     const supabase = getSupabaseClient();
     const {
       data: { session }
     } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      setImageError("Sign in required.");
-      return;
-    }
-    if (!offer.trim()) {
-      setImageError("Add your offer in Layer 01 first.");
+      setPostImages((prev) => ({
+        ...prev,
+        [postId]: { ...prev[postId], loading: false, error: "Sign in required.", url: prev[postId]?.url }
+      }));
       return;
     }
 
-    setImageLoading(true);
     try {
       const res = await fetch("/api/content/generate-image", {
         method: "POST",
@@ -181,32 +180,41 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           Authorization: `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          platform: imagePlatform,
-          style: imageStyle,
+          platform,
+          style: "professional",
           offer: offer.trim(),
           audience: audience.trim(),
-          userId
+          userId,
+          postText
         })
       });
-      const data = (await res.json()) as {
-        images?: { id: number; url: string }[];
-        error?: string;
-      };
-      if (!res.ok) {
-        setImageError(data.error ?? "Image generation failed.");
+      const data = (await res.json()) as { images?: { id: number; url: string }[]; error?: string };
+      if (!res.ok || !data.images?.[0]?.url) {
+        setPostImages((prev) => ({
+          ...prev,
+          [postId]: {
+            loading: false,
+            error: data.error ?? "Image generation failed.",
+            url: prev[postId]?.url
+          }
+        }));
         return;
       }
-      if (!data.images?.length) {
-        setImageError("No images returned.");
-        return;
-      }
-      setImages(data.images);
+      setPostImages((prev) => ({
+        ...prev,
+        [postId]: { url: data.images![0].url, loading: false, error: "" }
+      }));
     } catch {
-      setImageError("Network error.");
-    } finally {
-      setImageLoading(false);
+      setPostImages((prev) => ({
+        ...prev,
+        [postId]: {
+          loading: false,
+          error: "Network error.",
+          url: prev[postId]?.url
+        }
+      }));
     }
-  }, [audience, imagePlatform, imageStyle, offer, userId]);
+  }
 
   async function handleRegeneratePost(postId: number) {
     setError("");
@@ -244,6 +252,11 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
       }
       const newText = data.posts[0].text;
       setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, text: newText } : p)));
+      setPostImages((prev) => {
+        const next = { ...prev };
+        delete next[postId];
+        return next;
+      });
     } catch {
       setError("Network error.");
     } finally {
@@ -264,10 +277,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     marginBottom: 12
   };
 
-  const outerMaxWidth = activeTab === "image" && images && images.length > 0 ? 720 : 640;
-
   return (
-    <div style={{ fontFamily: "inherit", maxWidth: outerMaxWidth }}>
+    <div style={{ fontFamily: "inherit", maxWidth: 640 }}>
       <style>{`
         @keyframes content-machine-pulse {
           0%, 100% { opacity: 1; }
@@ -278,255 +289,144 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         }
       `}</style>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ ...rowStyle, marginBottom: 10 }}>
+          {PLATFORMS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setPlatform(p.id)}
+              style={platform === p.id ? btnActive : btnBase}
+              title={p.label}
+            >
+              {p.short} {p.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ ...rowStyle, marginBottom: 10 }}>
+          {POST_TYPES.map((pt) => (
+            <button
+              key={pt.id}
+              type="button"
+              onClick={() => setPostType(pt.id)}
+              style={postType === pt.id ? btnActive : btnBase}
+            >
+              {pt.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ ...rowStyle, marginBottom: 16 }}>
+          {MODELS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setModel(m.id)}
+              style={model === m.id ? btnActive : btnBase}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
         <button
           type="button"
-          onClick={() => setActiveTab("text")}
-          style={activeTab === "text" ? tabActive : tabBase}
+          onClick={() => void runGenerate()}
+          disabled={loading || !offer.trim() || !userId}
+          className={loading ? "content-machine-generating" : undefined}
+          style={{
+            width: "100%",
+            border: "none",
+            background: loading || !offer.trim() ? "var(--border-primary)" : "#06B6D4",
+            color: loading || !offer.trim() ? "var(--text-muted)" : "#000",
+            fontSize: "13px",
+            fontWeight: 800,
+            letterSpacing: "0.1em",
+            padding: "16px",
+            cursor: loading || !offer.trim() ? "not-allowed" : "pointer",
+            fontFamily: "inherit"
+          }}
         >
-          TEXT
+          {loading ? "GENERATING..." : "⚡ GENERATE 5 POSTS"}
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("image")}
-          style={activeTab === "image" ? tabActive : tabBase}
-        >
-          IMAGE
-        </button>
+        {error ? (
+          <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#ef4444" }}>{error}</p>
+        ) : null}
       </div>
 
-      {activeTab === "text" ? (
-        <>
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ ...rowStyle, marginBottom: 10 }}>
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setPlatform(p.id)}
-                  style={platform === p.id ? btnActive : btnBase}
-                  title={p.label}
-                >
-                  {p.short} {p.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ ...rowStyle, marginBottom: 10 }}>
-              {POST_TYPES.map((pt) => (
-                <button
-                  key={pt.id}
-                  type="button"
-                  onClick={() => setPostType(pt.id)}
-                  style={postType === pt.id ? btnActive : btnBase}
-                >
-                  {pt.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ ...rowStyle, marginBottom: 16 }}>
-              {MODELS.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setModel(m.id)}
-                  style={model === m.id ? btnActive : btnBase}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void runGenerate()}
-              disabled={loading || !offer.trim() || !userId}
-              className={loading ? "content-machine-generating" : undefined}
-              style={{
-                width: "100%",
-                border: "none",
-                background: loading || !offer.trim() ? "var(--border-primary)" : "#06B6D4",
-                color: loading || !offer.trim() ? "var(--text-muted)" : "#000",
-                fontSize: "13px",
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                padding: "16px",
-                cursor: loading || !offer.trim() ? "not-allowed" : "pointer",
-                fontFamily: "inherit"
-              }}
-            >
-              {loading ? "GENERATING..." : "⚡ GENERATE 5 POSTS"}
-            </button>
-            {error ? (
-              <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#ef4444" }}>{error}</p>
-            ) : null}
-          </div>
-
-          {posts.length > 0 ? (
-            <div style={{ marginBottom: 32 }}>
-              <p
+      {posts.length > 0 ? (
+        <div style={{ marginBottom: 32 }}>
+          <p
+            style={{
+              margin: "0 0 16px",
+              fontSize: "11px",
+              color: "var(--text-muted)",
+              letterSpacing: "0.1em",
+              fontWeight: 600
+            }}
+          >
+            5 POSTS FOR {platformLabel(platform)} — {modelLabel(model)}
+          </p>
+          {posts.map((post, idx) => {
+            const img = postImages[post.id];
+            return (
+              <div
+                key={`${post.id}-${idx}`}
                 style={{
-                  margin: "0 0 16px",
-                  fontSize: "11px",
-                  color: "var(--text-muted)",
-                  letterSpacing: "0.1em",
-                  fontWeight: 600
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-primary)",
+                  padding: 20,
+                  marginBottom: 14
                 }}
               >
-                5 POSTS FOR {platformLabel(platform)} — {modelLabel(model)}
-              </p>
-              {posts.map((post, idx) => (
                 <div
-                  key={`${post.id}-${idx}`}
                   style={{
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border-primary)",
-                    padding: 20,
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: "#06B6D4",
+                    marginBottom: 10
+                  }}
+                >
+                  {String(idx + 1).padStart(2, "0")}
+                </div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: 1.7,
+                    color: "var(--text-primary)",
+                    whiteSpace: "pre-wrap",
                     marginBottom: 14
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      color: "#06B6D4",
-                      marginBottom: 10
-                    }}
-                  >
-                    {String(idx + 1).padStart(2, "0")}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      lineHeight: 1.7,
-                      color: "var(--text-primary)",
-                      whiteSpace: "pre-wrap",
-                      marginBottom: 14
-                    }}
-                  >
-                    {post.text}
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
-                    <button
-                      type="button"
-                      onClick={() => void handleCopy(post.text, post.id)}
-                      style={{
-                        ...btnBase,
-                        fontSize: "11px",
-                        letterSpacing: "0.08em"
-                      }}
-                    >
-                      {copiedId === post.id ? "✓ COPIED" : "COPY"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={regeneratingId !== null || loading}
-                      onClick={() => void handleRegeneratePost(post.id)}
-                      style={{
-                        ...btnBase,
-                        fontSize: "11px",
-                        letterSpacing: "0.06em",
-                        opacity: regeneratingId !== null || loading ? 0.5 : 1
-                      }}
-                    >
-                      {regeneratingId === post.id ? "…" : "↺ REGENERATE"}
-                    </button>
-                  </div>
+                  {post.text}
                 </div>
-              ))}
-            </div>
-          ) : null}
 
-          {!loading && posts.length === 0 ? (
-            <p
-              style={{
-                fontSize: "14px",
-                color: "var(--text-muted)",
-                textAlign: "center",
-                padding: "60px 0",
-                margin: 0,
-                lineHeight: 1.6
-              }}
-            >
-              Select platform, post type and AI model above
-              <br />
-              then click GENERATE
-            </p>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ ...rowStyle, marginBottom: 10 }}>
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setImagePlatform(p.id)}
-                  style={imagePlatform === p.id ? btnActive : btnBase}
-                  title={p.label}
-                >
-                  {p.short} {p.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ ...rowStyle, marginBottom: 16 }}>
-              {IMAGE_STYLES.map((st) => (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => setImageStyle(st.id)}
-                  style={imageStyle === st.id ? btnActive : btnBase}
-                >
-                  {st.label}
-                </button>
-              ))}
-            </div>
+                {img?.loading ? (
+                  <p
+                    className="content-machine-generating"
+                    style={{
+                      margin: "0 0 12px",
+                      fontSize: "11px",
+                      color: "var(--text-muted)"
+                    }}
+                  >
+                    Generating image...
+                  </p>
+                ) : null}
+                {img?.error ? (
+                  <p style={{ margin: "0 0 12px", fontSize: "11px", color: "#ef4444" }}>{img.error}</p>
+                ) : null}
 
-            <button
-              type="button"
-              onClick={() => void runImageGenerate()}
-              disabled={imageLoading || !offer.trim() || !userId}
-              className={imageLoading ? "content-machine-generating" : undefined}
-              style={{
-                width: "100%",
-                border: "none",
-                background: imageLoading || !offer.trim() ? "var(--border-primary)" : "#06B6D4",
-                color: imageLoading || !offer.trim() ? "var(--text-muted)" : "#000",
-                fontSize: "13px",
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                padding: "16px",
-                cursor: imageLoading || !offer.trim() ? "not-allowed" : "pointer",
-                fontFamily: "inherit"
-              }}
-            >
-              {imageLoading ? "GENERATING..." : "⚡ GENERATE 2 IMAGES"}
-            </button>
-            {imageError ? (
-              <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#ef4444" }}>{imageError}</p>
-            ) : null}
-          </div>
-
-          {images && images.length > 0 ? (
-            <div style={{ marginBottom: 24 }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 16,
-                  marginBottom: 12
-                }}
-              >
-                {images.map((img) => (
-                  <div key={img.id}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- ephemeral OpenAI URLs, not in next.config */}
+                {img?.url ? (
+                  <div style={{ marginBottom: 14 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- ephemeral OpenAI URLs */}
                     <img
                       src={img.url}
-                      alt={`Generated ${img.id}`}
+                      alt=""
                       style={{
                         width: "100%",
                         aspectRatio: "1",
                         objectFit: "cover",
+                        marginTop: 12,
                         borderRadius: 4,
                         border: "1px solid var(--border-primary)",
                         display: "block"
@@ -535,56 +435,87 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                     <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                       <button
                         type="button"
-                        onClick={() => window.open(img.url, "_blank", "noopener,noreferrer")}
-                        style={{
-                          ...btnBase,
-                          fontSize: "11px",
-                          letterSpacing: "0.06em"
-                        }}
+                        onClick={() => void downloadImageFile(img.url!).catch(() => {})}
+                        style={{ ...btnBase, fontSize: "11px", letterSpacing: "0.06em" }}
                       >
                         ⬇ DOWNLOAD
                       </button>
                       <button
                         type="button"
-                        disabled={imageLoading}
-                        onClick={() => void runImageGenerate()}
+                        disabled={img.loading}
+                        onClick={() => void generatePostImage(post.id, post.text)}
                         style={{
                           ...btnBase,
                           fontSize: "11px",
                           letterSpacing: "0.06em",
-                          opacity: imageLoading ? 0.5 : 1
+                          opacity: img.loading ? 0.5 : 1
                         }}
                       >
-                        {imageLoading ? "…" : "↺ REGENERATE"}
+                        ↺ NEW IMAGE
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-              <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                ⚠ Download images now — links expire in 1 hour
-              </p>
-            </div>
-          ) : null}
+                ) : null}
 
-          {!imageLoading && (!images || images.length === 0) ? (
-            <p
-              style={{
-                fontSize: "14px",
-                color: "var(--text-muted)",
-                textAlign: "center",
-                padding: "60px 0",
-                margin: 0,
-                lineHeight: 1.6
-              }}
-            >
-              Select platform and style above
-              <br />
-              then click GENERATE
-            </p>
-          ) : null}
-        </>
-      )}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopy(post.text, post.id)}
+                    style={{
+                      ...btnBase,
+                      fontSize: "11px",
+                      letterSpacing: "0.08em"
+                    }}
+                  >
+                    {copiedId === post.id ? "✓ COPIED" : "COPY"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={regeneratingId !== null || loading}
+                    onClick={() => void handleRegeneratePost(post.id)}
+                    style={{
+                      ...btnBase,
+                      fontSize: "11px",
+                      letterSpacing: "0.06em",
+                      opacity: regeneratingId !== null || loading ? 0.5 : 1
+                    }}
+                  >
+                    {regeneratingId === post.id ? "…" : "↺ REGENERATE"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={img?.loading || loading || !offer.trim()}
+                    onClick={() => void generatePostImage(post.id, post.text)}
+                    style={{
+                      ...generateImageBtnStyle,
+                      opacity: img?.loading || loading || !offer.trim() ? 0.5 : 1
+                    }}
+                  >
+                    🖼 GENERATE IMAGE
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {!loading && posts.length === 0 ? (
+        <p
+          style={{
+            fontSize: "14px",
+            color: "var(--text-muted)",
+            textAlign: "center",
+            padding: "60px 0",
+            margin: 0,
+            lineHeight: 1.6
+          }}
+        >
+          Select platform, post type and AI model above
+          <br />
+          then click GENERATE
+        </p>
+      ) : null}
     </div>
   );
 }

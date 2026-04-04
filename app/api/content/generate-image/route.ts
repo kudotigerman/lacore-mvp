@@ -7,6 +7,8 @@ type ImageStyle = "professional" | "creative" | "minimal" | "bold";
 
 const PLATFORMS = ["instagram", "x", "linkedin", "threads", "telegram"] as const;
 
+const MAX_PROMPT_CHARS = 3800;
+
 function styleDescription(style: ImageStyle): string {
   switch (style) {
     case "professional":
@@ -29,6 +31,24 @@ Target audience: ${audience}.
 Style: ${styleDesc}.
 No text on image. Clean, modern, high-quality visual that represents the business.
 Make it suitable for ${platform} posts.`;
+}
+
+function buildImagePromptFromPost(
+  platform: string,
+  postText: string,
+  offer: string,
+  audience: string,
+  style: ImageStyle
+): string {
+  const styleDesc = styleDescription(style);
+  const safePost =
+    postText.length > MAX_PROMPT_CHARS ? postText.slice(0, MAX_PROMPT_CHARS) + "…" : postText;
+  return `Create a social media image for ${platform} that visually represents this post:
+'${safePost.replace(/'/g, "′")}'
+Business offer: ${offer}. Target audience: ${audience}.
+Style: ${styleDesc}.
+No text overlays on image. Clean, modern, photorealistic visual.
+Make it suitable for ${platform} format.`;
 }
 
 async function generateOneImage(apiKey: string, prompt: string): Promise<string> {
@@ -87,6 +107,7 @@ export async function POST(request: Request) {
       offer?: string;
       audience?: string;
       userId?: string;
+      postText?: string;
     };
 
     if (typeof body.userId === "string" && body.userId !== user.id) {
@@ -97,6 +118,7 @@ export async function POST(request: Request) {
     const style = body.style as ImageStyle;
     const offer = typeof body.offer === "string" ? body.offer.trim() : "";
     const audience = typeof body.audience === "string" ? body.audience.trim() : "";
+    const postText = typeof body.postText === "string" ? body.postText.trim() : "";
 
     if (!PLATFORMS.includes(platform as (typeof PLATFORMS)[number])) {
       return NextResponse.json({ error: "Invalid platform." }, { status: 400 });
@@ -114,18 +136,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "OpenAI is not configured." }, { status: 500 });
     }
 
-    const imagePrompt = buildImagePrompt(platform, offer, audience || "General audience", style);
+    const aud = audience || "General audience";
+    const imagePrompt =
+      postText.length > 0
+        ? buildImagePromptFromPost(platform, postText, offer, aud, style)
+        : buildImagePrompt(platform, offer, aud, style);
 
-    const [url1, url2] = await Promise.all([
-      generateOneImage(apiKey, imagePrompt),
-      generateOneImage(apiKey, imagePrompt)
-    ]);
+    const url = await generateOneImage(apiKey, imagePrompt);
 
     return NextResponse.json({
-      images: [
-        { id: 1, url: url1 },
-        { id: 2, url: url2 }
-      ]
+      images: [{ id: 1, url }]
     });
   } catch (e) {
     console.error("content/generate-image:", e);
