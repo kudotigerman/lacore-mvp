@@ -149,6 +149,13 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
     };
   }
 
+  const guideBox: CSSProperties = {
+    background: "rgba(6,182,212,0.05)",
+    border: "1px solid rgba(6,182,212,0.15)",
+    padding: "16px",
+    marginBottom: "20px"
+  };
+
   const s: Record<string, CSSProperties> = {
     btn: {
       background: "#06B6D4",
@@ -232,6 +239,32 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
   }
 
   if (showForm) {
+    const stepRow = (n: string, text: string) => (
+      <div
+        key={n}
+        style={{
+          display: "flex",
+          gap: "10px",
+          alignItems: "flex-start",
+          marginBottom: "10px"
+        }}
+      >
+        <span
+          style={{
+            color: "#06B6D4",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            flexShrink: 0,
+            minWidth: "52px"
+          }}
+        >
+          {n}
+        </span>
+        <span style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{text}</span>
+      </div>
+    );
+
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
@@ -245,6 +278,43 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
           CONNECT STRIPE
         </div>
 
+        <div style={guideBox}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: "#06B6D4",
+              marginBottom: "12px"
+            }}
+          >
+            HOW TO CONNECT STRIPE
+          </div>
+          {stepRow("STEP 1", "Go to dashboard.stripe.com and create an account if you don't have one")}
+          {stepRow(
+            "STEP 2",
+            "Developers → API Keys → copy your Publishable Key (pk_...) and Secret Key (sk_...)"
+          )}
+          {stepRow(
+            "STEP 3",
+            "Products → Create product → Add price → copy the Price ID (price_...)"
+          )}
+          <a
+            href="https://dashboard.stripe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-block",
+              marginTop: "8px",
+              fontSize: "12px",
+              color: "#06B6D4",
+              textDecoration: "none"
+            }}
+          >
+            Open Stripe Dashboard →
+          </a>
+        </div>
+
         <div>
           <span style={s.label}>STRIPE PUBLISHABLE KEY</span>
           <input
@@ -254,8 +324,8 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
             onChange={(e) => setPublishableKey(e.target.value)}
             autoComplete="off"
           />
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-            Find it at dashboard.stripe.com → Developers → API Keys
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.5 }}>
+            Found in Stripe Dashboard → Developers → API Keys. Starts with pk_live_ or pk_test_
           </div>
         </div>
 
@@ -269,8 +339,8 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
             onChange={(e) => setSecretKey(e.target.value)}
             autoComplete="off"
           />
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-            Required for Checkout. Kept server-side only; never exposed on the public landing page.
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.5 }}>
+            Found in the same place. Starts with sk_live_ or sk_test_. Never shared publicly — stored securely.
           </div>
         </div>
 
@@ -283,8 +353,8 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
             onChange={(e) => setPriceId(e.target.value)}
             autoComplete="off"
           />
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-            Create a product in Stripe → copy Price ID
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.5 }}>
+            Go to Products → select your product → Pricing → copy the Price ID. Starts with price_
           </div>
         </div>
 
@@ -308,6 +378,10 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
             value={buttonText}
             onChange={(e) => setButtonText(e.target.value)}
           />
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.5 }}>
+            This text will appear on the payment button on your landing page. Example: Book a Call, Get Access, Buy
+            Now
+          </div>
         </div>
 
         {error && <div style={{ fontSize: "12px", color: "#ef4444" }}>{error}</div>}

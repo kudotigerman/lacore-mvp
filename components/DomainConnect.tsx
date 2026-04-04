@@ -28,6 +28,9 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [, setDnsInfo] = useState<unknown>(null);
+  const [accNamecheap, setAccNamecheap] = useState(false);
+  const [accGodaddy, setAccGodaddy] = useState(false);
+  const [accCloudflare, setAccCloudflare] = useState(false);
 
   const loadExisting = useCallback(async () => {
     const supabase = createClient();
@@ -169,6 +172,13 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
     error: { fontSize: "12px", color: "#ef4444", marginTop: "8px" }
   };
 
+  const guideBox: CSSProperties = {
+    background: "rgba(6,182,212,0.05)",
+    border: "1px solid rgba(6,182,212,0.15)",
+    padding: "16px",
+    marginBottom: "20px"
+  };
+
   if (step === "idle") {
     return (
       <button type="button" style={s.btn} onClick={() => setStep("form")}>
@@ -178,8 +188,70 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
   }
 
   if (step === "form") {
+    const domainStepRow = (n: string, text: string) => (
+      <div
+        key={n}
+        style={{
+          display: "flex",
+          gap: "10px",
+          alignItems: "flex-start",
+          marginBottom: "10px"
+        }}
+      >
+        <span
+          style={{
+            color: "#06B6D4",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            flexShrink: 0,
+            minWidth: "52px"
+          }}
+        >
+          {n}
+        </span>
+        <span style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{text}</span>
+      </div>
+    );
+
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={guideBox}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: "#06B6D4",
+              marginBottom: "12px"
+            }}
+          >
+            HOW TO CONNECT YOUR DOMAIN
+          </div>
+          {domainStepRow(
+            "STEP 1",
+            "Enter your domain below (example: yourbrand.com). Don't include https://"
+          )}
+          {domainStepRow(
+            "STEP 2",
+            "Click CONNECT — we'll give you DNS records to add at your domain registrar"
+          )}
+          {domainStepRow(
+            "STEP 3",
+            "Add the records at Namecheap / GoDaddy / Cloudflare → click CHECK STATUS"
+          )}
+          <p
+            style={{
+              margin: "12px 0 0",
+              fontSize: "12px",
+              color: "var(--text-muted)",
+              lineHeight: 1.6
+            }}
+          >
+            DNS changes usually take 5–30 minutes. Sometimes up to 24 hours.
+          </p>
+        </div>
+
         <span style={s.label}>YOUR DOMAIN</span>
         <input
           style={s.input}
@@ -219,18 +291,17 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
         </div>
 
         <div style={s.dnsBox}>
-          <div
+          <p
             style={{
-              color: "var(--text-muted)",
-              marginBottom: "12px",
-              fontSize: "11px",
-              fontFamily: "inherit",
-              fontWeight: "700",
-              letterSpacing: "0.08em"
+              margin: "0 0 12px",
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+              fontFamily: "inherit"
             }}
           >
-            ADD THIS DNS RECORD AT YOUR DOMAIN REGISTRAR:
-          </div>
+            Add these records at your domain registrar (Namecheap, GoDaddy, Cloudflare, etc.)
+          </p>
           <div
             style={{
               display: "grid",
@@ -249,6 +320,96 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
             <span style={{ color: "var(--text-primary)", marginTop: "8px" }}>www</span>
             <span style={{ color: "var(--text-primary)", marginTop: "8px" }}>cname.vercel-dns.com</span>
           </div>
+        </div>
+
+        <div style={{ marginTop: "4px" }}>
+          {(
+            [
+              {
+                id: "namecheap" as const,
+                open: accNamecheap,
+                set: setAccNamecheap,
+                title: "Namecheap",
+                lines: [
+                  "Login → Domain List → Manage → Advanced DNS",
+                  "Delete existing A Record and CNAME if they exist",
+                  "Add New Record: Type=A, Host=@, Value=76.76.21.21",
+                  "Add New Record: Type=CNAME, Host=www, Value=cname.vercel-dns.com",
+                  "Save All Changes"
+                ]
+              },
+              {
+                id: "godaddy" as const,
+                open: accGodaddy,
+                set: setAccGodaddy,
+                title: "GoDaddy",
+                lines: [
+                  "Login → My Products → DNS",
+                  "Edit existing A Record: Value=76.76.21.21",
+                  "Edit CNAME www: Value=cname.vercel-dns.com",
+                  "Save"
+                ]
+              },
+              {
+                id: "cloudflare" as const,
+                open: accCloudflare,
+                set: setAccCloudflare,
+                title: "Cloudflare",
+                lines: [
+                  "Login → select domain → DNS → Records",
+                  "Add A record: Name=@, IPv4=76.76.21.21, Proxy=DNS only (grey cloud)",
+                  "Add CNAME: Name=www, Target=cname.vercel-dns.com, Proxy=DNS only",
+                  "Save"
+                ]
+              }
+            ] as const
+          ).map((acc) => (
+            <div key={acc.id}>
+              <button
+                type="button"
+                onClick={() => acc.set(!acc.open)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--text-secondary)",
+                  padding: "8px 0",
+                  border: "none",
+                  borderBottom: "1px solid var(--border-primary)",
+                  background: "transparent",
+                  fontFamily: "inherit",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}
+              >
+                <span aria-hidden style={{ flexShrink: 0 }}>
+                  {acc.open ? "▼" : "▶"}
+                </span>
+                {acc.title}
+              </button>
+              {acc.open ? (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--text-muted)",
+                    lineHeight: 1.8,
+                    paddingLeft: "16px",
+                    paddingTop: "8px",
+                    paddingBottom: "8px"
+                  }}
+                >
+                  {acc.lines.map((line, i) => (
+                    <div key={i}>
+                      {i + 1}. {line}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ))}
         </div>
 
         <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.5" }}>
