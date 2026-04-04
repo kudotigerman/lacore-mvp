@@ -19,6 +19,9 @@ export async function middleware(request: NextRequest) {
     hostname.includes("localhost") ||
     hostname.endsWith(".vercel.app");
 
+  console.log("middleware host:", hostname);
+  console.log("isLacore:", isLacore);
+
   if (!isLacore) {
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

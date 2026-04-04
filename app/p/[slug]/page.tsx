@@ -1,6 +1,16 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  type ErrorInfo,
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -101,7 +111,65 @@ function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: str
   );
 }
 
-export default function PublicLandingPage() {
+type LandingErrorBoundaryState = { error: Error | null };
+
+class PublicLandingPageErrorBoundary extends Component<
+  { children: ReactNode },
+  LandingErrorBoundaryState
+> {
+  state: LandingErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error): LandingErrorBoundaryState {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[p/[slug]] render error:", error.message, info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      const { message, stack } = this.state.error;
+      return (
+        <div
+          style={{
+            padding: 24,
+            fontFamily: "system-ui, sans-serif",
+            maxWidth: 720,
+            margin: "0 auto",
+            color: "#e5e5e5",
+            background: "#0a0a0a",
+            minHeight: "100vh",
+            boxSizing: "border-box"
+          }}
+        >
+          <h1 style={{ color: "#f87171", fontSize: 20, margin: "0 0 16px" }}>Landing page render error</h1>
+          <p style={{ margin: "0 0 12px", fontSize: 14, color: "#a3a3a3" }}>{message}</p>
+          {stack ? (
+            <pre
+              style={{
+                margin: 0,
+                padding: 16,
+                background: "#171717",
+                borderRadius: 8,
+                fontSize: 12,
+                overflow: "auto",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                border: "1px solid #262626"
+              }}
+            >
+              {stack}
+            </pre>
+          ) : null}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function PublicLandingPageContent() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
   const editMode = searchParams.get("edit") === "true";
@@ -1509,5 +1577,13 @@ export default function PublicLandingPage() {
       {regenerateModal}
       {promoModal}
     </>
+  );
+}
+
+export default function PublicLandingPage() {
+  return (
+    <PublicLandingPageErrorBoundary>
+      <PublicLandingPageContent />
+    </PublicLandingPageErrorBoundary>
   );
 }
