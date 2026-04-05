@@ -163,44 +163,13 @@ VISUAL SYSTEM (DARK — FIXED)
 - Cards/rows: subtle border rgba(255,255,255,0.08), border-radius 12px, padding 24px–32px, background rgba(255,255,255,0.03)
 
 ════════════════════════════════════
-SECTION ORDER (STRICT — DO NOT REORDER)
+SECTION ORDER (FLEXIBLE CORE — REQUIRED ELEMENTS)
 ════════════════════════════════════
-1) HERO
-   - One huge uppercase headline (Bebas Neue) that hits the MAIN PAIN or desired outcome for the audience from the user input — specific, not vague.
-   - Subheadline: 1–2 lines, clarifies who it's for and the promise.
-   - One primary CTA button (scroll to #contact or submit intent). Label must match Primary CTA goal from user message:
-     Book a call → e.g. "BOOK YOUR FREE CALL"
-     Buy a package → "GET STARTED NOW"
-     Send a message → "SEND A MESSAGE"
-     Join a waitlist → "JOIN THE WAITLIST"
-   - Short trust line under CTA (e.g. "No credit card • Reply within 24h") in muted text.
-
-2) SOCIAL PROOF (single line or compact strip)
-   - One believable fictional-but-plausible line, e.g. "Join 200+ freelancers who already switched" — numbers and wording must fit the niche (adjust "freelancers" to the actual audience).
-
-3) PAIN POINTS
-   - Exactly 3 sharp pains as short bullets or cards; each one line, emotional, concrete (no filler).
-
-4) SOLUTION
-   - Clear "what you get" — outcomes, deliverables, or process in plain language tied to the offer.
-
-5) FEATURES
-   - 3–4 items; each row/card starts with ONE emoji icon (relevant emoji), then bold title + one line of copy.
-
-6) TESTIMONIALS
-   - 2–3 quotes; realistic first name + last initial, role/title in the SAME niche as the audience; specific mini-result in the quote. Same language as the page. No lorem ipsum.
-
-7) CTA SECTION
-   - Repeat the main promise + same primary CTA button style as hero.
-
-8) CONTACT (LEAD CAPTURE — REQUIRED BEFORE FOOTER)
-   - Section with heading inviting contact.
-   - Form id="contact-form", method="post", fields with name="name", name="email", name="message" (email required). Include a submit button type="submit".
-   - Hidden or visible note: slug is NOT a form field; the script sends slug: 'SLUG_VALUE' (literal placeholder — do not invent a slug).
-   - Block id="success-msg" with display:none initially; friendly success copy in the page language (e.g. message received within 24h).
-
-9) FOOTER
-   - Business name / company from user input, and a contact email line (use a plausible email pattern from business name or "hello@..." if no email given — never a fake personal story).
+- ALWAYS start with: <!DOCTYPE html>, <head> with meta/OG tags, navigation
+- ALWAYS include: Hero section (first visible section)
+- ALWAYS end with: #contact-form section, footer with "Built with LACORE"
+- MIDDLE SECTIONS: arrange based on detected niche template from STEP 2. Order them logically for maximum conversion. Niche-specific sections (Tech Stack, Selected Works, Transformation Results, etc.) should be placed where they make most sense for that niche.
+- NEVER remove: contact form (#contact-form), #success-msg element, footer
 
 ════════════════════════════════════
 MOBILE
