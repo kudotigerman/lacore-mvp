@@ -65,6 +65,10 @@ export async function POST(request: Request) {
     if (userError || !user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
     const displayName = body.businessName || body.userEmail.split("@")[0];
+    const headlineRaw =
+      typeof body.headline === "string" && body.headline.trim().length > 0
+        ? body.headline.trim()
+        : displayName;
 
     const userMessage = `Generate a premium landing page for this business:
 
@@ -74,6 +78,7 @@ Target audience: ${body.audience}
 Pricing: ${body.pricing}
 Positioning: ${body.positioning}
 Suggested headline: ${body.headline}
+Page title (exact inner text for the HTML <title> element — use verbatim, single line): ${headlineRaw}
 Primary CTA goal: ${body.primaryGoal || "Book a call"}
 Site vibe: ${body.siteVibe || "Professional"}
 
@@ -92,6 +97,7 @@ Return the complete HTML document only. No explanation.`;
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 12000,
+        temperature: 0.8,
         stream: true,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],
