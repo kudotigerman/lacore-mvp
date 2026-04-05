@@ -4,6 +4,7 @@ import {
   Component,
   type ErrorInfo,
   type FormEvent,
+  type MouseEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -380,6 +381,17 @@ function PublicLandingPageContent() {
     setRegenSiteVibe("");
     setRegenOfferState({ status: "loading" });
     setShowRegenerateModal(true);
+  }
+
+  function handleRegenerateToolbarClick(e: MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    openRegenerateModal();
+  }
+
+  useEffect(() => {
+    if (!showRegenerateModal) return;
+    let cancelled = false;
     void (async () => {
       try {
         const supabase = getSupabaseClient();
@@ -389,6 +401,7 @@ function PublicLandingPageContent() {
           const { data: existing } = await supabase.auth.getSession();
           session = existing.session;
         }
+        if (cancelled) return;
         if (!session?.user) {
           setRegenOfferState({ status: "no_session" });
           return;
@@ -402,6 +415,7 @@ function PublicLandingPageContent() {
           .limit(1)
           .maybeSingle();
 
+        if (cancelled) return;
         if (offerErr) {
           setRegenOfferState({
             status: "error",
@@ -429,20 +443,28 @@ function PublicLandingPageContent() {
           }
         });
       } catch {
-        setRegenOfferState({
-          status: "error",
-          message: "Could not load your offer. Try again."
-        });
+        if (!cancelled) {
+          setRegenOfferState({
+            status: "error",
+            message: "Could not load your offer. Try again."
+          });
+        }
       }
     })();
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [showRegenerateModal]);
 
   function closeRegenerateModal() {
     setShowRegenerateModal(false);
     setRegenOfferState({ status: "idle" });
+    setRegenPrimaryGoals([]);
+    setRegenSiteVibe("");
   }
 
   async function handleRegenerateConfirm() {
+    if (!showRegenerateModal) return;
     if (regenOfferState.status !== "ready" || regenPrimaryGoals.length === 0 || !regenSiteVibe.trim())
       return;
     setRegenError(null);
@@ -1112,17 +1134,23 @@ function PublicLandingPageContent() {
             {regenOfferState.status === "ready" ? (
               <button
                 type="button"
-                disabled={regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe}
-                onClick={() => void handleRegenerateConfirm()}
+                disabled={
+                  regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe.trim()
+                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void handleRegenerateConfirm();
+                }}
                 style={{
                   flex: 1,
                   border: "none",
                   background:
-                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe.trim()
                       ? "var(--border-primary)"
                       : "var(--accent)",
                   color:
-                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe.trim()
                       ? "var(--text-muted)"
                       : "var(--on-accent)",
                   fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
@@ -1130,7 +1158,7 @@ function PublicLandingPageContent() {
                   letterSpacing: "0.12em",
                   padding: "10px 12px",
                   cursor:
-                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe.trim()
                       ? "not-allowed"
                       : "pointer"
                 }}
@@ -1409,7 +1437,7 @@ function PublicLandingPageContent() {
             </button>
             <button
               type="button"
-              onClick={() => openRegenerateModal()}
+              onClick={handleRegenerateToolbarClick}
               style={{
                 border: "1px solid var(--border-primary)",
                 background: "transparent",
