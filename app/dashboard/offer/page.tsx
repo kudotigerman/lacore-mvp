@@ -210,10 +210,10 @@ export default function DashboardOfferPage() {
               <div>
                 <p style={dash.sectionTitle}>What do you do?</p>
                 <textarea
-                  className="dash-focusable"
+                  className="dash-focusable dash-offer-gen-field"
                   value={whatYouDo}
                   onChange={(e) => setWhatYouDo(e.target.value)}
-                  placeholder="I help small businesses with interior design..."
+                  placeholder="e.g. I'm a fitness coach helping busy professionals lose weight..."
                   rows={4}
                   style={{ ...textareaStyle }}
                 />
@@ -221,10 +221,10 @@ export default function DashboardOfferPage() {
               <div>
                 <p style={dash.sectionTitle}>Who is your ideal client?</p>
                 <textarea
-                  className="dash-focusable"
+                  className="dash-focusable dash-offer-gen-field"
                   value={idealClient}
                   onChange={(e) => setIdealClient(e.target.value)}
-                  placeholder="Small business owners with retail spaces..."
+                  placeholder="e.g. Men 30-45, corporate jobs, no time to exercise..."
                   rows={4}
                   style={{ ...textareaStyle }}
                 />
@@ -232,11 +232,11 @@ export default function DashboardOfferPage() {
               <div>
                 <p style={dash.sectionTitle}>What is your price range?</p>
                 <input
-                  className="dash-focusable"
+                  className="dash-focusable dash-offer-gen-field"
                   type="text"
                   value={priceRange}
                   onChange={(e) => setPriceRange(e.target.value)}
-                  placeholder="$2,500-$5,000/month"
+                  placeholder="e.g. $500-2000/month"
                   style={{ ...dash.input, marginTop: 4, width: "100%", boxSizing: "border-box" as const }}
                 />
               </div>

@@ -21,6 +21,17 @@ export const dashPremiumCss = `
   --success: #22c55e;
   --danger: #ef4444;
 }
+.dash-premium-root .dash-offer-gen-field::placeholder,
+.dash-premium-root .dash-offer-gen-field::-webkit-input-placeholder {
+  color: #3f3f46;
+  font-style: italic;
+  opacity: 1;
+}
+.dash-premium-root .dash-offer-gen-field::-moz-placeholder {
+  color: #3f3f46;
+  font-style: italic;
+  opacity: 1;
+}
 .dash-premium-root .dash-focusable:focus {
   outline: none;
   border-color: rgba(6,182,212,0.5) !important;
