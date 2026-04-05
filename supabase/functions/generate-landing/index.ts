@@ -241,6 +241,7 @@ Optional: subtle scroll reveal via IntersectionObserver and class "scroll-reveal
 ════════════════════════════════════
 NAVIGATION & LINKS (CRITICAL — IFRAME / PREVIEW SAFE)
 ════════════════════════════════════
+- Nav logo / brand text in <nav> (link or span at the start of the bar): MUST use the exact "Brand name" line from the user message when it is a real name (not the placeholder "(not set in profile)"). If Brand name is "(not set in profile)" or empty, derive a short brand label from the first meaningful word or short phrase at the start of "What they sell" (the offer). NEVER use URL slug, username, email local-part, Supabase id, or any technical identifier in the navbar brand/logo area.
 - Contact / lead capture: wrap the form in <section id="contact-form"> ... </section>. Only that section uses id="contact-form" (never duplicate id on the inner <form>). The script below uses document.querySelector('#contact-form form') to bind submit.
 - Same-page / anchor links: use href="#real-section-id" (e.g. #contact-form for Contact, #faq only if that section exists) so navigation scrolls inside the document only. Never use href="#contact". Do not use target="_blank" on pure hash links.
 - External links (http:// or https:// to another host): MUST use target="_blank" rel="noopener noreferrer" so they open in a new tab and never replace the parent window or break an embedded preview.
@@ -296,13 +297,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const displayName = body.businessName || body.userEmail.split("@")[0];
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const profileDisplayName =
+      typeof (profileRow as { display_name?: string } | null)?.display_name === "string"
+        ? (profileRow as { display_name: string }).display_name.trim()
+        : "";
+    const brandNameLine =
+      profileDisplayName.length > 0 ? profileDisplayName : "(not set in profile)";
+    const displayName =
+      profileDisplayName || body.businessName || body.userEmail.split("@")[0];
     const headlineRaw =
       typeof body.headline === "string" && body.headline.trim().length > 0
         ? body.headline.trim()
         : displayName;
     const userMessage = `Generate a premium landing page for this business:
 
+Brand name: ${brandNameLine}
 Business name: ${displayName}
 What they sell: ${body.offer}
 Target audience: ${body.audience}

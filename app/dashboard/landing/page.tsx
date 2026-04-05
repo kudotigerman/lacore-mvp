@@ -7,6 +7,7 @@ import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import StripeConnect from "@/components/StripeConnect";
 import {
+  LANDING_EDITOR_IMAGE_POPUP_TOKEN,
   LANDING_EDITOR_QUICK_ACTIONS,
   LANDING_EDITOR_QUICK_STORAGE_KEY
 } from "@/lib/landingEditorQuickActions";
@@ -113,7 +114,13 @@ export default function DashboardLandingPage() {
                         type="button"
                         onClick={() => {
                           try {
-                            sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, action.text);
+                            const prefill =
+                              "kind" in action && action.kind === "image"
+                                ? LANDING_EDITOR_IMAGE_POPUP_TOKEN
+                                : "text" in action
+                                  ? action.text
+                                  : "";
+                            sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, prefill);
                           } catch {
                             /* ignore */
                           }

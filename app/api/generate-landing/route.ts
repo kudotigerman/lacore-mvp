@@ -64,7 +64,19 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (userError || !user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-    const displayName = body.businessName || body.userEmail.split("@")[0];
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const profileDisplayName =
+      typeof (profileRow as { display_name?: string } | null)?.display_name === "string"
+        ? (profileRow as { display_name: string }).display_name.trim()
+        : "";
+    const brandNameLine =
+      profileDisplayName.length > 0 ? profileDisplayName : "(not set in profile)";
+    const displayName =
+      profileDisplayName || body.businessName || body.userEmail.split("@")[0];
     const headlineRaw =
       typeof body.headline === "string" && body.headline.trim().length > 0
         ? body.headline.trim()
@@ -72,6 +84,7 @@ export async function POST(request: Request) {
 
     const userMessage = `Generate a premium landing page for this business:
 
+Brand name: ${brandNameLine}
 Business name: ${displayName}
 What they sell: ${body.offer}
 Target audience: ${body.audience}
