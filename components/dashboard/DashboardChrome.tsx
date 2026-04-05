@@ -13,6 +13,7 @@ import {
   type KeyboardEvent,
   type ReactNode
 } from "react";
+import OnboardingWizard from "@/app/components/OnboardingWizard";
 import {
   buildSalesBuilderIntro,
   profileInitialsFromName,
@@ -976,6 +977,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           ) : null}
         </>
       ) : null}
+
+      <OnboardingWizard />
     </main>
   );
 }

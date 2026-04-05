@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OfferVariant } from "@/app/api/generate-offer/route";
+import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/app/components/OnboardingWizard";
 import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import type { DashboardOffer } from "@/components/dashboard/DashboardDataContext";
@@ -31,16 +32,17 @@ export default function DashboardOfferPage() {
   const [variants, setVariants] = useState<OfferVariant[] | null>(null);
   const [chooseLoading, setChooseLoading] = useState<"A" | "B" | "C" | null>(null);
   const [chooseError, setChooseError] = useState<string | null>(null);
+  const onboardingAutoStarted = useRef(false);
 
   const offer = d.offer;
 
-  async function generateOffer() {
+  const executeGenerate = useCallback(async (w: string, ideal: string, price: string) => {
     const userInput = [
-      `What I do:\n${whatYouDo.trim()}`,
-      `Who is my ideal client:\n${idealClient.trim()}`,
-      `What is my price range:\n${priceRange.trim()}`
+      `What I do:\n${w.trim()}`,
+      `Who is my ideal client:\n${ideal.trim()}`,
+      `What is my price range:\n${price.trim()}`
     ].join("\n\n");
-    if (!whatYouDo.trim() || !idealClient.trim() || !priceRange.trim()) {
+    if (!w.trim() || !ideal.trim() || !price.trim()) {
       setGenError("Please fill in all three fields.");
       return;
     }
@@ -61,12 +63,51 @@ export default function DashboardOfferPage() {
       }
       setVariants(data.variants);
       setChooseError(null);
+      try {
+        localStorage.removeItem(ONBOARDING_INPUT_KEY);
+        sessionStorage.removeItem(ONBOARDING_GENERATING_KEY);
+      } catch {
+        /* ignore */
+      }
     } catch (e) {
       setVariants(null);
       setGenError(e instanceof Error ? e.message : "Something went wrong.");
+      try {
+        sessionStorage.removeItem(ONBOARDING_GENERATING_KEY);
+      } catch {
+        /* ignore */
+      }
     } finally {
       setGenLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!d.userId || onboardingAutoStarted.current) return;
+    let raw: string | null = null;
+    try {
+      raw = localStorage.getItem(ONBOARDING_INPUT_KEY);
+    } catch {
+      return;
+    }
+    if (!raw?.trim()) return;
+    onboardingAutoStarted.current = true;
+    try {
+      localStorage.removeItem(ONBOARDING_INPUT_KEY);
+    } catch {
+      /* ignore */
+    }
+    const ideal =
+      "Clients and teams who benefit from the outcome I described — we can refine this after you pick a strategy.";
+    const price = "Flexible — project-based or retainer (we'll define packages in the generated offer).";
+    setWhatYouDo(raw.trim());
+    setIdealClient(ideal);
+    setPriceRange(price);
+    void executeGenerate(raw.trim(), ideal, price);
+  }, [d.userId, executeGenerate]);
+
+  async function generateOffer() {
+    await executeGenerate(whatYouDo, idealClient, priceRange);
   }
 
   async function chooseVariant(v: OfferVariant) {
