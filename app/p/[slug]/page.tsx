@@ -12,6 +12,7 @@ import {
   useState
 } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { flushSync } from "react-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
@@ -206,6 +207,7 @@ function PublicLandingPageContent() {
   const [regenError, setRegenError] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [publicStripe, setPublicStripe] = useState<PublicStripeSettings | null>(null);
   const [stripePayLoading, setStripePayLoading] = useState(false);
 
@@ -227,6 +229,22 @@ function PublicLandingPageContent() {
   );
 
   const useLiveReact = Boolean(jsxContent.trim());
+
+  function applyQuickPrompt(text: string) {
+    flushSync(() => {
+      setChatInput(text);
+    });
+    const el = chatTextareaRef.current;
+    if (el) {
+      el.focus();
+      const len = text.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
 
   const fetchHtml = useCallback(async () => {
     setLoading(true);
@@ -252,10 +270,19 @@ function PublicLandingPageContent() {
     if (!editMode) return;
     try {
       const prefill = sessionStorage.getItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
-      if (prefill) {
-        sessionStorage.removeItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
-        setChatInput(prefill);
-      }
+      if (!prefill) return;
+      sessionStorage.removeItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
+      setChatInput(prefill);
+      requestAnimationFrame(() => {
+        const el = chatTextareaRef.current;
+        if (!el) return;
+        el.focus();
+        try {
+          el.setSelectionRange(prefill.length, prefill.length);
+        } catch {
+          /* ignore */
+        }
+      });
     } catch {
       /* storage blocked */
     }
@@ -1455,6 +1482,7 @@ function PublicLandingPageContent() {
               }}
             >
               <textarea
+                ref={chatTextareaRef}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -1495,7 +1523,7 @@ function PublicLandingPageContent() {
                     key={action.label}
                     type="button"
                     disabled={updating}
-                    onClick={() => setChatInput(action.text)}
+                    onClick={() => applyQuickPrompt(action.text)}
                     style={{
                       fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
                       fontSize: 11,
