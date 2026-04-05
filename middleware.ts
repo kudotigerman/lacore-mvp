@@ -1,91 +1,90 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-function requestHostname(request: NextRequest): string {
+/** Host only, lowercased, no leading www. (matches rows stored as e.g. geth.meme) */
+function normalizedHost(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-host");
+  let raw: string;
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim().split(":")[0]?.toLowerCase();
-    if (first) return first;
+    raw = forwarded.split(",")[0]?.trim().split(":")[0] ?? "";
+  } else {
+    raw = (request.headers.get("host") || "").split(":")[0];
   }
-  return (request.headers.get("host") || "").split(":")[0].toLowerCase();
+  return raw.toLowerCase().replace(/^www\./, "");
 }
 
 export async function middleware(request: NextRequest) {
-  const hostname = requestHostname(request);
+  const host = normalizedHost(request);
 
-  const isLacore =
-    hostname === "lacore.ai" ||
-    hostname === "www.lacore.ai" ||
-    hostname.includes("localhost") ||
-    hostname.endsWith(".vercel.app");
+  const isPrimaryAppHost =
+    host === "lacore.ai" ||
+    host === "localhost" ||
+    host.startsWith("127.0.0.1") ||
+    host.endsWith(".vercel.app");
 
-  console.log("middleware host:", hostname);
-  console.log("isLacore:", isLacore);
-
-  if (!isLacore) {
-    try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (!supabaseUrl || !supabaseKey) {
-        return NextResponse.next();
-      }
-
-      const domainFilter = encodeURIComponent(hostname);
-      const lookupUrl = `${supabaseUrl}/rest/v1/custom_domains?domain=eq.${domainFilter}&select=slug,verified`;
-
-      const controller = new AbortController();
-      const timeoutMs = 8000;
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-      let res: Response;
-      try {
-        res = await fetch(lookupUrl, {
-          method: "GET",
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            Accept: "application/json"
-          },
-          signal: controller.signal,
-          cache: "no-store"
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
-
-      if (!res.ok) {
-        return NextResponse.next();
-      }
-
-      let data: unknown;
-      try {
-        const text = await res.text();
-        if (!text.trim()) {
-          return NextResponse.next();
-        }
-        data = JSON.parse(text) as unknown;
-      } catch {
-        return NextResponse.next();
-      }
-
-      const rows = Array.isArray(data) ? data : [];
-      const row = rows[0] as { slug?: string; verified?: boolean } | undefined;
-
-      if (row?.verified && typeof row.slug === "string") {
-        const slug = row.slug.trim();
-        if (slug && !slug.includes("/") && !slug.includes("..")) {
-          const nextUrl = request.nextUrl.clone();
-          nextUrl.pathname = `/p/${slug}`;
-          return NextResponse.rewrite(nextUrl);
-        }
-      }
-    } catch (e) {
-      console.error("[middleware] custom domain routing failed:", e);
-    }
+  if (isPrimaryAppHost) {
     return NextResponse.next();
   }
 
-  return NextResponse.next();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.redirect(new URL("https://www.lacore.ai/", request.url), 307);
+  }
+
+  const domainFilter = encodeURIComponent(host);
+  const lookupUrl = `${supabaseUrl}/rest/v1/custom_domains?domain=eq.${domainFilter}&verified=eq.true&select=slug`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  let res: Response;
+  try {
+    res = await fetch(lookupUrl, {
+      method: "GET",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Accept: "application/json"
+      },
+      signal: controller.signal,
+      cache: "no-store"
+    });
+  } catch (e) {
+    console.error("[middleware] custom domain lookup failed:", e);
+    return NextResponse.redirect(new URL("https://www.lacore.ai/", request.url), 307);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    console.error("[middleware] custom_domains HTTP", res.status);
+    return NextResponse.redirect(new URL("https://www.lacore.ai/", request.url), 307);
+  }
+
+  let rows: unknown;
+  try {
+    const text = await res.text();
+    if (!text.trim()) {
+      return NextResponse.redirect(new URL("https://www.lacore.ai/", request.url), 307);
+    }
+    rows = JSON.parse(text) as unknown;
+  } catch {
+    return NextResponse.redirect(new URL("https://www.lacore.ai/", request.url), 307);
+  }
+
+  const list = Array.isArray(rows) ? rows : [];
+  const slugRaw = list[0] && typeof list[0] === "object" ? (list[0] as { slug?: string }).slug : undefined;
+  const slug = typeof slugRaw === "string" ? slugRaw.trim() : "";
+
+  if (slug && !slug.includes("/") && !slug.includes("..")) {
+    const nextUrl = request.nextUrl.clone();
+    nextUrl.pathname = `/p/${slug}`;
+    return NextResponse.rewrite(nextUrl);
+  }
+
+  return NextResponse.redirect(new URL("https://www.lacore.ai/", request.url), 307);
 }
 
 export const config = {
