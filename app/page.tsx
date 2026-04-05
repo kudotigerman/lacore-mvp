@@ -1294,31 +1294,15 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <p className="lacore-footer-heading">RESOURCES</p>
-                    <span
-                      style={{
-                        display: "block",
-                        marginBottom: 12,
-                        fontFamily: sans,
-                        fontSize: 14,
-                        color: "#52525B"
-                      }}
-                    >
+                    <Link href="/blog" className="lacore-footer-link">
                       Documentation
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        marginBottom: 12,
-                        fontFamily: sans,
-                        fontSize: 14,
-                        color: "#52525B"
-                      }}
-                    >
+                    </Link>
+                    <Link href="/blog" className="lacore-footer-link">
                       Blog
-                    </span>
-                    <a href="#" className="lacore-footer-link" onClick={(e) => e.preventDefault()}>
+                    </Link>
+                    <Link href="/blog" className="lacore-footer-link">
                       Changelog
-                    </a>
+                    </Link>
                   </div>
                   <div>
                     <p className="lacore-footer-heading">LEGAL</p>
@@ -1409,31 +1393,15 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="lacore-footer-heading">RESOURCES</p>
-                  <span
-                    style={{
-                      display: "block",
-                      marginBottom: 12,
-                      fontFamily: sans,
-                      fontSize: 14,
-                      color: "#52525B"
-                    }}
-                  >
+                  <Link href="/blog" className="lacore-footer-link">
                     Documentation
-                  </span>
-                  <span
-                    style={{
-                      display: "block",
-                      marginBottom: 12,
-                      fontFamily: sans,
-                      fontSize: 14,
-                      color: "#52525B"
-                    }}
-                  >
+                  </Link>
+                  <Link href="/blog" className="lacore-footer-link">
                     Blog
-                  </span>
-                  <a href="#" className="lacore-footer-link" onClick={(e) => e.preventDefault()}>
+                  </Link>
+                  <Link href="/blog" className="lacore-footer-link">
                     Changelog
-                  </a>
+                  </Link>
                 </div>
                 <div>
                   <p className="lacore-footer-heading">LEGAL</p>
