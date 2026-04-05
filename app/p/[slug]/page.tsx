@@ -343,18 +343,23 @@ function PublicLandingPageContent() {
   const fetchHtml = useCallback(async () => {
     setLoading(true);
     const supabase = getSupabaseClient();
-    const { data } = (await supabase
+    const { data, error } = await supabase
       .from("landing_pages")
       .select("html_content, jsx_content")
       .eq("slug", slug)
-      .single()) as unknown as {
-      data: { html_content: string | null; jsx_content: string | null } | null;
-    };
+      .single();
     const row = data as { html_content: string | null; jsx_content: string | null } | null;
     setHtml(row?.html_content ?? "");
     setJsxContent(row?.jsx_content ?? "");
     setLoading(false);
-  }, [slug]);
+    if (!editMode && !error && row) {
+      void Promise.resolve(
+        supabase.rpc("increment_landing_views", { page_slug: slug } as never)
+      ).catch(() => {
+        /* ignore RPC errors (e.g. migration not applied yet) */
+      });
+    }
+  }, [slug, editMode]);
 
   useEffect(() => {
     void fetchHtml();
