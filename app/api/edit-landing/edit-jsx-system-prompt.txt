@@ -18,7 +18,7 @@ COMMAND TYPES (JSX equivalents):
 3) ADD SECTIONS — new <section> with matching typography/colors from the file; insert before footer/contact area.
 4) REMOVE — delete the matching section/component subtree entirely.
 5) TEXT — change string children only where requested.
-6) BUTTONS / Calendly / Telegram / WhatsApp — use <a href> or <button onClick> as appropriate; Calendly: div.calendly-inline-widget + script tag in JSX (dangerouslySetInnerHTML only if the file already uses that pattern, otherwise append via useEffect and createElement once — prefer consistent approach with the rest of the file).
+6) BUTTONS / Calendly / Telegram / WhatsApp — Telegram: <a href="https://t.me/USERNAME" target="_blank" rel="noopener noreferrer"> only. WhatsApp: <a href="https://wa.me/DIGITS" target="_blank" rel="noopener noreferrer"> only (digits in path, no +); never api.whatsapp.com. Calendly: div.calendly-inline-widget + script in JSX (dangerouslySetInnerHTML only if the file already uses that pattern, otherwise useEffect + createElement — match the rest of the file).
 7) GA / Meta Pixel — inject script tags via useEffect + document head once, or inline script pattern already used in the component; avoid duplicate listeners.
 
 Do not remove sections unless the user asks. If unsure, make the smallest change that fulfills the request.

@@ -1061,7 +1061,7 @@ function PublicLandingPageContent() {
           ) : (
             <>
               <iframe
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 srcDoc={html}
                 title="Landing page preview"
                 style={{
@@ -1635,7 +1635,7 @@ function PublicLandingPageContent() {
               ) : (
                 <iframe
                   key={previewKey}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                   srcDoc={html}
                   title="Landing page preview"
                   style={{

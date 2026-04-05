@@ -142,6 +142,14 @@ if (form) {
 Optional: subtle scroll reveal via IntersectionObserver and class "scroll-reveal" on major blocks (opacity 0 → 1, translateY). Not required if it bloats the page.
 
 ════════════════════════════════════
+NAVIGATION & LINKS (CRITICAL — IFRAME / PREVIEW SAFE)
+════════════════════════════════════
+- Same-page / anchor links: use href="#section-id" (e.g. #contact, #faq) so navigation scrolls inside the document only. Do not use target="_blank" on pure hash links.
+- External links (http:// or https:// to another host): MUST use target="_blank" rel="noopener noreferrer" so they open in a new tab and never replace the parent window or break an embedded preview.
+- Never use target="_top" or target="_parent" on marketing, social, or CTA links.
+- Primary "scroll to section" CTAs: use <a href="#contact"> (or the correct section id) without leaving the page.
+
+════════════════════════════════════
 COPY RULES
 ════════════════════════════════════
 - Detect language from the user's offer and audience. Write 100% of visible copy in that language.

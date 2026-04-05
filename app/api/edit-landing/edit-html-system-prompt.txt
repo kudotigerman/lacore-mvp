@@ -34,10 +34,10 @@ COMMAND TYPES — HOW TO EXECUTE:
 - “Change headline to …”, “edit button text”, “add a bullet”: locate the exact node and replace or append minimally. Preserve surrounding tags and styles.
 
 6) BUTTONS & EXTERNAL LINKS
-- Telegram: <a href="https://t.me/username" ...> or floating button as requested.
-- WhatsApp: https://wa.me/<digits> (no + in path; country code + number).
+- Telegram: use ONLY <a href="https://t.me/USERNAME" target="_blank" rel="noopener noreferrer"> (replace USERNAME). Floating buttons must use the same href format. Never omit target="_blank".
+- WhatsApp: use ONLY <a href="https://wa.me/COUNTRYCODE_AND_NUMBER" target="_blank" rel="noopener noreferrer"> where the path is digits only (country code + number, no +, no spaces). NEVER use https://api.whatsapp.com/, web.whatsapp.com, or any URL other than https://wa.me/... for the primary link.
 - Calendly: use the standard embed pattern — <div class="calendly-inline-widget" data-url="https://calendly.com/..." style="min-width:320px;height:700px;"></div> and <script src="https://assets.calendly.com/assets/external/widget.js" async></script> before </body> (once; no duplicate widget.js).
-- Prefer accessible labels and target="_blank" rel="noopener noreferrer" for external links when appropriate.
+- All other external http(s) links: use target="_blank" rel="noopener noreferrer" where appropriate.
 
 7) ANALYTICS & PIXELS
 - Google Analytics (G-XXXXXXXX): add gtag snippet in <head> — async loader for https://www.googletagmanager.com/gtag/js?id=ID, then gtag('config','ID'). Use the exact ID from the user message.

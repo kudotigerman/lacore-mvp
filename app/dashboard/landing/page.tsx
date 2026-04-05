@@ -65,7 +65,7 @@ export default function DashboardLandingPage() {
                 <iframe
                   title="Landing preview"
                   src={`/p/${d.landingSlug}`}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                   style={{
                     width: "100%",
                     height: 480,
