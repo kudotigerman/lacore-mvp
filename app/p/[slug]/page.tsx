@@ -15,6 +15,10 @@ import { useParams, useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
+import {
+  LANDING_EDITOR_QUICK_ACTIONS,
+  LANDING_EDITOR_QUICK_STORAGE_KEY
+} from "@/lib/landingEditorQuickActions";
 
 type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 
@@ -243,6 +247,19 @@ function PublicLandingPageContent() {
   useEffect(() => {
     void fetchHtml();
   }, [fetchHtml]);
+
+  useEffect(() => {
+    if (!editMode) return;
+    try {
+      const prefill = sessionStorage.getItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
+      if (prefill) {
+        sessionStorage.removeItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
+        setChatInput(prefill);
+      }
+    } catch {
+      /* storage blocked */
+    }
+  }, [editMode, slug]);
 
   useEffect(() => {
     if (editMode || !slug) return;
@@ -1465,6 +1482,37 @@ function PublicLandingPageContent() {
                   boxSizing: "border-box"
                 }}
               />
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8
+                }}
+              >
+                {LANDING_EDITOR_QUICK_ACTIONS.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    disabled={updating}
+                    onClick={() => setChatInput(action.text)}
+                    style={{
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 11,
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      border: "1px solid var(--border-primary)",
+                      background: "var(--bg-card)",
+                      color: "var(--text-secondary)",
+                      cursor: updating ? "not-allowed" : "pointer",
+                      opacity: updating ? 0.55 : 1,
+                      lineHeight: 1.3
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
               <div
                 style={{
                   marginTop: 10,

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
 
 export const maxDuration = 120;
@@ -11,26 +13,15 @@ type EditPayload = {
   currentJsx?: string;
 };
 
-const editJsxSystemPrompt = `You are editing a React landing page component. The user wants a specific change.
+const editHtmlSystemPrompt = readFileSync(
+  join(process.cwd(), "app/api/edit-landing/edit-html-system-prompt.txt"),
+  "utf8"
+);
 
-RULES:
-- Return the COMPLETE updated React component starting with: import React, { useState, useEffect } from 'react';
-- Make ONLY the requested change, keep everything else identical
-- Preserve all existing inline styles, animations, sections
-- Do not add markdown, backticks, or explanation
-- The component must be valid JSX that compiles without errors
-- Keep all existing useState hooks and useEffect hooks
-- Do not remove any sections
-
-CRITICAL: The component MUST end with: export default LandingPage;
-This is required. Never omit it. Never use module.exports. Always use: export default LandingPage;`;
-
-const editHtmlSystemPrompt = `You are editing an HTML landing page. The user wants a specific change.
-
-RULES:
-- Return the COMPLETE updated HTML document starting with <!DOCTYPE html>
-- Make ONLY the requested change, keep everything else identical
-- Do not add markdown, backticks, or explanation`;
+const editJsxSystemPrompt = readFileSync(
+  join(process.cwd(), "app/api/edit-landing/edit-jsx-system-prompt.txt"),
+  "utf8"
+);
 
 function cleanClaudeCode(text: string): string {
   return text.replace(/^```(?:tsx|jsx|typescript|html)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
@@ -74,7 +65,7 @@ async function callClaude(apiKey: string, system: string, userContent: string): 
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 6000,
+      max_tokens: 12000,
       system,
       messages: [{ role: "user", content: userContent }]
     })

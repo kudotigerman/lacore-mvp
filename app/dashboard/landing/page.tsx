@@ -1,13 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import DomainConnect from "@/components/DomainConnect";
 import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import StripeConnect from "@/components/StripeConnect";
+import {
+  LANDING_EDITOR_QUICK_ACTIONS,
+  LANDING_EDITOR_QUICK_STORAGE_KEY
+} from "@/lib/landingEditorQuickActions";
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
+  const router = useRouter();
 
   async function copyUrl() {
     if (!d.landingSlug) return;
@@ -97,6 +103,38 @@ export default function DashboardLandingPage() {
                   >
                     Edit Page →
                   </a>
+                  <p style={{ ...dash.small, margin: "14px 0 8px", color: "var(--text-muted)" }}>
+                    AI editor quick prompts (opens editor with text ready to send):
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {LANDING_EDITOR_QUICK_ACTIONS.map((action) => (
+                      <button
+                        key={action.label}
+                        type="button"
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, action.text);
+                          } catch {
+                            /* ignore */
+                          }
+                          router.push(`/p/${d.landingSlug}?edit=true`);
+                        }}
+                        style={{
+                          fontFamily: "inherit",
+                          fontSize: 11,
+                          padding: "6px 10px",
+                          borderRadius: 6,
+                          border: "1px solid var(--border-primary)",
+                          background: "var(--bg-card)",
+                          color: "var(--text-secondary)",
+                          cursor: "pointer",
+                          lineHeight: 1.3
+                        }}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {d.userId ? (
