@@ -181,7 +181,7 @@ JAVASCRIPT (before </body>)
 ════════════════════════════════════
 Include this behavior (adapt only string literals for language if needed; keep IDs and fetch URL exact):
 
-const form = document.getElementById('contact-form');
+const form = document.querySelector('#contact-form form');
 const successMsg = document.getElementById('success-msg');
 if (form) {
   form.addEventListener('submit', async (e) => {
@@ -222,10 +222,12 @@ Optional: subtle scroll reveal via IntersectionObserver and class "scroll-reveal
 ════════════════════════════════════
 NAVIGATION & LINKS (CRITICAL — IFRAME / PREVIEW SAFE)
 ════════════════════════════════════
-- Same-page / anchor links: use href="#section-id" (e.g. #contact, #faq) so navigation scrolls inside the document only. Do not use target="_blank" on pure hash links.
+- Contact / lead capture: wrap the form in <section id="contact-form"> ... </section>. Only that section uses id="contact-form" (never duplicate id on the inner <form>). The script below uses document.querySelector('#contact-form form') to bind submit.
+- Same-page / anchor links: use href="#real-section-id" (e.g. #contact-form for Contact, #faq only if that section exists) so navigation scrolls inside the document only. Never use href="#contact". Do not use target="_blank" on pure hash links.
 - External links (http:// or https:// to another host): MUST use target="_blank" rel="noopener noreferrer" so they open in a new tab and never replace the parent window or break an embedded preview.
 - Never use target="_top" or target="_parent" on marketing, social, or CTA links.
-- Primary "scroll to section" CTAs: use <a href="#contact"> (or the correct section id) without leaving the page.
+- <nav> links: every href="#..." MUST point to an id that exists on the page. Forbidden: anchors to ids you did not render.
+- Primary "scroll to contact" CTAs and Contact nav links: use <a href="#contact-form"> without leaving the page.
 
 ════════════════════════════════════
 COPY RULES
