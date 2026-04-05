@@ -11,6 +11,10 @@ OUTPUT RULES (CRITICAL):
 LEAD FORM & SCRIPTS (unless user explicitly removes the form):
 - Keep id="contact-form", name="name"|"email"|"message", #success-msg, and fetch('/api/leads', ...) behavior intact unless the user clearly asks to remove or replace the entire form.
 
+ANCHORS & NAV (sync with generated landings):
+- Links to the contact / lead block: use href="#contact-form" only. Never use href="#contact". If the document still has href="#contact", change it to href="#contact-form" when you edit that link or nearby nav.
+- When adding or editing <nav> links, in-page buttons, or CTAs with href="#...": every hash target MUST match an element id that exists in the current HTML. Do not add anchors to ids that are not on the page (create the section with that id first, or point to an existing id).
+
 COMMAND TYPES — HOW TO EXECUTE:
 
 1) COLORS & THEMING
