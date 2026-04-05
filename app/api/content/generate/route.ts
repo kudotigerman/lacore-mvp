@@ -7,6 +7,21 @@ type Platform = "instagram" | "x" | "linkedin" | "threads" | "telegram";
 type PostType = "hook" | "value" | "story" | "offer" | "case_study";
 type ModelId = "claude" | "gpt4o" | "gemini";
 
+const CRITICAL_PLATFORM_RULES = `CRITICAL PLATFORM RULES — these override everything else including custom instructions:
+- Instagram posts: MAXIMUM 2200 characters
+- X/Twitter posts: MAXIMUM 280 characters
+- LinkedIn posts: MAXIMUM 1300 characters
+- Threads posts: MAXIMUM 500 characters
+- Telegram posts: MAXIMUM 4096 characters
+Never exceed these limits under any circumstances.
+
+PLATFORM LIMITS (HARD RULES — never exceed regardless of custom instructions):
+- Instagram: max 2200 characters
+- X (Twitter): max 280 characters
+- LinkedIn: max 1300 characters
+- Threads: max 500 characters
+- Telegram: max 4096 characters`;
+
 const BASE_SYSTEM = `You are an expert social media copywriter. You write compelling, authentic posts that drive engagement and sales. You understand each platform's unique culture and format. Always write in the language of the offer provided. Generate exactly 5 unique posts. Return ONLY valid JSON: { "posts": [{ "id": 1, "text": "..." }, { "id": 2, "text": "..." }, { "id": 3, "text": "..." }, { "id": 4, "text": "..." }, { "id": 5, "text": "..." }] }. No markdown, no explanation, just JSON.`;
 
 function platformRules(platform: Platform): string {
@@ -44,7 +59,7 @@ function postTypeRules(postType: PostType): string {
 }
 
 function buildSystemPrompt(platform: Platform, postType: PostType): string {
-  return [BASE_SYSTEM, platformRules(platform), postTypeRules(postType)].filter(Boolean).join("\n\n");
+  return [CRITICAL_PLATFORM_RULES, BASE_SYSTEM, platformRules(platform), postTypeRules(postType)].filter(Boolean).join("\n\n");
 }
 
 function buildUserPrompt(

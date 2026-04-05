@@ -206,7 +206,12 @@ export default function LeadsList({
   };
 
   const fetchWhatToSay = async (lead: LeadRow) => {
-    const token = dashData.sessionToken;
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
     if (!token) {
       setError("Sign in required.");
       return;
@@ -485,11 +490,11 @@ export default function LeadsList({
                   {renderStatusMenu(lead)}
                   <button
                     type="button"
-                    disabled={!dashData.sessionToken || !!leadHints[lead.id]?.loading}
+                    disabled={!!leadHints[lead.id]?.loading}
                     onClick={() => void fetchWhatToSay(lead)}
                     style={{
                       ...whatSayBtnStyle,
-                      opacity: !dashData.sessionToken || leadHints[lead.id]?.loading ? 0.5 : 1
+                      opacity: leadHints[lead.id]?.loading ? 0.5 : 1
                     }}
                   >
                     ⚡ What to say?
@@ -568,11 +573,11 @@ export default function LeadsList({
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
                     <button
                       type="button"
-                      disabled={!dashData.sessionToken || !!leadHints[lead.id]?.loading}
+                      disabled={!!leadHints[lead.id]?.loading}
                       onClick={() => void fetchWhatToSay(lead)}
                       style={{
                         ...whatSayBtnStyle,
-                        opacity: !dashData.sessionToken || leadHints[lead.id]?.loading ? 0.5 : 1
+                        opacity: leadHints[lead.id]?.loading ? 0.5 : 1
                       }}
                     >
                       ⚡ What to say?

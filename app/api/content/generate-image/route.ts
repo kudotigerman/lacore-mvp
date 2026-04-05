@@ -29,7 +29,8 @@ function buildImagePrompt(platform: string, offer: string, audience: string, sty
   return `Create a professional social media image for ${platform} for a business with this offer: ${offer}. 
 Target audience: ${audience}. 
 Style: ${styleDesc}.
-No text on image. Clean, modern, high-quality visual that represents the business.
+ABSOLUTE REQUIREMENT: The image must contain ZERO text, letters, words, numbers, labels, captions, watermarks, or any written characters whatsoever. Pure visual only. If you add any text the image is considered failed.
+Clean, modern, high-quality visual that represents the business.
 Make it suitable for ${platform} posts.`;
 }
 
@@ -54,7 +55,7 @@ Visual style: ${styleDesc}
 
 Requirements:
 - Image must visually tell the same story as the post text
-- No text, words, or letters on the image
+- ABSOLUTE REQUIREMENT: The image must contain ZERO text, letters, words, numbers, labels, captions, watermarks, or any written characters whatsoever. Pure visual only. If you add any text the image is considered failed.
 - Photorealistic, professional quality
 - Optimized for ${platform} square format
 - Colors and mood must match the post's emotional tone`;
