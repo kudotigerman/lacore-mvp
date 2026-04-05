@@ -36,6 +36,7 @@ COMMAND TYPES — HOW TO EXECUTE:
 2) IMAGES
 - If the user gives a URL: insert <img src="URL" alt="..." style="max-width:100%;height:auto;border-radius:8px;display:block"> (adjust alt and placement: hero, section, etc.).
 - If they describe an image without URL: insert a tasteful placeholder <div> with border-radius 8px, subtle border, padding, short label describing the intended image, and text telling them to replace with their image URL in an <img src="">.
+- If an image is provided by the user (attached in the chat): analyze it and apply it as instructed. If the user says "use as background" — set it as background-image in CSS. If the user says "make buttons like this" — extract the style and apply to buttons. If the user says "add this photo" — insert as <img> in the requested section. For images that need to be displayed on the page: for smaller assets (roughly under ~500KB) you may use a base64 data URL in src inline in the HTML; for larger images, prefer uploading to Supabase Storage bucket "landing-images" and using the public URL in src (you cannot call APIs from here—if the image is large, still use a concise public URL pattern the app can serve, or use base64 only when the payload stays reasonable).
 
 3) ADD SECTIONS
 - "Add FAQ", "pricing", "features", "form", etc.: add a full semantic HTML section (e.g. <section id="faq">) using the SAME visual language as the page (colors, fonts, spacing from existing CSS).
@@ -62,6 +63,13 @@ WHEN IN DOUBT:
 - Never strip <!DOCTYPE>, <html>, <head>, or <body> unless replacing the entire document (which you should avoid).
 `;
 
+function normalizeClaudeImageMediaType(raw?: string): string | null {
+  const r = (raw ?? "image/jpeg").split(";")[0].trim().toLowerCase();
+  if (r === "image/jpg") return "image/jpeg";
+  if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(r)) return r;
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -72,6 +80,8 @@ serve(async (req) => {
       slug?: string;
       instruction?: string;
       currentHtml?: string;
+      imageBase64?: string;
+      imageMediaType?: string;
     };
 
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -103,8 +113,14 @@ serve(async (req) => {
     const currentHtml = typeof body.currentHtml === "string"
       ? body.currentHtml.trim()
       : "";
+    const imageBase64 = typeof body.imageBase64 === "string"
+      ? body.imageBase64.replace(/\s/g, "").trim()
+      : "";
+    const imageMediaTypeRaw = typeof body.imageMediaType === "string"
+      ? body.imageMediaType.trim()
+      : "";
 
-    if (!slug || !instruction || !currentHtml) {
+    if (!slug || !currentHtml || (!instruction && !imageBase64)) {
       return new Response(
         JSON.stringify({ error: "Missing required fields." }),
         {
@@ -113,6 +129,27 @@ serve(async (req) => {
         },
       );
     }
+
+    if (imageBase64) {
+      const mt = normalizeClaudeImageMediaType(imageMediaTypeRaw || "image/jpeg");
+      if (!mt) {
+        return new Response(
+          JSON.stringify({
+            error: "Unsupported image type. Use JPEG, PNG, GIF, or WebP.",
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
+    const effectiveInstruction =
+      instruction ||
+      (imageBase64
+        ? "The user attached an image without extra text. Analyze it and apply it sensibly to the landing page (e.g. hero photo, background, or style reference)."
+        : "");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -135,12 +172,30 @@ serve(async (req) => {
       );
     }
 
-    const userMessage = `Here is the current page:
+    const textPart = `Here is the current page:
 ${currentHtml}
 
-Make this change: ${instruction}
+Make this change: ${effectiveInstruction}
 
 Return the complete updated HTML.`;
+
+    const mediaTypeForClaude = imageBase64
+      ? normalizeClaudeImageMediaType(imageMediaTypeRaw || "image/jpeg")!
+      : "";
+
+    const messageContent = imageBase64
+      ? [
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mediaTypeForClaude,
+            data: imageBase64,
+          },
+        },
+        { type: "text", text: textPart },
+      ]
+      : textPart;
 
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -154,7 +209,7 @@ Return the complete updated HTML.`;
         max_tokens: 12000,
         stream: true,
         system: systemPrompt,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [{ role: "user", content: messageContent }],
       }),
     });
 

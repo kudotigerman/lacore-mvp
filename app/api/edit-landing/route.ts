@@ -11,7 +11,34 @@ type EditPayload = {
   instruction: string;
   currentHtml?: string;
   currentJsx?: string;
+  imageBase64?: string;
+  imageMediaType?: string;
 };
+
+type ClaudeUserContent =
+  | string
+  | Array<
+      | { type: "text"; text: string }
+      | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+    >;
+
+function normalizeClaudeImageMediaType(raw?: string): string | null {
+  const r = (raw ?? "image/jpeg").split(";")[0].trim().toLowerCase();
+  if (r === "image/jpg") return "image/jpeg";
+  if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(r)) return r;
+  return null;
+}
+
+function buildClaudeUserContent(textBody: string, imageBase64?: string, imageMediaType?: string): ClaudeUserContent {
+  const b64 = imageBase64?.replace(/\s/g, "").trim();
+  if (!b64) return textBody;
+  const mediaType = normalizeClaudeImageMediaType(imageMediaType);
+  if (!mediaType) return textBody;
+  return [
+    { type: "image", source: { type: "base64", media_type: mediaType, data: b64 } },
+    { type: "text", text: textBody }
+  ];
+}
 
 const editHtmlSystemPrompt = readFileSync(
   join(process.cwd(), "app/api/edit-landing/edit-html-system-prompt.txt"),
@@ -55,7 +82,7 @@ function tryCompileJsx(jsx: string): { ok: true } | { ok: false; message: string
   }
 }
 
-async function callClaude(apiKey: string, system: string, userContent: string): Promise<string> {
+async function callClaude(apiKey: string, system: string, userContent: ClaudeUserContent): Promise<string> {
   const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -89,9 +116,31 @@ async function callClaude(apiKey: string, system: string, userContent: string): 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as EditPayload;
-    if (!body.slug || !body.instruction) {
+    const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
+    const imageBase64 =
+      typeof body.imageBase64 === "string" ? body.imageBase64.replace(/\s/g, "").trim() : "";
+    const imageMediaTypeRaw =
+      typeof body.imageMediaType === "string" ? body.imageMediaType.trim() : "";
+
+    if (!body.slug || (!instruction && !imageBase64)) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
+
+    if (imageBase64) {
+      const mt = normalizeClaudeImageMediaType(imageMediaTypeRaw || "image/jpeg");
+      if (!mt) {
+        return NextResponse.json(
+          { error: "Unsupported image type. Use JPEG, PNG, GIF, or WebP." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const effectiveInstruction =
+      instruction ||
+      (imageBase64
+        ? "The user attached an image without extra text. Analyze it and apply it sensibly to the landing page (e.g. hero photo, background, or style reference)."
+        : "");
 
     const useJsx = Boolean(body.currentJsx?.trim());
     const useHtml = Boolean(body.currentHtml?.trim());
@@ -131,13 +180,15 @@ export async function POST(request: Request) {
       const baseUser = `Here is the current component:
 ${body.currentJsx}
 
-Make this change: ${body.instruction}
+Make this change: ${effectiveInstruction}
 
 Return the complete updated component.`;
 
+      const userContent = buildClaudeUserContent(baseUser, imageBase64 || undefined, imageMediaTypeRaw);
+
       let jsx: string;
       try {
-        jsx = await callClaude(apiKey, editJsxSystemPrompt, baseUser);
+        jsx = await callClaude(apiKey, editJsxSystemPrompt, userContent);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Claude request failed.";
         return NextResponse.json({ error: msg }, { status: 502 });
@@ -152,11 +203,12 @@ Return the complete updated component.`;
 
       let compiled = tryCompileJsx(jsx);
       if (!compiled.ok) {
-        const retryUser = `${baseUser}
+        const retryText = `${baseUser}
 
 Previous output did not compile (${compiled.message}). Fix the JSX and return the complete valid component again.`;
+        const retryContent = buildClaudeUserContent(retryText, imageBase64 || undefined, imageMediaTypeRaw);
         try {
-          jsx = await callClaude(apiKey, editJsxSystemPrompt, retryUser);
+          jsx = await callClaude(apiKey, editJsxSystemPrompt, retryContent);
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Claude request failed on retry.";
           return NextResponse.json({ error: msg }, { status: 502 });
@@ -191,13 +243,15 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
     const htmlUser = `Here is the current page:
 ${body.currentHtml}
 
-Make this change: ${body.instruction}
+Make this change: ${effectiveInstruction}
 
 Return the complete updated HTML.`;
 
+    const htmlContent = buildClaudeUserContent(htmlUser, imageBase64 || undefined, imageMediaTypeRaw);
+
     let html: string;
     try {
-      html = await callClaude(apiKey, editHtmlSystemPrompt, htmlUser);
+      html = await callClaude(apiKey, editHtmlSystemPrompt, htmlContent);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Claude request failed.";
       return NextResponse.json({ error: msg }, { status: 502 });

@@ -14,7 +14,7 @@ Never omit it. Never use module.exports.
 COMMAND TYPES (JSX equivalents):
 
 1) COLORS — adjust style objects or constants; do not rewrite unrelated JSX trees.
-2) IMAGES — add <img src="..." alt="..." style={{ maxWidth: '100%', borderRadius: 8, height: 'auto', display: 'block' }} /> or a placeholder <div> with instructions if no URL.
+2) IMAGES — add <img src="..." alt="..." style={{ maxWidth: '100%', borderRadius: 8, height: 'auto', display: 'block' }} /> or a placeholder <div> with instructions if no URL. If an image is provided by the user (attached in the chat): analyze it and apply as instructed. “Use as background” → backgroundImage / background in styles. “Make buttons like this” → match colors, radius, typography on buttons. “Add this photo” → <img> in the requested section. For display: smaller images (~under 500KB) may use a base64 data URL in src; larger images should use a public URL (e.g. Supabase Storage “landing-images”) when a stable URL is available—avoid enormous inline base64 when it would bloat the bundle.
 3) ADD SECTIONS — new <section> with matching typography/colors from the file; insert before footer/contact area.
 4) REMOVE — delete the matching section/component subtree entirely.
 5) TEXT — change string children only where requested.

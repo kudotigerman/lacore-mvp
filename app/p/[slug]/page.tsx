@@ -2,14 +2,13 @@
 
 import {
   Component,
-  type CSSProperties,
+  type DragEvent,
   type ErrorInfo,
   type FormEvent,
   type MouseEvent,
   type ReactNode,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState
@@ -20,14 +19,16 @@ import { flushSync } from "react-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
-import type { LandingEditorQuickAction } from "@/lib/landingEditorQuickActions";
-import {
-  LANDING_EDITOR_IMAGE_POPUP_TOKEN,
-  LANDING_EDITOR_QUICK_ACTIONS,
-  LANDING_EDITOR_QUICK_STORAGE_KEY
-} from "@/lib/landingEditorQuickActions";
+import { LANDING_EDITOR_QUICK_ACTIONS, LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
 
 type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
+
+type ChatImageAttachment = {
+  base64: string;
+  mediaType: string;
+  previewDataUrl: string;
+  name: string;
+};
 
 const FRIENDLY_COMPILE_MESSAGE =
   "I had trouble with that change. The page wasn't updated. Try rephrasing your request or be more specific about what you want to change.";
@@ -231,17 +232,12 @@ function PublicLandingPageContent() {
   const [previewKey, setPreviewKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const imageQuickBtnRef = useRef<HTMLButtonElement>(null);
-  const imageQuickPopupRef = useRef<HTMLDivElement>(null);
-  const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const chatAttachInputRef = useRef<HTMLInputElement>(null);
+  const [chatAttachment, setChatAttachment] = useState<ChatImageAttachment | null>(null);
+  const [chatDragActive, setChatDragActive] = useState(false);
+  const [attachError, setAttachError] = useState<string | null>(null);
   const [publicStripe, setPublicStripe] = useState<PublicStripeSettings | null>(null);
   const [stripePayLoading, setStripePayLoading] = useState(false);
-  const [showImageQuickPopup, setShowImageQuickPopup] = useState(false);
-  const [imagePopupAnchored, setImagePopupAnchored] = useState(false);
-  const [imagePopupPos, setImagePopupPos] = useState<{ top: number; left: number } | null>(null);
-  const [imageUrlDraft, setImageUrlDraft] = useState("");
-  const [imageQuickError, setImageQuickError] = useState<string | null>(null);
-  const [imageQuickUploading, setImageQuickUploading] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("lacore-theme") ?? "dark";
@@ -278,6 +274,72 @@ function PublicLandingPageContent() {
     }
   }
 
+  function normalizeClientImageMediaType(mime: string): string | null {
+    const m = mime.split(";")[0].trim().toLowerCase();
+    if (m === "image/jpg") return "image/jpeg";
+    if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(m)) return m;
+    return null;
+  }
+
+  function attachChatImageFile(file: File) {
+    setAttachError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result;
+      if (typeof r !== "string") {
+        setAttachError("Could not read file.");
+        return;
+      }
+      const match = /^data:([^;,]+)(?:;[^,]*)?,base64,([\s\S]+)$/.exec(r);
+      if (!match) {
+        setAttachError("Could not read image.");
+        return;
+      }
+      const mediaTypeRaw = match[1].trim();
+      const base64 = match[2].replace(/\s/g, "");
+      const claudeMt = normalizeClientImageMediaType(mediaTypeRaw);
+      if (!claudeMt) {
+        setAttachError("Unsupported type. Use JPEG, PNG, GIF, or WebP.");
+        return;
+      }
+      setChatAttachment({
+        base64,
+        mediaType: claudeMt,
+        previewDataUrl: r,
+        name: file.name
+      });
+    };
+    reader.onerror = () => setAttachError("Could not read file.");
+    reader.readAsDataURL(file);
+  }
+
+  function onChatDragOver(e: DragEvent<HTMLDivElement>) {
+    if ([...(e.dataTransfer?.types ?? [])].includes("Files")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  }
+
+  function onChatDragEnter(e: DragEvent<HTMLDivElement>) {
+    if ([...(e.dataTransfer?.types ?? [])].includes("Files")) {
+      e.preventDefault();
+      setChatDragActive(true);
+    }
+  }
+
+  function onChatDragLeave(e: DragEvent<HTMLDivElement>) {
+    const rel = e.relatedTarget as Node | null;
+    if (rel && e.currentTarget.contains(rel)) return;
+    setChatDragActive(false);
+  }
+
+  function onChatDrop(e: DragEvent<HTMLDivElement>) {
+    setChatDragActive(false);
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f) attachChatImageFile(f);
+  }
+
   const fetchHtml = useCallback(async () => {
     setLoading(true);
     const supabase = getSupabaseClient();
@@ -304,13 +366,6 @@ function PublicLandingPageContent() {
       const prefill = sessionStorage.getItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
       if (!prefill) return;
       sessionStorage.removeItem(LANDING_EDITOR_QUICK_STORAGE_KEY);
-      if (prefill === LANDING_EDITOR_IMAGE_POPUP_TOKEN) {
-        setImageUrlDraft("");
-        setImageQuickError(null);
-        setImagePopupAnchored(false);
-        setShowImageQuickPopup(true);
-        return;
-      }
       setChatInput(prefill);
       requestAnimationFrame(() => {
         const el = chatTextareaRef.current;
@@ -326,42 +381,6 @@ function PublicLandingPageContent() {
       /* storage blocked */
     }
   }, [editMode, slug]);
-
-  useLayoutEffect(() => {
-    if (!showImageQuickPopup) return;
-    if (imagePopupAnchored && imageQuickBtnRef.current) {
-      const r = imageQuickBtnRef.current.getBoundingClientRect();
-      setImagePopupPos({ top: r.top, left: r.left });
-    } else {
-      setImagePopupPos(null);
-    }
-  }, [showImageQuickPopup, imagePopupAnchored]);
-
-  useEffect(() => {
-    if (!showImageQuickPopup) return;
-    const onDown = (e: globalThis.MouseEvent) => {
-      const t = e.target as Node;
-      if (
-        imageQuickPopupRef.current?.contains(t) ||
-        imageQuickBtnRef.current?.contains(t) ||
-        imageFileInputRef.current?.contains(t)
-      ) {
-        return;
-      }
-      setShowImageQuickPopup(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [showImageQuickPopup]);
-
-  useEffect(() => {
-    if (!showImageQuickPopup) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowImageQuickPopup(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [showImageQuickPopup]);
 
   useEffect(() => {
     if (editMode || !slug) return;
@@ -585,12 +604,15 @@ function PublicLandingPageContent() {
   }
 
   async function handleEditDirect(overrideInstruction?: string) {
-    const instruction = (overrideInstruction ?? chatInput).trim();
-    if (!instruction || updating) return;
+    const snap = chatAttachment;
+    const instructionRaw = (overrideInstruction ?? chatInput).trim();
+    if ((!instructionRaw && !snap) || updating) return;
 
     const timeUser = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setMessages((prev) => [...prev, { role: "user", text: instruction, time: timeUser }]);
+    const displayUser = instructionRaw || (snap ? "📎 Image attached" : "");
+    setMessages((prev) => [...prev, { role: "user", text: displayUser, time: timeUser }]);
     setChatInput("");
+    setChatAttachment(null);
     setUpdating(true);
 
     try {
@@ -602,9 +624,12 @@ function PublicLandingPageContent() {
         throw new Error("Sign in required to edit this page.");
       }
 
-      const bodyPayload = useLiveReact
-        ? { slug, instruction, currentJsx: jsxContent }
-        : { slug, instruction, currentHtml: html };
+      const bodyPayload = {
+        slug,
+        instruction: instructionRaw,
+        ...(useLiveReact ? { currentJsx: jsxContent } : { currentHtml: html }),
+        ...(snap ? { imageBase64: snap.base64, imageMediaType: snap.mediaType } : {})
+      };
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -651,7 +676,7 @@ function PublicLandingPageContent() {
       const timeAssistant = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: `Updated: ${instruction}`, time: timeAssistant }
+        { role: "assistant", text: `Updated: ${displayUser}`, time: timeAssistant }
       ]);
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Failed to update page.";
@@ -668,88 +693,6 @@ function PublicLandingPageContent() {
     event.preventDefault();
     await handleEditDirect();
   }
-
-  async function submitHeroImagePrompt(imageRef: string) {
-    setShowImageQuickPopup(false);
-    setImageQuickError(null);
-    await handleEditDirect(`Add this image in the hero section: ${imageRef}`);
-  }
-
-  async function handleAddImageByUrl() {
-    const raw = imageUrlDraft.trim();
-    if (!raw) {
-      setImageQuickError("Enter an image URL.");
-      return;
-    }
-    let parsed: URL;
-    try {
-      parsed = new URL(raw);
-    } catch {
-      setImageQuickError("Invalid URL.");
-      return;
-    }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      setImageQuickError("URL must start with http or https.");
-      return;
-    }
-    await submitHeroImagePrompt(parsed.href);
-  }
-
-  async function handleLandingImageUpload(files: FileList | null) {
-    const file = files?.[0];
-    if (!file || !file.type.startsWith("image/")) {
-      setImageQuickError("Choose an image file.");
-      return;
-    }
-    setImageQuickError(null);
-    setImageQuickUploading(true);
-    try {
-      const supabase = getSupabaseClient();
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
-      if (!session?.user?.id) {
-        throw new Error("Sign in required.");
-      }
-      const extMatch = file.name.match(/\.([a-z0-9]+)$/i);
-      const ext = (extMatch?.[1] ?? "jpg").toLowerCase();
-      const objectPath = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("landing-images").upload(objectPath, file, {
-        contentType: file.type || "image/jpeg",
-        upsert: false
-      });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("landing-images").getPublicUrl(objectPath);
-      if (!pub?.publicUrl) throw new Error("Could not get public URL.");
-      await submitHeroImagePrompt(pub.publicUrl);
-    } catch (e) {
-      setImageQuickError(e instanceof Error ? e.message : "Upload failed.");
-    } finally {
-      setImageQuickUploading(false);
-      if (imageFileInputRef.current) imageFileInputRef.current.value = "";
-    }
-  }
-
-  function openImageQuickFromToolbar() {
-    if (showImageQuickPopup && imagePopupAnchored) {
-      setShowImageQuickPopup(false);
-      return;
-    }
-    setImageUrlDraft("");
-    setImageQuickError(null);
-    setImagePopupAnchored(true);
-    setShowImageQuickPopup(true);
-  }
-
-  const imageQuickPopupPosition: CSSProperties = imagePopupPos
-    ? {
-        position: "fixed",
-        top: imagePopupPos.top,
-        left: imagePopupPos.left,
-        transform: "translateY(calc(-100% - 8px))",
-        zIndex: 10002
-      }
-    : { position: "fixed", bottom: 100, right: 24, zIndex: 10002 };
 
   const promoModal = showPromo && (
     <div
@@ -1660,6 +1603,19 @@ function PublicLandingPageContent() {
             <div
               style={{
                 flex: 1,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                boxShadow: chatDragActive ? "inset 0 0 0 2px var(--accent)" : undefined
+              }}
+              onDragEnter={onChatDragEnter}
+              onDragLeave={onChatDragLeave}
+              onDragOver={onChatDragOver}
+              onDrop={onChatDrop}
+            >
+            <div
+              style={{
+                flex: 1,
                 overflowY: "auto",
                 padding: 16,
                 display: "flex",
@@ -1812,6 +1768,76 @@ function PublicLandingPageContent() {
                 margin: 0
               }}
             >
+              {chatAttachment ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 10
+                  }}
+                >
+                  <div style={{ position: "relative", width: 60, height: 60, flexShrink: 0 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={chatAttachment.previewDataUrl}
+                      alt=""
+                      width={60}
+                      height={60}
+                      style={{
+                        width: 60,
+                        height: 60,
+                        objectFit: "cover",
+                        borderRadius: 6,
+                        border: "1px solid var(--border-primary)",
+                        display: "block"
+                      }}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Remove image"
+                      onClick={() => setChatAttachment(null)}
+                      style={{
+                        position: "absolute",
+                        top: -8,
+                        right: -8,
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        border: "1px solid var(--border-primary)",
+                        background: "var(--bg-card)",
+                        color: "var(--text-primary)",
+                        fontSize: 14,
+                        lineHeight: 1,
+                        cursor: "pointer",
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "var(--text-muted)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      minWidth: 0,
+                      flex: 1
+                    }}
+                    title={chatAttachment.name}
+                  >
+                    {chatAttachment.name}
+                  </span>
+                </div>
+              ) : null}
+              {attachError ? (
+                <p style={{ margin: "0 0 10px", fontSize: 11, color: "var(--error)" }}>{attachError}</p>
+              ) : null}
               <textarea
                 ref={chatTextareaRef}
                 value={chatInput}
@@ -1842,102 +1868,16 @@ function PublicLandingPageContent() {
                 }}
               />
               <input
-                ref={imageFileInputRef}
+                ref={chatAttachInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,*/*"
                 style={{ display: "none" }}
-                onChange={(e) => void handleLandingImageUpload(e.target.files)}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) attachChatImageFile(f);
+                  e.target.value = "";
+                }}
               />
-              {showImageQuickPopup ? (
-                <div
-                  ref={imageQuickPopupRef}
-                  style={{
-                    ...imageQuickPopupPosition,
-                    width: 280,
-                    background: "#111116",
-                    border: "1px solid #1C1C22",
-                    borderRadius: 12,
-                    padding: 24,
-                    boxSizing: "border-box",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: "0 0 12px",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      color: "var(--text-primary)"
-                    }}
-                  >
-                    ADD HERO IMAGE
-                  </p>
-                  <label style={{ display: "block", fontSize: 10, color: "#A1A1AA", marginBottom: 6 }}>
-                    Image URL
-                  </label>
-                  <input
-                    type="url"
-                    value={imageUrlDraft}
-                    onChange={(e) => setImageUrlDraft(e.target.value)}
-                    placeholder="https://your-image.com/photo.jpg"
-                    disabled={updating || imageQuickUploading}
-                    style={{
-                      width: "100%",
-                      boxSizing: "border-box",
-                      padding: "8px 10px",
-                      borderRadius: 8,
-                      border: "1px solid #1C1C22",
-                      background: "#0A0A0D",
-                      color: "#FAFAFA",
-                      fontSize: 12,
-                      marginBottom: 10
-                    }}
-                  />
-                  <button
-                    type="button"
-                    disabled={updating || imageQuickUploading}
-                    onClick={() => void handleAddImageByUrl()}
-                    style={{
-                      width: "100%",
-                      marginBottom: 16,
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "none",
-                      background: "var(--accent)",
-                      color: "var(--on-accent)",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      cursor: updating || imageQuickUploading ? "not-allowed" : "pointer",
-                      opacity: updating || imageQuickUploading ? 0.5 : 1
-                    }}
-                  >
-                    Add by URL
-                  </button>
-                  <button
-                    type="button"
-                    disabled={updating || imageQuickUploading}
-                    onClick={() => imageFileInputRef.current?.click()}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #1C1C22",
-                      background: "transparent",
-                      color: "#FAFAFA",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: updating || imageQuickUploading ? "not-allowed" : "pointer",
-                      opacity: updating || imageQuickUploading ? 0.5 : 1
-                    }}
-                  >
-                    {imageQuickUploading ? "Uploading…" : "Upload image"}
-                  </button>
-                  {imageQuickError ? (
-                    <p style={{ margin: "10px 0 0", fontSize: 11, color: "var(--error)" }}>{imageQuickError}</p>
-                  ) : null}
-                </div>
-              ) : null}
               <div
                 style={{
                   marginTop: 10,
@@ -1946,61 +1886,36 @@ function PublicLandingPageContent() {
                   gap: 8
                 }}
               >
-                {LANDING_EDITOR_QUICK_ACTIONS.map((action: LandingEditorQuickAction) =>
-                  "kind" in action && action.kind === "image" ? (
-                    <button
-                      key={action.label}
-                      ref={imageQuickBtnRef}
-                      type="button"
-                      disabled={updating}
-                      onClick={() => openImageQuickFromToolbar()}
-                      style={{
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                        fontSize: 11,
-                        padding: "6px 10px",
-                        borderRadius: 6,
-                        border: "1px solid var(--border-primary)",
-                        background: "var(--bg-card)",
-                        color: "var(--text-secondary)",
-                        cursor: updating ? "not-allowed" : "pointer",
-                        opacity: updating ? 0.55 : 1,
-                        lineHeight: 1.3
-                      }}
-                    >
-                      {action.label}
-                    </button>
-                  ) : (
-                    <button
-                      key={action.label}
-                      type="button"
-                      disabled={updating}
-                      onClick={() =>
-                        "text" in action ? applyQuickPrompt(action.text) : undefined
-                      }
-                      style={{
-                        fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                        fontSize: 11,
-                        padding: "6px 10px",
-                        borderRadius: 6,
-                        border: "1px solid var(--border-primary)",
-                        background: "var(--bg-card)",
-                        color: "var(--text-secondary)",
-                        cursor: updating ? "not-allowed" : "pointer",
-                        opacity: updating ? 0.55 : 1,
-                        lineHeight: 1.3
-                      }}
-                    >
-                      {action.label}
-                    </button>
-                  )
-                )}
+                {LANDING_EDITOR_QUICK_ACTIONS.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    disabled={updating}
+                    onClick={() => applyQuickPrompt(action.text)}
+                    style={{
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontSize: 11,
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      border: "1px solid var(--border-primary)",
+                      background: "var(--bg-card)",
+                      color: "var(--text-secondary)",
+                      cursor: updating ? "not-allowed" : "pointer",
+                      opacity: updating ? 0.55 : 1,
+                      lineHeight: 1.3
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                ))}
               </div>
               <div
                 style={{
                   marginTop: 10,
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center"
+                  alignItems: "center",
+                  gap: 8
                 }}
               >
                 <span
@@ -2012,23 +1927,57 @@ function PublicLandingPageContent() {
                 >
                   ⏎ send &nbsp; ⇧⏎ newline
                 </span>
-                <button
-                  type="submit"
-                  disabled={updating || !chatInput.trim()}
-                  style={{
-                    background: updating || !chatInput.trim() ? "var(--border-primary)" : "var(--accent)",
-                    color: updating || !chatInput.trim() ? "var(--text-muted)" : "var(--on-accent)",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontWeight: 800,
-                    fontSize: 16,
-                    letterSpacing: "1px",
-                    border: "none",
-                    padding: "10px 24px",
-                    cursor: updating || !chatInput.trim() ? "not-allowed" : "pointer"
-                  }}
-                >
-                  APPLY →
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    aria-label="Attach image"
+                    title="Attach image"
+                    disabled={updating}
+                    onClick={() => chatAttachInputRef.current?.click()}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      border: "1px solid var(--border-primary)",
+                      background: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                      fontSize: 18,
+                      lineHeight: 1,
+                      cursor: updating ? "not-allowed" : "pointer",
+                      opacity: updating ? 0.55 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0
+                    }}
+                  >
+                    📎
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updating || (!chatInput.trim() && !chatAttachment)}
+                    style={{
+                      background:
+                        updating || (!chatInput.trim() && !chatAttachment)
+                          ? "var(--border-primary)"
+                          : "var(--accent)",
+                      color:
+                        updating || (!chatInput.trim() && !chatAttachment)
+                          ? "var(--text-muted)"
+                          : "var(--on-accent)",
+                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                      fontWeight: 800,
+                      fontSize: 16,
+                      letterSpacing: "1px",
+                      border: "none",
+                      padding: "10px 24px",
+                      cursor:
+                        updating || (!chatInput.trim() && !chatAttachment) ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    APPLY →
+                  </button>
+                </div>
               </div>
               <button
                 type="button"
@@ -2052,6 +2001,7 @@ function PublicLandingPageContent() {
                 ⚡ Built with LACORE
               </button>
             </form>
+            </div>
           </aside>
 
           <div
