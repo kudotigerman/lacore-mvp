@@ -79,18 +79,25 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
     if (!savedDomain) return;
     setChecking(true);
     setError("");
-    const res = await fetch("/api/domains/verify", {
-      method: "POST",
-      headers: await authHeaders(),
-      body: JSON.stringify({ domain: savedDomain.domain })
-    });
-    const data = (await res.json()) as { verified?: boolean };
-    setChecking(false);
-    if (data.verified) {
-      setSavedDomain({ ...savedDomain, verified: true });
-      setStep("done");
-    } else {
-      setError("Domain not verified yet. Check DNS settings and try again in a few minutes.");
+    try {
+      const res = await fetch("/api/domains/verify", {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify({ domain: savedDomain.domain })
+      });
+      const data = (await res.json()) as { verified?: boolean; error?: string };
+      if (!res.ok) {
+        setError(data.error || "Could not check domain status.");
+        return;
+      }
+      if (data.verified) {
+        await loadExisting();
+        setStep("done");
+      } else {
+        setError("Domain not verified yet. Check DNS settings and try again in a few minutes.");
+      }
+    } finally {
+      setChecking(false);
     }
   }
 
@@ -287,7 +294,7 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
           <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>
             {savedDomain?.domain}
           </span>
-          <span style={badgeStyle(false)}>● PENDING</span>
+          <span style={badgeStyle(false)}>PENDING</span>
         </div>
 
         <div style={s.dnsBox}>
@@ -447,7 +454,7 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
           <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>
             {savedDomain?.domain}
           </span>
-          <span style={badgeStyle(true)}>● ACTIVE</span>
+          <span style={badgeStyle(true)}>VERIFIED</span>
         </div>
         <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
           Your landing page is live at{" "}

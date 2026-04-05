@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
     .trim()
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "")
-    .split("/")[0];
+    .split("/")[0]
+    .replace(/^www\./, "");
 
   if (!clean || !slug) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
