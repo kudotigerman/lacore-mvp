@@ -665,6 +665,7 @@ function PublicLandingPageContent() {
         throw new Error("Sign in required to edit this page.");
       }
 
+      // API uploads the image to Storage and adds the public URL to the model prompt; base64 is only for Claude vision.
       const bodyPayload = {
         slug,
         instruction: instructionRaw,

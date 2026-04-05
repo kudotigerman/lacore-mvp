@@ -17,6 +17,7 @@ OUTPUT RULES (CRITICAL):
 - Preserve structure, copy, classes, ids, scripts, and styles that are unrelated to the request.
 - Do NOT rewrite the whole page, reorder unrelated sections, or "refresh" design unless asked.
 - Answer in the same language the user used for the instruction (UI copy you add or change should match that language).
+- When inserting images into HTML: always use the provided public URL, never base64 or data: URLs. The image URL will be provided in the instruction as "Image public URL for use in HTML/CSS: ...". Use it for <img src>, background-image: url(), and similar.
 
 LEAD FORM & SCRIPTS (unless user explicitly removes the form):
 - Keep id="contact-form", name="name"|"email"|"message", #success-msg, and fetch('/api/leads', ...) behavior intact unless the user clearly asks to remove or replace the entire form.
@@ -36,7 +37,7 @@ COMMAND TYPES — HOW TO EXECUTE:
 2) IMAGES
 - If the user gives a URL: insert <img src="URL" alt="..." style="max-width:100%;height:auto;border-radius:8px;display:block"> (adjust alt and placement: hero, section, etc.).
 - If they describe an image without URL: insert a tasteful placeholder <div> with border-radius 8px, subtle border, padding, short label describing the intended image, and text telling them to replace with their image URL in an <img src="">.
-- If an image is provided by the user (attached in the chat): analyze it and apply it as instructed. If the user says "use as background" — set it as background-image in CSS. If the user says "make buttons like this" — extract the style and apply to buttons. If the user says "add this photo" — insert as <img> in the requested section. For images that need to be displayed on the page: for smaller assets (roughly under ~500KB) you may use a base64 data URL in src inline in the HTML; for larger images, prefer uploading to Supabase Storage bucket "landing-images" and using the public URL in src (you cannot call APIs from here—if the image is large, still use a concise public URL pattern the app can serve, or use base64 only when the payload stays reasonable).
+- If an image is provided by the user (attached in the chat): you will also receive "Image public URL for use in HTML/CSS: ..." in the instruction. Analyze the image for vision, but in the returned HTML always reference that URL only (never embed base64 or data: URLs for that image). If the user says "use as background" — use background-image: url(publicUrl). If they say "add this photo" — use <img src="publicUrl" ...>.
 - When adding a background image: NEVER use base64 as CSS background-image if it exceeds 200KB — it will break the page render. Instead insert it as <img> tag with position absolute, or use a solid color fallback. Always keep the page renderable — if the image is too large, show a placeholder with the instruction to upload via URL.
 
 3) ADD SECTIONS
@@ -69,6 +70,22 @@ function normalizeClaudeImageMediaType(raw?: string): string | null {
   if (r === "image/jpg") return "image/jpeg";
   if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(r)) return r;
   return null;
+}
+
+function fileExtensionFromMediaType(mediaType: string): string {
+  const m = mediaType.split(";")[0].trim().toLowerCase();
+  if (m === "image/jpeg" || m === "image/jpg") return "jpg";
+  if (m === "image/png") return "png";
+  if (m === "image/gif") return "gif";
+  if (m === "image/webp") return "webp";
+  return "jpg";
+}
+
+function base64ToUint8Array(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 serve(async (req) => {
@@ -173,10 +190,53 @@ serve(async (req) => {
       );
     }
 
+    let imagePublicUrl: string | undefined;
+    if (imageBase64) {
+      const mt = normalizeClaudeImageMediaType(imageMediaTypeRaw || "image/jpeg")!;
+      const ext = fileExtensionFromMediaType(mt);
+      const fileName = `${userId}/${Date.now()}.${ext}`;
+      const bytes = base64ToUint8Array(imageBase64);
+      const { error: upErr } = await supabase.storage.from("landing-images").upload(
+        fileName,
+        bytes,
+        {
+          contentType: mt,
+          upsert: false,
+        },
+      );
+      if (upErr) {
+        return new Response(
+          JSON.stringify({
+            error: "Failed to upload image.",
+            details: upErr.message,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      const { data: pub } = supabase.storage.from("landing-images").getPublicUrl(fileName);
+      imagePublicUrl = pub?.publicUrl;
+      if (!imagePublicUrl) {
+        return new Response(
+          JSON.stringify({ error: "Could not get public URL." }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
+    const instructionForClaude = imagePublicUrl
+      ? `${effectiveInstruction}\n\nImage public URL for use in HTML/CSS: ${imagePublicUrl}. Use this URL when inserting the image into the page (as src, background-image url(), etc). Do NOT use base64 in HTML.`
+      : effectiveInstruction;
+
     const textPart = `Here is the current page:
 ${currentHtml}
 
-Make this change: ${effectiveInstruction}
+Make this change: ${instructionForClaude}
 
 Return the complete updated HTML.`;
 

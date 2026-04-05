@@ -7,6 +7,7 @@ OUTPUT RULES (CRITICAL):
 - Preserve all existing useState and useEffect hooks unless the change truly requires a new hook — then add minimally.
 - Use inline style={{ }} objects or existing style patterns in the file; for colors, update only the relevant keys (background, backgroundColor, color, borderColor, etc.).
 - Respond in the same language the user used for the instruction (new copy must match).
+- When inserting images from a chat attachment: the instruction will include “Image public URL for use in JSX: …”. Always use that URL string in <img src>, backgroundImage: \`url(...)\`, etc. Never use base64 or data: URLs for that image in the component source.
 
 CRITICAL: The component MUST end with: export default LandingPage;
 Never omit it. Never use module.exports.
@@ -14,7 +15,7 @@ Never omit it. Never use module.exports.
 COMMAND TYPES (JSX equivalents):
 
 1) COLORS — adjust style objects or constants; do not rewrite unrelated JSX trees.
-2) IMAGES — add <img src="..." alt="..." style={{ maxWidth: '100%', borderRadius: 8, height: 'auto', display: 'block' }} /> or a placeholder <div> with instructions if no URL. If an image is provided by the user (attached in the chat): analyze it and apply as instructed. “Use as background” → backgroundImage / background in styles. “Make buttons like this” → match colors, radius, typography on buttons. “Add this photo” → <img> in the requested section. For display: smaller images (~under 500KB) may use a base64 data URL in src; larger images should use a public URL (e.g. Supabase Storage “landing-images”) when a stable URL is available—avoid enormous inline base64 when it would bloat the bundle.
+2) IMAGES — add <img src="..." alt="..." style={{ maxWidth: '100%', borderRadius: 8, height: 'auto', display: 'block' }} /> or a placeholder <div> with instructions if no URL. If an image is attached in chat, use the “Image public URL for use in JSX: …” from the instruction for any inserted image (including backgrounds via url()). Do not use base64 in JSX for that image.
 3) ADD SECTIONS — new <section> with matching typography/colors from the file; insert before footer/contact area.
 4) REMOVE — delete the matching section/component subtree entirely.
 5) TEXT — change string children only where requested.

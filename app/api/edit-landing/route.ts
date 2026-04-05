@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
@@ -38,6 +38,54 @@ function buildClaudeUserContent(textBody: string, imageBase64?: string, imageMed
     { type: "image", source: { type: "base64", media_type: mediaType, data: b64 } },
     { type: "text", text: textBody }
   ];
+}
+
+function fileExtensionFromMediaType(mediaType: string): string {
+  const m = mediaType.split(";")[0].trim().toLowerCase();
+  if (m === "image/jpeg" || m === "image/jpg") return "jpg";
+  if (m === "image/png") return "png";
+  if (m === "image/gif") return "gif";
+  if (m === "image/webp") return "webp";
+  return "jpg";
+}
+
+async function uploadLandingImageForEdit(
+  supabase: SupabaseClient,
+  userId: string,
+  imageBase64: string,
+  mediaType: string
+): Promise<{ publicUrl: string } | { error: string }> {
+  const ext = fileExtensionFromMediaType(mediaType);
+  const fileName = `${userId}/${Date.now()}.${ext}`;
+  let buffer: Buffer;
+  try {
+    buffer = Buffer.from(imageBase64, "base64");
+  } catch {
+    return { error: "Invalid image data." };
+  }
+  if (buffer.length === 0) return { error: "Empty image data." };
+
+  const { error: upErr } = await supabase.storage.from("landing-images").upload(fileName, buffer, {
+    contentType: mediaType,
+    upsert: false
+  });
+  if (upErr) return { error: upErr.message };
+
+  const { data } = supabase.storage.from("landing-images").getPublicUrl(fileName);
+  const publicUrl = data?.publicUrl;
+  if (!publicUrl) return { error: "Could not get public URL." };
+  return { publicUrl };
+}
+
+function appendImagePublicUrlToInstruction(
+  instruction: string,
+  publicUrl: string,
+  target: "html" | "jsx"
+): string {
+  if (target === "html") {
+    return `${instruction}\n\nImage public URL for use in HTML/CSS: ${publicUrl}. Use this URL when inserting the image into the page (as src, background-image url(), etc). Do NOT use base64 in HTML.`;
+  }
+  return `${instruction}\n\nImage public URL for use in JSX: ${publicUrl}. Use this URL when inserting the image (as <img src>, style backgroundImage / url(), etc). Do NOT use base64 or data: URLs in the component source.`;
 }
 
 const editHtmlSystemPrompt = readFileSync(
@@ -176,11 +224,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    let imagePublicUrl: string | undefined;
+    if (imageBase64) {
+      const mt = normalizeClaudeImageMediaType(imageMediaTypeRaw || "image/jpeg")!;
+      const uploaded = await uploadLandingImageForEdit(supabase, user.id, imageBase64, mt);
+      if ("error" in uploaded) {
+        return NextResponse.json(
+          { error: "Failed to upload image.", details: uploaded.error },
+          { status: 500 }
+        );
+      }
+      imagePublicUrl = uploaded.publicUrl;
+    }
+
+    const instructionWithImageUrl = imagePublicUrl
+      ? appendImagePublicUrlToInstruction(
+          effectiveInstruction,
+          imagePublicUrl,
+          useJsx ? "jsx" : "html"
+        )
+      : effectiveInstruction;
+
     if (useJsx && body.currentJsx) {
       const baseUser = `Here is the current component:
 ${body.currentJsx}
 
-Make this change: ${effectiveInstruction}
+Make this change: ${instructionWithImageUrl}
 
 Return the complete updated component.`;
 
@@ -203,7 +272,13 @@ Return the complete updated component.`;
 
       let compiled = tryCompileJsx(jsx);
       if (!compiled.ok) {
-        const retryText = `${baseUser}
+        const retryBase = `Here is the current component:
+${body.currentJsx}
+
+Make this change: ${instructionWithImageUrl}
+
+Return the complete updated component.`;
+        const retryText = `${retryBase}
 
 Previous output did not compile (${compiled.message}). Fix the JSX and return the complete valid component again.`;
         const retryContent = buildClaudeUserContent(retryText, imageBase64 || undefined, imageMediaTypeRaw);
@@ -243,7 +318,7 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
     const htmlUser = `Here is the current page:
 ${body.currentHtml}
 
-Make this change: ${effectiveInstruction}
+Make this change: ${instructionWithImageUrl}
 
 Return the complete updated HTML.`;
 
