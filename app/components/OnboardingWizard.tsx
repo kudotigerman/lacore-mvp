@@ -26,7 +26,8 @@ export default function OnboardingWizard() {
     setHydrated(true);
     try {
       if (localStorage.getItem(DISMISS_OFFER_KEY) === "1") setDismissOffer(true);
-      if (localStorage.getItem(DISMISS_LANDING_KEY) === "1") setDismissLanding(true);
+      const landingDismissed = localStorage.getItem(DISMISS_LANDING_KEY);
+      if (landingDismissed === "1" || landingDismissed === "true") setDismissLanding(true);
     } catch {
       /* ignore */
     }
@@ -76,7 +77,7 @@ export default function OnboardingWizard() {
 
   function dismissLandingWizard() {
     try {
-      localStorage.setItem(DISMISS_LANDING_KEY, "1");
+      localStorage.setItem(DISMISS_LANDING_KEY, "true");
     } catch {
       /* ignore */
     }
@@ -104,7 +105,14 @@ export default function OnboardingWizard() {
     router.push("/dashboard/offer");
   }
 
-  function goToLanding() {
+  function handleBuildLandingClick() {
+    console.log("Build landing clicked");
+    try {
+      localStorage.setItem(DISMISS_LANDING_KEY, "true");
+    } catch {
+      /* ignore */
+    }
+    setDismissLanding(true);
     router.push("/dashboard/landing");
   }
 
@@ -140,11 +148,14 @@ export default function OnboardingWizard() {
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
-        boxSizing: "border-box"
+        boxSizing: "border-box",
+        pointerEvents: "auto"
       }}
     >
       <div
         style={{
+          position: "relative",
+          zIndex: 1,
           width: "100%",
           maxWidth: 560,
           background: "#111116",
@@ -152,7 +163,8 @@ export default function OnboardingWizard() {
           borderRadius: 16,
           padding: 40,
           boxSizing: "border-box",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.55)"
+          boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
+          pointerEvents: "auto"
         }}
       >
         <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
@@ -326,7 +338,11 @@ export default function OnboardingWizard() {
             >
               One click — your page is live in 30 seconds
             </p>
-            <button type="button" style={btnPrimary} onClick={() => goToLanding()}>
+            <button
+              type="button"
+              style={{ ...btnPrimary, position: "relative", zIndex: 2 }}
+              onClick={() => handleBuildLandingClick()}
+            >
               Build my landing page →
             </button>
           </>
