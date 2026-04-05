@@ -119,6 +119,25 @@ DEFAULT:
 - Use standard structure: Hero → Pain → Solution → Features → Testimonials → CTA
 
 ════════════════════════════════════
+STEP 2.5 — COLOR SCHEME BY NICHE
+════════════════════════════════════
+Apply these color palettes based on detected niche:
+
+DESIGNER: bg #0A0A0D, accent #8B5CF6 (purple) — creative and artistic
+DEVELOPER: bg #0A0A0D, accent #06B6D4 (cyan) — technical and precise
+COACH: bg #0F0F0F, accent #F59E0B (amber) — warm and motivational
+FITNESS: bg #0A0A0D, accent #EF4444 (red/orange) — energy and power
+CONSULTANT: bg #0A0A0D, accent #10B981 (green) — growth and money
+COPYWRITER: bg #111116, accent #F97316 (orange) — bold and creative
+AGENCY: bg #080810, accent #6366F1 (indigo) — professional and premium
+COURSE_CREATOR: bg #0A0A0D, accent #EC4899 (pink) — community and transformation
+LOCAL_SERVICE: bg #0F0F0A, accent #84CC16 (lime green) — fresh and local
+DEFAULT: bg #0A0A0D, accent #06B6D4 (cyan)
+
+Apply the accent color to: buttons, links, headings highlights, borders, icons, hover states.
+Keep text #FAFAFA and secondary text #A1A1AA for all niches.
+
+════════════════════════════════════
 STEP 3 — LANGUAGE
 ════════════════════════════════════
 Always generate content in the same language as the user's offer. If Russian — full Russian. If English — full English.
@@ -149,15 +168,15 @@ PAGE SHELL (MANDATORY)
 - All styling: either a single <style> block in <head> or inline on elements; prefer one <style> for maintainability. The design tokens below are fixed.
 
 ════════════════════════════════════
-VISUAL SYSTEM (DARK — FIXED)
+VISUAL SYSTEM (DARK — NICHE PALETTE FROM STEP 2.5)
 ════════════════════════════════════
-- Page background: #0A0A0D
+- Page background: use STEP 2.5 niche bg (DEFAULT niche: #0A0A0D).
 - Primary text: #FAFAFA
-- Muted text: rgba(250,250,250,0.65)
-- Accent: #06B6D4 (cyan) — use for highlights, borders, links, gradient buttons
+- Secondary / muted text: #A1A1AA (body, captions, trust lines)
+- Accent: use STEP 2.5 niche accent (DEFAULT: #06B6D4) — highlights, borders, links, gradient buttons, icons, hover states
 - Hero headline (Bebas Neue): font-size minimum 56px (use clamp for larger on desktop), font-weight 400 (Bebas is display; if unavailable fall back to system-ui with font-weight 900), text-transform: uppercase, letter-spacing 0.02em–0.06em, line-height ~0.95–1.05
-- Buttons (primary CTA): background linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); color #0A0A0D or #FAFAFA (pick highest contrast); border-radius 8px; padding 16px 32px; font-weight 700; border none; cursor pointer; subtle box-shadow using cyan glow
-- Secondary/outline button optional: 1px solid rgba(6,182,212,0.5), transparent bg, cyan text
+- Buttons (primary CTA): background linear-gradient(135deg, ACCENT 0%, slightly darker ACCENT ~100%); pick a darker shade in the same hue as the niche accent; text color #0A0A0D or #FAFAFA for contrast; border-radius 8px; padding 16px 32px; font-weight 700; border none; cursor pointer; subtle box-shadow tinted with the accent
+- Secondary/outline button optional: 1px solid accent at ~50% opacity, transparent bg, accent-colored text
 - Section wrapper: max-width 800px; margin-left auto; margin-right auto; padding 80px 24px (hero can be slightly taller vertically)
 - Subheadings: strong, short; use accent for small labels above H2 ("PROBLEM", "SOLUTION", etc.) in uppercase tracking
 - Cards/rows: subtle border rgba(255,255,255,0.08), border-radius 12px, padding 24px–32px, background rgba(255,255,255,0.03)

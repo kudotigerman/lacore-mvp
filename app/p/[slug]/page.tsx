@@ -11,6 +11,7 @@ import {
   useRef,
   useState
 } from "react";
+import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { flushSync } from "react-dom";
 import { loadStripe } from "@stripe/stripe-js";
@@ -201,6 +202,23 @@ function PublicLandingPageContent() {
   const [dashBackHover, setDashBackHover] = useState(false);
   const [chatInputFocused, setChatInputFocused] = useState(false);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
+  type RegenOfferState =
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "no_session" }
+    | { status: "no_offer" }
+    | { status: "error"; message: string }
+    | {
+        status: "ready";
+        payload: {
+          offer: string;
+          audience: string;
+          pricing: string;
+          positioning: string;
+          headline: string;
+        };
+      };
+  const [regenOfferState, setRegenOfferState] = useState<RegenOfferState>({ status: "idle" });
   const [regenPrimaryGoals, setRegenPrimaryGoals] = useState<string[]>([]);
   const [regenSiteVibe, setRegenSiteVibe] = useState("");
   const [regenerating, setRegenerating] = useState(false);
@@ -360,39 +378,88 @@ function PublicLandingPageContent() {
     setRegenError(null);
     setRegenPrimaryGoals([]);
     setRegenSiteVibe("");
+    setRegenOfferState({ status: "loading" });
     setShowRegenerateModal(true);
+    void (async () => {
+      try {
+        const supabase = getSupabaseClient();
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        let session = refreshed.session;
+        if (!session) {
+          const { data: existing } = await supabase.auth.getSession();
+          session = existing.session;
+        }
+        if (!session?.user) {
+          setRegenOfferState({ status: "no_session" });
+          return;
+        }
+
+        const { data: offerRow, error: offerErr } = await supabase
+          .from("offers")
+          .select("offer, audience, pricing, positioning, headline")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (offerErr) {
+          setRegenOfferState({
+            status: "error",
+            message: offerErr.message || "Could not load your offer."
+          });
+          return;
+        }
+        const offerText =
+          offerRow && typeof (offerRow as { offer?: unknown }).offer === "string"
+            ? (offerRow as { offer: string }).offer.trim()
+            : "";
+        if (!offerRow || !offerText) {
+          setRegenOfferState({ status: "no_offer" });
+          return;
+        }
+
+        setRegenOfferState({
+          status: "ready",
+          payload: offerRow as {
+            offer: string;
+            audience: string;
+            pricing: string;
+            positioning: string;
+            headline: string;
+          }
+        });
+      } catch {
+        setRegenOfferState({
+          status: "error",
+          message: "Could not load your offer. Try again."
+        });
+      }
+    })();
+  }
+
+  function closeRegenerateModal() {
+    setShowRegenerateModal(false);
+    setRegenOfferState({ status: "idle" });
   }
 
   async function handleRegenerateConfirm() {
-    if (regenPrimaryGoals.length === 0 || !regenSiteVibe.trim()) return;
+    if (regenOfferState.status !== "ready" || regenPrimaryGoals.length === 0 || !regenSiteVibe.trim())
+      return;
     setRegenError(null);
     setRegenerating(true);
     try {
       const supabase = getSupabaseClient();
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      let session = refreshed.session;
+      if (!session) {
+        const { data: existing } = await supabase.auth.getSession();
+        session = existing.session;
+      }
       if (!session?.access_token || !session.user.email) {
         throw new Error("Sign in required to regenerate.");
       }
 
-      const { data: offerRow, error: offerErr } = await supabase
-        .from("offers")
-        .select("offer, audience, pricing, positioning, headline")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (offerErr || !offerRow) {
-        throw new Error("No offer found. Add your offer on the dashboard first.");
-      }
-
-      const offerPayload = offerRow as {
-        offer: string;
-        audience: string;
-        pricing: string;
-        positioning: string;
-        headline: string;
-      };
+      const offerPayload = regenOfferState.payload;
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -428,7 +495,7 @@ function PublicLandingPageContent() {
         throw new Error(typeof result?.error === "string" ? result.error : "Regeneration failed.");
       }
 
-      setShowRegenerateModal(false);
+      closeRegenerateModal();
       setJsxContent("");
       await fetchHtml();
       setPreviewKey((k) => k + 1);
@@ -793,187 +860,285 @@ function PublicLandingPageContent() {
         >
           REGENERATE LANDING
         </h3>
-        <p
-          style={{
-            margin: "8px 0 0",
-            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-            fontSize: 11,
-            color: "var(--text-secondary)"
-          }}
-        >
-          Pick a new vibe and goals. Your offer stays the same.
-        </p>
-
-        <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
-          <div>
-            <p
-              style={{
-                margin: 0,
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 10,
-                letterSpacing: "0.14em",
-                color: "var(--accent)"
-              }}
-            >
-              PRIMARY GOAL
-            </p>
-            <p
-              style={{
-                margin: "6px 0 0",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 10,
-                color: "var(--text-muted)"
-              }}
-            >
-              What should visitors do? Select all that apply.
-            </p>
-            <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {REGENERATE_GOAL_OPTIONS.map((goal) => {
-                const selected = regenPrimaryGoals.includes(goal);
-                return (
-                  <button
-                    key={goal}
-                    type="button"
-                    disabled={regenerating}
-                    onClick={() =>
-                      setRegenPrimaryGoals((prev) =>
-                        prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
-                      )
-                    }
-                    style={{
-                      border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
-                      background: selected ? "var(--accent)" : "transparent",
-                      color: selected ? "var(--on-accent)" : "var(--text-secondary)",
-                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                      fontSize: 11,
-                      lineHeight: 1.4,
-                      textAlign: "left",
-                      padding: "10px 10px",
-                      cursor: regenerating ? "not-allowed" : "pointer",
-                      opacity: regenerating ? 0.5 : 1
-                    }}
-                  >
-                    {goal}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <p
-              style={{
-                margin: 0,
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 10,
-                letterSpacing: "0.14em",
-                color: "var(--accent)"
-              }}
-            >
-              SITE VIBE
-            </p>
-            <p
-              style={{
-                margin: "6px 0 0",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 10,
-                color: "var(--text-muted)"
-              }}
-            >
-              How should your site feel?
-            </p>
-            <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {REGENERATE_VIBE_OPTIONS.map((vibe) => {
-                const selected = regenSiteVibe === vibe;
-                return (
-                  <button
-                    key={vibe}
-                    type="button"
-                    disabled={regenerating}
-                    onClick={() => setRegenSiteVibe(vibe)}
-                    style={{
-                      border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
-                      background: selected ? "var(--accent)" : "transparent",
-                      color: selected ? "var(--on-accent)" : "var(--text-secondary)",
-                      fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                      fontSize: 11,
-                      lineHeight: 1.4,
-                      textAlign: "left",
-                      padding: "10px 10px",
-                      cursor: regenerating ? "not-allowed" : "pointer",
-                      opacity: regenerating ? 0.5 : 1
-                    }}
-                  >
-                    {vibe}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {regenError ? (
+        {regenOfferState.status === "loading" ? (
           <p
             style={{
-              margin: "12px 0 0",
+              margin: "16px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              color: "var(--error)"
+              fontSize: 12,
+              color: "var(--text-secondary)"
             }}
           >
-            {regenError}
+            Loading your offer…
           </p>
         ) : null}
 
-        <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            disabled={regenerating}
-            onClick={() => setShowRegenerateModal(false)}
+        {regenOfferState.status === "no_session" ? (
+          <p
             style={{
-              flex: 1,
-              border: "1px solid var(--accent)",
-              background: "transparent",
-              color: "var(--accent)",
+              margin: "16px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.12em",
-              padding: "10px 12px",
-              cursor: regenerating ? "not-allowed" : "pointer",
-              opacity: regenerating ? 0.5 : 1
+              fontSize: 12,
+              color: "var(--text-secondary)"
             }}
           >
-            CANCEL
-          </button>
-          <button
-            type="button"
-            disabled={
-              regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
-            }
-            onClick={() => void handleRegenerateConfirm()}
+            Sign in to regenerate your landing page.
+          </p>
+        ) : null}
+
+        {regenOfferState.status === "no_offer" ? (
+          <p
             style={{
-              flex: 1,
-              border: "none",
-              background:
-                regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
-                  ? "var(--border-primary)"
-                  : "var(--accent)",
-              color:
-                regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
-                  ? "var(--text-muted)"
-                  : "var(--on-accent)",
+              margin: "16px 0 0",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontSize: 11,
-              letterSpacing: "0.12em",
-              padding: "10px 12px",
-              cursor:
-                regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
-                  ? "not-allowed"
-                  : "pointer"
+              fontSize: 12,
+              color: "var(--text-secondary)"
             }}
           >
-            REGENERATE →
-          </button>
+            No offer saved yet. Add your offer first, then try again.
+          </p>
+        ) : null}
+
+        {regenOfferState.status === "error" ? (
+          <p
+            style={{
+              margin: "16px 0 0",
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              fontSize: 12,
+              color: "var(--error)"
+            }}
+          >
+            {regenOfferState.message}
+          </p>
+        ) : null}
+
+        {regenOfferState.status === "ready" ? (
+          <>
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontSize: 11,
+                color: "var(--text-secondary)"
+              }}
+            >
+              Pick a new vibe and goals. Your offer stays the same.
+            </p>
+
+            <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    color: "var(--accent)"
+                  }}
+                >
+                  PRIMARY GOAL
+                </p>
+                <p
+                  style={{
+                    margin: "6px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 10,
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  What should visitors do? Select all that apply.
+                </p>
+                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {REGENERATE_GOAL_OPTIONS.map((goal) => {
+                    const selected = regenPrimaryGoals.includes(goal);
+                    return (
+                      <button
+                        key={goal}
+                        type="button"
+                        disabled={regenerating}
+                        onClick={() =>
+                          setRegenPrimaryGoals((prev) =>
+                            prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
+                          )
+                        }
+                        style={{
+                          border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
+                          background: selected ? "var(--accent)" : "transparent",
+                          color: selected ? "var(--on-accent)" : "var(--text-secondary)",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontSize: 11,
+                          lineHeight: 1.4,
+                          textAlign: "left",
+                          padding: "10px 10px",
+                          cursor: regenerating ? "not-allowed" : "pointer",
+                          opacity: regenerating ? 0.5 : 1
+                        }}
+                      >
+                        {goal}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                    color: "var(--accent)"
+                  }}
+                >
+                  SITE VIBE
+                </p>
+                <p
+                  style={{
+                    margin: "6px 0 0",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 10,
+                    color: "var(--text-muted)"
+                  }}
+                >
+                  How should your site feel?
+                </p>
+                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {REGENERATE_VIBE_OPTIONS.map((vibe) => {
+                    const selected = regenSiteVibe === vibe;
+                    return (
+                      <button
+                        key={vibe}
+                        type="button"
+                        disabled={regenerating}
+                        onClick={() => setRegenSiteVibe(vibe)}
+                        style={{
+                          border: `1px solid ${selected ? "var(--accent)" : "var(--border-primary)"}`,
+                          background: selected ? "var(--accent)" : "transparent",
+                          color: selected ? "var(--on-accent)" : "var(--text-secondary)",
+                          fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                          fontSize: 11,
+                          lineHeight: 1.4,
+                          textAlign: "left",
+                          padding: "10px 10px",
+                          cursor: regenerating ? "not-allowed" : "pointer",
+                          opacity: regenerating ? 0.5 : 1
+                        }}
+                      >
+                        {vibe}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {regenError ? (
+              <p
+                style={{
+                  margin: "12px 0 0",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: 11,
+                  color: "var(--error)"
+                }}
+              >
+                {regenError}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+
+        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          {regenOfferState.status === "no_session" ? (
+            <Link
+              href="/auth"
+              onClick={() => closeRegenerateModal()}
+              style={{
+                display: "block",
+                textAlign: "center",
+                border: "1px solid var(--accent)",
+                background: "var(--accent)",
+                color: "var(--on-accent)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                padding: "10px 12px",
+                textDecoration: "none"
+              }}
+            >
+              SIGN IN →
+            </Link>
+          ) : null}
+          {regenOfferState.status === "no_offer" ? (
+            <Link
+              href="/dashboard/offer"
+              onClick={() => closeRegenerateModal()}
+              style={{
+                display: "block",
+                textAlign: "center",
+                border: "1px solid var(--accent)",
+                background: "var(--accent)",
+                color: "var(--on-accent)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                padding: "10px 12px",
+                textDecoration: "none"
+              }}
+            >
+              ADD YOUR OFFER →
+            </Link>
+          ) : null}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              disabled={regenerating}
+              onClick={() => closeRegenerateModal()}
+              style={{
+                flex: 1,
+                border: "1px solid var(--accent)",
+                background: "transparent",
+                color: "var(--accent)",
+                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                fontSize: 11,
+                letterSpacing: "0.12em",
+                padding: "10px 12px",
+                cursor: regenerating ? "not-allowed" : "pointer",
+                opacity: regenerating ? 0.5 : 1
+              }}
+            >
+              CANCEL
+            </button>
+            {regenOfferState.status === "ready" ? (
+              <button
+                type="button"
+                disabled={regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe}
+                onClick={() => void handleRegenerateConfirm()}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  background:
+                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                      ? "var(--border-primary)"
+                      : "var(--accent)",
+                  color:
+                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                      ? "var(--text-muted)"
+                      : "var(--on-accent)",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
+                  padding: "10px 12px",
+                  cursor:
+                    regenerating || regenPrimaryGoals.length === 0 || !regenSiteVibe
+                      ? "not-allowed"
+                      : "pointer"
+                }}
+              >
+                REGENERATE →
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
