@@ -26,7 +26,7 @@ type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 type ChatImageAttachment = {
   base64: string;
   mediaType: string;
-  previewDataUrl: string;
+  preview: string;
   name: string;
 };
 
@@ -274,44 +274,49 @@ function PublicLandingPageContent() {
     }
   }
 
-  function normalizeClientImageMediaType(mime: string): string | null {
-    const m = mime.split(";")[0].trim().toLowerCase();
-    if (m === "image/jpg") return "image/jpeg";
-    if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(m)) return m;
-    return null;
-  }
-
-  function attachChatImageFile(file: File) {
+  const handleFileSelect = useCallback((file: File) => {
     setAttachError(null);
+    if (file.type && !file.type.startsWith("image/")) {
+      setAttachError("Please choose an image file.");
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = () => {
-      const r = reader.result;
-      if (typeof r !== "string") {
+
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (!result) {
         setAttachError("Could not read file.");
         return;
       }
-      const match = /^data:([^;,]+)(?:;[^,]*)?,base64,([\s\S]+)$/.exec(r);
-      if (!match) {
-        setAttachError("Could not read image.");
+      const comma = result.indexOf(",");
+      if (comma < 0) {
+        setAttachError("Could not read image. Try a different file.");
         return;
       }
-      const mediaTypeRaw = match[1].trim();
-      const base64 = match[2].replace(/\s/g, "");
-      const claudeMt = normalizeClientImageMediaType(mediaTypeRaw);
-      if (!claudeMt) {
-        setAttachError("Unsupported type. Use JPEG, PNG, GIF, or WebP.");
+      const base64 = result.slice(comma + 1).replace(/\s/g, "");
+      if (!base64) {
+        setAttachError("Could not read image. Try a different file.");
         return;
       }
+      let mediaType = file.type?.trim() || "image/jpeg";
+      if (mediaType === "image/jpg") mediaType = "image/jpeg";
+
       setChatAttachment({
         base64,
-        mediaType: claudeMt,
-        previewDataUrl: r,
+        mediaType,
+        preview: result,
         name: file.name
       });
+      setAttachError(null);
     };
-    reader.onerror = () => setAttachError("Could not read file.");
+
+    reader.onerror = () => {
+      setAttachError("Could not read image. Try a different file.");
+    };
+
     reader.readAsDataURL(file);
-  }
+  }, []);
 
   function onChatDragOver(e: DragEvent<HTMLDivElement>) {
     if ([...(e.dataTransfer?.types ?? [])].includes("Files")) {
@@ -337,7 +342,7 @@ function PublicLandingPageContent() {
     setChatDragActive(false);
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f) attachChatImageFile(f);
+    if (f) handleFileSelect(f);
   }
 
   const fetchHtml = useCallback(async () => {
@@ -1785,7 +1790,7 @@ function PublicLandingPageContent() {
                   <div style={{ position: "relative", width: 60, height: 60, flexShrink: 0 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={chatAttachment.previewDataUrl}
+                      src={chatAttachment.preview}
                       alt=""
                       width={60}
                       height={60}
@@ -1801,7 +1806,10 @@ function PublicLandingPageContent() {
                     <button
                       type="button"
                       aria-label="Remove image"
-                      onClick={() => setChatAttachment(null)}
+                      onClick={() => {
+                        setChatAttachment(null);
+                        setAttachError(null);
+                      }}
                       style={{
                         position: "absolute",
                         top: -8,
@@ -1841,7 +1849,7 @@ function PublicLandingPageContent() {
                 </div>
               ) : null}
               {attachError ? (
-                <p style={{ margin: "0 0 10px", fontSize: 11, color: "var(--error)" }}>{attachError}</p>
+                <p style={{ margin: "0 0 10px", fontSize: 11, color: "#EF4444" }}>{attachError}</p>
               ) : null}
               <textarea
                 ref={chatTextareaRef}
@@ -1875,11 +1883,11 @@ function PublicLandingPageContent() {
               <input
                 ref={chatAttachInputRef}
                 type="file"
-                accept="image/*,*/*"
+                accept="image/*"
                 style={{ display: "none" }}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) attachChatImageFile(f);
+                  if (f) handleFileSelect(f);
                   e.target.value = "";
                 }}
               />
