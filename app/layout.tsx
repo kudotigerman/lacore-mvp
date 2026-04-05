@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   description: "You say what you sell. LACORE does the rest.",
   icons: {
     icon: "/favicon.svg"
+  },
+  verification: {
+    google: "5tSyzFVAJt2ONZr3Nw2YgU4nuQ2HSR1qcVE3-wWKuqw"
   }
 };
 
