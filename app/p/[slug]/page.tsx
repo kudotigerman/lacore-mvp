@@ -116,7 +116,7 @@ function LiveLandingView({ jsxSource, height }: { jsxSource: string; height: str
   return (
     <iframe
       srcDoc={srcDoc}
-      sandbox="allow-scripts allow-same-origin"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       style={{ width: "100%", height, border: "none", display: "block" }}
     />
   );
