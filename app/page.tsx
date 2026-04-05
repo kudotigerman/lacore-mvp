@@ -85,9 +85,20 @@ const AUDIENCE_CARDS = [
   }
 ] as const;
 
+const HERO_PLACEHOLDER_PHRASES = [
+  "I help restaurants design spaces that increase revenue...",
+  "I coach founders on building high-performance teams...",
+  "I create brand identities for premium lifestyle brands...",
+  "I help e-commerce stores grow with paid ads...",
+  "I build custom software for logistics companies...",
+  "I consult small agencies on pricing and positioning..."
+];
+
 export default function LandingPage() {
   const router = useRouter();
   const [heroInput, setHeroInput] = useState("");
+  const [heroInputFocused, setHeroInputFocused] = useState(false);
+  const [currentPlaceholder, setCurrentPlaceholder] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -126,6 +137,66 @@ export default function LandingPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (heroInput.trim() || heroInputFocused) return;
+
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let phraseIndex = 0;
+    let displayedLen = 0;
+    type Phase = "typing" | "pause" | "deleting";
+    let phase: Phase = "typing";
+
+    const schedule = (fn: () => void, ms: number) => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        if (!cancelled) fn();
+      }, ms);
+    };
+
+    const step = () => {
+      if (cancelled) return;
+      const text = HERO_PLACEHOLDER_PHRASES[phraseIndex] ?? "";
+
+      if (phase === "typing") {
+        if (displayedLen < text.length) {
+          displayedLen += 1;
+          setCurrentPlaceholder(text.slice(0, displayedLen));
+          schedule(step, 30);
+        } else {
+          phase = "pause";
+          schedule(() => {
+            if (cancelled) return;
+            phase = "deleting";
+            step();
+          }, 3000);
+        }
+      } else if (phase === "deleting") {
+        if (displayedLen > 0) {
+          displayedLen -= 1;
+          setCurrentPlaceholder(text.slice(0, displayedLen));
+          schedule(step, 15);
+        } else {
+          phraseIndex = (phraseIndex + 1) % HERO_PLACEHOLDER_PHRASES.length;
+          phase = "typing";
+          step();
+        }
+      }
+    };
+
+    setCurrentPlaceholder("");
+    displayedLen = 0;
+    phraseIndex = 0;
+    phase = "typing";
+    schedule(step, 0);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
+  }, [heroInput, heroInputFocused]);
 
   function scrollToSection(sectionId: string) {
     const el = document.getElementById(sectionId);
@@ -473,9 +544,11 @@ export default function LandingPage() {
               marginTop: 32,
               width: "100%",
               maxWidth: 560,
+              marginLeft: "auto",
+              marginRight: "auto",
               display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              gap: 10,
+              flexDirection: "column",
+              gap: 12,
               alignItems: "stretch"
             }}
           >
@@ -483,12 +556,14 @@ export default function LandingPage() {
               type="text"
               value={heroInput}
               onChange={(e) => setHeroInput(e.target.value)}
-              placeholder="What do you do? (e.g. I help restaurants with interior design)"
+              onFocus={() => setHeroInputFocused(true)}
+              onBlur={() => setHeroInputFocused(false)}
+              placeholder={currentPlaceholder}
               style={{
-                flex: 1,
-                minWidth: 0,
-                padding: "14px 16px",
-                fontSize: 14,
+                width: "100%",
+                height: 56,
+                padding: "16px 20px",
+                fontSize: 16,
                 fontFamily: sans,
                 border: "1px solid var(--border-primary)",
                 borderRadius: 8,
@@ -502,9 +577,10 @@ export default function LandingPage() {
               type="submit"
               disabled={!heroInput.trim()}
               style={{
-                padding: "14px 20px",
-                fontSize: 14,
-                fontWeight: 800,
+                width: "100%",
+                padding: "14px 24px",
+                fontSize: 13,
+                fontWeight: 700,
                 fontFamily: sans,
                 border: "none",
                 borderRadius: 8,
@@ -512,7 +588,7 @@ export default function LandingPage() {
                 color: "#000000",
                 cursor: heroInput.trim() ? "pointer" : "not-allowed",
                 letterSpacing: "0.04em",
-                whiteSpace: "nowrap"
+                boxSizing: "border-box"
               }}
             >
               BUILD MY SALES MACHINE →
