@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OfferVariant } from "@/app/api/generate-offer/route";
 import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/app/components/OnboardingWizard";
@@ -8,6 +9,32 @@ import { dash } from "@/components/dashboard/dashTokens";
 import type { DashboardOffer } from "@/components/dashboard/DashboardDataContext";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
+
+const REFINE_QUICK = [
+  "More aggressive",
+  "Focus on ROI",
+  "More specific niche",
+  "Add guarantee"
+] as const;
+
+function parseOfferRefinementJson(raw: string): DashboardOffer | null {
+  let s = raw.trim();
+  if (s.startsWith("```")) {
+    s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  }
+  try {
+    const o = JSON.parse(s) as Record<string, unknown>;
+    const offer = typeof o.offer === "string" ? o.offer.trim() : "";
+    const audience = typeof o.audience === "string" ? o.audience.trim() : "";
+    const pricing = typeof o.pricing === "string" ? o.pricing.trim() : "";
+    const positioning = typeof o.positioning === "string" ? o.positioning.trim() : "";
+    const headline = typeof o.headline === "string" ? o.headline.trim() : "";
+    if (!offer || !audience || !pricing || !positioning || !headline) return null;
+    return { offer, audience, pricing, positioning, headline };
+  } catch {
+    return null;
+  }
+}
 
 const fields = [
   { label: "OFFER", key: "offer" as const, multiline: true },
@@ -34,7 +61,16 @@ export default function DashboardOfferPage() {
   const [chooseError, setChooseError] = useState<string | null>(null);
   const onboardingAutoStarted = useRef(false);
 
+  const [refineLog, setRefineLog] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
+  const [refineInput, setRefineInput] = useState("");
+  const [refineLoading, setRefineLoading] = useState(false);
+  const [refineError, setRefineError] = useState<string | null>(null);
+  const [pendingRefinement, setPendingRefinement] = useState<DashboardOffer | null>(null);
+  const [saveRefineLoading, setSaveRefineLoading] = useState(false);
+  const refineTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   const offer = d.offer;
+  const displayOffer = offer ? (pendingRefinement ?? offer) : null;
 
   const executeGenerate = useCallback(async (w: string, ideal: string, price: string) => {
     const userInput = [
@@ -142,6 +178,124 @@ export default function DashboardOfferPage() {
     }
   }
 
+  async function saveRefinedOffer() {
+    if (!d.userId || !pendingRefinement) return;
+    setRefineError(null);
+    setSaveRefineLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase
+        .from("offers")
+        .update({
+          offer: pendingRefinement.offer,
+          audience: pendingRefinement.audience,
+          pricing: pendingRefinement.pricing,
+          positioning: pendingRefinement.positioning,
+          headline: pendingRefinement.headline
+        } as never)
+        .eq("user_id", d.userId);
+      if (error) throw error;
+      d.setOffer(pendingRefinement);
+      await d.refreshOffer();
+      setPendingRefinement(null);
+    } catch (e) {
+      setRefineError(e instanceof Error ? e.message : "Could not save.");
+    } finally {
+      setSaveRefineLoading(false);
+    }
+  }
+
+  async function improveOfferFromFeedback() {
+    const feedback = refineInput.trim();
+    if (!feedback || !d.sessionToken || !displayOffer) return;
+    setRefineError(null);
+    setRefineLoading(true);
+    const base = displayOffer;
+    const prior = refineLog
+      .filter((m) => m.role === "user")
+      .map((m) => m.text)
+      .slice(-3);
+    const priorBlock =
+      prior.length > 0
+        ? `Earlier feedback in this session (oldest first): ${prior.join(" → ")}\n\n`
+        : "";
+    const userContent = `${priorBlock}Improve my offer based on this feedback: ${feedback}
+
+Current offer:
+OFFER: ${base.offer}
+AUDIENCE: ${base.audience}
+PRICING: ${base.pricing}
+POSITIONING: ${base.positioning}
+HEADLINE: ${base.headline}
+
+Return ONLY valid JSON (no markdown fences, no explanation) with exactly these string keys: "offer", "audience", "pricing", "positioning", "headline". Each value must be a non-empty string. Keep the same language as the current offer.`;
+
+    setRefineLog((prev) => [...prev, { role: "user", text: feedback }]);
+
+    try {
+      const res = await fetch("/api/dashboard-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${d.sessionToken}`
+        },
+        body: JSON.stringify({
+          message: userContent,
+          salesContext: {
+            offer: base.offer,
+            audience: base.audience,
+            pricing: base.pricing,
+            positioning: base.positioning,
+            headline: base.headline,
+            slug: d.landingSlug
+          }
+        })
+      });
+      const json = (await res.json()) as { reply?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(json.error ?? "Request failed.");
+      }
+      const parsed = json.reply ? parseOfferRefinementJson(json.reply) : null;
+      if (!parsed) {
+        throw new Error("Could not parse improved offer. Try rephrasing your feedback.");
+      }
+      setPendingRefinement(parsed);
+      setRefineInput("");
+      setRefineLog((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Updated your offer — review the fields above, then save when you're happy."
+        }
+      ]);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Something went wrong.";
+      setRefineError(msg);
+      setRefineLog((prev) => [
+        ...prev,
+        { role: "assistant", text: `Couldn't apply that: ${msg}` }
+      ]);
+    } finally {
+      setRefineLoading(false);
+    }
+  }
+
+  function applyRefineQuick(text: string) {
+    flushSync(() => {
+      setRefineInput((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text));
+    });
+    const el = refineTextareaRef.current;
+    if (el) {
+      el.focus();
+      const len = el.value.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   async function save() {
     if (!d.userId || !draft) return;
     setSaveErr(null);
@@ -185,7 +339,8 @@ export default function DashboardOfferPage() {
           type="button"
           onClick={() => {
             setSaveErr(null);
-            setDraft({ ...offer });
+            setDraft({ ...(pendingRefinement ?? offer) });
+            setPendingRefinement(null);
             setEditing(true);
           }}
           style={dash.btnGhostEdit}
@@ -334,9 +489,21 @@ export default function DashboardOfferPage() {
         </>
       ) : (
         <>
+          {pendingRefinement ? (
+            <p
+              style={{
+                margin: "0 0 12px",
+                fontSize: 12,
+                color: "var(--accent)",
+                fontFamily: "inherit"
+              }}
+            >
+              You have unsaved AI improvements — review the card and click &quot;Save improved offer&quot; below.
+            </p>
+          ) : null}
           <div style={{ ...dash.card }}>
             {fields.map((item, idx) => {
-              const src = editing && draft ? draft : offer;
+              const src = editing && draft ? draft : displayOffer!;
               const value = src[item.key];
               const last = idx === fields.length - 1;
               return (
@@ -400,7 +567,154 @@ export default function DashboardOfferPage() {
                 Cancel
               </button>
             </div>
-          ) : null}
+          ) : (
+            <div
+              style={{
+                marginTop: 24,
+                background: "#111116",
+                border: "1px solid #1C1C22",
+                borderRadius: 8,
+                padding: "20px 24px",
+                boxSizing: "border-box"
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "#52525B",
+                  fontFamily: "inherit",
+                  letterSpacing: "0.04em"
+                }}
+              >
+                Not quite right? Refine it →
+              </p>
+              <div
+                style={{
+                  marginTop: 14,
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10
+                }}
+              >
+                {refineLog.slice(-5).map((m, i) => (
+                  <div
+                    key={`${m.role}-${i}-${m.text.slice(0, 24)}`}
+                    style={{
+                      alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                      maxWidth: "92%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      background: m.role === "user" ? "rgba(6,182,212,0.12)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${m.role === "user" ? "rgba(6,182,212,0.25)" : "#1C1C22"}`,
+                      fontSize: 12,
+                      lineHeight: 1.55,
+                      color: m.role === "user" ? "#E4E4E7" : "#A1A1AA",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word"
+                    }}
+                  >
+                    {m.text}
+                  </div>
+                ))}
+              </div>
+              <textarea
+                ref={refineTextareaRef}
+                value={refineInput}
+                onChange={(e) => setRefineInput(e.target.value)}
+                placeholder="e.g. Make it more aggressive, focus on ROI, target enterprise clients..."
+                disabled={refineLoading}
+                rows={3}
+                className="dash-focusable dash-offer-gen-field"
+                style={{
+                  width: "100%",
+                  marginTop: 12,
+                  padding: 12,
+                  borderRadius: 8,
+                  border: "1px solid #1C1C22",
+                  background: "#0A0A0D",
+                  color: "#FAFAFA",
+                  fontFamily: "inherit",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  resize: "none",
+                  boxSizing: "border-box",
+                  outline: "none"
+                }}
+              />
+              <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {REFINE_QUICK.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={refineLoading}
+                    onClick={() => applyRefineQuick(label)}
+                    style={{
+                      padding: "5px 10px",
+                      borderRadius: 6,
+                      border: "1px solid #1C1C22",
+                      background: "rgba(255,255,255,0.04)",
+                      color: "#A1A1AA",
+                      fontSize: 11,
+                      fontFamily: "inherit",
+                      cursor: refineLoading ? "not-allowed" : "pointer",
+                      opacity: refineLoading ? 0.5 : 1
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {refineError ? (
+                <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--danger)" }}>{refineError}</p>
+              ) : null}
+              <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                <button
+                  type="button"
+                  disabled={refineLoading || !refineInput.trim() || !d.sessionToken}
+                  onClick={() => void improveOfferFromFeedback()}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "var(--accent)",
+                    color: "#0A0A0D",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: "inherit",
+                    cursor:
+                      refineLoading || !refineInput.trim() || !d.sessionToken ? "not-allowed" : "pointer",
+                    opacity: refineLoading || !refineInput.trim() || !d.sessionToken ? 0.5 : 1
+                  }}
+                >
+                  {refineLoading ? "…" : "Improve →"}
+                </button>
+                {pendingRefinement ? (
+                  <button
+                    type="button"
+                    disabled={saveRefineLoading}
+                    onClick={() => void saveRefinedOffer()}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      border: "1px solid var(--accent)",
+                      background: "transparent",
+                      color: "var(--accent)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      fontFamily: "inherit",
+                      cursor: saveRefineLoading ? "not-allowed" : "pointer",
+                      opacity: saveRefineLoading ? 0.6 : 1
+                    }}
+                  >
+                    {saveRefineLoading ? "Saving…" : "Save improved offer"}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
