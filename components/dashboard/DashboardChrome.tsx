@@ -24,6 +24,15 @@ const CHAT_STORAGE_KEY = "lacore-chat-history";
 
 type DashChatMessage = { role: "user" | "assistant"; text: string };
 
+function cleanMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/---/g, "")
+    .trim();
+}
+
 const SIDEBAR_W = 220;
 
 const QUICK_ACTIONS: { label: string; message: string }[] = [
@@ -864,7 +873,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                     marginBottom: 10
                   }}
                 >
-                  {m.text}
+                  {m.role === "assistant" ? cleanMarkdown(m.text) : m.text}
                 </div>
               ))}
               {chatLoading ? (

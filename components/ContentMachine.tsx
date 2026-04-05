@@ -32,19 +32,20 @@ const POST_TYPES: { id: PostType; label: string }[] = [
   { id: "case_study", label: "Case Study" }
 ];
 
-const MODELS: { id: ModelId; label: string }[] = [
-  { id: "claude", label: "Claude" },
-  { id: "gpt4o", label: "GPT-4o" },
-  { id: "gemini", label: "Gemini" }
+const MODELS: { id: ModelId; label: string; hint: string }[] = [
+  { id: "claude", label: "Standard", hint: "Fast and reliable" },
+  { id: "gpt4o", label: "Pro", hint: "Deeper and more detailed" },
+  { id: "gemini", label: "Creative", hint: "Unconventional and bold" }
 ];
 
 function platformLabel(p: Platform): string {
   return PLATFORMS.find((x) => x.id === p)?.label.toUpperCase() ?? p;
 }
 
-function modelLabel(m: ModelId): string {
-  if (m === "gpt4o") return "GPT-4O";
-  return m.toUpperCase();
+function modelDisplayName(m: ModelId): string {
+  if (m === "claude") return "Standard";
+  if (m === "gpt4o") return "Pro";
+  return "Creative";
 }
 
 const pillBase: CSSProperties = {
@@ -74,6 +75,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [postType, setPostType] = useState<PostType>("hook");
   const [model, setModel] = useState<ModelId>("claude");
+  const [customPrompt, setCustomPrompt] = useState("");
   const [posts, setPosts] = useState<{ id: number; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -110,7 +112,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           model,
           offer: offer.trim(),
           audience: audience.trim(),
-          userId
+          userId,
+          customPrompt: customPrompt.trim() || undefined
         })
       });
       const data = (await res.json()) as { posts?: { id: number; text: string }[]; error?: string };
@@ -129,7 +132,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     } finally {
       setLoading(false);
     }
-  }, [audience, offer, model, platform, postType, userId]);
+  }, [audience, customPrompt, offer, model, platform, postType, userId]);
 
   async function generatePostImage(postId: number, postText: string) {
     setPostImages((prev) => ({
@@ -219,7 +222,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           model,
           offer: offer.trim(),
           audience: audience.trim(),
-          userId
+          userId,
+          customPrompt: customPrompt.trim() || undefined
         })
       });
       const data = (await res.json()) as { posts?: { id: number; text: string }[]; error?: string };
@@ -302,10 +306,47 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               onClick={() => setModel(m.id)}
               className={model === m.id ? undefined : "content-machine-pill"}
               style={model === m.id ? pillActive : pillBase}
+              title={m.hint}
             >
               {m.label}
             </button>
           ))}
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <p
+            style={{
+              margin: "0 0 8px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.08em",
+              color: "var(--text-muted)",
+              textTransform: "none"
+            }}
+          >
+            CUSTOM PROMPT (optional)
+          </p>
+          <textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            rows={2}
+            placeholder="Describe what you want, e.g. 'Write about a client success story with 40% revenue increase'"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "#16161C",
+              border: "1px solid #1C1C22",
+              borderRadius: 8,
+              padding: "10px 13px",
+              fontSize: 13,
+              resize: "vertical",
+              fontFamily: "inherit",
+              color: "var(--text-primary)",
+              outline: "none",
+              lineHeight: 1.5,
+              minHeight: 56
+            }}
+          />
         </div>
 
         <button
@@ -346,7 +387,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               fontWeight: 600
             }}
           >
-            5 POSTS FOR {platformLabel(platform)} — {modelLabel(model)}
+            5 POSTS FOR {platformLabel(platform)} — {modelDisplayName(model).toUpperCase()}
           </p>
           {posts.map((post, idx) => {
             const img = postImages[post.id];
@@ -504,7 +545,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
             lineHeight: 1.6
           }}
         >
-          Select platform, post type and AI model above
+          Select platform, post type and model above
           <br />
           then click GENERATE
         </p>

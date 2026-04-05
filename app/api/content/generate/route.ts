@@ -47,12 +47,20 @@ function buildSystemPrompt(platform: Platform, postType: PostType): string {
   return [BASE_SYSTEM, platformRules(platform), postTypeRules(postType)].filter(Boolean).join("\n\n");
 }
 
-function buildUserPrompt(offer: string, audience: string, platform: Platform, postType: PostType): string {
-  return `Business offer: ${offer}
+function buildUserPrompt(
+  offer: string,
+  audience: string,
+  platform: Platform,
+  postType: PostType,
+  customPrompt?: string
+): string {
+  const base = `Business offer: ${offer}
 Target audience: ${audience}
 Platform: ${platform}
 Post type: ${postType}
 Generate 5 ${postType} posts for ${platform}.`;
+  const extra = typeof customPrompt === "string" && customPrompt.trim() ? `\n\nAdditional instructions: ${customPrompt.trim()}` : "";
+  return base + extra;
 }
 
 function parsePostsFromText(raw: string): { id: number; text: string }[] {
@@ -182,6 +190,7 @@ export async function POST(request: Request) {
       offer?: string;
       audience?: string;
       userId?: string;
+      customPrompt?: string;
     };
 
     if (typeof body.userId === "string" && body.userId !== user.id) {
@@ -193,6 +202,7 @@ export async function POST(request: Request) {
     const model = body.model as ModelId;
     const offer = typeof body.offer === "string" ? body.offer.trim() : "";
     const audience = typeof body.audience === "string" ? body.audience.trim() : "";
+    const customPrompt = typeof body.customPrompt === "string" ? body.customPrompt : "";
 
     const platforms: Platform[] = ["instagram", "x", "linkedin", "threads", "telegram"];
     const postTypes: PostType[] = ["hook", "value", "story", "offer", "case_study"];
@@ -212,7 +222,7 @@ export async function POST(request: Request) {
     }
 
     const system = buildSystemPrompt(platform, postType);
-    const userPrompt = buildUserPrompt(offer, audience || "General audience", platform, postType);
+    const userPrompt = buildUserPrompt(offer, audience || "General audience", platform, postType, customPrompt);
 
     let text = "";
     if (model === "claude") {
