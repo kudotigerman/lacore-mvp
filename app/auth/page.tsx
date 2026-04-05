@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -17,6 +17,35 @@ export default function AuthPage() {
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const router = useRouter();
 
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    let cancelled = false;
+
+    async function redirectIfSession() {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!cancelled && session?.user) {
+        router.replace("/dashboard");
+      }
+    }
+    void redirectIfSession();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session?.user) return;
+      if (event === "SIGNED_IN") {
+        router.replace("/dashboard");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!email.trim() || !password) return;
@@ -30,11 +59,18 @@ export default function AuthPage() {
         const normalizedEmail = email.trim();
         // For easier local testing, disable email confirmations in Supabase Dashboard:
         // Authentication -> Providers -> Email -> turn off "Confirm email".
-        const { error: signUpError } = await supabase.auth.signUp({
+        const redirectUrl =
+          typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined;
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: normalizedEmail,
-          password
+          password,
+          options: redirectUrl ? { emailRedirectTo: redirectUrl } : undefined
         });
         if (signUpError) throw signUpError;
+        if (signUpData.session?.user) {
+          router.replace("/dashboard");
+          return;
+        }
         setConfirmationEmail(normalizedEmail);
         setEmailConfirmationSent(true);
         return;
@@ -45,7 +81,7 @@ export default function AuthPage() {
         password
       });
       if (signInError) throw signInError;
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
@@ -58,10 +94,11 @@ export default function AuthPage() {
     setError(null);
     try {
       const supabase = getSupabaseClient();
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://www.lacore.ai/dashboard"
+          redirectTo: origin ? `${origin}/dashboard` : "https://www.lacore.ai/dashboard"
         }
       });
       if (oauthError) throw oauthError;
