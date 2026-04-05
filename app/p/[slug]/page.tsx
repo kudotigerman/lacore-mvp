@@ -59,6 +59,34 @@ type StripeWithRedirect = {
   redirectToCheckout: (options: { sessionId: string }) => Promise<{ error?: { message?: string } }>;
 };
 
+/** Opens external links in a new tab inside srcDoc iframes so parent Next.js route is not navigated. */
+const IFRAME_LINK_ISOLATION_SCRIPT = `<script>
+(function() {
+  document.addEventListener('click', function(e) {
+    var target = e.target.closest('a');
+    if (!target) return;
+    var href = target.getAttribute('href');
+    if (!href) return;
+    if (href.startsWith('#')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.open(href, '_blank', 'noopener,noreferrer');
+  }, true);
+})();
+</script>`;
+
+function injectIframeLinkIsolationScript(html: string): string {
+  const trimmed = html.trim();
+  if (!trimmed) return html;
+  if (/<\/head>/i.test(trimmed)) {
+    return trimmed.replace(/<\/head>/i, `${IFRAME_LINK_ISOLATION_SCRIPT}</head>`);
+  }
+  if (/<\/body>/i.test(trimmed)) {
+    return trimmed.replace(/<\/body>/i, `${IFRAME_LINK_ISOLATION_SCRIPT}</body>`);
+  }
+  return `${trimmed}${IFRAME_LINK_ISOLATION_SCRIPT}`;
+}
+
 function buildLandingIframeSrcDoc(compiledJs: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -69,6 +97,7 @@ function buildLandingIframeSrcDoc(compiledJs: string): string {
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+${IFRAME_LINK_ISOLATION_SCRIPT}
 </head>
 <body style="margin:0;padding:0;overflow-x:hidden;">
 <div id="root"></div>
@@ -257,6 +286,8 @@ function PublicLandingPageContent() {
   );
 
   const useLiveReact = Boolean(jsxContent.trim());
+
+  const htmlSrcDoc = useMemo(() => injectIframeLinkIsolationScript(html), [html]);
 
   function applyQuickPrompt(text: string) {
     flushSync(() => {
@@ -1346,7 +1377,7 @@ function PublicLandingPageContent() {
             <>
               <iframe
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                srcDoc={html}
+                srcDoc={htmlSrcDoc}
                 title="Landing page preview"
                 style={{
                   width: "100%",
@@ -2053,7 +2084,7 @@ function PublicLandingPageContent() {
                 <iframe
                   key={previewKey}
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  srcDoc={html}
+                  srcDoc={htmlSrcDoc}
                   title="Landing page preview"
                   style={{
                     width: "100%",
