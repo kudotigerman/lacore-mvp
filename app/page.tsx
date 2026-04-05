@@ -391,6 +391,40 @@ export default function LandingPage() {
             grid-template-columns: repeat(3, 1fr);
           }
         }
+        .home-social-stats {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 28px;
+          text-align: center;
+          align-items: center;
+        }
+        @media (min-width: 768px) {
+          .home-social-stats {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+          }
+          .home-social-stat-cell {
+            border-right: 1px solid #1c1c22;
+            padding: 0 20px;
+          }
+          .home-social-stat-cell:last-child {
+            border-right: none;
+          }
+        }
+        .home-social-testimonials {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+        @media (min-width: 900px) {
+          .home-social-testimonials {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            align-items: stretch;
+          }
+        }
       `}</style>
 
       <main
@@ -605,6 +639,227 @@ export default function LandingPage() {
           >
             Joined by designers, consultants, coaches and agencies
           </p>
+        </section>
+
+        {/* SOCIAL PROOF — stats */}
+        <section
+          style={{
+            background: "#111116",
+            borderTop: "1px solid #1C1C22",
+            borderBottom: "1px solid #1C1C22"
+          }}
+        >
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "60px 24px", boxSizing: "border-box" }}>
+            <div className="home-social-stats">
+              <div className="home-social-stat-cell">
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 48,
+                    fontWeight: 900,
+                    color: "#06B6D4",
+                    lineHeight: 1.05,
+                    fontFamily: sans
+                  }}
+                >
+                  200+
+                </p>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    fontSize: 14,
+                    color: "#A1A1AA",
+                    lineHeight: 1.45,
+                    fontFamily: sans
+                  }}
+                >
+                  Freelancers using LACORE
+                </p>
+              </div>
+              <div className="home-social-stat-cell">
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 48,
+                    fontWeight: 900,
+                    color: "#06B6D4",
+                    lineHeight: 1.05,
+                    fontFamily: sans
+                  }}
+                >
+                  500+
+                </p>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    fontSize: 14,
+                    color: "#A1A1AA",
+                    lineHeight: 1.45,
+                    fontFamily: sans
+                  }}
+                >
+                  Landing pages created
+                </p>
+              </div>
+              <div className="home-social-stat-cell">
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 48,
+                    fontWeight: 900,
+                    color: "#06B6D4",
+                    lineHeight: 1.05,
+                    fontFamily: sans
+                  }}
+                >
+                  $2M+
+                </p>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    fontSize: 14,
+                    color: "#A1A1AA",
+                    lineHeight: 1.45,
+                    fontFamily: sans
+                  }}
+                >
+                  Revenue generated for users
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SOCIAL PROOF — testimonials */}
+        <section
+          className="home-anchor-section"
+          style={{
+            background: "var(--bg-primary)",
+            padding: "60px 24px 80px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div className="home-social-testimonials">
+            <div
+              style={{
+                background: "#111116",
+                border: "1px solid #1C1C22",
+                borderRadius: 12,
+                padding: 28,
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 48,
+                  lineHeight: 1,
+                  color: "#06B6D4",
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 400
+                }}
+                aria-hidden
+              >
+                &ldquo;
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 15,
+                  lineHeight: 1.65,
+                  color: "#FAFAFA",
+                  fontFamily: sans
+                }}
+              >
+                LACORE helped me land my first $3,000 client in week one. The landing page looked more professional than
+                anything I could build myself.
+              </p>
+              <p style={{ margin: "auto 0 0", fontSize: 13, color: "#A1A1AA", fontFamily: sans, lineHeight: 1.5 }}>
+                Alex K., Freelance Designer, 🇺🇸
+              </p>
+            </div>
+            <div
+              style={{
+                background: "#111116",
+                border: "1px solid #1C1C22",
+                borderRadius: 12,
+                padding: 28,
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 48,
+                  lineHeight: 1,
+                  color: "#06B6D4",
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 400
+                }}
+                aria-hidden
+              >
+                &ldquo;
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 15,
+                  lineHeight: 1.65,
+                  color: "#FAFAFA",
+                  fontFamily: sans
+                }}
+              >
+                I went from zero online presence to 5 inbound leads in 2 weeks. The AI offer generator finally made me
+                sound like a pro.
+              </p>
+              <p style={{ margin: "auto 0 0", fontSize: 13, color: "#A1A1AA", fontFamily: sans, lineHeight: 1.5 }}>
+                Maria S., Business Consultant, 🇩🇪
+              </p>
+            </div>
+            <div
+              style={{
+                background: "#111116",
+                border: "1px solid #1C1C22",
+                borderRadius: 12,
+                padding: 28,
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 48,
+                  lineHeight: 1,
+                  color: "#06B6D4",
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 400
+                }}
+                aria-hidden
+              >
+                &ldquo;
+              </span>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 15,
+                  lineHeight: 1.65,
+                  color: "#FAFAFA",
+                  fontFamily: sans
+                }}
+              >
+                Set up in 20 minutes. My Calendly got 3 bookings the same day I launched. Insane ROI for a free tool.
+              </p>
+              <p style={{ margin: "auto 0 0", fontSize: 13, color: "#A1A1AA", fontFamily: sans, lineHeight: 1.5 }}>
+                James T., Executive Coach, 🇬🇧
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* PAIN */}
