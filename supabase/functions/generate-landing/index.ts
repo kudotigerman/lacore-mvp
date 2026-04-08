@@ -26,6 +26,234 @@ function injectDocumentTitle(html: string, rawTitle: string): string {
 
 /** Keep in sync with app/api/generate-landing/system-prompt.txt */
 const systemPrompt = `════════════════════════════════════
+MANDATORY CSS & LAYOUT (EVERY PAGE)
+════════════════════════════════════
+MANDATORY CSS — include this exact block inside every landing page’s first <style> tag, BEFORE any other rules (niche colors, fonts, etc.):
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.container {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Cards grid - never overflow */
+.cards-grid, .features-grid, .testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.card {
+  width: 100%;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Nav */
+nav {
+  width: 100%;
+  overflow: hidden;
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  list-style: none;
+  align-items: center;
+}
+
+/* Buttons */
+.btn, button, [class*='btn'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  h1 { font-size: clamp(28px, 8vw, 56px) !important; }
+  h2 { font-size: clamp(22px, 6vw, 36px) !important; }
+
+  .cards-grid, .features-grid, .testimonials-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  nav {
+    padding: 12px 16px;
+  }
+
+  nav ul {
+    gap: 8px;
+  }
+
+  section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: clamp(24px, 7vw, 40px) !important; }
+
+  .btn, button {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+LAYOUT RULES (enforce together with the block above):
+- All multi-column grids: CSS Grid only with repeat(auto-fit, minmax(...)) — never float.
+- All images: max-width: 100%, height: auto.
+- All sections: overflow: hidden (or equivalent containment).
+- Text inside cards: word-wrap / overflow-wrap break-word.
+- Mobile: primary CTAs and buttons full width (covered by the mandatory @media rules; do not override with narrower fixed widths on small screens).
+
+════════════════════════════════════
+STEP 0 — MANDATORY PREMIUM TECH REQUIREMENTS (EVERY PAGE)
+════════════════════════════════════
+These requirements are mandatory for every generated landing page and must be implemented together with all existing niche/template/color/section rules.
+
+MANDATORY CSS / ASSETS IN <head>:
+1) GOOGLE FONTS — always include:
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+Typography usage:
+- body { font-family: 'Inter', sans-serif; }
+- h1, h2 { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+2) AOS ANIMATIONS — always include:
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 800, once: true, offset: 100 });</script>
+
+Apply data-aos attributes:
+- Sections: data-aos="fade-up"
+- Cards: data-aos="fade-up" with staggered delays (100, 200, 300...)
+- Headings: data-aos="fade-up"
+- Images: data-aos="zoom-in"
+
+3) UNSPLASH HERO IMAGE — always set hero background-image by niche with dark overlay:
+- FITNESS: https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80
+- BUSINESS/CONSULTANT: https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&q=80
+- DESIGN: https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200&q=80
+- DEVELOPER: https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&q=80
+- COACH: https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80
+- AGENCY: https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80
+- DEFAULT: https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80
+
+Use this pattern in hero:
+background: linear-gradient(rgba(10,10,13,0.85), rgba(10,10,13,0.95)), url('UNSPLASH_URL') center/cover no-repeat;
+
+4) CSS MICRO-INTERACTIONS — include in <style>:
+* { transition: color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s; }
+
+.btn:hover, button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(ACCENT_COLOR_RGB, 0.4);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border-color: ACCENT_COLOR;
+}
+
+5) TYPOGRAPHY TOKENS — include in base styles:
+h1 {
+  font-size: clamp(40px, 6vw, 80px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+p {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #A1A1AA;
+}
+
+6) NAVBAR — sticky blur treatment required:
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(10,10,13,0.8);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+7) GRADIENT ACCENTS IN HERO:
+- Add subtle radial gradient in a hero corner for depth
+- Hero headline gradient text:
+  background: linear-gradient(135deg, #fff 0%, ACCENT_COLOR 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+8) SECTION SPACING:
+section { padding: 120px 0; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+
+9) TESTIMONIALS CARD CONTENT:
+Each testimonial card must include all:
+- Round initials avatar (background uses accent color)
+- Rating row: ⭐⭐⭐⭐⭐
+- Testimonial quote in quotation marks
+- Person name and role/title
+
+10) FOOTER — simple clean layout required:
+- Logo/brand on the left
+- Copyright in the center
+- "Built with LACORE ⚡" on the right as a link to https://lacore.ai
+- border-top: 1px solid #1C1C22
+
+IMPORTANT: all requirements above are mandatory for every generated landing page.
+
+════════════════════════════════════
 STEP 1 — DETECT NICHE
 ════════════════════════════════════
 Based on the user's offer, automatically detect which niche they belong to:
@@ -164,7 +392,7 @@ PAGE SHELL (MANDATORY)
 - <title>: use EXACTLY the "Page title" line from the user message (verbatim, one line). Never "LACORE", "Untitled", or your own product name as the title.
 - <meta name="description">: one compelling sentence derived from the offer (same language as the page).
 - Open Graph: og:title (same as document title), og:description (same or tighter than meta description), og:type content="website".
-- Load Google Font "Bebas Neue" for the hero headline only (link in head). Body copy uses system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif (optionally add Inter as a second link if you use it for body).
+- Load Google Fonts Inter and Plus Jakarta Sans in <head> using the mandatory links from STEP 0. Body uses Inter; h1 and h2 use Plus Jakarta Sans.
 - All styling: either a single <style> block in <head> or inline on elements; prefer one <style> for maintainability. The design tokens below are fixed.
 
 ════════════════════════════════════
@@ -174,7 +402,7 @@ VISUAL SYSTEM (DARK — NICHE PALETTE FROM STEP 2.5)
 - Primary text: #FAFAFA
 - Secondary / muted text: #A1A1AA (body, captions, trust lines)
 - Accent: use STEP 2.5 niche accent (DEFAULT: #06B6D4) — highlights, borders, links, gradient buttons, icons, hover states
-- Hero headline (Bebas Neue): font-size minimum 56px (use clamp for larger on desktop), font-weight 400 (Bebas is display; if unavailable fall back to system-ui with font-weight 900), text-transform: uppercase, letter-spacing 0.02em–0.06em, line-height ~0.95–1.05
+- Hero headline (Plus Jakarta Sans): use STEP 0 typography tokens (h1 clamp 40-80, weight 800, line-height 1.1) with gradient text treatment and strong contrast over hero image overlay
 - Buttons (primary CTA): background linear-gradient(135deg, ACCENT 0%, slightly darker ACCENT ~100%); pick a darker shade in the same hue as the niche accent; text color #0A0A0D or #FAFAFA for contrast; border-radius 8px; padding 16px 32px; font-weight 700; border none; cursor pointer; subtle box-shadow tinted with the accent
 - Secondary/outline button optional: 1px solid accent at ~50% opacity, transparent bg, accent-colored text
 - Section wrapper: max-width 800px; margin-left auto; margin-right auto; padding 80px 24px (hero can be slightly taller vertically)
