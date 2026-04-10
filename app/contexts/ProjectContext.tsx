@@ -38,51 +38,59 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const supabase = getSupabaseClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) {
-        if (!cancelled) setIsLoading(false);
-        return;
-      }
+      try {
+        const supabase = getSupabaseClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) {
+          if (!cancelled) setIsLoading(false);
+          return;
+        }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const planName = ((profile as { plan?: string } | null)?.plan || "free") as PlanName;
-      const plan = PLANS[planName] ?? PLANS.free;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("plan")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const planName = ((profile as { plan?: string } | null)?.plan || "free") as PlanName;
+        const plan = PLANS[planName] ?? PLANS.free;
 
-      const { data } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
-
-      let list = (data ?? []) as Project[];
-      if (list.length === 0) {
-        const { data: inserted } = await supabase
+        const { data } = await supabase
           .from("projects")
-          .insert({ user_id: user.id, name: "My Project" } as never)
           .select("*")
-          .single();
-        if (inserted) list = [inserted as Project];
-      }
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
 
-      if (!cancelled) {
-        setProjects(list);
-        const saved = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_PROJECT_KEY) : null;
-        const preferred = list.find((p) => p.id === saved) ?? list[0] ?? null;
-        setActiveProjectState(preferred);
-        if (preferred && typeof window !== "undefined") localStorage.setItem(ACTIVE_PROJECT_KEY, preferred.id);
-        setIsLoading(false);
-      }
+        let list = (data ?? []) as Project[];
+        if (list.length === 0) {
+          const { data: inserted } = await supabase
+            .from("projects")
+            .insert({ user_id: user.id, name: "My Project" } as never)
+            .select("*")
+            .single();
+          if (inserted) list = [inserted as Project];
+        }
 
-      if (list.length > plan.maxProjects && plan.maxProjects !== Infinity) {
-        // do not auto-delete anything; limit only enforced on create
+        if (!cancelled) {
+          setProjects(list);
+          const saved = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_PROJECT_KEY) : null;
+          const preferred = list.find((p) => p.id === saved) ?? list[0] ?? null;
+          setActiveProjectState(preferred);
+          if (preferred && typeof window !== "undefined") localStorage.setItem(ACTIVE_PROJECT_KEY, preferred.id);
+          setIsLoading(false);
+        }
+
+        if (list.length > plan.maxProjects && plan.maxProjects !== Infinity) {
+          // do not auto-delete anything; limit only enforced on create
+        }
+      } catch {
+        if (!cancelled) {
+          setProjects([]);
+          setActiveProjectState(null);
+          setIsLoading(false);
+        }
       }
     }
     void load();

@@ -588,7 +588,9 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           >
             LACORE
           </Link>
-          <ProjectSelector />
+          <div style={{ marginTop: 10 }}>
+            <ProjectSelector />
+          </div>
         </div>
 
         <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px", minHeight: 0 }}>
