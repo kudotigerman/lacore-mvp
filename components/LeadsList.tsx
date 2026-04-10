@@ -74,6 +74,7 @@ const whatSayBtnStyle: CSSProperties = {
 
 type LeadsListProps = {
   userId: string;
+  projectId?: string | null;
   showToolbar?: boolean;
   variant?: "list" | "cards";
   refreshNonce?: number;
@@ -100,6 +101,7 @@ function statusButtonStyle(color: string): CSSProperties {
 
 export default function LeadsList({
   userId,
+  projectId = null,
   showToolbar = true,
   variant = "list",
   refreshNonce = 0,
@@ -129,7 +131,8 @@ export default function LeadsList({
         setLeads([]);
         return;
       }
-      const res = await fetch("/api/leads/list", {
+      const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+      const res = await fetch(`/api/leads/list${qs}`, {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       const data = (await res.json()) as { leads?: LeadRow[]; error?: string };
@@ -145,7 +148,7 @@ export default function LeadsList({
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, projectId]);
 
   useEffect(() => {
     void load();

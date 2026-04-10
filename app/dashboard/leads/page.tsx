@@ -5,9 +5,11 @@ import LeadsList from "@/components/LeadsList";
 import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 
 export default function DashboardLeadsPage() {
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [leadCount, setLeadCount] = useState<number | null>(null);
 
@@ -46,6 +48,7 @@ export default function DashboardLeadsPage() {
       {d.userId ? (
         <LeadsList
           userId={d.userId}
+          projectId={activeProject?.id ?? null}
           showToolbar={false}
           variant="cards"
           refreshNonce={refreshNonce}

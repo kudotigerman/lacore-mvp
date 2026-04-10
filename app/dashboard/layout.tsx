@@ -1,10 +1,13 @@
 import { DashboardDataProvider } from "@/components/dashboard/DashboardDataContext";
 import DashboardChrome from "@/components/dashboard/DashboardChrome";
+import { ProjectProvider } from "@/app/contexts/ProjectContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DashboardDataProvider>
-      <DashboardChrome>{children}</DashboardChrome>
-    </DashboardDataProvider>
+    <ProjectProvider>
+      <DashboardDataProvider>
+        <DashboardChrome>{children}</DashboardChrome>
+      </DashboardDataProvider>
+    </ProjectProvider>
   );
 }

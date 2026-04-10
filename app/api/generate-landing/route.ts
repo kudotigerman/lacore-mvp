@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import type { LandingContent } from "@/types/landing";
+import { PLANS, type PlanName } from "@/lib/plans";
 
 export const maxDuration = 120;
 
@@ -19,6 +20,7 @@ type LandingInput = {
   headline: string;
   userEmail: string;
   businessName?: string;
+  project_id?: string;
   primaryGoal?: string;
   siteVibe?: string;
 };
@@ -67,13 +69,22 @@ export async function POST(request: Request) {
 
     const { data: profileRow } = await supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name, plan, landing_generations_count")
       .eq("user_id", user.id)
       .maybeSingle();
     const profileDisplayName =
       typeof (profileRow as { display_name?: string } | null)?.display_name === "string"
         ? (profileRow as { display_name: string }).display_name.trim()
         : "";
+    const profilePlan = ((profileRow as { plan?: string } | null)?.plan || "free") as PlanName;
+    const generationCount = Number((profileRow as { landing_generations_count?: number } | null)?.landing_generations_count || 0);
+    const plan = PLANS[profilePlan] ?? PLANS.free;
+    if (generationCount >= plan.maxLandingGenerations) {
+      return NextResponse.json(
+        { error: "Generation limit reached. Upgrade your plan." },
+        { status: 403 }
+      );
+    }
     const brandNameLine =
       profileDisplayName.length > 0 ? profileDisplayName : "(not set in profile)";
     const displayName =
@@ -95,6 +106,7 @@ export async function POST(request: Request) {
         pricing: body.pricing,
         positioning: body.positioning,
         headline: body.headline,
+        project_id: body.project_id ?? null,
         displayName: brandNameLine === "(not set in profile)" ? displayName : brandNameLine,
       }),
     });
@@ -225,6 +237,7 @@ Return the complete HTML document only. No explanation.`;
       .from("landing_pages")
       .select("slug")
       .eq("user_id", user.id)
+      .eq("project_id", body.project_id ?? null)
       .maybeSingle();
 
     const emailBase = body.userEmail
@@ -239,6 +252,7 @@ Return the complete HTML document only. No explanation.`;
       .upsert(
         {
           user_id: user.id,
+          project_id: body.project_id ?? null,
           slug,
           html_content: htmlWithSlug,
           json_content: generated.data,
@@ -253,6 +267,11 @@ Return the complete HTML document only. No explanation.`;
         { status: 500 }
       );
     }
+
+    await supabase
+      .from("profiles")
+      .update({ landing_generations_count: generationCount + 1 } as never)
+      .eq("user_id", user.id);
 
     return NextResponse.json({ slug, success: true });
   } catch (error) {

@@ -14,6 +14,7 @@ import {
   type ReactNode
 } from "react";
 import OnboardingWizard from "@/app/components/OnboardingWizard";
+import ProjectSelector from "@/app/components/dashboard/ProjectSelector";
 import {
   buildSalesBuilderIntro,
   profileInitialsFromName,
@@ -587,6 +588,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           >
             LACORE
           </Link>
+          <ProjectSelector />
         </div>
 
         <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px", minHeight: 0 }}>

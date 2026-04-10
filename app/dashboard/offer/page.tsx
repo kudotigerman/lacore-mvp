@@ -9,6 +9,7 @@ import { dash } from "@/components/dashboard/dashTokens";
 import type { DashboardOffer } from "@/components/dashboard/DashboardDataContext";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 
 const REFINE_QUICK = [
   "More aggressive",
@@ -46,6 +47,7 @@ const fields = [
 
 export default function DashboardOfferPage() {
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<DashboardOffer | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export default function DashboardOfferPage() {
       const res = await fetch("/api/generate-offer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userInput })
+        body: JSON.stringify({ userInput, project_id: activeProject?.id ?? null })
       });
       const data = (await res.json()) as { variants?: OfferVariant[]; error?: string };
       if (!res.ok) {
@@ -158,6 +160,7 @@ export default function DashboardOfferPage() {
       const { error } = await supabase.from("offers").upsert(
         {
           user_id: d.userId,
+          project_id: activeProject?.id ?? null,
           offer: v.offer,
           audience: v.audience,
           pricing: v.pricing,
@@ -193,7 +196,8 @@ export default function DashboardOfferPage() {
           positioning: pendingRefinement.positioning,
           headline: pendingRefinement.headline
         } as never)
-        .eq("user_id", d.userId);
+        .eq("user_id", d.userId)
+        .eq("project_id", activeProject?.id ?? null);
       if (error) throw error;
       d.setOffer(pendingRefinement);
       await d.refreshOffer();
@@ -311,7 +315,8 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
           positioning: draft.positioning,
           headline: draft.headline
         } as never)
-        .eq("user_id", d.userId);
+        .eq("user_id", d.userId)
+        .eq("project_id", activeProject?.id ?? null);
       if (error) {
         setSaveErr(error.message);
         return;

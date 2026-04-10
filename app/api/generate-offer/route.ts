@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 30;
 
@@ -57,7 +58,7 @@ function parseVariantsFromText(text: string): OfferVariant[] | null {
 
 export async function POST(request: Request) {
   try {
-    const { userInput } = (await request.json()) as { userInput?: string };
+    const { userInput, project_id } = (await request.json()) as { userInput?: string; project_id?: string };
 
     if (!userInput || !userInput.trim()) {
       return NextResponse.json({ error: "Missing user input." }, { status: 400 });
@@ -109,6 +110,34 @@ export async function POST(request: Request) {
 
     if (!variants) {
       return NextResponse.json({ error: "Claude returned invalid variants schema." }, { status: 502 });
+    }
+
+    const authHeader = request.headers.get("authorization");
+    if (authHeader && project_id) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey) {
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const first = variants[0];
+          await supabase.from("offers").upsert(
+            {
+              user_id: user.id,
+              project_id,
+              offer: first.offer,
+              audience: first.audience,
+              pricing: first.pricing,
+              positioning: first.positioning,
+              headline: first.headline,
+            } as never
+          );
+        }
+      }
     }
 
     return NextResponse.json({ variants });

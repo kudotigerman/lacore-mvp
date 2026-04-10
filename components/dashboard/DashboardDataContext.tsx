@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 
 export type DashboardOffer = {
   offer: string;
@@ -150,6 +151,7 @@ export function useDashboardData() {
 
 export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const { activeProject } = useProjectContext();
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [offer, setOffer] = useState<DashboardOffer | null>(null);
@@ -221,17 +223,19 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   }, [offer, landingSlug]);
 
   const refreshOffer = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !activeProject?.id) return;
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("offers")
       .select("*")
       .eq("user_id", userId)
+      .eq("project_id", activeProject.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
     if (!error && data) setOffer(data as DashboardOffer);
-  }, [userId]);
+    if (error) setOffer(null);
+  }, [userId, activeProject?.id]);
 
   useEffect(() => {
     try {
@@ -247,6 +251,12 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function init() {
+      if (!activeProject?.id) {
+        setLoading(false);
+        setOffer(null);
+        setLandingSlug(null);
+        return;
+      }
       const supabase = getSupabaseClient();
       const {
         data: { session }
@@ -294,25 +304,29 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         .from("offers")
         .select("*")
         .eq("user_id", session.user.id)
+        .eq("project_id", activeProject.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
       if (!error && data) setOffer(data as DashboardOffer);
+      if (error) setOffer(null);
 
       const landingResult = (await supabase
         .from("landing_pages")
         .select("slug")
         .eq("user_id", session.user.id)
+        .eq("project_id", activeProject.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()) as { data: { slug: string } | null };
       if (landingResult.data?.slug) setLandingSlug(landingResult.data.slug);
+      else setLandingSlug(null);
 
       setLoading(false);
     }
 
     void init();
-  }, [router]);
+  }, [router, activeProject?.id]);
 
   function setDashboardTheme(next: UiTheme) {
     setUiTheme(next);
@@ -398,6 +412,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             ...offer,
             userName: email.split("@")[0],
             userEmail: email,
+            project_id: activeProject?.id ?? null,
             businessName: extra?.businessName ?? businessName,
             primaryGoal: extra?.primaryGoal ?? primaryGoals.join(", "),
             siteVibe: extra?.siteVibe ?? siteVibe
@@ -421,7 +436,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         setBuildingLanding(false);
       }
     },
-    [offer, sessionToken, email, businessName, primaryGoals, siteVibe, router]
+    [offer, sessionToken, email, businessName, primaryGoals, siteVibe, router, activeProject?.id]
   );
 
   useEffect(() => {
@@ -449,10 +464,14 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   }, [buildingLanding, buildLogVisible]);
 
   const handleRegenerateSiteConfirmed = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !activeProject?.id) return;
     setRegenerateError(null);
     const supabase = getSupabaseClient();
-    const { error } = await supabase.from("landing_pages").delete().eq("user_id", userId);
+    const { error } = await supabase
+      .from("landing_pages")
+      .delete()
+      .eq("user_id", userId)
+      .eq("project_id", activeProject.id);
     if (error) {
       setRegenerateError(error.message);
       setRegenerateConfirm(false);
@@ -461,7 +480,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     setLandingSlug(null);
     setRegenerateConfirm(false);
     void handleBuildLandingPage();
-  }, [userId, handleBuildLandingPage]);
+  }, [userId, handleBuildLandingPage, activeProject?.id]);
 
   const value = useMemo(
     () => ({
