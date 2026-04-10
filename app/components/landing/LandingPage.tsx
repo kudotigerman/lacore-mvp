@@ -244,7 +244,7 @@ export default function LandingPage({ content, slug }: Props) {
             {content.testimonials.slice(0, 3).map((t, i) => (
               <div data-aos="fade-up" data-aos-delay={i * 100} key={t.name} style={{ background: theme.bgPrimary, border: "1px solid #1C1C22", borderRadius: 16, padding: 28 }}>
                 <div style={{ marginBottom: 12 }}>⭐⭐⭐⭐⭐</div>
-                <p style={{ color: "#FAFAFA", lineHeight: 1.7, fontStyle: "italic", margin: "0 0 20px" }}>"{t.text}"</p>
+                <p style={{ color: "#FAFAFA", lineHeight: 1.7, fontStyle: "italic", margin: "0 0 20px" }}>&quot;{t.text}&quot;</p>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, display: "grid", placeItems: "center", fontWeight: 800 }}>{initials(t.name)}</div>
                   <div>
