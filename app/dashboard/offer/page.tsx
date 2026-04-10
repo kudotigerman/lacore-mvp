@@ -187,7 +187,7 @@ export default function DashboardOfferPage() {
     setSaveRefineLoading(true);
     try {
       const supabase = getSupabaseClient();
-      const { error } = await supabase
+      let query = supabase
         .from("offers")
         .update({
           offer: pendingRefinement.offer,
@@ -196,8 +196,11 @@ export default function DashboardOfferPage() {
           positioning: pendingRefinement.positioning,
           headline: pendingRefinement.headline
         } as never)
-        .eq("user_id", d.userId)
-        .eq("project_id", activeProject?.id ?? null);
+        .eq("user_id", d.userId);
+      if (activeProject?.id) {
+        query = query.eq("project_id", activeProject.id);
+      }
+      const { error } = await query;
       if (error) throw error;
       d.setOffer(pendingRefinement);
       await d.refreshOffer();
@@ -306,7 +309,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
     setSaving(true);
     try {
       const supabase = getSupabaseClient();
-      const { error } = await supabase
+      let query = supabase
         .from("offers")
         .update({
           offer: draft.offer,
@@ -315,8 +318,11 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
           positioning: draft.positioning,
           headline: draft.headline
         } as never)
-        .eq("user_id", d.userId)
-        .eq("project_id", activeProject?.id ?? null);
+        .eq("user_id", d.userId);
+      if (activeProject?.id) {
+        query = query.eq("project_id", activeProject.id);
+      }
+      const { error } = await query;
       if (error) {
         setSaveErr(error.message);
         return;
