@@ -20,6 +20,8 @@ import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 import { LANDING_EDITOR_QUICK_ACTIONS, LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
+import LandingPage from "@/app/components/landing/LandingPage";
+import type { LandingContent } from "@/types/landing";
 
 type ChatMessage = { role: "user" | "assistant"; text: string; time?: string };
 
@@ -218,6 +220,7 @@ function PublicLandingPageContent() {
 
   const [html, setHtml] = useState("");
   const [jsxContent, setJsxContent] = useState("");
+  const [jsonContent, setJsonContent] = useState<LandingContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [updating, setUpdating] = useState(false);
@@ -381,12 +384,17 @@ function PublicLandingPageContent() {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("landing_pages")
-      .select("html_content, jsx_content")
+      .select("html_content, jsx_content, json_content")
       .eq("slug", slug)
       .single();
-    const row = data as { html_content: string | null; jsx_content: string | null } | null;
+    const row = data as {
+      html_content: string | null;
+      jsx_content: string | null;
+      json_content: LandingContent | null;
+    } | null;
     setHtml(row?.html_content ?? "");
     setJsxContent(row?.jsx_content ?? "");
+    setJsonContent(row?.json_content ?? null);
     setLoading(false);
     if (!editMode && !error && row) {
       void Promise.resolve(
@@ -1313,6 +1321,34 @@ function PublicLandingPageContent() {
             >
               Loading page...
             </div>
+          ) : jsonContent ? (
+            <>
+              <LandingPage content={jsonContent} slug={slug} />
+              <button
+                type="button"
+                onClick={() => setShowPromo(true)}
+                style={{
+                  position: "fixed",
+                  bottom: 20,
+                  right: 20,
+                  zIndex: 9998,
+                  border: "1px solid var(--accent)",
+                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  color: "var(--accent)",
+                  borderRadius: 4,
+                  padding: "8px 14px",
+                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                  fontSize: 9,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+                }}
+              >
+                ⚡ Built with LACORE
+              </button>
+            </>
           ) : useLiveReact ? (
             <>
               <div style={{ width: "100%", height: "100vh" }}>

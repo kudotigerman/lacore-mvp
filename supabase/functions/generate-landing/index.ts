@@ -7,365 +7,35 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-function escapeHtmlTitleText(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+const systemPrompt = `You are an expert conversion copywriter. Generate landing page content as a valid JSON object.
+Output ONLY JSON with this schema:
+{ niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats:[{number,label}x3], problemHeadline, problems:[{emoji,title,desc}x3], solutionHeadline, features:[{icon,title,desc}x3], processHeadline, steps:[{title,desc}x3], testimonialsHeadline, testimonials:[{text,name,role}x3], ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton }
+Rules:
+- niche one of [fitness|designer|developer|coach|consultant|agency|course|local|default]
+- same language as offer
+- no lorem ipsum
+- testimonials and stats must include specific numbers`;
+
+function randomFourDigits() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-function injectDocumentTitle(html: string, rawTitle: string): string {
-  const normalized = rawTitle.replace(/\s+/g, " ").trim();
-  const inner = escapeHtmlTitleText(normalized.length > 0 ? normalized : "Landing");
-  if (/<title[^>]*>[\s\S]*?<\/title>/i.test(html)) {
-    return html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${inner}</title>`);
-  }
-  return html.replace(/<head[^>]*>/i, (open) => `${open}<title>${inner}</title>`);
+function cleanJson(raw: string) {
+  return raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 }
 
-/** Keep in sync with app/api/generate-landing/system-prompt.txt */
-const systemPrompt = `
-You are an expert web designer generating premium landing pages. You generate complete, beautiful, production-ready HTML pages that look like they were designed by a $10,000/month agency.
-
-MANDATORY: Every page must include these exact CDN links in <head>:
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-
-MANDATORY: Before </body> add:
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script>document.addEventListener('DOMContentLoaded',function(){AOS.init({duration:900,once:true,offset:80});});</script>
-
-MANDATORY CSS RESET (include in every <style> tag):
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { font-family: 'Inter', sans-serif; background: #0A0A0D; color: #FAFAFA; overflow-x: hidden; line-height: 1.6; -webkit-font-smoothing: antialiased; }
-img { max-width: 100%; height: auto; display: block; }
-a { text-decoration: none; color: inherit; }
-
-DETECT NICHE from user's offer and apply:
-- FITNESS/HEALTH: accent=#EF4444, hero-image=https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80
-- DESIGNER/CREATIVE: accent=#8B5CF6, hero-image=https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1400&q=80  
-- DEVELOPER/TECH: accent=#06B6D4, hero-image=https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1400&q=80
-- COACH/CONSULTANT: accent=#10B981, hero-image=https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&q=80
-- AGENCY: accent=#F59E0B, hero-image=https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80
-- DEFAULT: accent=#06B6D4, hero-image=https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80
-
-Use ACCENT_COLOR as variable below for all accent uses.
-
-GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
-
-=== 1. NAVIGATION ===
-<nav style="position:fixed;top:0;left:0;right:0;z-index:1000;padding:20px 40px;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(10,10,13,0.8);border-bottom:1px solid rgba(255,255,255,0.06);">
-  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:#FAFAFA;letter-spacing:-0.5px;">BRAND_NAME</div>
-  <div style="display:flex;gap:32px;align-items:center;">
-    <a href="#benefits" style="color:#A1A1AA;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='#FAFAFA'" onmouseout="this.style.color='#A1A1AA'">Benefits</a>
-    <a href="#process" style="color:#A1A1AA;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='#FAFAFA'" onmouseout="this.style.color='#A1A1AA'">Process</a>
-    <a href="#testimonials" style="color:#A1A1AA;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='#FAFAFA'" onmouseout="this.style.color='#A1A1AA'">Results</a>
-    <a href="#contact-form" style="background:ACCENT_COLOR;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity='0.85';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">Get Started</a>
-  </div>
-</nav>
-
-=== 2. HERO ===
-<section style="min-height:100vh;display:flex;align-items:center;position:relative;padding:140px 40px 80px;background:linear-gradient(135deg,rgba(10,10,13,0.92) 0%,rgba(10,10,13,0.75) 100%),url('UNSPLASH_URL') center/cover no-repeat fixed;">
-  <!-- Decorative glow -->
-  <div style="position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,ACCENT_COLOR15 0%,transparent 70%);pointer-events:none;"></div>
-  <div style="max-width:900px;margin:0 auto;position:relative;z-index:1;">
-    <!-- Badge -->
-    <div data-aos="fade-up" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;padding:8px 16px;margin-bottom:32px;">
-      <div style="width:6px;height:6px;background:ACCENT_COLOR;border-radius:50%;"></div>
-      <span style="font-size:12px;font-weight:600;color:#A1A1AA;letter-spacing:0.08em;text-transform:uppercase;">NICHE_CATEGORY</span>
-    </div>
-    <!-- Headline -->
-    <h1 data-aos="fade-up" data-aos-delay="100" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(44px,6vw,80px);font-weight:900;line-height:1.05;letter-spacing:-0.03em;margin-bottom:24px;">
-      HERO_HEADLINE_LINE1<br>
-      <span style="background:linear-gradient(135deg,ACCENT_COLOR,ACCENT_COLOR_LIGHT);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">HERO_HEADLINE_ACCENT</span>
-    </h1>
-    <!-- Subheadline -->
-    <p data-aos="fade-up" data-aos-delay="200" style="font-size:20px;color:#A1A1AA;max-width:600px;line-height:1.7;margin-bottom:40px;">HERO_SUBHEADLINE</p>
-    <!-- CTAs -->
-    <div data-aos="fade-up" data-aos-delay="300" style="display:flex;gap:16px;flex-wrap:wrap;">
-      <a href="#contact-form" style="display:inline-flex;align-items:center;gap:8px;background:ACCENT_COLOR;color:#fff;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:700;transition:all 0.25s;box-shadow:0 0 40px ACCENT_COLOR40;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 40px ACCENT_COLOR60'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 0 40px ACCENT_COLOR40'">CTA_PRIMARY →</a>
-      <a href="#process" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#FAFAFA;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:600;transition:all 0.25s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">See How It Works</a>
-    </div>
-    <!-- Social proof mini -->
-    <div data-aos="fade-up" data-aos-delay="400" style="display:flex;align-items:center;gap:20px;margin-top:48px;padding-top:48px;border-top:1px solid rgba(255,255,255,0.08);">
-      <div style="display:flex;">
-        <!-- Avatar circles -->
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,ACCENT_COLOR,#7C3AED);border:2px solid #0A0A0D;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">A</div>
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10B981,#06B6D4);border:2px solid #0A0A0D;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">M</div>
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#EF4444);border:2px solid #0A0A0D;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">K</div>
-      </div>
-      <div>
-        <div style="display:flex;gap:2px;margin-bottom:2px;">⭐⭐⭐⭐⭐</div>
-        <p style="font-size:13px;color:#A1A1AA;">SOCIAL_PROOF_TEXT</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-=== 3. STATS BAR ===
-<section style="padding:60px 40px;background:#111116;border-top:1px solid #1C1C22;border-bottom:1px solid #1C1C22;">
-  <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;">
-    <div data-aos="fade-up" style="text-align:center;">
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:52px;font-weight:900;color:ACCENT_COLOR;line-height:1;">STAT_1_NUM</div>
-      <div style="font-size:14px;color:#A1A1AA;margin-top:8px;font-weight:500;">STAT_1_LABEL</div>
-    </div>
-    <div data-aos="fade-up" data-aos-delay="100" style="text-align:center;border-left:1px solid #1C1C22;border-right:1px solid #1C1C22;">
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:52px;font-weight:900;color:ACCENT_COLOR;line-height:1;">STAT_2_NUM</div>
-      <div style="font-size:14px;color:#A1A1AA;margin-top:8px;font-weight:500;">STAT_2_LABEL</div>
-    </div>
-    <div data-aos="fade-up" data-aos-delay="200" style="text-align:center;">
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:52px;font-weight:900;color:ACCENT_COLOR;line-height:1;">STAT_3_NUM</div>
-      <div style="font-size:14px;color:#A1A1AA;margin-top:8px;font-weight:500;">STAT_3_LABEL</div>
-    </div>
-  </div>
-</section>
-
-=== 4. PROBLEMS ===
-<section id="benefits" style="padding:120px 40px;background:#0A0A0D;">
-  <div style="max-width:900px;margin:0 auto;">
-    <div data-aos="fade-up" style="text-align:center;margin-bottom:64px;">
-      <span style="font-size:12px;font-weight:700;color:ACCENT_COLOR;letter-spacing:0.1em;text-transform:uppercase;">THE PROBLEM</span>
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:800;margin-top:16px;letter-spacing:-0.02em;">PROBLEM_HEADLINE</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;">
-      <div data-aos="fade-up" style="background:#111116;border:1px solid #1C1C22;border-radius:16px;padding:32px;transition:all 0.3s;" onmouseover="this.style.borderColor='ACCENT_COLOR40';this.style.transform='translateY(-4px)'" onmouseout="this.style.borderColor='#1C1C22';this.style.transform='translateY(0)'">
-        <div style="width:48px;height:48px;background:rgba(239,68,68,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;">❌</div>
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">PAIN_1_TITLE</h3>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">PAIN_1_DESC</p>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="100" style="background:#111116;border:1px solid #1C1C22;border-radius:16px;padding:32px;transition:all 0.3s;" onmouseover="this.style.borderColor='ACCENT_COLOR40';this.style.transform='translateY(-4px)'" onmouseout="this.style.borderColor='#1C1C22';this.style.transform='translateY(0)'">
-        <div style="width:48px;height:48px;background:rgba(239,68,68,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;">❌</div>
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">PAIN_2_TITLE</h3>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">PAIN_2_DESC</p>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="200" style="background:#111116;border:1px solid #1C1C22;border-radius:16px;padding:32px;transition:all 0.3s;" onmouseover="this.style.borderColor='ACCENT_COLOR40';this.style.transform='translateY(-4px)'" onmouseout="this.style.borderColor='#1C1C22';this.style.transform='translateY(0)'">
-        <div style="width:48px;height:48px;background:rgba(239,68,68,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;">❌</div>
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">PAIN_3_TITLE</h3>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">PAIN_3_DESC</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-=== 5. FEATURES ===
-<section style="padding:120px 40px;background:#111116;">
-  <div style="max-width:900px;margin:0 auto;">
-    <div data-aos="fade-up" style="text-align:center;margin-bottom:64px;">
-      <span style="font-size:12px;font-weight:700;color:ACCENT_COLOR;letter-spacing:0.1em;text-transform:uppercase;">THE SOLUTION</span>
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:800;margin-top:16px;letter-spacing:-0.02em;">SOLUTION_HEADLINE</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;">
-      <div data-aos="fade-up" style="background:#0A0A0D;border:1px solid #1C1C22;border-radius:16px;padding:32px;transition:all 0.3s;position:relative;overflow:hidden;" onmouseover="this.style.borderColor='ACCENT_COLOR';this.style.transform='translateY(-6px)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.4)'" onmouseout="this.style.borderColor='#1C1C22';this.style.transform='translateY(0)';this.style.boxShadow='none'">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,ACCENT_COLOR,ACCENT_COLOR_LIGHT);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:24px;">FEATURE_1_ICON</div>
-        <h3 style="font-size:20px;font-weight:700;margin-bottom:12px;">FEATURE_1_TITLE</h3>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">FEATURE_1_DESC</p>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="100" style="background:#0A0A0D;border:1px solid #1C1C22;border-radius:16px;padding:32px;transition:all 0.3s;position:relative;" onmouseover="this.style.borderColor='ACCENT_COLOR';this.style.transform='translateY(-6px)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.4)'" onmouseout="this.style.borderColor='#1C1C22';this.style.transform='translateY(0)';this.style.boxShadow='none'">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,ACCENT_COLOR,ACCENT_COLOR_LIGHT);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:24px;">FEATURE_2_ICON</div>
-        <h3 style="font-size:20px;font-weight:700;margin-bottom:12px;">FEATURE_2_TITLE</h3>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">FEATURE_2_DESC</p>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="200" style="background:#0A0A0D;border:1px solid #1C1C22;border-radius:16px;padding:32px;transition:all 0.3s;" onmouseover="this.style.borderColor='ACCENT_COLOR';this.style.transform='translateY(-6px)';this.style.boxShadow='0 20px 60px rgba(0,0,0,0.4)'" onmouseout="this.style.borderColor='#1C1C22';this.style.transform='translateY(0)';this.style.boxShadow='none'">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,ACCENT_COLOR,ACCENT_COLOR_LIGHT);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:24px;">FEATURE_3_ICON</div>
-        <h3 style="font-size:20px;font-weight:700;margin-bottom:12px;">FEATURE_3_TITLE</h3>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">FEATURE_3_DESC</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-=== 6. PROCESS ===
-<section id="process" style="padding:120px 40px;background:#0A0A0D;">
-  <div style="max-width:700px;margin:0 auto;">
-    <div data-aos="fade-up" style="text-align:center;margin-bottom:64px;">
-      <span style="font-size:12px;font-weight:700;color:ACCENT_COLOR;letter-spacing:0.1em;text-transform:uppercase;">HOW IT WORKS</span>
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:800;margin-top:16px;letter-spacing:-0.02em;">PROCESS_HEADLINE</h2>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0;">
-      <div data-aos="fade-up" style="display:flex;gap:24px;padding-bottom:48px;position:relative;">
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="width:48px;height:48px;background:ACCENT_COLOR;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;z-index:1;">1</div>
-          <div style="width:2px;flex:1;background:linear-gradient(to bottom,ACCENT_COLOR,transparent);margin-top:8px;"></div>
-        </div>
-        <div style="padding-top:8px;">
-          <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">STEP_1_TITLE</h3>
-          <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">STEP_1_DESC</p>
-        </div>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="100" style="display:flex;gap:24px;padding-bottom:48px;position:relative;">
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="width:48px;height:48px;background:ACCENT_COLOR;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">2</div>
-          <div style="width:2px;flex:1;background:linear-gradient(to bottom,ACCENT_COLOR,transparent);margin-top:8px;"></div>
-        </div>
-        <div style="padding-top:8px;">
-          <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">STEP_2_TITLE</h3>
-          <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">STEP_2_DESC</p>
-        </div>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="200" style="display:flex;gap:24px;">
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="width:48px;height:48px;background:ACCENT_COLOR;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;">3</div>
-        </div>
-        <div style="padding-top:8px;">
-          <h3 style="font-size:20px;font-weight:700;margin-bottom:8px;">STEP_3_TITLE</h3>
-          <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">STEP_3_DESC</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-=== 7. TESTIMONIALS ===
-<section id="testimonials" style="padding:120px 40px;background:#111116;">
-  <div style="max-width:900px;margin:0 auto;">
-    <div data-aos="fade-up" style="text-align:center;margin-bottom:64px;">
-      <span style="font-size:12px;font-weight:700;color:ACCENT_COLOR;letter-spacing:0.1em;text-transform:uppercase;">RESULTS</span>
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:800;margin-top:16px;letter-spacing:-0.02em;">TESTIMONIALS_HEADLINE</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;">
-      <div data-aos="fade-up" style="background:#0A0A0D;border:1px solid #1C1C22;border-radius:16px;padding:32px;">
-        <div style="display:flex;gap:4px;margin-bottom:16px;">⭐⭐⭐⭐⭐</div>
-        <p style="color:#FAFAFA;font-size:15px;line-height:1.7;margin-bottom:24px;font-style:italic;">"T1_TEXT"</p>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,ACCENT_COLOR,ACCENT_COLOR_LIGHT);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">T1_INITIAL</div>
-          <div>
-            <div style="font-weight:700;font-size:15px;">T1_NAME</div>
-            <div style="color:#A1A1AA;font-size:13px;">T1_ROLE</div>
-          </div>
-        </div>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="100" style="background:#0A0A0D;border:1px solid #1C1C22;border-radius:16px;padding:32px;">
-        <div style="display:flex;gap:4px;margin-bottom:16px;">⭐⭐⭐⭐⭐</div>
-        <p style="color:#FAFAFA;font-size:15px;line-height:1.7;margin-bottom:24px;font-style:italic;">"T2_TEXT"</p>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#10B981,#06B6D4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">T2_INITIAL</div>
-          <div>
-            <div style="font-weight:700;font-size:15px;">T2_NAME</div>
-            <div style="color:#A1A1AA;font-size:13px;">T2_ROLE</div>
-          </div>
-        </div>
-      </div>
-      <div data-aos="fade-up" data-aos-delay="200" style="background:#0A0A0D;border:1px solid #1C1C22;border-radius:16px;padding:32px;">
-        <div style="display:flex;gap:4px;margin-bottom:16px;">⭐⭐⭐⭐⭐</div>
-        <p style="color:#FAFAFA;font-size:15px;line-height:1.7;margin-bottom:24px;font-style:italic;">"T3_TEXT"</p>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#EF4444);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">T3_INITIAL</div>
-          <div>
-            <div style="font-weight:700;font-size:15px;">T3_NAME</div>
-            <div style="color:#A1A1AA;font-size:13px;">T3_ROLE</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-=== 8. CTA SECTION ===
-<section style="padding:120px 40px;background:linear-gradient(135deg,rgba(ACCENT_R,ACCENT_G,ACCENT_B,0.15) 0%,rgba(10,10,13,1) 60%);">
-  <div data-aos="fade-up" style="max-width:700px;margin:0 auto;text-align:center;">
-    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:900;letter-spacing:-0.03em;margin-bottom:24px;">CTA_HEADLINE</h2>
-    <p style="font-size:18px;color:#A1A1AA;margin-bottom:40px;line-height:1.7;">CTA_SUBTEXT</p>
-    <a href="#contact-form" style="display:inline-flex;align-items:center;gap:10px;background:ACCENT_COLOR;color:#fff;padding:20px 48px;border-radius:12px;font-size:18px;font-weight:800;transition:all 0.25s;box-shadow:0 0 60px ACCENT_COLOR30;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 60px ACCENT_COLOR50'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 0 60px ACCENT_COLOR30'">CTA_BUTTON_TEXT →</a>
-  </div>
-</section>
-
-=== 9. CONTACT FORM ===
-<section id="contact-form" style="padding:120px 40px;background:#0A0A0D;">
-  <div style="max-width:600px;margin:0 auto;">
-    <div data-aos="fade-up" style="text-align:center;margin-bottom:48px;">
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-0.02em;">FORM_HEADLINE</h2>
-      <p style="color:#A1A1AA;margin-top:16px;font-size:16px;">FORM_SUBTEXT</p>
-    </div>
-    <form id="lacore-form" data-aos="fade-up" data-aos-delay="100" style="background:#111116;border:1px solid #1C1C22;border-radius:20px;padding:40px;">
-      <div style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:#A1A1AA;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Your Name</label>
-        <input type="text" name="name" required placeholder="John Smith" style="width:100%;background:#0A0A0D;border:1px solid #1C1C22;border-radius:10px;padding:14px 16px;color:#FAFAFA;font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='ACCENT_COLOR'" onblur="this.style.borderColor='#1C1C22'">
-      </div>
-      <div style="margin-bottom:20px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:#A1A1AA;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Email Address</label>
-        <input type="email" name="email" required placeholder="john@example.com" style="width:100%;background:#0A0A0D;border:1px solid #1C1C22;border-radius:10px;padding:14px 16px;color:#FAFAFA;font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='ACCENT_COLOR'" onblur="this.style.borderColor='#1C1C22'">
-      </div>
-      <div style="margin-bottom:28px;">
-        <label style="display:block;font-size:13px;font-weight:600;color:#A1A1AA;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Message</label>
-        <textarea name="message" rows="4" placeholder="Tell me about your goals..." style="width:100%;background:#0A0A0D;border:1px solid #1C1C22;border-radius:10px;padding:14px 16px;color:#FAFAFA;font-size:15px;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border-color 0.2s;" onfocus="this.style.borderColor='ACCENT_COLOR'" onblur="this.style.borderColor='#1C1C22'"></textarea>
-      </div>
-      <button type="submit" style="width:100%;background:ACCENT_COLOR;color:#fff;padding:16px;border-radius:10px;font-size:16px;font-weight:700;font-family:'Inter',sans-serif;border:none;cursor:pointer;transition:all 0.25s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">FORM_BUTTON_TEXT →</button>
-      <div id="success-msg" style="display:none;text-align:center;padding:20px;color:ACCENT_COLOR;font-weight:600;font-size:16px;margin-top:16px;">✓ Message sent! I'll get back to you within 24 hours.</div>
-    </form>
-  </div>
-</section>
-
-=== 10. FOOTER ===
-<footer style="padding:40px;background:#060608;border-top:1px solid #1C1C22;">
-  <div style="max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
-    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;">BRAND_NAME</div>
-    <div style="color:#52525B;font-size:13px;">© 2026 BRAND_NAME. All rights reserved.</div>
-    <a href="https://lacore.ai" target="_blank" style="display:flex;align-items:center;gap:6px;background:#111116;border:1px solid #1C1C22;padding:8px 16px;border-radius:100px;font-size:12px;font-weight:600;color:#A1A1AA;transition:all 0.2s;" onmouseover="this.style.borderColor='ACCENT_COLOR';this.style.color='#FAFAFA'" onmouseout="this.style.borderColor='#1C1C22';this.style.color='#A1A1AA'">⚡ Built with LACORE</a>
-  </div>
-</footer>
-
-=== MOBILE RESPONSIVE ===
-Add this inside <style>:
-@media (max-width: 768px) {
-  nav > div:last-child { display: none; }
-  section { padding: 80px 20px !important; }
-  .stats-grid { grid-template-columns: 1fr !important; }
-  h1 { font-size: 36px !important; }
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-=== FORM SCRIPT ===
-Add before </body>:
-<script>
-document.getElementById('lacore-form').addEventListener('submit',async function(e){
-  e.preventDefault();
-  const btn = this.querySelector('button[type=submit]');
-  btn.textContent = 'Sending...';
-  btn.disabled = true;
-  try {
-    const slug = window.location.pathname.split('/p/')[1]?.split('?')[0] || '';
-    await fetch('/api/leads/notify', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        slug,
-        name: this.name.value,
-        email: this.email.value,
-        message: this.message.value
-      })
-    });
-    document.getElementById('success-msg').style.display = 'block';
-    this.reset();
-  } catch(err) {
-    btn.textContent = 'FORM_BUTTON_TEXT →';
-    btn.disabled = false;
-  }
-});
-</script>
-
-=== INSTRUCTIONS FOR FILLING CONTENT ===
-Based on the user's offer, replace ALL CAPS variables with compelling content:
-- BRAND_NAME: extract from user's profile display_name or from offer
-- HERO_HEADLINE: split into 2 lines, first plain, second with accent. Max 8 words total. ALL CAPS. Hit the main pain/desire.
-- HERO_SUBHEADLINE: 1-2 sentences, specific, no fluff. Mention the target audience.
-- SOCIAL_PROOF_TEXT: "Trusted by X+ [niche] professionals"
-- STAT_1/2/3: Specific numbers relevant to the offer (revenue, clients, days, %, etc.)
-- PAIN titles: Short 3-4 word phrases. Pain descriptions: 1-2 sentences, emotional.
-- FEATURE icons: Use relevant emojis (🎯 🚀 💰 ⚡ 🔥 📈 etc.)
-- TESTIMONIALS: Realistic names, specific results with numbers, relevant roles
-- CTA_HEADLINE: Bold promise. Max 6 words.
-- All content in SAME LANGUAGE as user's offer.
-- NEVER use lorem ipsum.
-- NEVER leave any variable unfilled.
-- ACCENT_COLOR_LIGHT: use 20% lighter version of accent (e.g. if accent is #EF4444, light is #FCA5A5)
-
-Return ONLY the complete HTML. No markdown, no explanations.
-
-`;
-
+function renderHtml(content: Record<string, unknown>, title: string): string {
+  const brand = String(content.brand ?? "Brand");
+  const headline = String(content.headline ?? "");
+  const headlineAccent = String(content.headlineAccent ?? "");
+  const subheadline = String(content.subheadline ?? "");
+  const cta = String(content.ctaPrimary ?? "Get Started");
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(subheadline)}"></head><body style="margin:0;background:#0A0A0D;color:#FAFAFA;font-family:Inter,system-ui,sans-serif"><main style="max-width:900px;margin:0 auto;padding:120px 24px"><p style="color:#06B6D4">${escapeHtml(String(content.badge ?? ""))}</p><h1 style="font-size:56px;line-height:1.05">${escapeHtml(headline)}<br><span style="color:#67E8F9">${escapeHtml(headlineAccent)}</span></h1><p style="color:#A1A1AA">${escapeHtml(subheadline)}</p><a href="#contact-form" style="display:inline-block;background:#06B6D4;color:#fff;padding:14px 20px;border-radius:10px;text-decoration:none">${escapeHtml(cta)}</a><section id="contact-form" style="margin-top:64px"><h2>${escapeHtml(String(content.formHeadline ?? "Contact us"))}</h2></section><footer style="margin-top:64px;border-top:1px solid #1C1C22;padding-top:24px">${escapeHtml(brand)} · <a href="https://lacore.ai" target="_blank" rel="noopener noreferrer" style="color:#A1A1AA">Built with LACORE</a></footer></main></body></html>`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -419,23 +89,15 @@ serve(async (req) => {
       typeof body.headline === "string" && body.headline.trim().length > 0
         ? body.headline.trim()
         : displayName;
-    const userMessage = `Generate a premium landing page for this business:
-
-Brand name: ${brandNameLine}
-Business name: ${displayName}
-What they sell: ${body.offer}
-Target audience: ${body.audience}
+    const userMessage = `Generate JSON landing content.
+Display name: ${brandNameLine}
+Offer: ${body.offer}
+Audience: ${body.audience}
 Pricing: ${body.pricing}
 Positioning: ${body.positioning}
 Suggested headline: ${body.headline}
-Page title (exact inner text for the HTML <title> element — use verbatim, single line): ${headlineRaw}
 Primary CTA goal: ${body.primaryGoal || "Book a call"}
-Site vibe: ${body.siteVibe || "Professional"}
-
-Detect the language from the offer text. Write ALL copy in that language.
-Contact form slug value: SLUG_VALUE
-
-Return the complete HTML document only.`;
+Site vibe: ${body.siteVibe || "Professional"}`;
 
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -446,9 +108,9 @@ Return the complete HTML document only.`;
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 12000,
+        max_tokens: 6000,
         temperature: 0.8,
-        stream: true,
+        stream: false,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],
       }),
@@ -465,65 +127,15 @@ Return the complete HTML document only.`;
       );
     }
 
-    const streamBody = anthropicRes.body;
-    if (!streamBody) {
-      return new Response(
-        JSON.stringify({ error: "No response body from Claude." }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    const reader = streamBody.getReader();
-    const decoder = new TextDecoder();
-    let fullText = "";
-    let lineBuffer = "";
-
+    const parsed = await anthropicRes.json() as { content?: Array<{ text?: string }> };
+    const text = parsed.content?.[0]?.text ?? "";
+    const jsonRaw = cleanJson(text);
+    let jsonContent: Record<string, unknown>;
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        lineBuffer += decoder.decode(value, { stream: true });
-        const lines = lineBuffer.split("\n");
-        lineBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6).trim();
-          if (!data || data === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(data);
-            fullText +=
-              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
-          } catch {
-            /* ignore malformed SSE JSON */
-          }
-        }
-      }
-      if (lineBuffer.startsWith("data: ")) {
-        const data = lineBuffer.slice(6).trim();
-        if (data && data !== "[DONE]") {
-          try {
-            const parsed = JSON.parse(data);
-            fullText +=
-              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
-
-    let html = fullText
-      .replace(/^```(?:html)?\s*/im, "")
-      .replace(/\s*```\s*$/im, "")
-      .trim();
-    if (!html.startsWith("<!DOCTYPE html>") && !html.startsWith("<html")) {
+      jsonContent = JSON.parse(jsonRaw) as Record<string, unknown>;
+    } catch {
       return new Response(
-        JSON.stringify({ error: "Generation failed. Please try again." }),
+        JSON.stringify({ error: "Generation failed. Invalid JSON output." }),
         {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -544,11 +156,10 @@ Return the complete HTML document only.`;
       existingPage.data?.slug ??
       `${emailBase}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    html = html.replaceAll("SLUG_VALUE", slug);
-    html = injectDocumentTitle(html, headlineRaw);
+    const html = renderHtml(jsonContent, headlineRaw);
 
     const { error: upsertError } = await supabase.from("landing_pages").upsert(
-      { user_id: userId, slug, html_content: html, jsx_content: null },
+      { user_id: userId, slug, html_content: html, json_content: jsonContent, jsx_content: null },
       { onConflict: "slug" },
     );
 
