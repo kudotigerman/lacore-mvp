@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import React from "react";
-import ReactDOMServer from "react-dom/server";
-import LandingPage from "@/app/components/landing/LandingPage";
+import { readFileSync } from "fs";
+import { join } from "path";
 import type { LandingContent } from "@/types/landing";
 
 export const maxDuration = 120;
+
+const systemPrompt = readFileSync(
+  join(process.cwd(), "app/api/generate-landing/system-prompt.txt"),
+  "utf8"
+);
 
 type LandingInput = {
   offer: string;
@@ -23,22 +27,15 @@ function randomFourDigits() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-function buildDocument(title: string, description: string, body: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
-    <meta name="description" content="${description}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:type" content="website" />
-  </head>
-  <body style="margin:0;padding:0;">
-    <div id="root">${body}</div>
-  </body>
-</html>`;
+function injectSlug(html: string, slug: string): string {
+  return html.replaceAll("SLUG_VALUE", slug);
+}
+
+function cleanHtml(raw: string): string {
+  return raw
+    .replace(/^```(?:html)?\s*/im, "")
+    .replace(/\s*```\s*$/im, "")
+    .trim();
 }
 
 export async function POST(request: Request) {
@@ -48,9 +45,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!apiKey || !supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({ error: "Missing environment variables." }, { status: 500 });
     }
 
@@ -118,6 +116,111 @@ export async function POST(request: Request) {
       );
     }
 
+    const userMessage = `Generate a premium landing page for this business:
+
+Brand name: ${brandNameLine}
+Business name: ${displayName}
+What they sell: ${body.offer}
+Target audience: ${body.audience}
+Pricing: ${body.pricing}
+Positioning: ${body.positioning}
+Suggested headline: ${body.headline}
+Page title (exact inner text for the HTML <title> element — use verbatim, single line): ${headlineRaw}
+Primary CTA goal: ${body.primaryGoal || "Book a call"}
+Site vibe: ${body.siteVibe || "Professional"}
+
+Use EXACTLY this content to generate the HTML landing page:
+${JSON.stringify(generated.data)}
+
+Detect the language from the offer text. Write ALL copy in that language.
+Contact form slug value: SLUG_VALUE
+
+Return the complete HTML document only. No explanation.`;
+
+    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 12000,
+        temperature: 0.8,
+        stream: true,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      }),
+    });
+
+    if (!anthropicResponse.ok) {
+      const details = await anthropicResponse.text();
+      return NextResponse.json({ error: "Claude request failed.", details }, { status: 502 });
+    }
+
+    const streamBody = anthropicResponse.body;
+    if (!streamBody) {
+      return NextResponse.json({ error: "No response body from Claude." }, { status: 502 });
+    }
+
+    const reader = streamBody.getReader();
+    const decoder = new TextDecoder();
+    let fullText = "";
+    let lineBuffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        lineBuffer += chunk;
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]" || !data) continue;
+          try {
+            const parsed = JSON.parse(data) as {
+              delta?: { text?: string };
+              content?: Array<{ text?: string }>;
+            };
+            const text =
+              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
+            fullText += text;
+          } catch {
+            /* ignore malformed SSE JSON */
+          }
+        }
+      }
+      if (lineBuffer.startsWith("data: ")) {
+        const data = lineBuffer.slice(6).trim();
+        if (data && data !== "[DONE]") {
+          try {
+            const parsed = JSON.parse(data) as {
+              delta?: { text?: string };
+              content?: Array<{ text?: string }>;
+            };
+            const text =
+              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
+            fullText += text;
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const rawText = fullText.trim();
+    const html = cleanHtml(rawText);
+
+    if (!html.startsWith("<!DOCTYPE html>") && !html.startsWith("<html")) {
+      return NextResponse.json({ error: "Generation failed. Please try again." }, { status: 502 });
+    }
+
     const existingPage = await supabase
       .from("landing_pages")
       .select("slug")
@@ -129,11 +232,7 @@ export async function POST(request: Request) {
       .replace(/[^a-zA-Z0-9-]/g, "-")
       .toLowerCase();
     const slug = existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
-    const rendered = ReactDOMServer.renderToString(
-      React.createElement(LandingPage, { content: generated.data, slug })
-    );
-    const description = generated.data.subheadline || `Landing page for ${displayName}`;
-    const htmlWithSlug = buildDocument(headlineRaw, description, rendered);
+    const htmlWithSlug = injectSlug(html, slug);
 
     const { error: upsertError } = await supabase
       .from("landing_pages")
