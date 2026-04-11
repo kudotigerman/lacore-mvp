@@ -385,10 +385,19 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-    const supabase = getSupabaseClient();
-    await supabase.auth.signOut();
-    router.replace("/auth");
-  }, [router]);
+    try {
+      await fetch("/api/auth/signout", { method: "POST", credentials: "include", cache: "no-store" });
+    } catch {
+      /* still navigate — try client signOut as fallback */
+      try {
+        const supabase = getSupabaseClient();
+        await supabase.auth.signOut();
+      } catch {
+        /* ignore */
+      }
+    }
+    window.location.assign("/");
+  }, []);
 
   const handleSaveProfile = useCallback(async () => {
     if (!userId) return;
