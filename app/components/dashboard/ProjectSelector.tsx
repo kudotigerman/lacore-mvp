@@ -7,7 +7,6 @@ export default function ProjectSelector() {
   const { projects, activeProject, setActiveProject, createProject, isLoading } = useProjectContext();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (isLoading) {
     return <div style={{ fontSize: 11, color: "#71717A", marginTop: 10 }}>Loading projects...</div>;
@@ -79,11 +78,10 @@ export default function ProjectSelector() {
             disabled={creating}
             onClick={async () => {
               setCreating(true);
-              setError(null);
               try {
                 await createProject(`Project ${projects.length + 1}`);
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Could not create project.");
+              } catch {
+                /* temp: no plan-limit UI until Stripe */
               } finally {
                 setCreating(false);
               }
@@ -102,7 +100,6 @@ export default function ProjectSelector() {
           >
             + New Project
           </button>
-          {error ? <p style={{ margin: "6px 6px 2px", fontSize: 11, color: "#ef4444" }}>{error}</p> : null}
         </div>
       ) : null}
     </div>
