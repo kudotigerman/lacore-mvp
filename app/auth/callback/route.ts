@@ -5,20 +5,19 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-function buildRedirectLocation(request: Request, path: string): string {
+function safeNextPath(next: string | null): string {
+  const raw = next ?? "/dashboard/offer";
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard/offer";
+}
+
+/** After OAuth, send users to canonical www host in production; keep request origin in dev. */
+function postAuthRedirectUrl(request: Request, path: string): string {
   const url = new URL(request.url);
-  const origin = url.origin;
   const safe = path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard/offer";
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const isLocalEnv = process.env.NODE_ENV === "development";
-  if (isLocalEnv) {
-    return `${origin}${safe}`;
+  if (process.env.NODE_ENV === "development") {
+    return `${url.origin}${safe}`;
   }
-  if (forwardedHost) {
-    const host = forwardedHost.split(",")[0]?.trim().split(":")[0] ?? "";
-    if (host) return `https://${host}${safe}`;
-  }
-  return `${origin}${safe}`;
+  return `https://www.lacore.ai${safe}`;
 }
 
 /**
@@ -26,16 +25,16 @@ function buildRedirectLocation(request: Request, path: string): string {
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const nextRaw = url.searchParams.get("next") ?? "/dashboard/offer";
-  const safeNext =
-    nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/dashboard/offer";
+  const { searchParams } = url;
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/dashboard/offer";
+  const safeNext = safeNextPath(next);
 
   if (!code) {
     return NextResponse.redirect(new URL("/auth", url.origin));
   }
 
-  const redirectLocation = buildRedirectLocation(request, safeNext);
+  const redirectLocation = postAuthRedirectUrl(request, safeNext);
   const response = NextResponse.redirect(redirectLocation);
 
   const supabase = createServerClient(
