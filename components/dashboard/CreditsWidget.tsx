@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { getPaddleInstance, initializePaddle } from "@paddle/paddle-js";
 import { PADDLE_PRICE_IDS } from "@/lib/paddle-config";
 
@@ -12,6 +11,8 @@ const TOPUP_PACKS = [
   { label: "600 credits", price: "$59", priceId: PADDLE_PRICE_IDS.credits_600, credits: 600 }
 ];
 
+type BalancePayload = { credits_balance: number; plan: string };
+
 export function CreditsWidget() {
   const [balance, setBalance] = useState<number | null>(null);
   const [plan, setPlan] = useState("free");
@@ -19,16 +20,28 @@ export function CreditsWidget() {
   const [paddleReady, setPaddleReady] = useState(false);
 
   const reload = useCallback(async () => {
-    const supabase = createClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase.from("profiles").select("credits_balance, plan").eq("user_id", user.id).maybeSingle();
-    const row = data as { credits_balance?: number; plan?: string } | null;
-    if (row) {
-      setBalance(typeof row.credits_balance === "number" ? row.credits_balance : 0);
-      setPlan(row.plan ?? "free");
+    try {
+      const res = await fetch("/api/credits/balance", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store"
+      });
+      if (res.status === 401) {
+        setBalance(0);
+        setPlan("free");
+        return;
+      }
+      if (!res.ok) {
+        setBalance(0);
+        setPlan("free");
+        return;
+      }
+      const json = (await res.json()) as BalancePayload;
+      setBalance(typeof json.credits_balance === "number" ? json.credits_balance : 0);
+      setPlan(typeof json.plan === "string" ? json.plan : "free");
+    } catch {
+      setBalance(0);
+      setPlan("free");
     }
   }, []);
 
@@ -72,6 +85,7 @@ export function CreditsWidget() {
       customer: customerId ? { id: customerId } : { email: customerEmail ?? "" }
     });
     setShowModal(false);
+    void reload();
   };
 
   if (balance === null) {
