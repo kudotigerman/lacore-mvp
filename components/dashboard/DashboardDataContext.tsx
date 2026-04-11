@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
+import { dashToast } from "@/lib/dash-toast";
 import { useProjectContext } from "@/app/contexts/ProjectContext";
 
 export type DashboardOffer = {
@@ -115,19 +116,7 @@ type DashboardDataContextValue = {
   buildProgressWidth: number;
   buildingLogMessages: string[];
   buildLogEndRef: React.MutableRefObject<HTMLDivElement | null>;
-  showOnboarding: boolean;
-  setShowOnboarding: (v: boolean) => void;
-  businessName: string;
-  setBusinessName: (v: string) => void;
-  primaryGoals: string[];
-  setPrimaryGoals: React.Dispatch<React.SetStateAction<string[]>>;
-  siteVibe: string;
-  setSiteVibe: (v: string) => void;
-  handleBuildLandingPage: (extra?: {
-    businessName?: string;
-    primaryGoal?: string;
-    siteVibe?: string;
-  }) => Promise<void>;
+  handleBuildLandingPage: () => Promise<void>;
   regenerateConfirm: boolean;
   setRegenerateConfirm: (v: boolean) => void;
   regenerateError: string | null;
@@ -172,10 +161,6 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [buildProgressWidth, setBuildProgressWidth] = useState(0);
   const buildLogEndRef = useRef<HTMLDivElement | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [businessName, setBusinessName] = useState("");
-  const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
-  const [siteVibe, setSiteVibe] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [regenerateConfirm, setRegenerateConfirm] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
@@ -234,15 +219,15 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   }, [offer, landingSlug]);
 
   const refreshDashboardStatus = useCallback(async () => {
-    if (!userId || !activeProject?.id) {
+    if (!userId) {
       setDashboardStatus(null);
       return;
     }
     try {
-      const res = await fetch(
-        `/api/dashboard/status?projectId=${encodeURIComponent(activeProject.id)}`,
-        { credentials: "include", cache: "no-store" }
-      );
+      const q = activeProject?.id
+        ? `?projectId=${encodeURIComponent(activeProject.id)}`
+        : "";
+      const res = await fetch(`/api/dashboard/status${q}`, { credentials: "include", cache: "no-store" });
       if (!res.ok) return;
       const j = (await res.json()) as Partial<DashboardFunnelStatus>;
       setDashboardStatus({
@@ -362,10 +347,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       try {
-        const st = await fetch(
-          `/api/dashboard/status?projectId=${encodeURIComponent(activeProject.id)}`,
-          { credentials: "include", cache: "no-store" }
-        );
+        const statusUrl = activeProject?.id
+          ? `/api/dashboard/status?projectId=${encodeURIComponent(activeProject.id)}`
+          : "/api/dashboard/status";
+        const st = await fetch(statusUrl, { credentials: "include", cache: "no-store" });
         if (st.ok) {
           const j = (await st.json()) as Partial<DashboardFunnelStatus>;
           setDashboardStatus({
@@ -433,6 +418,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       }
 
       setSavedProfileDisplayName(profileDisplayName.trim() || null);
+      dashToast("Settings saved successfully");
     } finally {
       setProfileSaving(false);
     }
@@ -445,8 +431,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     profileTelegramChatId
   ]);
 
-  const handleBuildLandingPage = useCallback(
-    async (extra?: { businessName?: string; primaryGoal?: string; siteVibe?: string }) => {
+  const handleBuildLandingPage = useCallback(async () => {
       if (!offer || !sessionToken) return;
       setBuildError(null);
       setBuildingLanding(true);
@@ -469,9 +454,9 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             userName: email.split("@")[0],
             userEmail: email,
             project_id: activeProject?.id ?? null,
-            businessName: extra?.businessName ?? businessName,
-            primaryGoal: extra?.primaryGoal ?? primaryGoals.join(", "),
-            siteVibe: extra?.siteVibe ?? siteVibe
+            businessName: "",
+            primaryGoal: "",
+            siteVibe: ""
           })
         });
         const text = await response.text();
@@ -492,9 +477,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       } finally {
         setBuildingLanding(false);
       }
-    },
-    [offer, sessionToken, email, businessName, primaryGoals, siteVibe, router, activeProject?.id, refreshDashboardStatus]
-  );
+    }, [offer, sessionToken, email, router, activeProject?.id, refreshDashboardStatus]);
 
   useEffect(() => {
     if (!buildingLanding) {
@@ -562,14 +545,6 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       buildProgressWidth,
       buildingLogMessages,
       buildLogEndRef,
-      showOnboarding,
-      setShowOnboarding,
-      businessName,
-      setBusinessName,
-      primaryGoals,
-      setPrimaryGoals,
-      siteVibe,
-      setSiteVibe,
       handleBuildLandingPage,
       regenerateConfirm,
       setRegenerateConfirm,
@@ -611,10 +586,6 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       buildProgressWidth,
       buildingLogMessages,
       buildLogEndRef,
-      showOnboarding,
-      businessName,
-      primaryGoals,
-      siteVibe,
       handleBuildLandingPage,
       regenerateConfirm,
       regenerateError,

@@ -18,6 +18,8 @@ import {
 type Props = {
   content: LandingContent;
   slug: string;
+  /** When false, hide the “Built with LACORE” footer link (paid plans). */
+  showBrandWatermark?: boolean;
 };
 
 const iconMap = { Zap, Target, Shield, TrendingUp, Clock, Users, Star, Check } as const;
@@ -32,7 +34,7 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export default function LandingPage({ content, slug }: Props) {
+export default function LandingPage({ content, slug, showBrandWatermark = true }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -289,9 +291,25 @@ export default function LandingPage({ content, slug }: Props) {
         <div className="container" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
           <div style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 800 }}>{content.brand}</div>
           <div style={{ color: "#52525B", fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
-          <a href="https://lacore.ai" target="_blank" rel="noopener noreferrer" style={{ color: "#A1A1AA", border: "1px solid #1C1C22", background: "#111116", borderRadius: 999, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            ⚡ Built with LACORE
-          </a>
+          {showBrandWatermark ? (
+            <a
+              href="https://lacore.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "#A1A1AA",
+                border: "1px solid #1C1C22",
+                background: "#111116",
+                borderRadius: 999,
+                padding: "8px 14px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              ⚡ Built with LACORE
+            </a>
+          ) : null}
         </div>
       </footer>
     </div>

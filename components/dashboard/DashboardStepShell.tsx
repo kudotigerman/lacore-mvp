@@ -3,6 +3,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+function progressEncouragement(completedCount: number): string {
+  if (completedCount <= 0) return "Start with Step 1";
+  if (completedCount === 1) return "1 step done · 2 to go";
+  if (completedCount === 2) return "Halfway there!";
+  return "All done! 🎉";
+}
+
 export function DashboardStepShell({
   stepNum,
   completedCount,
@@ -32,7 +39,7 @@ export function DashboardStepShell({
             Step {stepNum} of 4
           </span>
           <div className="h-px flex-1 bg-white/10" />
-          <span className="text-[10px] text-white/30">{completedCount} steps done</span>
+          <span className="text-[10px] text-white/30">{progressEncouragement(completedCount)}</span>
         </div>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

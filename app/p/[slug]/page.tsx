@@ -270,6 +270,25 @@ function PublicLandingPageContent() {
   const [attachError, setAttachError] = useState<string | null>(null);
   const [publicStripe, setPublicStripe] = useState<PublicStripeSettings | null>(null);
   const [stripePayLoading, setStripePayLoading] = useState(false);
+  const [ownerPlan, setOwnerPlan] = useState<string | null>(null);
+
+  const showFreeWatermark = (ownerPlan ?? "free") === "free";
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    void fetch(`/api/public/landing-owner-plan?slug=${encodeURIComponent(slug)}`)
+      .then((r) => r.json())
+      .then((j: { plan?: string }) => {
+        if (!cancelled) setOwnerPlan(typeof j.plan === "string" && j.plan.length > 0 ? j.plan : "free");
+      })
+      .catch(() => {
+        if (!cancelled) setOwnerPlan("free");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("lacore-theme") ?? "dark";
@@ -1323,31 +1342,33 @@ function PublicLandingPageContent() {
             </div>
           ) : jsonContent ? (
             <>
-              <LandingPage content={jsonContent} slug={slug} />
-              <button
-                type="button"
-                onClick={() => setShowPromo(true)}
-                style={{
-                  position: "fixed",
-                  bottom: 20,
-                  right: 20,
-                  zIndex: 9998,
-                  border: "1px solid var(--accent)",
-                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  color: "var(--accent)",
-                  borderRadius: 4,
-                  padding: "8px 14px",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 9,
-                  letterSpacing: "0.08em",
-                  cursor: "pointer",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
-                }}
-              >
-                ⚡ Built with LACORE
-              </button>
+              <LandingPage content={jsonContent} slug={slug} showBrandWatermark={showFreeWatermark} />
+              {showFreeWatermark ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPromo(true)}
+                  style={{
+                    position: "fixed",
+                    bottom: 20,
+                    right: 20,
+                    zIndex: 9998,
+                    border: "1px solid var(--accent)",
+                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    color: "var(--accent)",
+                    borderRadius: 4,
+                    padding: "8px 14px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+                  }}
+                >
+                  ⚡ Built with LACORE
+                </button>
+              ) : null}
             </>
           ) : useLiveReact ? (
             <>
@@ -1358,30 +1379,32 @@ function PublicLandingPageContent() {
                   key={jsxContent.slice(0, 120) + jsxContent.length}
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => setShowPromo(true)}
-                style={{
-                  position: "fixed",
-                  bottom: 20,
-                  right: 20,
-                  zIndex: 9998,
-                  border: "1px solid var(--accent)",
-                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  color: "var(--accent)",
-                  borderRadius: 4,
-                  padding: "8px 14px",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 9,
-                  letterSpacing: "0.08em",
-                  cursor: "pointer",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
-                }}
-              >
-                ⚡ Built with LACORE
-              </button>
+              {showFreeWatermark ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPromo(true)}
+                  style={{
+                    position: "fixed",
+                    bottom: 20,
+                    right: 20,
+                    zIndex: 9998,
+                    border: "1px solid var(--accent)",
+                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    color: "var(--accent)",
+                    borderRadius: 4,
+                    padding: "8px 14px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+                  }}
+                >
+                  ⚡ Built with LACORE
+                </button>
+              ) : null}
               {publicStripe?.checkout_ready ? (
                 <button
                   type="button"
@@ -1424,30 +1447,32 @@ function PublicLandingPageContent() {
                   display: "block"
                 }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPromo(true)}
-                style={{
-                  position: "fixed",
-                  bottom: 20,
-                  right: 20,
-                  zIndex: 9998,
-                  border: "1px solid var(--accent)",
-                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                  backdropFilter: "blur(10px)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  color: "var(--accent)",
-                  borderRadius: 4,
-                  padding: "8px 14px",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 9,
-                  letterSpacing: "0.08em",
-                  cursor: "pointer",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
-                }}
-              >
-                ⚡ Built with LACORE
-              </button>
+              {showFreeWatermark ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPromo(true)}
+                  style={{
+                    position: "fixed",
+                    bottom: 20,
+                    right: 20,
+                    zIndex: 9998,
+                    border: "1px solid var(--accent)",
+                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+                    backdropFilter: "blur(10px)",
+                    WebkitBackdropFilter: "blur(10px)",
+                    color: "var(--accent)",
+                    borderRadius: 4,
+                    padding: "8px 14px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+                  }}
+                >
+                  ⚡ Built with LACORE
+                </button>
+              ) : null}
               {publicStripe?.checkout_ready ? (
                 <button
                   type="button"
@@ -2060,27 +2085,29 @@ function PublicLandingPageContent() {
                   </button>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowPromo(true)}
-                style={{
-                  marginTop: 12,
-                  width: "100%",
-                  border: "1px solid var(--accent)",
-                  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                  color: "var(--accent)",
-                  borderRadius: 4,
-                  padding: "8px 14px",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 9,
-                  letterSpacing: "0.08em",
-                  cursor: "pointer",
-                  boxShadow:
-                    "0 8px 32px color-mix(in srgb, var(--text-primary) 14%, transparent)"
-                }}
-              >
-                ⚡ Built with LACORE
-              </button>
+              {showFreeWatermark ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPromo(true)}
+                  style={{
+                    marginTop: 12,
+                    width: "100%",
+                    border: "1px solid var(--accent)",
+                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+                    color: "var(--accent)",
+                    borderRadius: 4,
+                    padding: "8px 14px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 9,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    boxShadow:
+                      "0 8px 32px color-mix(in srgb, var(--text-primary) 14%, transparent)"
+                  }}
+                >
+                  ⚡ Built with LACORE
+                </button>
+              ) : null}
             </form>
             </div>
           </aside>

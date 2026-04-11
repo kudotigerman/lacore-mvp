@@ -8,9 +8,19 @@ import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { useProjectContext } from "@/app/contexts/ProjectContext";
 import StripeConnect from "@/components/StripeConnect";
-import { LANDING_EDITOR_QUICK_ACTIONS, LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
+import { LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
+import { dashToast } from "@/lib/dash-toast";
 import { getSupabaseClient } from "@/lib/supabase";
 import Link from "next/link";
+
+const LANDING_AI_QUICK_PROMPTS = [
+  "Change colors",
+  "Add testimonials section",
+  "Add FAQ section",
+  "Add Calendly booking",
+  "Add WhatsApp button",
+  "Make headline stronger"
+] as const;
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
@@ -18,7 +28,7 @@ export default function DashboardLandingPage() {
   const { activeProject } = useProjectContext();
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
-  const [showAiNote, setShowAiNote] = useState(false);
+  const [aiEditCommand, setAiEditCommand] = useState("");
 
   useEffect(() => {
     if (!d.userId || !d.landingSlug || !activeProject?.id) {
@@ -48,6 +58,7 @@ export default function DashboardLandingPage() {
   async function copyUrl() {
     if (!d.landingSlug) return;
     await navigator.clipboard.writeText(`https://www.lacore.ai/p/${d.landingSlug}`);
+    dashToast("Link copied to clipboard!");
   }
 
   const url = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
@@ -80,7 +91,7 @@ export default function DashboardLandingPage() {
             </p>
             <button
               type="button"
-              onClick={() => d.setShowOnboarding(true)}
+              onClick={() => void d.handleBuildLandingPage()}
               disabled={d.buildingLanding}
               className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -147,15 +158,8 @@ export default function DashboardLandingPage() {
                   href={`/p/${d.landingSlug}?edit=true`}
                   className="rounded-xl bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-500"
                 >
-                  Edit with AI
+                  Open AI editor
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => setShowAiNote((v) => !v)}
-                  className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
-                >
-                  Quick prompts
-                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -176,27 +180,44 @@ export default function DashboardLandingPage() {
                 </button>
               </div>
 
-              {showAiNote ? (
-                <div className="flex flex-wrap gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
-                  {LANDING_EDITOR_QUICK_ACTIONS.map((action) => (
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
+                <p className="mb-3 text-sm font-medium text-white">Edit with AI</p>
+                <textarea
+                  value={aiEditCommand}
+                  onChange={(e) => setAiEditCommand(e.target.value)}
+                  rows={2}
+                  placeholder="e.g. Change accent color to green, add a FAQ section..."
+                  className="mb-4 w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
+                />
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {LANDING_AI_QUICK_PROMPTS.map((prompt) => (
                     <button
-                      key={action.label}
+                      key={prompt}
                       type="button"
-                      onClick={() => {
-                        try {
-                          sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, action.text);
-                        } catch {
-                          /* ignore */
-                        }
-                        router.push(`/p/${d.landingSlug}?edit=true`);
-                      }}
-                      className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] text-white/60 transition-colors hover:border-indigo-500/30 hover:text-indigo-200"
+                      onClick={() => setAiEditCommand(prompt)}
+                      className="cursor-pointer rounded-full border border-white/15 bg-transparent px-3 py-1.5 text-xs text-white/55 transition-colors hover:border-white/30 hover:text-white"
                     >
-                      {action.label}
+                      {prompt}
                     </button>
                   ))}
                 </div>
-              ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = aiEditCommand.trim();
+                    if (!t) return;
+                    try {
+                      sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, t);
+                    } catch {
+                      /* ignore */
+                    }
+                    router.push(`/p/${d.landingSlug}?edit=true`);
+                  }}
+                  className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+                >
+                  Apply
+                </button>
+              </div>
 
               {d.regenerateConfirm ? (
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">

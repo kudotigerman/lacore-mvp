@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const projectId = searchParams.get("projectId");
+  const projectIdParam = searchParams.get("projectId");
 
   const supabase = createClient();
   const {
@@ -15,7 +15,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!projectId) {
+  let resolvedProjectId = projectIdParam?.trim() || null;
+  if (!resolvedProjectId) {
+    const { data: firstProject } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    resolvedProjectId = (firstProject as { id?: string } | null)?.id ?? null;
+  }
+
+  if (!resolvedProjectId) {
     return NextResponse.json({
       offer: false,
       landing: false,
@@ -26,17 +38,15 @@ export async function GET(req: Request) {
   }
 
   const [offerRes, landingRes, leadsRes] = await Promise.all([
-    supabase.from("offers").select("id").eq("user_id", user.id).eq("project_id", projectId).limit(1),
-    supabase.from("landing_pages").select("id").eq("user_id", user.id).eq("project_id", projectId).limit(1),
-    supabase.from("leads").select("id").eq("user_id", user.id).eq("project_id", projectId).limit(1)
+    supabase.from("offers").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1),
+    supabase.from("landing_pages").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1),
+    supabase.from("leads").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1)
   ]);
 
   const hasOffer = (offerRes.data?.length ?? 0) > 0;
   const hasLanding = (landingRes.data?.length ?? 0) > 0;
   const hasLeads = (leadsRes.data?.length ?? 0) > 0;
-  const funnelContent = hasOffer && hasLanding;
-
-  const completedSteps = [hasOffer, hasLanding, funnelContent, hasLeads].filter(Boolean).length;
+  const completedSteps = [hasOffer, hasLanding, hasLeads].filter(Boolean).length;
 
   return NextResponse.json({
     offer: hasOffer,

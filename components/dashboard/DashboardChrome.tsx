@@ -12,8 +12,8 @@ import {
   type KeyboardEvent,
   type ReactNode
 } from "react";
-import OnboardingWizard from "@/app/components/OnboardingWizard";
 import ProjectSelector from "@/app/components/dashboard/ProjectSelector";
+import { DASH_TOAST_EVENT } from "@/lib/dash-toast";
 import { CreditsWidget } from "@/components/dashboard/CreditsWidget";
 import { Logo } from "@/components/Logo";
 import {
@@ -105,8 +105,20 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInitDone = useRef(false);
+
+  useEffect(() => {
+    function onToast(e: Event) {
+      const msg = (e as CustomEvent<{ message?: string }>).detail?.message;
+      if (typeof msg !== "string" || !msg.trim()) return;
+      setToastMsg(msg.trim());
+      window.setTimeout(() => setToastMsg(null), 3000);
+    }
+    window.addEventListener(DASH_TOAST_EVENT, onToast);
+    return () => window.removeEventListener(DASH_TOAST_EVENT, onToast);
+  }, []);
 
   useEffect(() => {
     const u = () => setIsMobile(window.innerWidth < 900);
@@ -163,7 +175,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   );
 
   const funnel = data.dashboardStatus;
-  const completedSteps = funnel?.completedSteps ?? 0;
+  const completedSteps = Math.min(funnel?.completedSteps ?? 0, 3);
+  const progressTotal = 3;
 
   const apiSalesContext = useMemo(
     () => ({
@@ -272,15 +285,14 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         }
         .dash-sb-fab--closed:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 40px rgba(6,182,212,0.45), 0 4px 12px rgba(0,0,0,0.5) !important;
         }
         .dash-sb-quick-pill {
           transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
         .dash-sb-quick-pill:hover {
-          background: rgba(6,182,212,0.06) !important;
-          border-color: rgba(6,182,212,0.2) !important;
-          color: #06B6D4 !important;
+          background: rgba(99,102,241,0.12) !important;
+          border-color: rgba(99,102,241,0.35) !important;
+          color: #a5b4fc !important;
         }
         .dash-sb-chat-close {
           transition: background 0.15s ease, color 0.15s ease;
@@ -382,180 +394,6 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {data.showOnboarding && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9998,
-            background: "rgba(0,0,0,0.72)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 480,
-              border: "1px solid #1C1C22",
-              background: "var(--card-bg)",
-              borderRadius: 8,
-              padding: 24
-            }}
-          >
-            <h3 style={{ margin: 0, fontWeight: 600, fontSize: 22, color: "var(--text-primary)" }}>Tell us about your business</h3>
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-muted)" }}>
-              3 quick questions to make your landing page stronger
-            </p>
-            <div style={{ marginTop: 20, display: "grid", gap: 16 }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                  Business name
-                </p>
-                <input
-                  className="dash-focusable"
-                  value={data.businessName}
-                  onChange={(e) => data.setBusinessName(e.target.value)}
-                  placeholder="Nike, Alex Design Studio..."
-                  style={{
-                    width: "100%",
-                    marginTop: 8,
-                    border: "1px solid var(--border)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "var(--text-primary)",
-                    padding: "8px 12px",
-                    fontFamily: "inherit",
-                    fontSize: 14,
-                    outline: "none",
-                    boxSizing: "border-box",
-                    borderRadius: 6
-                  }}
-                />
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                  Primary goal
-                </p>
-                <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--text-muted)" }}>What should visitors do?</p>
-                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {["📞 Book a call", "💳 Buy a package", "✉️ Send a message", "📋 Join a waitlist"].map((goal) => {
-                    const selected = data.primaryGoals.includes(goal);
-                    return (
-                      <button
-                        key={goal}
-                        type="button"
-                        onClick={() =>
-                          data.setPrimaryGoals((prev) =>
-                            prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
-                          )
-                        }
-                        style={{
-                          border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
-                          background: selected ? "var(--accent-subtle)" : "rgba(255,255,255,0.04)",
-                          color: selected ? "var(--accent)" : "var(--text-secondary)",
-                          fontFamily: "inherit",
-                          fontSize: 12,
-                          textAlign: "left",
-                          padding: "10px 12px",
-                          cursor: "pointer",
-                          borderRadius: 6
-                        }}
-                      >
-                        {goal}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                  Site vibe
-                </p>
-                <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {["💼 Professional & trustworthy", "⚡ Bold & energetic", "💎 Luxury & premium", "🤝 Warm & approachable"].map((vibe) => {
-                    const selected = data.siteVibe === vibe;
-                    return (
-                      <button
-                        key={vibe}
-                        type="button"
-                        onClick={() => data.setSiteVibe(vibe)}
-                        style={{
-                          border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
-                          background: selected ? "var(--accent-subtle)" : "rgba(255,255,255,0.04)",
-                          color: selected ? "var(--accent)" : "var(--text-secondary)",
-                          fontFamily: "inherit",
-                          fontSize: 12,
-                          textAlign: "left",
-                          padding: "10px 12px",
-                          cursor: "pointer",
-                          borderRadius: 6
-                        }}
-                      >
-                        {vibe}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  data.setShowOnboarding(false);
-                  void data.handleBuildLandingPage();
-                }}
-                style={{
-                  flex: 1,
-                  border: "1px solid var(--border)",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  fontFamily: "inherit",
-                  fontSize: 13,
-                  padding: "8px 16px",
-                  cursor: "pointer",
-                  borderRadius: 6,
-                  fontWeight: 500
-                }}
-              >
-                Skip
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  data.setShowOnboarding(false);
-                  void data.handleBuildLandingPage({
-                    businessName: data.businessName,
-                    primaryGoal: data.primaryGoals.join(", "),
-                    siteVibe: data.siteVibe
-                  });
-                }}
-                disabled={!data.businessName.trim() || data.primaryGoals.length === 0 || !data.siteVibe}
-                style={{
-                  flex: 1,
-                  border: "none",
-                  background:
-                    !data.businessName.trim() || data.primaryGoals.length === 0 || !data.siteVibe ? "var(--border)" : "var(--accent)",
-                  color:
-                    !data.businessName.trim() || data.primaryGoals.length === 0 || !data.siteVibe ? "var(--text-muted)" : "#000",
-                  fontFamily: "inherit",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: "8px 16px",
-                  borderRadius: 6,
-                  cursor:
-                    !data.businessName.trim() || data.primaryGoals.length === 0 || !data.siteVibe ? "not-allowed" : "pointer"
-                }}
-              >
-                Build page
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <aside
         className="dash-sidebar-col border-r border-white/[0.06] bg-[#060608]"
         style={{
@@ -578,13 +416,13 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           <div className="mb-1 flex items-center justify-between">
             <span className="text-[10px] uppercase tracking-wider text-white/30">Your progress</span>
             <span className="text-[10px] text-white/40">
-              {completedSteps} of 4
+              {completedSteps} of {progressTotal}
             </span>
           </div>
           <div className="h-0.5 overflow-hidden rounded-full bg-white/[0.08]">
             <div
               className="h-full rounded-full bg-indigo-500 transition-all duration-500"
-              style={{ width: `${(completedSteps / 4) * 100}%` }}
+              style={{ width: `${(completedSteps / progressTotal) * 100}%` }}
             />
           </div>
         </div>
@@ -762,198 +600,87 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           <aside
             id="dash-sales-builder-panel"
             aria-hidden={!chatOpen}
+            className="box-border flex h-full max-h-screen w-96 max-w-[100vw] flex-col border-l border-white/[0.08] bg-[#0D0F1A] shadow-[-8px_0_40px_rgba(0,0,0,0.5)]"
             style={{
               position: "fixed",
               right: 0,
               top: 0,
-              bottom: 0,
-              width: 400,
-              maxWidth: "100vw",
               zIndex: 999,
-              background: "#0D0D11",
-              borderLeft: "1px solid #1C1C22",
-              boxShadow: "-8px 0 40px rgba(0,0,0,0.5)",
-              display: "flex",
-              flexDirection: "column",
-              height: "100%",
               transform: chatOpen ? "translateX(0)" : "translateX(100%)",
               transition: "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-              pointerEvents: chatOpen ? "auto" : "none",
-              boxSizing: "border-box"
+              pointerEvents: chatOpen ? "auto" : "none"
             }}
           >
-            <div style={{ padding: 20, borderBottom: "1px solid #1C1C22", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 auto" }}>
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "#22c55e",
-                      flexShrink: 0
-                    }}
-                  />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>Sales Builder</span>
+            <div className="flex flex-shrink-0 flex-col border-b border-white/[0.08] px-5 py-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-semibold text-white">Sales Builder</span>
+                  <span className="flex-shrink-0 rounded border border-indigo-500/25 bg-indigo-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-300">
+                    AI
+                  </span>
                 </div>
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 600,
-                    background: "rgba(6,182,212,0.15)",
-                    color: "#06B6D4",
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    border: "1px solid rgba(6,182,212,0.2)",
-                    flexShrink: 0
-                  }}
-                >
-                  AI
-                </span>
                 <button
                   type="button"
-                  className="dash-sb-chat-close"
+                  className="dash-sb-chat-close flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md border-0 bg-white/[0.06] text-base text-zinc-500"
                   aria-label="Close Sales Builder"
                   onClick={() => setChatOpen(false)}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    marginLeft: "auto",
-                    padding: 0,
-                    background: "rgba(255,255,255,0.06)",
-                    borderRadius: 6,
-                    border: "none",
-                    color: "#71717A",
-                    fontSize: 16,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "inherit",
-                    flexShrink: 0,
-                    lineHeight: 1
-                  }}
                 >
                   ✕
                 </button>
               </div>
-              <p style={{ margin: "6px 0 0", fontSize: 11, color: "#52525B" }}>Your AI sales assistant</p>
+              <p className="mt-1.5 text-[11px] text-white/40">Your AI sales assistant</p>
             </div>
 
-            <div
-              style={{
-                padding: "12px 16px",
-                borderBottom: "1px solid #1C1C22",
-                flexShrink: 0,
-                overflowX: "auto",
-                display: "flex",
-                gap: 8,
-                scrollbarWidth: "thin"
-              }}
-            >
+            <div className="flex flex-shrink-0 gap-2 overflow-x-auto border-b border-white/[0.08] px-4 py-3 scrollbar-thin">
               {QUICK_ACTIONS.map((qa) => (
                 <button
                   key={qa.label}
                   type="button"
                   disabled={chatLoading || !data.sessionToken}
-                  className="dash-sb-quick-pill"
+                  className="dash-sb-quick-pill flex-shrink-0 cursor-pointer rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/55 disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => void sendChatMessage(qa.message)}
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid #1C1C22",
-                    color: "#A1A1AA",
-                    fontSize: 11,
-                    padding: "6px 12px",
-                    borderRadius: 20,
-                    cursor: chatLoading || !data.sessionToken ? "not-allowed" : "pointer",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    fontFamily: "inherit",
-                    opacity: chatLoading || !data.sessionToken ? 0.5 : 1
-                  }}
                 >
                   {qa.label}
                 </button>
               ))}
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 0, minHeight: 0 }}>
+            <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-4 py-4">
               {chatMessages.map((m, idx) => (
                 <div
                   key={`${idx}-${m.text.slice(0, 20)}`}
-                  style={{
-                    background: m.role === "user" ? "rgba(6,182,212,0.07)" : "#111116",
-                    border: m.role === "user" ? "1px solid rgba(6,182,212,0.15)" : "1px solid #1C1C22",
-                    borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
-                    padding: "12px 14px",
-                    marginLeft: m.role === "user" ? "auto" : 0,
-                    marginRight: m.role === "user" ? 0 : "auto",
-                    maxWidth: m.role === "user" ? "88%" : "100%",
-                    fontSize: 13,
-                    lineHeight: 1.65,
-                    color: m.role === "user" ? "#E4E4E7" : "#A1A1AA",
-                    boxSizing: "border-box",
-                    marginBottom: 10
-                  }}
+                  className={
+                    m.role === "user"
+                      ? "mb-2.5 ml-8 max-w-[88%] self-end rounded-xl border border-indigo-500/20 bg-indigo-600/20 px-4 py-3 text-sm text-white"
+                      : "mb-2.5 mr-8 max-w-full rounded-xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-sm text-white/85"
+                  }
                 >
                   {m.role === "assistant" ? cleanMarkdown(m.text) : m.text}
                 </div>
               ))}
-              {chatLoading ? (
-                <div style={{ fontSize: 12, color: "#52525B" }}>Thinking…</div>
-              ) : null}
+              {chatLoading ? <div className="text-xs text-white/35">Thinking…</div> : null}
               <div ref={chatEndRef} />
             </div>
 
             <form
               onSubmit={(e) => handleChatSubmit(e)}
-              style={{
-                borderTop: "1px solid #1C1C22",
-                padding: "14px 16px",
-                flexShrink: 0
-              }}
+              className="flex flex-shrink-0 flex-col gap-2 border-t border-white/[0.08] px-4 py-3.5"
             >
               <textarea
-                className="dash-chat-input"
+                className="dash-chat-input min-h-[4.5rem] w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={handleChatKeyDown}
                 rows={3}
                 placeholder="Ask anything…"
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  background: "#16161C",
-                  border: "1px solid #1C1C22",
-                  borderRadius: 8,
-                  padding: "10px 13px",
-                  fontSize: 13,
-                  resize: "none",
-                  fontFamily: "inherit",
-                  color: "#FFFFFF",
-                  outline: "none"
-                }}
               />
               <button
                 type="submit"
                 disabled={chatLoading || !data.sessionToken}
-                style={{
-                  width: "100%",
-                  marginTop: 8,
-                  background: "#06B6D4",
-                  color: "#000",
-                  border: "none",
-                  padding: 10,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  borderRadius: 7,
-                  letterSpacing: "0.06em",
-                  cursor: chatLoading ? "not-allowed" : "pointer",
-                  fontFamily: "inherit",
-                  opacity: chatLoading ? 0.6 : 1
-                }}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                SEND
+                Send
               </button>
             </form>
           </aside>
@@ -962,45 +689,27 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setChatOpen(true)}
-              className="dash-sb-fab dash-sb-fab--closed"
+              className="dash-sb-fab dash-sb-fab--closed fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500"
               aria-expanded={false}
               aria-controls="dash-sales-builder-panel"
-              style={{
-                position: "fixed",
-                bottom: 32,
-                right: 32,
-                zIndex: 1000,
-                padding: "14px 22px",
-                borderRadius: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-                border: "1px solid rgba(255,255,255,0.15)",
-                fontFamily: "inherit",
-                boxShadow: "0 8px 32px rgba(6,182,212,0.35), 0 2px 8px rgba(0,0,0,0.4)",
-                background: "linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)"
-              }}
             >
-              <span style={{ fontSize: 16, lineHeight: 1, color: "#000" }}>⚡</span>
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.05em", color: "#000" }}>Sales Builder</span>
-              <span
-                className="dash-sb-live-dot"
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "#22c55e",
-                  animation: "dash-sb-dot-pulse 2s ease-in-out infinite",
-                  flexShrink: 0
-                }}
-              />
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                <path
+                  d="M7 1L9 5H13L10 8L11 12L7 10L3 12L4 8L1 5H5L7 1Z"
+                  fill="currentColor"
+                />
+              </svg>
+              Sales Builder
             </button>
           ) : null}
         </>
       ) : null}
 
-      <OnboardingWizard />
+      {toastMsg ? (
+        <div className="fixed bottom-6 left-1/2 z-[10001] -translate-x-1/2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white shadow-lg">
+          {toastMsg}
+        </div>
+      ) : null}
     </main>
   );
 }

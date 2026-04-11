@@ -1,154 +1,201 @@
 "use client";
 
-import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
-import { dash } from "@/components/dashboard/dashTokens";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 
 export default function DashboardSettingsPage() {
   const d = useDashboardData();
+  const [billingPlan, setBillingPlan] = useState<string | null>(null);
+  const [billingCredits, setBillingCredits] = useState<number | null>(null);
 
-  const toggleActive = (on: boolean) => ({
-    borderColor: on ? "rgba(6,182,212,0.4)" : "#1C1C22",
-    background: on ? "rgba(6,182,212,0.15)" : "transparent",
-    color: on ? "#06B6D4" : "var(--text-secondary)"
-  });
+  const loadBilling = useCallback(async () => {
+    try {
+      const res = await fetch("/api/credits/balance", { credentials: "include", cache: "no-store" });
+      if (!res.ok) return;
+      const json = (await res.json()) as { plan?: string; credits_balance?: number };
+      setBillingPlan(typeof json.plan === "string" ? json.plan : "free");
+      setBillingCredits(typeof json.credits_balance === "number" ? json.credits_balance : 0);
+    } catch {
+      setBillingPlan("free");
+      setBillingCredits(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadBilling();
+  }, [loadBilling]);
+
+  const toggleBtn = (on: boolean) =>
+    on
+      ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-300"
+      : "border-white/10 bg-transparent text-white/50";
 
   return (
-    <div style={{ ...dash.pageShell, maxWidth: 520 }}>
-      <DashPageHeader title="Settings" subtitle="Manage your account and preferences" />
+    <div className="min-h-full max-w-xl">
+      <div className="mb-6">
+        <h1 className="mb-1 text-2xl font-semibold text-white">Settings</h1>
+        <p className="text-sm text-white/45">Manage your account and preferences</p>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div style={{ ...dash.card }}>
-          <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Profile</p>
-          <div style={{ display: "grid", gap: 16 }}>
-            <div>
-              <p style={dash.sectionTitle}>Display name</p>
-              <input
-                className="dash-focusable"
-                type="text"
-                value={d.profileDisplayName}
-                onChange={(e) => d.setProfileDisplayName(e.target.value)}
-                style={dash.input}
-              />
-            </div>
-            <div>
-              <p style={dash.sectionTitle}>Email</p>
-              <input
-                className="dash-focusable"
-                type="text"
-                readOnly
-                value={d.email || "—"}
-                style={{ ...dash.input, color: "#52525B" }}
-              />
-            </div>
-            <div>
-              <p style={dash.sectionTitle}>Telegram</p>
-              <input
-                className="dash-focusable"
-                type="text"
-                value={d.profileTelegram}
-                onChange={(e) => d.setProfileTelegram(e.target.value)}
-                placeholder="@username"
-                style={dash.input}
-              />
-            </div>
-            <div>
-              <p style={dash.sectionTitle}>WhatsApp</p>
-              <input
-                className="dash-focusable"
-                type="text"
-                value={d.profileWhatsapp}
-                onChange={(e) => d.setProfileWhatsapp(e.target.value)}
-                placeholder="+1..."
-                style={dash.input}
-              />
-            </div>
-            {d.profileSaveError ? <p style={{ color: "var(--danger)", fontSize: 12, margin: 0 }}>{d.profileSaveError}</p> : null}
-            <button
-              type="button"
-              disabled={d.profileSaving}
-              onClick={() => void d.handleSaveProfile()}
-              style={{ ...dash.btnSettingsSave, alignSelf: "flex-start", opacity: d.profileSaving ? 0.6 : 1 }}
-            >
-              {d.profileSaving ? "Saving…" : "Save"}
-            </button>
-          </div>
-        </div>
-
-        <div style={{ ...dash.card }}>
-          <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Notifications</p>
-          <p style={dash.sectionTitle}>Email</p>
-          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            <button
-              type="button"
-              onClick={() => d.setProfileEmailNotifications(true)}
-              style={{
-                ...dash.btnGhost,
-                ...toggleActive(d.profileEmailNotifications),
-                flex: 1
-              }}
-            >
-              On
-            </button>
-            <button
-              type="button"
-              onClick={() => d.setProfileEmailNotifications(false)}
-              style={{
-                ...dash.btnGhost,
-                ...toggleActive(!d.profileEmailNotifications),
-                flex: 1
-              }}
-            >
-              Off
-            </button>
-          </div>
-          <p style={dash.sectionTitle}>Telegram chat ID</p>
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-4 text-sm font-medium text-white">Profile</p>
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Display name</span>
           <input
-            className="dash-focusable"
+            className="dash-focusable w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
+            type="text"
+            value={d.profileDisplayName}
+            onChange={(e) => d.setProfileDisplayName(e.target.value)}
+          />
+        </label>
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Email</span>
+          <input
+            className="w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/40"
+            type="text"
+            readOnly
+            value={d.email || "—"}
+          />
+        </label>
+        {d.profileSaveError ? <p className="mb-3 text-sm text-red-400">{d.profileSaveError}</p> : null}
+        <button
+          type="button"
+          disabled={d.profileSaving}
+          onClick={() => void d.handleSaveProfile()}
+          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {d.profileSaving ? "Saving…" : "Save"}
+        </button>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-4 text-sm font-medium text-white">Notifications</p>
+        <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Email</span>
+        <div className="mb-5 flex gap-2">
+          <button
+            type="button"
+            onClick={() => d.setProfileEmailNotifications(true)}
+            className={`flex-1 rounded-xl border px-4 py-2.5 text-sm transition-colors ${toggleBtn(d.profileEmailNotifications)}`}
+          >
+            On
+          </button>
+          <button
+            type="button"
+            onClick={() => d.setProfileEmailNotifications(false)}
+            className={`flex-1 rounded-xl border px-4 py-2.5 text-sm transition-colors ${toggleBtn(!d.profileEmailNotifications)}`}
+          >
+            Off
+          </button>
+        </div>
+        <label className="block">
+          <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Telegram chat ID</span>
+          <input
+            className="dash-focusable w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
             type="text"
             value={d.profileTelegramChatId}
             onChange={(e) => d.setProfileTelegramChatId(e.target.value)}
             placeholder="123456789"
-            style={{ ...dash.input, marginBottom: 8 }}
           />
-          <p style={{ ...dash.small, margin: 0, lineHeight: 1.5 }}>
-            To get your Chat ID: open Telegram → find @lacorebot → send /start → bot will reply with your Chat ID
-          </p>
-          <p style={{ ...dash.small, margin: "12px 0 0", fontStyle: "italic" }}>
-            Use Save above to persist notification settings.
-          </p>
-        </div>
+        </label>
+        <p className="mt-2 text-xs leading-relaxed text-white/35">
+          To get your Chat ID: open Telegram → find @lacorebot → send /start → the bot replies with your Chat ID.
+        </p>
+        <p className="mt-3 text-xs text-white/30">Use Save below to persist notification settings.</p>
+      </div>
 
-        <div style={{ ...dash.card }}>
-          <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Appearance</p>
-          <div style={{ display: "flex", gap: 8 }}>
-            {(["dark", "light"] as const).map((theme) => {
-              const active = d.uiTheme === theme;
-              return (
-                <button
-                  key={theme}
-                  type="button"
-                  onClick={() => d.setDashboardTheme(theme)}
-                  style={{
-                    ...dash.btnGhost,
-                    flex: 1,
-                    textTransform: "uppercase",
-                    ...toggleActive(active)
-                  }}
-                >
-                  {theme}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-4 text-sm font-medium text-white">Integrations</p>
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Telegram</span>
+          <input
+            className="dash-focusable w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
+            type="text"
+            value={d.profileTelegram}
+            onChange={(e) => d.setProfileTelegram(e.target.value)}
+            placeholder="@username"
+          />
+        </label>
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">WhatsApp</span>
+          <input
+            className="dash-focusable w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
+            type="text"
+            value={d.profileWhatsapp}
+            onChange={(e) => d.setProfileWhatsapp(e.target.value)}
+            placeholder="+1…"
+          />
+        </label>
+        <button
+          type="button"
+          disabled={d.profileSaving}
+          onClick={() => void d.handleSaveProfile()}
+          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {d.profileSaving ? "Saving…" : "Save integrations"}
+        </button>
+      </div>
 
-        <div style={{ ...dash.card }}>
-          <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Account</p>
-          <button type="button" onClick={() => void d.handleSignOut()} style={dash.btnDanger}>
-            Sign out
-          </button>
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-4 text-sm font-medium text-white">Billing</p>
+        <p className="text-xs uppercase tracking-wider text-white/40">Current plan</p>
+        <p className="mt-1 text-lg font-semibold capitalize text-white">
+          {billingPlan === null ? "…" : billingPlan}
+        </p>
+        <p className="mt-4 text-xs uppercase tracking-wider text-white/40">Credits balance</p>
+        <p className="mt-1 text-lg font-semibold text-white">
+          {billingCredits === null ? "…" : billingCredits}
+        </p>
+        <Link
+          href="/#pricing"
+          className="mt-4 inline-block text-sm text-indigo-400 transition-colors hover:text-indigo-300"
+        >
+          Upgrade plan →
+        </Link>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-4 text-sm font-medium text-white">Appearance</p>
+        <div className="flex gap-2">
+          {(["dark", "light"] as const).map((theme) => (
+            <button
+              key={theme}
+              type="button"
+              onClick={() => d.setDashboardTheme(theme)}
+              className={`flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase transition-colors ${toggleBtn(d.uiTheme === theme)}`}
+            >
+              {theme}
+            </button>
+          ))}
         </div>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-4 text-sm font-medium text-white">Session</p>
+        <button
+          type="button"
+          onClick={() => void d.handleSignOut()}
+          className="rounded-xl border border-white/15 px-5 py-2.5 text-sm font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white"
+        >
+          Sign out
+        </button>
+      </div>
+
+      <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
+        <p className="mb-2 text-sm font-medium text-red-300">Danger zone</p>
+        <p className="mb-4 text-xs text-white/40">
+          Account deletion is permanent. Contact us to remove your data and cancel billing.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href =
+              "mailto:support@lacore.ai?subject=Delete%20my%20LACORE%20account&body=Please%20delete%20my%20account%20associated%20with%20this%20email.";
+          }}
+          className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-500"
+        >
+          Request account deletion
+        </button>
       </div>
     </div>
   );

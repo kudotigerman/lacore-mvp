@@ -27,7 +27,7 @@ export default function AuthPage() {
         data: { session }
       } = await supabase.auth.getSession();
       if (!cancelled && session?.user) {
-        router.replace("/dashboard");
+        router.replace("/dashboard/offer");
       }
     }
     void redirectIfSession();
@@ -37,7 +37,7 @@ export default function AuthPage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session?.user) return;
       if (event === "SIGNED_IN") {
-        router.replace("/dashboard");
+        router.replace("/dashboard/offer");
       }
     });
 
@@ -61,7 +61,7 @@ export default function AuthPage() {
         // For easier local testing, disable email confirmations in Supabase Dashboard:
         // Authentication -> Providers -> Email -> turn off "Confirm email".
         const redirectUrl =
-          typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined;
+          typeof window !== "undefined" ? `${window.location.origin}/dashboard/offer` : undefined;
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
@@ -69,7 +69,7 @@ export default function AuthPage() {
         });
         if (signUpError) throw signUpError;
         if (signUpData.session?.user) {
-          router.replace("/dashboard");
+          router.replace("/dashboard/offer");
           return;
         }
         setConfirmationEmail(normalizedEmail);
@@ -82,7 +82,7 @@ export default function AuthPage() {
         password
       });
       if (signInError) throw signInError;
-      router.replace("/dashboard");
+      router.replace("/dashboard/offer");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
@@ -99,7 +99,7 @@ export default function AuthPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: origin ? `${origin}/dashboard` : "https://www.lacore.ai/dashboard"
+          redirectTo: origin ? `${origin}/dashboard/offer` : "https://www.lacore.ai/dashboard/offer"
         }
       });
       if (oauthError) throw oauthError;

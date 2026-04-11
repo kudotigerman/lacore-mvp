@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -196,6 +197,8 @@ export default function DashboardAnalyticsPage() {
 
   const recentFive = leads.slice(0, 5);
 
+  const isAnalyticsEmpty = !loading && totalLeads === 0 && (landingViews ?? 0) === 0;
+
   const viewsCaption =
     viewsMeta === "unavailable"
       ? "Coming soon"
@@ -222,6 +225,22 @@ export default function DashboardAnalyticsPage() {
 
       {loading ? (
         <p style={{ ...dash.body, color: TEXT_MUTED }}>Loading…</p>
+      ) : isAnalyticsEmpty ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-4 text-white/20" aria-hidden>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M7 15l4-4 4 4 5-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h3 className="mb-2 font-medium text-white">No data yet</h3>
+          <p className="mb-5 max-w-xs text-sm text-white/40">
+            Share your landing page to start getting views and leads. Your analytics will appear here.
+          </p>
+          <Link href="/dashboard/landing" className="text-sm text-indigo-400 transition-colors hover:text-indigo-300">
+            Go to Landing page →
+          </Link>
+        </div>
       ) : (
         <>
           <div

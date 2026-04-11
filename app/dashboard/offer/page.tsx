@@ -3,7 +3,8 @@
 import { flushSync } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OfferVariant } from "@/app/api/generate-offer/route";
-import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/app/components/OnboardingWizard";
+import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/lib/onboarding-keys";
+import { dashToast } from "@/lib/dash-toast";
 import { DashboardStepShell } from "@/components/dashboard/DashboardStepShell";
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { dash } from "@/components/dashboard/dashTokens";
@@ -104,6 +105,7 @@ export default function DashboardOfferPage() {
       }
       setVariants(data.variants);
       setChooseError(null);
+      dashToast("Your offer is ready! ✓");
       try {
         localStorage.removeItem(ONBOARDING_INPUT_KEY);
         sessionStorage.removeItem(ONBOARDING_GENERATING_KEY);
