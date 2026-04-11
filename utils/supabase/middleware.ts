@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Refresh auth cookies on the response. No redirects — dashboard auth is enforced in `app/dashboard/layout.tsx`.
+ * Refresh auth cookies on the response, protect `/dashboard` unless the request follows OAuth callback.
  * `getUser()` triggers token refresh when needed (Supabase SSR pattern).
  */
 export async function updateSession(request: NextRequest) {
@@ -29,7 +29,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  const referer = request.headers.get("referer") ?? "";
+  if (referer.includes("/auth/callback")) {
+    return supabaseResponse;
+  }
+
+  if (!user && pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/auth", request.url));
+  }
 
   return supabaseResponse;
 }
