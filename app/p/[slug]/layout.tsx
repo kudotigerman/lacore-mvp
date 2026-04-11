@@ -40,7 +40,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title,
     icons: {
-      icon: "/favicon.ico"
+      icon: "/icon",
+      apple: "/apple-icon"
     }
   };
 }

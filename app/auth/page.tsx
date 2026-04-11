@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type AuthMode = "signup" | "signin";
@@ -136,17 +137,9 @@ export default function AuthPage() {
         >
           ← BACK TO LACORE
         </Link>
-        <p
-          style={{
-            margin: "10px 0 0",
-            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-            fontSize: 12,
-            letterSpacing: "0.3em",
-            color: "var(--accent)"
-          }}
-        >
-          LACORE
-        </p>
+        <div style={{ marginTop: 12 }}>
+          <Logo size="lg" variant="dark" href="/" />
+        </div>
         <h1
           style={{
             margin: "14px 0 0",

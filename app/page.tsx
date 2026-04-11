@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { HomePricingSection } from "@/components/home/HomePricingSection";
+import { Logo } from "@/components/Logo";
 
 const PLACEHOLDER_EXAMPLES = [
   "I coach founders on building high-performance teams...",
@@ -111,12 +112,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#07080F] text-white antialiased" style={{ fontFamily: "var(--font-geist-sans), Inter, system-ui, sans-serif" }}>
       <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#07080F]/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link
-            href="/"
-            className="font-plus-jakarta text-sm font-medium tracking-[0.1em] text-white no-underline"
-          >
-            LACORE
-          </Link>
+          <Logo size="md" variant="dark" href="/" />
           <div className="hidden items-center gap-6 md:flex">
             <button
               type="button"
@@ -234,7 +230,7 @@ export default function HomePage() {
             </div>
             <div className="flex min-h-[280px] flex-col md:flex-row">
               <aside className="w-full shrink-0 border-white/[0.06] bg-black/30 p-5 md:w-[220px] md:border-r">
-                <p className="font-plus-jakarta text-[10px] font-medium tracking-[0.12em] text-white/40">LACORE</p>
+                <Logo size="sm" variant="dark" href={false} className="opacity-90" />
                 <div className="mt-4 rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 text-xs text-white/70">
                   Project 1 <span className="text-white/35">▾</span>
                 </div>
@@ -529,8 +525,8 @@ export default function HomePage() {
       <footer className="relative z-[1] border-t border-white/5 px-6 py-8 text-xs text-white/25 sm:px-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-plus-jakarta text-sm font-medium tracking-[0.1em] text-white/80">LACORE</p>
-            <p className="mt-2 max-w-xs">Your business. Our sales machine.</p>
+            <Logo size="md" variant="dark" href="/" />
+            <p className="mt-3 max-w-xs text-white/25">Your business. Our sales machine.</p>
           </div>
           <div className="flex flex-col gap-3 sm:items-end sm:text-right">
             <div className="flex flex-wrap gap-x-3 gap-y-1">

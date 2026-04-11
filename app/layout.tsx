@@ -19,10 +19,18 @@ const themeInitScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "LACORE",
-  description: "You say what you sell. LACORE does the rest.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.lacore.ai"),
+  title: "LACORE — Your AI Sales Machine",
+  description:
+    "From offer to first client in 60 minutes. AI-powered sales system for freelancers and consultants.",
   icons: {
-    icon: "/favicon.svg"
+    icon: "/icon",
+    apple: "/apple-icon"
+  },
+  openGraph: {
+    title: "LACORE — Your AI Sales Machine",
+    description: "From offer to first client in 60 minutes.",
+    siteName: "LACORE"
   },
   verification: {
     google: "5tSyzFVAJt2ONZr3Nw2YgU4nuQ2HSR1qcVE3-wWKuqw"

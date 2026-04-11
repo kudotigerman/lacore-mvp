@@ -15,6 +15,7 @@ import {
 import OnboardingWizard from "@/app/components/OnboardingWizard";
 import ProjectSelector from "@/app/components/dashboard/ProjectSelector";
 import { CreditsWidget } from "@/components/dashboard/CreditsWidget";
+import { Logo } from "@/components/Logo";
 import {
   buildSalesBuilderIntro,
   profileInitialsFromName,
@@ -567,9 +568,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         }}
       >
         <div className="flex-shrink-0 px-4 pb-3 pt-5">
-          <Link href="/" className="block text-sm font-medium tracking-[0.1em] text-white no-underline">
-            LACORE
-          </Link>
+          <Logo size="sm" variant="dark" href="/dashboard/offer" />
           <div className="mt-2.5">
             <ProjectSelector />
           </div>
