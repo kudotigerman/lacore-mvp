@@ -16,12 +16,37 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
 
-    if (!code) {
-      throw new Error("missing oauth code");
-    }
-
     const redirectBase =
       process.env.NODE_ENV === "development" ? url.origin : PROD_APP_ORIGIN;
+
+    if (!code) {
+      const offerResponse = NextResponse.redirect(new URL("/dashboard/offer", redirectBase));
+      const cookieStore = cookies();
+      const supabaseNoCode = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                offerResponse.cookies.set(name, value, options)
+              );
+            }
+          }
+        }
+      );
+      const {
+        data: { user }
+      } = await supabaseNoCode.auth.getUser();
+      if (user) {
+        return offerResponse;
+      }
+      return NextResponse.redirect(new URL("/auth", redirectBase));
+    }
+
     const response = NextResponse.redirect(new URL("/dashboard/offer", redirectBase));
 
     const cookieStore = cookies();

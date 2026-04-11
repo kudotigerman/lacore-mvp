@@ -96,7 +96,7 @@ export default function AuthPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://www.lacore.ai/auth/callback?next=/dashboard/offer"
+          redirectTo: "https://www.lacore.ai/auth/callback"
         }
       });
       if (oauthError) throw oauthError;
