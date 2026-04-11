@@ -223,7 +223,7 @@ export default function HomePage() {
 
       {/* Product preview */}
       <section id="product-preview" className="relative z-[1] px-4 sm:px-6">
-        <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/5 to-transparent px-3 pb-3 sm:mt-16 sm:px-0 sm:pb-0">
+        <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/5 to-transparent px-3 pb-3 sm:mt-10 sm:px-0 sm:pb-0">
           <div className="overflow-hidden rounded-xl border border-white/[0.08] sm:rounded-2xl">
             <div className="flex items-center gap-2 border-b border-white/[0.06] bg-black/40 px-4 py-3">
               <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
@@ -273,19 +273,24 @@ export default function HomePage() {
       </section>
 
       {/* Logos */}
-      <div className="mx-auto max-w-5xl border-y border-white/5 py-8 text-center">
+      <div className="mx-auto max-w-5xl border-y border-white/5 py-6 text-center">
         <p className="text-xs text-white/20">Trusted by freelancers and consultants from</p>
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4">
-          {["Upwork", "Toptal", "Fiverr", "LinkedIn", "99designs", "Clutch"].map((name) => (
-            <span key={name} className="text-sm font-medium tracking-wide text-white/20">
-              {name}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 px-4 text-sm font-medium tracking-wide text-white/35">
+          {["Upwork", "Toptal", "Fiverr", "LinkedIn", "99designs", "Clutch"].map((name, i) => (
+            <span key={name} className="inline-flex items-center gap-x-2">
+              {i > 0 ? (
+                <span className="select-none text-white/25" aria-hidden>
+                  ·
+                </span>
+              ) : null}
+              <span>{name}</span>
             </span>
           ))}
         </div>
       </div>
 
       {/* How it works */}
-      <section id="how-it-works" className="scroll-mt-20 px-4 py-14 sm:px-6 sm:py-14">
+      <section id="how-it-works" className="scroll-mt-20 px-4 py-10 sm:px-6 sm:py-10">
         <div className="animate-on-scroll mx-auto max-w-5xl text-center">
           <div className="mx-auto inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-white/45">
             How it works
@@ -295,7 +300,7 @@ export default function HomePage() {
             LACORE turns what you do into a complete sales system — automatically.
           </p>
 
-          <div className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 n: "01",
@@ -333,7 +338,7 @@ export default function HomePage() {
                   className="relative bg-[#0D0F1A] p-7 text-left"
                 >
                   <p className="text-xs font-semibold text-white/25">{card.n}</p>
-                  <div className={`mt-3 flex h-10 w-10 items-center justify-center rounded-xl ${card.box}`}>
+                  <div className={`mt-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.box}`}>
                     <Icon />
                   </div>
                   <h3 className="mt-4 text-base font-semibold text-white">{card.title}</h3>
@@ -351,8 +356,8 @@ export default function HomePage() {
       </section>
 
       {/* Comparison */}
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <h2 className="mb-10 text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
+      <section className="px-4 py-8 sm:px-6 sm:py-10">
+        <h2 className="mb-6 text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
           The tools exist. The clients don&apos;t.
         </h2>
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3">
@@ -375,12 +380,12 @@ export default function HomePage() {
       </section>
 
       {/* Bento */}
-      <section className="animate-on-scroll px-4 py-10 sm:px-6 sm:py-14">
+      <section className="animate-on-scroll px-4 py-8 sm:px-6 sm:py-10">
         <div className="mx-auto max-w-5xl">
           <h2 className="font-plus-jakarta text-center text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
             Everything you need to go from freelancer to booked.
           </h2>
-          <div className="mt-10 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="md:col-span-2 rounded-2xl border border-white/[0.07] bg-[#13151F] p-6 sm:p-8">
               <h3 className="text-lg font-semibold text-white sm:text-xl">Your landing page — live in 60 seconds</h3>
               <p className="mt-2 text-sm text-white/45">
@@ -452,7 +457,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="animate-on-scroll px-4 py-10 sm:px-6 sm:py-14">
+      <section className="animate-on-scroll px-4 py-8 sm:px-6 sm:py-10">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             {
@@ -477,7 +482,7 @@ export default function HomePage() {
               bg: "bg-violet-600"
             }
           ].map((t) => (
-            <div key={t.initials} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6">
+            <div key={t.initials} className="rounded-2xl border border-white/[0.12] bg-white/[0.03] p-6">
               <p className="text-amber-400">★★★★★</p>
               <p className="mt-3 text-sm leading-relaxed text-white/60">&quot;{t.quote}&quot;</p>
               <div className="mt-5 flex items-center gap-3">
@@ -493,13 +498,13 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section id="pricing" className="animate-on-scroll scroll-mt-20 px-4 pb-14 sm:px-6">
-        <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:p-16">
+      <section id="pricing" className="scroll-mt-20 px-4 pb-10 pt-8 sm:px-6 sm:pb-10 sm:pt-8">
+        <div className="relative z-[1] mx-auto max-w-4xl overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:p-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,0.2),transparent_65%)]" />
-          <div className="relative z-[1]">
+          <div className="relative z-[2]">
             <h2 className="text-4xl font-bold tracking-tight text-white">Ready to build your sales machine?</h2>
             <p className="mx-auto mt-3 max-w-xl text-white/45">Join 2,400+ freelancers already getting leads on autopilot.</p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <Link
                 href="/auth"
                 className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-8 py-4 text-base font-medium text-white no-underline transition hover:bg-indigo-500 sm:w-auto"
@@ -518,7 +523,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 px-6 py-10 text-xs text-white/25 sm:px-10">
+      <footer className="relative z-[1] border-t border-white/5 px-6 py-8 text-xs text-white/25 sm:px-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-plus-jakarta text-sm font-medium tracking-[0.1em] text-white/80">LACORE</p>
