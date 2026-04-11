@@ -4,6 +4,7 @@ import { checkCredits, deductCredits } from "@/lib/credits";
 import { createClient } from "@/utils/supabase/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const systemPrompt = `You are a world-class business strategist and copywriter. Given what someone sells, generate 3 distinct positioning strategies as a JSON array. Each strategy must be genuinely different in target audience, pricing model, and positioning angle.
@@ -93,7 +94,8 @@ export async function POST(request: Request) {
     console.log("generate-offer: user=", user?.id ?? "null");
 
     if (authErr || !user) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      console.error("generate-offer: unauthorized", authErr?.message ?? "no user");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const hasCredits = await checkCredits(supabaseForDb, user.id, "generate_offer");

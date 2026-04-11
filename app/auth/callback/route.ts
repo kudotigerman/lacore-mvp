@@ -5,9 +5,24 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
+function buildRedirectLocation(request: Request, path: string): string {
+  const url = new URL(request.url);
+  const origin = url.origin;
+  const safe = path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard/offer";
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocalEnv = process.env.NODE_ENV === "development";
+  if (isLocalEnv) {
+    return `${origin}${safe}`;
+  }
+  if (forwardedHost) {
+    const host = forwardedHost.split(",")[0]?.trim().split(":")[0] ?? "";
+    if (host) return `https://${host}${safe}`;
+  }
+  return `${origin}${safe}`;
+}
+
 /**
- * OAuth PKCE return URL. Session cookies are attached to the redirect response.
- * Also ensures `profiles` row with starter credits (fallback if DB trigger did not run).
+ * OAuth PKCE: attach session cookies to redirect response, then ensure profile + credits via service role.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,13 +30,13 @@ export async function GET(request: Request) {
   const nextRaw = url.searchParams.get("next") ?? "/dashboard/offer";
   const safeNext =
     nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/dashboard/offer";
-  const redirectTo = new URL(safeNext, url.origin);
 
   if (!code) {
     return NextResponse.redirect(new URL("/auth", url.origin));
   }
 
-  const response = NextResponse.redirect(redirectTo);
+  const redirectLocation = buildRedirectLocation(request, safeNext);
+  const response = NextResponse.redirect(redirectLocation);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,72 +53,72 @@ export async function GET(request: Request) {
     }
   );
 
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) {
+  const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (exchangeError || !exchangeData?.session?.user) {
     return NextResponse.redirect(
-      new URL(`/auth?error=${encodeURIComponent(exchangeError.message)}`, url.origin)
+      new URL(
+        `/auth?error=${encodeURIComponent(exchangeError?.message ?? "callback_failed")}`,
+        url.origin
+      )
     );
   }
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const sessionUser = exchangeData.session.user;
+  const userId = sessionUser.id;
 
-  if (user) {
-    const { data: existing } = await supabase
+  const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (serviceUrl && serviceKey) {
+    const serviceClient = createServiceClient(serviceUrl, serviceKey);
+
+    const { data: existingProfile, error: selectErr } = await serviceClient
       .from("profiles")
       .select("user_id, credits_balance")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
-    const row = existing as { user_id: string; credits_balance: number | null } | null;
+    if (selectErr) {
+      console.error("callback: profile select error", selectErr.message);
+    }
 
+    const row = existingProfile as { user_id: string; credits_balance: number | null } | null;
+
+    const meta = sessionUser.user_metadata as Record<string, unknown> | undefined;
     const displayName =
-      (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()) ||
-      user.email?.split("@")[0] ||
+      (typeof meta?.full_name === "string" && meta.full_name.trim()) ||
+      (typeof meta?.name === "string" && meta.name.trim()) ||
+      sessionUser.email?.split("@")[0] ||
       "User";
 
     if (!row) {
-      const { error: insErr } = await supabase.from("profiles").insert({
-        user_id: user.id,
+      const { error: insertErr } = await serviceClient.from("profiles").insert({
+        user_id: userId,
         plan: "free",
         credits_balance: 20,
         subscription_status: "inactive",
-        display_name: displayName
+        display_name: displayName,
+        email_notifications: true
       } as never);
-      if (insErr) {
-        const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (serviceUrl && serviceKey) {
-          const admin = createServiceClient(serviceUrl, serviceKey);
-          await admin.from("profiles").upsert(
-            {
-              user_id: user.id,
-              plan: "free",
-              credits_balance: 20,
-              subscription_status: "inactive",
-              display_name: displayName,
-              updated_at: new Date().toISOString()
-            } as never,
-            { onConflict: "user_id" }
-          );
-        }
+      if (insertErr) {
+        console.error("callback: profile insert error", insertErr.message);
+      } else {
+        console.log("callback: created new profile for", userId, "with 20 credits");
       }
     } else if (row.credits_balance == null || row.credits_balance === 0) {
-      await supabase.from("profiles").update({ credits_balance: 20, plan: "free" }).eq("user_id", user.id);
-    }
-
-    const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (serviceUrl && serviceKey) {
-      const { createClient: createServiceClientDynamic } = await import("@supabase/supabase-js");
-      const serviceClient = createServiceClientDynamic(serviceUrl, serviceKey);
-      await serviceClient
+      const { error: updErr } = await serviceClient
         .from("profiles")
         .update({ credits_balance: 20, plan: "free" })
-        .eq("user_id", user.id)
-        .eq("credits_balance", 0);
+        .eq("user_id", userId);
+      if (updErr) {
+        console.error("callback: profile credits update error", updErr.message);
+      } else {
+        console.log("callback: fixed credits for", userId);
+      }
     }
+  } else {
+    console.error("auth/callback: SUPABASE_SERVICE_ROLE_KEY missing — profile not ensured server-side");
   }
 
   return response;

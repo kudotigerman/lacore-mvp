@@ -66,7 +66,11 @@ export function CreditsWidget() {
 
   const handleTopup = async (priceId: string) => {
     const paddle = paddleReady ? getPaddleInstance() : null;
-    if (!paddle?.Checkout) return;
+    if (!paddle?.Checkout) {
+      console.error("Paddle not initialized");
+      alert("Payment system loading, please try again in a moment");
+      return;
+    }
     const res = await fetch("/api/billing/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

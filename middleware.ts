@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 /** Host only, lowercased, no leading www. (matches rows stored as e.g. geth.meme) */
 function normalizedHost(request: NextRequest): string {
@@ -14,6 +14,45 @@ function normalizedHost(request: NextRequest): string {
 }
 
 export async function middleware(request: NextRequest) {
+  /** Require auth for all /dashboard routes (Supabase SSR cookie refresh on response). */
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    let supabaseResponse = NextResponse.next({ request });
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => {
+              request.cookies.set(name, value);
+            });
+            supabaseResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) => {
+              supabaseResponse.cookies.set(name, value, options);
+            });
+          }
+        }
+      }
+    );
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth";
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  }
+
+  /** Custom domain → rewrite to /p/[slug] (non-primary hosts only). */
   const host = normalizedHost(request);
 
   const isPrimaryAppHost =
@@ -88,7 +127,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|_next/data|favicon.ico|sitemap.xml|robots.txt).*)"
-  ]
+  matcher: ["/((?!api|_next/static|_next/image|_next/data|favicon.ico|sitemap.xml|robots.txt).*)"]
 };

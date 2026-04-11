@@ -93,7 +93,11 @@ export function HomePricingSection() {
   const openCheckout = useCallback(
     async (priceId: string) => {
       const paddle = paddleReady ? getPaddleInstance() : null;
-      if (!paddle?.Checkout) return;
+      if (!paddle?.Checkout) {
+        console.error("Paddle not initialized");
+        alert("Payment system loading, please try again in a moment");
+        return;
+      }
 
       if (user) {
         const res = await fetch("/api/billing/checkout", {

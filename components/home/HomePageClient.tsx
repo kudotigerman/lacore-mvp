@@ -103,6 +103,11 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   function handleHeroSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!heroInput.trim()) return;
+    try {
+      localStorage.setItem("lacore_prefill_offer", heroInput.trim());
+    } catch {
+      /* ignore */
+    }
     window.location.assign("/auth");
   }
 

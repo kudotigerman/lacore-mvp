@@ -65,12 +65,24 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
         let list = (data ?? []) as Project[];
         if (list.length === 0) {
-          const { data: inserted } = await supabase
+          const { data: inserted, error: insertErr } = await supabase
             .from("projects")
             .insert({ user_id: user.id, name: "My Project" } as never)
             .select("*")
-            .single();
-          if (inserted) list = [inserted as Project];
+            .maybeSingle();
+          if (insertErr) {
+            console.error("[ProjectContext] default project insert:", insertErr.message);
+          }
+          if (inserted) {
+            list = [inserted as Project];
+          } else {
+            const { data: again } = await supabase
+              .from("projects")
+              .select("*")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: true });
+            list = (again ?? []) as Project[];
+          }
         }
 
         if (!cancelled) {

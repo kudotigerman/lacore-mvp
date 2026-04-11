@@ -75,6 +75,17 @@ export default function DashboardOfferPage() {
   const [refineOpen, setRefineOpen] = useState(false);
   const credits = useCreditsBalance();
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("lacore_prefill_offer");
+      if (!raw?.trim()) return;
+      localStorage.removeItem("lacore_prefill_offer");
+      setWhatYouDo(raw.trim());
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const offer = d.offer;
   const displayOffer = offer ? (pendingRefinement ?? offer) : null;
 
