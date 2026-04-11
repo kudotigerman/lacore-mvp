@@ -17,15 +17,16 @@ body { font-family: 'Inter', sans-serif; background: #0A0A0D; color: #FAFAFA; ov
 img { max-width: 100%; height: auto; display: block; }
 a { text-decoration: none; color: inherit; }
 
-DETECT NICHE from user's offer and apply:
-- FITNESS/HEALTH: accent=#EF4444, hero-image=https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80
-- DESIGNER/CREATIVE: accent=#8B5CF6, hero-image=https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1400&q=80  
-- DEVELOPER/TECH: accent=#06B6D4, hero-image=https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1400&q=80
-- COACH/CONSULTANT: accent=#10B981, hero-image=https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&q=80
-- AGENCY: accent=#F59E0B, hero-image=https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80
-- DEFAULT: accent=#06B6D4, hero-image=https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80
+DETECT NICHE from user's offer and apply (each row: pick accent_light + accent_hover as lighter/darker partners of accent):
+- FITNESS/HEALTH: accent=#EF4444, accent_light=#FCA5A5, accent_hover=#DC2626, hero-image=https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80
+- DESIGNER/CREATIVE: accent=#8B5CF6, accent_light=#C4B5FD, accent_hover=#7C3AED, hero-image=https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1400&q=80  
+- DEVELOPER/TECH: accent=#6366F1, accent_light=#818CF8, accent_hover=#4F46E5, hero-image=https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1400&q=80
+- COACH/CONSULTANT: accent=#10B981, accent_light=#6EE7B7, accent_hover=#059669, hero-image=https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&q=80
+- AGENCY: accent=#F59E0B, accent_light=#FCD34D, accent_hover=#D97706, hero-image=https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80
+- DEFAULT: accent=#6366F1, accent_light=#818CF8, accent_hover=#4F46E5, hero-image=https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80
 
-Use ACCENT_COLOR as variable below for all accent uses.
+Use ACCENT_COLOR, ACCENT_COLOR_LIGHT, and ACCENT_COLOR_HOVER as variables below for all accent uses.
+Primary solid buttons: background ACCENT_COLOR; on hover set background to ACCENT_COLOR_HOVER (not opacity-only).
 
 GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
 
@@ -36,7 +37,7 @@ GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
     <a href="#benefits" style="color:#A1A1AA;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='#FAFAFA'" onmouseout="this.style.color='#A1A1AA'">Benefits</a>
     <a href="#process" style="color:#A1A1AA;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='#FAFAFA'" onmouseout="this.style.color='#A1A1AA'">Process</a>
     <a href="#testimonials" style="color:#A1A1AA;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color='#FAFAFA'" onmouseout="this.style.color='#A1A1AA'">Results</a>
-    <a href="#contact-form" style="background:ACCENT_COLOR;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity='0.85';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">Get Started</a>
+    <a href="#contact-form" style="background:ACCENT_COLOR;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;transition:all 0.2s;" onmouseover="this.style.background='ACCENT_COLOR_HOVER';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='ACCENT_COLOR';this.style.transform='translateY(0)'">Get Started</a>
   </div>
 </nav>
 
@@ -59,7 +60,7 @@ GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
     <p data-aos="fade-up" data-aos-delay="200" style="font-size:20px;color:#A1A1AA;max-width:600px;line-height:1.7;margin-bottom:40px;">HERO_SUBHEADLINE</p>
     <!-- CTAs -->
     <div data-aos="fade-up" data-aos-delay="300" style="display:flex;gap:16px;flex-wrap:wrap;">
-      <a href="#contact-form" style="display:inline-flex;align-items:center;gap:8px;background:ACCENT_COLOR;color:#fff;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:700;transition:all 0.25s;box-shadow:0 0 40px ACCENT_COLOR40;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 40px ACCENT_COLOR60'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 0 40px ACCENT_COLOR40'">CTA_PRIMARY →</a>
+      <a href="#contact-form" style="display:inline-flex;align-items:center;gap:8px;background:ACCENT_COLOR;color:#fff;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:700;transition:all 0.25s;box-shadow:0 0 40px ACCENT_COLOR40;" onmouseover="this.style.background='ACCENT_COLOR_HOVER';this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 40px ACCENT_COLOR60'" onmouseout="this.style.background='ACCENT_COLOR';this.style.transform='translateY(0)';this.style.boxShadow='0 0 40px ACCENT_COLOR40'">CTA_PRIMARY →</a>
       <a href="#process" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#FAFAFA;padding:16px 32px;border-radius:10px;font-size:16px;font-weight:600;transition:all 0.25s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">See How It Works</a>
     </div>
     <!-- Social proof mini -->
@@ -67,7 +68,7 @@ GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
       <div style="display:flex;">
         <!-- Avatar circles -->
         <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,ACCENT_COLOR,#7C3AED);border:2px solid #0A0A0D;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">A</div>
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10B981,#06B6D4);border:2px solid #0A0A0D;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">M</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4F46E5,#6366F1);border:2px solid #0A0A0D;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">M</div>
         <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#EF4444);border:2px solid #0A0A0D;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">K</div>
       </div>
       <div>
@@ -214,7 +215,7 @@ GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
         <div style="display:flex;gap:4px;margin-bottom:16px;">⭐⭐⭐⭐⭐</div>
         <p style="color:#FAFAFA;font-size:15px;line-height:1.7;margin-bottom:24px;font-style:italic;">"T2_TEXT"</p>
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#10B981,#06B6D4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">T2_INITIAL</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4F46E5,#6366F1);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">T2_INITIAL</div>
           <div>
             <div style="font-weight:700;font-size:15px;">T2_NAME</div>
             <div style="color:#A1A1AA;font-size:13px;">T2_ROLE</div>
@@ -241,7 +242,7 @@ GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
   <div data-aos="fade-up" style="max-width:700px;margin:0 auto;text-align:center;">
     <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:900;letter-spacing:-0.03em;margin-bottom:24px;">CTA_HEADLINE</h2>
     <p style="font-size:18px;color:#A1A1AA;margin-bottom:40px;line-height:1.7;">CTA_SUBTEXT</p>
-    <a href="#contact-form" style="display:inline-flex;align-items:center;gap:10px;background:ACCENT_COLOR;color:#fff;padding:20px 48px;border-radius:12px;font-size:18px;font-weight:800;transition:all 0.25s;box-shadow:0 0 60px ACCENT_COLOR30;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 60px ACCENT_COLOR50'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 0 60px ACCENT_COLOR30'">CTA_BUTTON_TEXT →</a>
+    <a href="#contact-form" style="display:inline-flex;align-items:center;gap:10px;background:ACCENT_COLOR;color:#fff;padding:20px 48px;border-radius:12px;font-size:18px;font-weight:800;transition:all 0.25s;box-shadow:0 0 60px ACCENT_COLOR30;" onmouseover="this.style.background='ACCENT_COLOR_HOVER';this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 60px ACCENT_COLOR50'" onmouseout="this.style.background='ACCENT_COLOR';this.style.transform='translateY(0)';this.style.boxShadow='0 0 60px ACCENT_COLOR30'">CTA_BUTTON_TEXT →</a>
   </div>
 </section>
 
@@ -265,7 +266,7 @@ GENERATE THE PAGE WITH THESE EXACT SECTION PATTERNS:
         <label style="display:block;font-size:13px;font-weight:600;color:#A1A1AA;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Message</label>
         <textarea name="message" rows="4" placeholder="Tell me about your goals..." style="width:100%;background:#0A0A0D;border:1px solid #1C1C22;border-radius:10px;padding:14px 16px;color:#FAFAFA;font-size:15px;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border-color 0.2s;" onfocus="this.style.borderColor='ACCENT_COLOR'" onblur="this.style.borderColor='#1C1C22'"></textarea>
       </div>
-      <button type="submit" style="width:100%;background:ACCENT_COLOR;color:#fff;padding:16px;border-radius:10px;font-size:16px;font-weight:700;font-family:'Inter',sans-serif;border:none;cursor:pointer;transition:all 0.25s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">FORM_BUTTON_TEXT →</button>
+      <button type="submit" style="width:100%;background:ACCENT_COLOR;color:#fff;padding:16px;border-radius:10px;font-size:16px;font-weight:700;font-family:'Inter',sans-serif;border:none;cursor:pointer;transition:all 0.25s;" onmouseover="this.style.background='ACCENT_COLOR_HOVER'" onmouseout="this.style.background='ACCENT_COLOR'">FORM_BUTTON_TEXT →</button>
       <div id="success-msg" style="display:none;text-align:center;padding:20px;color:ACCENT_COLOR;font-weight:600;font-size:16px;margin-top:16px;">✓ Message sent! I'll get back to you within 24 hours.</div>
     </form>
   </div>
@@ -332,6 +333,7 @@ Based on the user's offer, replace ALL CAPS variables with compelling content:
 - All content in SAME LANGUAGE as user's offer.
 - NEVER use lorem ipsum.
 - NEVER leave any variable unfilled.
-- ACCENT_COLOR_LIGHT: use 20% lighter version of accent (e.g. if accent is #EF4444, light is #FCA5A5)
+- ACCENT_COLOR_LIGHT: use a lighter companion to accent (e.g. #818CF8 for #6366F1; if accent is #EF4444, light is #FCA5A5)
+- ACCENT_COLOR_HOVER: use a darker shade for primary button hovers (e.g. #4F46E5 for #6366F1; derive similarly for other niches)
 
 Return ONLY the complete HTML. No markdown, no explanations.

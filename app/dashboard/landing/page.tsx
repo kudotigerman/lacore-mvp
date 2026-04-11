@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DomainConnect from "@/components/DomainConnect";
 import { DashboardStepShell } from "@/components/dashboard/DashboardStepShell";
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
@@ -29,6 +29,32 @@ export default function DashboardLandingPage() {
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
   const [aiEditCommand, setAiEditCommand] = useState("");
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const previewLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const landingUrl = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
+
+  const clearPreviewLoadTimer = () => {
+    if (previewLoadTimerRef.current) {
+      clearTimeout(previewLoadTimerRef.current);
+      previewLoadTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    clearPreviewLoadTimer();
+    if (!d.landingSlug) {
+      setIframeSrc(null);
+      setPreviewFailed(false);
+      return;
+    }
+    setPreviewFailed(false);
+    const src = `${window.location.origin}/p/${d.landingSlug}`;
+    setIframeSrc(src);
+    previewLoadTimerRef.current = setTimeout(() => setPreviewFailed(true), 12000);
+    return () => clearPreviewLoadTimer();
+  }, [d.landingSlug]);
 
   useEffect(() => {
     if (!d.userId || !d.landingSlug || !activeProject?.id) {
@@ -61,7 +87,7 @@ export default function DashboardLandingPage() {
     dashToast("Link copied to clipboard!");
   }
 
-  const url = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
+  const url = landingUrl;
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
   const stepDone = !!d.landingSlug;
@@ -107,13 +133,39 @@ export default function DashboardLandingPage() {
         ) : (
           <div className="flex flex-wrap items-start gap-8">
             <div className="min-w-0 flex-[1.2] basis-[320px]">
-              <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#111116]">
-                <iframe
-                  title="Landing preview"
-                  src={`/p/${d.landingSlug}`}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  className="pointer-events-none block h-[min(70vh,560px)] w-full border-0"
-                />
+              <div className="h-[min(70vh,560px)] overflow-hidden rounded-xl border border-white/[0.08] bg-[#111116]">
+                {!iframeSrc ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-sm text-white/35">Loading preview…</p>
+                  </div>
+                ) : previewFailed ? (
+                  <div className="flex h-full flex-col items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-6">
+                    <p className="mb-3 text-sm text-white/40">Preview not available in editor</p>
+                    <a
+                      href={landingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-indigo-400 transition-colors hover:text-indigo-300"
+                    >
+                      Open landing page ↗
+                    </a>
+                  </div>
+                ) : (
+                  <iframe
+                    title="Landing preview"
+                    src={iframeSrc}
+                    sandbox="allow-scripts allow-same-origin"
+                    onLoad={() => {
+                      clearPreviewLoadTimer();
+                      setPreviewFailed(false);
+                    }}
+                    onError={() => {
+                      clearPreviewLoadTimer();
+                      setPreviewFailed(true);
+                    }}
+                    className="pointer-events-none block h-full min-h-[min(70vh,560px)] w-full border-0"
+                  />
+                )}
               </div>
             </div>
             <div className="flex min-w-[260px] flex-1 basis-[280px] flex-col gap-4">

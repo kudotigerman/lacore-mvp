@@ -59,8 +59,8 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     heroStyle: "gradient-mesh",
   },
   developer: {
-    accent: "#06B6D4",
-    accentLight: "#67E8F9",
+    accent: "#6366F1",
+    accentLight: "#818CF8",
     bgPrimary: "#020C10",
     bgSecondary: "#051018",
     heroStyle: "gradient-blob",
@@ -101,8 +101,8 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     heroStyle: "gradient-blob",
   },
   default: {
-    accent: "#06B6D4",
-    accentLight: "#67E8F9",
+    accent: "#6366F1",
+    accentLight: "#818CF8",
     bgPrimary: "#0A0A0D",
     bgSecondary: "#0F0F14",
     heroStyle: "solid-glow",
