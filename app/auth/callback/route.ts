@@ -6,18 +6,10 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** After OAuth, canonical www in production; request origin in dev. */
-function postAuthRedirectUrl(request: Request): string {
-  const url = new URL(request.url);
-  const path = "/dashboard/offer";
-  if (process.env.NODE_ENV === "development") {
-    return `${url.origin}${path}`;
-  }
-  return `https://www.lacore.ai${path}`;
-}
+const PROD_APP_ORIGIN = "https://www.lacore.ai";
 
 /**
- * OAuth PKCE: attach session cookies to redirect response, then ensure profile + credits via service role.
+ * OAuth PKCE: single redirect response; session cookies are set on that same response via setAll.
  */
 export async function GET(request: Request) {
   try {
@@ -28,8 +20,11 @@ export async function GET(request: Request) {
       throw new Error("missing oauth code");
     }
 
-    const redirectLocation = postAuthRedirectUrl(request);
-    const response = NextResponse.redirect(redirectLocation);
+    const redirectBase =
+      process.env.NODE_ENV === "development" ? url.origin : PROD_APP_ORIGIN;
+    const response = NextResponse.redirect(new URL("/dashboard/offer", redirectBase));
+
+    const cookieStore = cookies();
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,10 +32,12 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() {
-            return cookies().getAll();
+            return cookieStore.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
           }
         }
       }
@@ -112,6 +109,6 @@ export async function GET(request: Request) {
     return response;
   } catch (err) {
     console.error("callback error:", err);
-    return NextResponse.redirect("https://www.lacore.ai/dashboard/offer");
+    return NextResponse.redirect(new URL("/dashboard/offer", PROD_APP_ORIGIN));
   }
 }

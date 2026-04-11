@@ -14,6 +14,11 @@ function normalizedHost(request: NextRequest): string {
 }
 
 export async function middleware(request: NextRequest) {
+  /** OAuth callback + auth pages: never run session checks or custom-domain rewrite. */
+  if (request.nextUrl.pathname.startsWith("/auth")) {
+    return NextResponse.next();
+  }
+
   /** Require auth for all /dashboard routes (Supabase SSR cookie refresh on response). */
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     let supabaseResponse = NextResponse.next({ request });
@@ -127,5 +132,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|_next/data|favicon.ico|sitemap.xml|robots.txt).*)"]
+  matcher: [
+    "/dashboard/:path*",
+    // Custom domains + public app routes; exclude /auth so /auth/callback is not handled here
+    "/((?!api|_next/static|_next/image|_next/data|favicon.ico|sitemap.xml|robots.txt|auth).*)"
+  ]
 };
