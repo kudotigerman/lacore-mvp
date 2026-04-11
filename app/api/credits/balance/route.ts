@@ -18,16 +18,22 @@ export async function GET() {
     .from("profiles")
     .select("credits_balance, plan")
     .eq("user_id", user.id)
-    .maybeSingle();
+    .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return NextResponse.json({
+        credits_balance: 0,
+        plan: "free"
+      });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const row = data as { credits_balance?: number | null; plan?: string | null } | null;
+  const row = data as { credits_balance?: number | null; plan?: string | null };
 
   return NextResponse.json({
-    credits_balance: typeof row?.credits_balance === "number" ? row.credits_balance : 20,
+    credits_balance: typeof row.credits_balance === "number" ? row.credits_balance : 0,
     plan: typeof row?.plan === "string" && row.plan.length > 0 ? row.plan : "free"
   });
 }

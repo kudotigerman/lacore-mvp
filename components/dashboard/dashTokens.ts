@@ -54,7 +54,7 @@ export const dashPremiumCss = `
 
 export const dash = {
   pageShell: {
-    padding: "36px 44px",
+    padding: 0,
     boxSizing: "border-box" as const,
     background: "var(--content-bg)",
     minHeight: "100%",

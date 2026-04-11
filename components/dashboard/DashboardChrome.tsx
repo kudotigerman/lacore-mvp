@@ -8,7 +8,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode
@@ -66,7 +65,36 @@ const QUICK_ACTIONS: { label: string; message: string }[] = [
   }
 ];
 
-type NavBadgeKind = "done" | "live" | "soon" | "muted";
+const FUNNEL_STEPS = [
+  { num: "01", label: "Offer", href: "/dashboard/offer", key: "offer" as const },
+  { num: "02", label: "Landing page", href: "/dashboard/landing", key: "landing" as const },
+  { num: "03", label: "Content", href: "/dashboard/content", key: "content" as const },
+  { num: "04", label: "Leads & closing", href: "/dashboard/leads", key: "leads" as const }
+];
+
+function stepDone(
+  key: (typeof FUNNEL_STEPS)[number]["key"],
+  s: { offer: boolean; landing: boolean; content: boolean; leads: boolean } | null
+): boolean {
+  if (!s) return false;
+  if (key === "offer") return s.offer;
+  if (key === "landing") return s.landing;
+  if (key === "content") return s.offer && s.landing;
+  if (key === "leads") return s.leads;
+  return false;
+}
+
+function stepLocked(
+  key: (typeof FUNNEL_STEPS)[number]["key"],
+  s: { offer: boolean; landing: boolean; content: boolean; leads: boolean } | null
+): boolean {
+  if (key === "offer") return false;
+  if (!s) return true;
+  if (key === "landing") return !s.offer;
+  if (key === "content") return !s.landing;
+  if (key === "leads") return !s.landing;
+  return false;
+}
 
 export default function DashboardChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -133,43 +161,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
     [data.savedProfileDisplayName, data.profileDisplayName, data.email]
   );
 
-  const navItems: { href: string; num: string; label: string; badgeKind: NavBadgeKind }[] = useMemo(
-    () => [
-      { href: "/dashboard/offer", num: "01", label: "OFFER", badgeKind: data.offer ? "done" : "muted" },
-      { href: "/dashboard/landing", num: "02", label: "LANDING PAGE", badgeKind: data.landingSlug ? "live" : "muted" },
-      { href: "/dashboard/content", num: "03", label: "CONTENT", badgeKind: "live" },
-      { href: "/dashboard/leads", num: "04", label: "LEADS", badgeKind: "live" },
-      { href: "/dashboard/closing", num: "05", label: "CLOSING", badgeKind: "live" },
-      { href: "/dashboard/analytics", num: "06", label: "ANALYTICS", badgeKind: "soon" }
-    ],
-    [data.offer, data.landingSlug]
-  );
-
-  const navBadge = (kind: NavBadgeKind): { text: string; style: CSSProperties } => {
-    const base = { fontWeight: 600 as const, marginLeft: "auto" as const, flexShrink: 0 as const, whiteSpace: "nowrap" as const };
-    if (kind === "done") {
-      return {
-        text: "✓ done",
-        style: { ...base, fontSize: 9, color: "#22c55e", background: "rgba(34,197,94,0.08)", padding: "2px 6px", borderRadius: 3 }
-      };
-    }
-    if (kind === "live") {
-      return {
-        text: "● live",
-        style: { ...base, fontSize: 9, color: "#06B6D4", background: "rgba(6,182,212,0.08)", padding: "2px 6px", borderRadius: 3 }
-      };
-    }
-    if (kind === "soon") {
-      return {
-        text: "soon",
-        style: { ...base, fontSize: 9, color: "#3F3F46", background: "rgba(255,255,255,0.03)", padding: "2px 6px", borderRadius: 3 }
-      };
-    }
-    return {
-      text: "—",
-      style: { ...base, fontSize: 9, color: "#3F3F46", background: "rgba(255,255,255,0.03)", padding: "2px 6px", borderRadius: 3 }
-    };
-  };
+  const funnel = data.dashboardStatus;
+  const completedSteps = funnel?.completedSteps ?? 0;
 
   const apiSalesContext = useMemo(
     () => ({
@@ -563,72 +556,95 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       )}
 
       <aside
-        className="dash-sidebar-col"
+        className="dash-sidebar-col border-r border-white/[0.06] bg-[#060608]"
         style={{
           width: SIDEBAR_W,
           flexShrink: 0,
-          background: "#060608",
-          borderRight: "2px solid #06B6D4",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           boxSizing: "border-box"
         }}
       >
-        <div style={{ padding: "20px 16px 16px", borderBottom: "1px solid #1C1C22", flexShrink: 0 }}>
-          <Link
-            href="/"
-            style={{
-              fontSize: 13,
-              fontWeight: 800,
-              letterSpacing: "0.15em",
-              color: "#fff",
-              textDecoration: "none",
-              display: "block"
-            }}
-          >
+        <div className="flex-shrink-0 px-4 pb-3 pt-5">
+          <Link href="/" className="block text-sm font-medium tracking-[0.1em] text-white no-underline">
             LACORE
           </Link>
-          <div style={{ marginTop: 10 }}>
+          <div className="mt-2.5">
             <ProjectSelector />
           </div>
         </div>
 
-        <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px", minHeight: 0 }}>
-          {navItems.map((item) => {
+        <div className="px-4 py-2">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-white/30">Your progress</span>
+            <span className="text-[10px] text-white/40">
+              {completedSteps} of 4
+            </span>
+          </div>
+          <div className="h-0.5 overflow-hidden rounded-full bg-white/[0.08]">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-all duration-500"
+              style={{ width: `${(completedSteps / 4) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          {FUNNEL_STEPS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
-            const nb = navBadge(item.badgeKind);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={active ? "dash-nav-item dash-nav-item-active" : "dash-nav-item"}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: active ? "9px 10px 9px 8px" : "9px 10px",
-                  borderRadius: 6,
-                  marginBottom: 1,
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderLeft: active ? "2px solid #06B6D4" : "2px solid transparent",
-                  background: active
-                    ? "linear-gradient(90deg, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.04) 100%)"
-                    : "transparent",
-                  color: active ? "#FFFFFF" : "#71717A",
-                  fontSize: 12,
-                  fontWeight: active ? 600 : 500,
-                  letterSpacing: "0.03em",
-                  boxSizing: "border-box"
-                }}
-              >
-                <span style={{ width: 18, flexShrink: 0, fontSize: 10, color: "#52525B", textAlign: "left" }}>{item.num}</span>
-                <span style={{ flex: 1, lineHeight: 1.25, minWidth: 0 }}>{item.label}</span>
-                <span style={nb.style}>{nb.text}</span>
+            const done = stepDone(item.key, funnel);
+            const locked = stepLocked(item.key, funnel);
+            const suffix = done ? (
+              <span className="text-[10px] text-emerald-400">✓</span>
+            ) : active ? (
+              <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-indigo-400" aria-hidden />
+            ) : locked ? (
+              <span className="text-[10px] text-white/20">·</span>
+            ) : null;
+
+            const baseRow =
+              "flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] transition-colors duration-150";
+            const activeCls = "bg-indigo-500/15 text-indigo-300";
+            const doneCls = "text-white/60 hover:bg-white/5";
+            const availCls = "text-white/55 hover:bg-white/5";
+            const lockedCls = "cursor-default text-white/25";
+
+            const cls = locked
+              ? `${baseRow} ${lockedCls}`
+              : active
+                ? `${baseRow} ${activeCls}`
+                : done
+                  ? `${baseRow} ${doneCls}`
+                  : `${baseRow} ${availCls}`;
+
+            return locked ? (
+              <div key={item.href} className={cls} title="Complete the previous step first">
+                <span className="w-5 flex-shrink-0 text-[10px] text-white/30">{item.num}</span>
+                <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
+                {suffix}
+              </div>
+            ) : (
+              <Link key={item.href} href={item.href} className={`${cls} no-underline`}>
+                <span className="w-5 flex-shrink-0 text-[10px] text-white/35">{item.num}</span>
+                <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
+                {suffix}
               </Link>
             );
           })}
+
+          <div className="mx-2 my-2 h-px bg-white/[0.06]" />
+
+          <Link
+            href="/dashboard/analytics"
+            className={`flex h-9 items-center rounded-lg px-3 text-xs no-underline transition-colors duration-150 ${
+              pathname === "/dashboard/analytics" || pathname.startsWith("/dashboard/analytics/")
+                ? "bg-white/[0.06] text-white/70"
+                : "text-white/35 hover:bg-white/5 hover:text-white/50"
+            }`}
+          >
+            Analytics
+          </Link>
         </nav>
 
         <CreditsWidget />
@@ -646,8 +662,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                 width: 30,
                 height: 30,
                 borderRadius: "50%",
-                background: "#06B6D4",
-                color: "#000",
+                background: "#6366F1",
+                color: "#fff",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -710,7 +726,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       </aside>
 
       <div
-        className="dash-main-col"
+        className="dash-main-col px-8 py-6"
         style={{
           flex: 1,
           minWidth: 0,

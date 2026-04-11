@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { dash } from "@/components/dashboard/dashTokens";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -17,6 +17,8 @@ export type LeadRow = {
 };
 
 export type LeadStatus = "new" | "contacted" | "in_talks" | "won" | "lost";
+
+export type LeadsListStatusFilter = "all" | "new" | "in_progress" | "won" | "lost";
 
 const LEAD_STATUSES: LeadStatus[] = ["new", "contacted", "in_talks", "won", "lost"];
 
@@ -79,6 +81,12 @@ type LeadsListProps = {
   variant?: "list" | "cards";
   refreshNonce?: number;
   onLeadsLoaded?: (count: number) => void;
+  statusFilter?: LeadsListStatusFilter;
+  selectedLeadId?: string | null;
+  onSelectLead?: (lead: LeadRow) => void;
+  compactRows?: boolean;
+  hideInlineActions?: boolean;
+  omitEmptyState?: boolean;
 };
 
 function statusButtonStyle(color: string): CSSProperties {
@@ -105,7 +113,13 @@ export default function LeadsList({
   showToolbar = true,
   variant = "list",
   refreshNonce = 0,
-  onLeadsLoaded
+  onLeadsLoaded,
+  statusFilter = "all",
+  selectedLeadId = null,
+  onSelectLead,
+  compactRows = false,
+  hideInlineActions = false,
+  omitEmptyState = false
 }: LeadsListProps) {
   const dashData = useDashboardData();
   const [leads, setLeads] = useState<LeadRow[]>([]);
@@ -154,7 +168,19 @@ export default function LeadsList({
     void load();
   }, [load, refreshNonce]);
 
-  const count = leads.length;
+  const filteredLeads = useMemo(() => {
+    if (!statusFilter || statusFilter === "all") return leads;
+    return leads.filter((l) => {
+      const s = normalizeLeadStatus(l.status);
+      if (statusFilter === "new") return s === "new";
+      if (statusFilter === "in_progress") return s === "contacted" || s === "in_talks";
+      if (statusFilter === "won") return s === "won";
+      if (statusFilter === "lost") return s === "lost";
+      return true;
+    });
+  }, [leads, statusFilter]);
+
+  const count = filteredLeads.length;
 
   useEffect(() => {
     if (!loading && onLeadsLoaded) onLeadsLoaded(count);
@@ -374,8 +400,12 @@ export default function LeadsList({
 
   const badgeText = `${count} lead${count === 1 ? "" : "s"}`;
 
+  if (!loading && count === 0 && omitEmptyState) {
+    return null;
+  }
+
   return (
-    <div style={{ fontFamily: "inherit", maxWidth: variant === "cards" ? 900 : 640 }}>
+    <div style={{ fontFamily: "inherit", maxWidth: variant === "cards" && !compactRows ? 900 : compactRows ? "none" : 640 }}>
       {showToolbar ? (
         <div
           style={{
@@ -420,19 +450,39 @@ export default function LeadsList({
           </p>
         </div>
       ) : variant === "cards" ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-          {leads.map((lead) => (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: compactRows ? 8 : 12 }}>
+          {filteredLeads.map((lead) => (
             <li key={lead.id} style={{ display: "flex", flexDirection: "column" }}>
               <div
+                role={onSelectLead ? "button" : undefined}
+                tabIndex={onSelectLead ? 0 : undefined}
+                onClick={onSelectLead ? () => onSelectLead(lead) : undefined}
+                onKeyDown={
+                  onSelectLead
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelectLead(lead);
+                        }
+                      }
+                    : undefined
+                }
                 style={{
                   ...dash.cardCompact,
                   display: "flex",
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
-                  gap: 16,
-                  flexWrap: "wrap"
+                  gap: compactRows ? 10 : 16,
+                  flexWrap: "wrap",
+                  cursor: onSelectLead ? "pointer" : undefined,
+                  border:
+                    selectedLeadId === lead.id ? "1px solid rgba(99,102,241,0.45)" : "1px solid #1C1C22",
+                  boxSizing: "border-box",
+                  padding: compactRows ? "10px 12px" : dash.cardCompact.padding,
+                  transition: onSelectLead ? "background 0.15s ease" : undefined
                 }}
+                className={onSelectLead ? "hover:bg-white/[0.06]" : undefined}
               >
                 <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -489,34 +539,40 @@ export default function LeadsList({
                     gap: 8,
                     marginLeft: "auto"
                   }}
+                  onClick={onSelectLead ? (e) => e.stopPropagation() : undefined}
+                  onKeyDown={onSelectLead ? (e) => e.stopPropagation() : undefined}
                 >
                   {renderStatusMenu(lead)}
-                  <button
-                    type="button"
-                    disabled={!!leadHints[lead.id]?.loading}
-                    onClick={() => void fetchWhatToSay(lead)}
-                    style={{
-                      ...whatSayBtnStyle,
-                      opacity: leadHints[lead.id]?.loading ? 0.5 : 1
-                    }}
-                  >
-                    ⚡ What to say?
-                  </button>
-                  <a
-                    href={`mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent("Re: your inquiry")}`}
-                    style={{ ...replyLinkStyle, marginLeft: 0 }}
-                  >
-                    Reply →
-                  </a>
+                  {hideInlineActions ? null : (
+                    <>
+                      <button
+                        type="button"
+                        disabled={!!leadHints[lead.id]?.loading}
+                        onClick={() => void fetchWhatToSay(lead)}
+                        style={{
+                          ...whatSayBtnStyle,
+                          opacity: leadHints[lead.id]?.loading ? 0.5 : 1
+                        }}
+                      >
+                        ⚡ What to say?
+                      </button>
+                      <a
+                        href={`mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent("Re: your inquiry")}`}
+                        style={{ ...replyLinkStyle, marginLeft: 0 }}
+                      >
+                        Reply →
+                      </a>
+                    </>
+                  )}
                 </div>
               </div>
-              {renderHintBlock(lead.id)}
+              {hideInlineActions ? null : renderHintBlock(lead.id)}
             </li>
           ))}
         </ul>
       ) : (
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {leads.map((lead) => (
+          {filteredLeads.map((lead) => (
             <li key={lead.id} style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{

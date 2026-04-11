@@ -42,6 +42,14 @@ type ProfileRow = {
 
 export type UiTheme = "dark" | "light";
 
+export type DashboardFunnelStatus = {
+  offer: boolean;
+  landing: boolean;
+  content: boolean;
+  leads: boolean;
+  completedSteps: number;
+};
+
 const UI_THEME_STORAGE_KEY = "lacore-theme";
 
 function buildSalesBuilderIntro(savedDisplayNameFromDb: string | null): string {
@@ -139,6 +147,8 @@ type DashboardDataContextValue = {
   profileSaving: boolean;
   profileSaveError: string | null;
   handleSaveProfile: () => Promise<void>;
+  dashboardStatus: DashboardFunnelStatus | null;
+  refreshDashboardStatus: () => Promise<void>;
 };
 
 const DashboardDataContext = createContext<DashboardDataContextValue | null>(null);
@@ -178,6 +188,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const [uiTheme, setUiTheme] = useState<UiTheme>("dark");
+  const [dashboardStatus, setDashboardStatus] = useState<DashboardFunnelStatus | null>(null);
 
   const buildingLogMessages = useMemo(
     () => [
@@ -222,6 +233,30 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     };
   }, [offer, landingSlug]);
 
+  const refreshDashboardStatus = useCallback(async () => {
+    if (!userId || !activeProject?.id) {
+      setDashboardStatus(null);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/dashboard/status?projectId=${encodeURIComponent(activeProject.id)}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const j = (await res.json()) as Partial<DashboardFunnelStatus>;
+      setDashboardStatus({
+        offer: !!j.offer,
+        landing: !!j.landing,
+        content: !!j.content,
+        leads: !!j.leads,
+        completedSteps: typeof j.completedSteps === "number" ? j.completedSteps : 0
+      });
+    } catch {
+      /* ignore */
+    }
+  }, [userId, activeProject?.id]);
+
   const refreshOffer = useCallback(async () => {
     if (!userId || !activeProject?.id) return;
     const supabase = getSupabaseClient();
@@ -235,7 +270,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       .single();
     if (!error && data) setOffer(data as DashboardOffer);
     if (error) setOffer(null);
-  }, [userId, activeProject?.id]);
+    await refreshDashboardStatus();
+  }, [userId, activeProject?.id, refreshDashboardStatus]);
 
   useEffect(() => {
     try {
@@ -255,6 +291,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         setOffer(null);
         setLandingSlug(null);
+        setDashboardStatus(null);
         return;
       }
       const supabase = getSupabaseClient();
@@ -323,6 +360,25 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       else setLandingSlug(null);
 
       setLoading(false);
+
+      try {
+        const st = await fetch(
+          `/api/dashboard/status?projectId=${encodeURIComponent(activeProject.id)}`,
+          { credentials: "include", cache: "no-store" }
+        );
+        if (st.ok) {
+          const j = (await st.json()) as Partial<DashboardFunnelStatus>;
+          setDashboardStatus({
+            offer: !!j.offer,
+            landing: !!j.landing,
+            content: !!j.content,
+            leads: !!j.leads,
+            completedSteps: typeof j.completedSteps === "number" ? j.completedSteps : 0
+          });
+        }
+      } catch {
+        /* ignore */
+      }
     }
 
     void init();
@@ -429,6 +485,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
           throw new Error(result?.error || "Failed to build.");
         }
         setLandingSlug(result.slug ?? null);
+        await refreshDashboardStatus();
         router.push(`/p/${result.slug}?edit=true`);
       } catch (err) {
         setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
@@ -436,7 +493,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         setBuildingLanding(false);
       }
     },
-    [offer, sessionToken, email, businessName, primaryGoals, siteVibe, router, activeProject?.id]
+    [offer, sessionToken, email, businessName, primaryGoals, siteVibe, router, activeProject?.id, refreshDashboardStatus]
   );
 
   useEffect(() => {
@@ -479,8 +536,9 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     }
     setLandingSlug(null);
     setRegenerateConfirm(false);
+    void refreshDashboardStatus();
     void handleBuildLandingPage();
-  }, [userId, handleBuildLandingPage, activeProject?.id]);
+  }, [userId, handleBuildLandingPage, activeProject?.id, refreshDashboardStatus]);
 
   const value = useMemo(
     () => ({
@@ -531,7 +589,9 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       setProfileTelegramChatId,
       profileSaving,
       profileSaveError,
-      handleSaveProfile
+      handleSaveProfile,
+      dashboardStatus,
+      refreshDashboardStatus
     }),
     [
       loading,
@@ -567,7 +627,9 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       profileTelegramChatId,
       profileSaving,
       profileSaveError,
-      handleSaveProfile
+      handleSaveProfile,
+      dashboardStatus,
+      refreshDashboardStatus
     ]
   );
 

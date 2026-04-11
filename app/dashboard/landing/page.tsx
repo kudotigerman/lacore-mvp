@@ -1,16 +1,49 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import DomainConnect from "@/components/DomainConnect";
-import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
-import { dash } from "@/components/dashboard/dashTokens";
+import { DashboardStepShell } from "@/components/dashboard/DashboardStepShell";
+import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 import StripeConnect from "@/components/StripeConnect";
 import { LANDING_EDITOR_QUICK_ACTIONS, LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
+import { getSupabaseClient } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
   const router = useRouter();
+  const { activeProject } = useProjectContext();
+  const credits = useCreditsBalance();
+  const [views, setViews] = useState<number | null>(null);
+  const [showAiNote, setShowAiNote] = useState(false);
+
+  useEffect(() => {
+    if (!d.userId || !d.landingSlug || !activeProject?.id) {
+      setViews(null);
+      return;
+    }
+    let cancelled = false;
+    const supabase = getSupabaseClient();
+    void supabase
+      .from("landing_pages")
+      .select("views")
+      .eq("user_id", d.userId)
+      .eq("project_id", activeProject.id)
+      .eq("slug", d.landingSlug)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const row = data as { views?: unknown } | null;
+        const v = row?.views;
+        setViews(typeof v === "number" ? v : 0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [d.userId, d.landingSlug, activeProject?.id]);
 
   async function copyUrl() {
     if (!d.landingSlug) return;
@@ -18,196 +51,204 @@ export default function DashboardLandingPage() {
   }
 
   const url = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
+  const st = d.dashboardStatus;
+  const completedCount = st?.completedSteps ?? 0;
+  const stepDone = !!d.landingSlug;
 
   return (
-    <div style={dash.pageShell}>
-      <DashPageHeader title="Landing Page" subtitle="Your public-facing sales page" />
-
-      {!d.offer ? (
-        <p style={dash.body}>Add your offer first on the Offer page.</p>
-      ) : (
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div style={{ flex: "1.4 1 320px", minWidth: 280 }}>
-            {!d.landingSlug ? (
-              <div style={{ ...dash.card }}>
-                <p style={{ ...dash.body, margin: "0 0 16px" }}>
-                  Build a full page from your offer — no design skills required.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => d.setShowOnboarding(true)}
-                  disabled={d.buildingLanding}
-                  style={{
-                    ...dash.btnPrimary,
-                    width: "100%",
-                    cursor: d.buildingLanding ? "not-allowed" : "pointer",
-                    opacity: d.buildingLanding ? 0.6 : 1
-                  }}
-                >
-                  Build my landing page →
-                </button>
-                {d.buildError ? (
-                  <p style={{ margin: "12px 0 0", fontSize: 12, color: "var(--danger)" }}>{d.buildError}</p>
-                ) : null}
-              </div>
-            ) : (
-              <div
-                style={{
-                  border: "1px solid #1C1C22",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  background: "#111116"
-                }}
-              >
+    <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
+      <DashboardStepShell
+        stepNum={2}
+        completedCount={completedCount}
+        title="Landing page"
+        subtitle="Your public sales page — built from your offer"
+        isStepDone={stepDone}
+        nextStepLabel="Content"
+        nextStepHref="/dashboard/content"
+      >
+        {!d.offer ? (
+          <p className="text-sm text-white/45">Add your offer first on the Offer page.</p>
+        ) : !d.landingSlug ? (
+          <div className="mx-auto flex max-w-lg flex-col items-center">
+            <div className="mb-6 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 text-left">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-white/35">Your offer (preview)</p>
+              <p className="mt-2 text-sm font-medium text-white/80">{d.offer.headline}</p>
+              <p className="mt-2 text-xs leading-relaxed text-white/45 line-clamp-4">{d.offer.offer}</p>
+            </div>
+            <p className="mb-6 text-center text-sm text-white/50">
+              Your offer is ready. Now let&apos;s build your sales page.
+            </p>
+            <button
+              type="button"
+              onClick={() => d.setShowOnboarding(true)}
+              disabled={d.buildingLanding}
+              className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {d.buildingLanding ? "Generating…" : "Generate landing page →"}
+            </button>
+            <p className="mt-2 text-center text-xs text-white/30">
+              Uses 10 credits
+              {credits !== null ? ` · You have ${credits} credits` : ""}
+            </p>
+            <p className="mt-1 text-center text-xs text-white/25">Creates a complete sales page from your offer</p>
+            {d.buildError ? <p className="mt-4 text-center text-sm text-red-400">{d.buildError}</p> : null}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-start gap-8">
+            <div className="min-w-0 flex-[1.2] basis-[320px]">
+              <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#111116]">
                 <iframe
                   title="Landing preview"
                   src={`/p/${d.landingSlug}`}
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  style={{
-                    width: "100%",
-                    height: 480,
-                    border: "none",
-                    display: "block",
-                    pointerEvents: "none"
-                  }}
+                  className="pointer-events-none block h-[min(70vh,560px)] w-full border-0"
                 />
               </div>
-            )}
-          </div>
+            </div>
+            <div className="flex min-w-[260px] flex-1 basis-[280px] flex-col gap-4">
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Checklist</p>
+                <ul className="mt-3 space-y-2 text-sm text-white/55">
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span> Page created
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white/25">○</span> Custom domain
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white/25">○</span> Payment connected
+                  </li>
+                </ul>
+              </div>
 
-          <div style={{ flex: "1 1 280px", minWidth: 260, display: "flex", flexDirection: "column", gap: 12 }}>
-            {d.landingSlug ? (
-              <>
-                <div style={{ ...dash.cardPanel }}>
-                  <p style={{ ...dash.sectionTitle, marginBottom: 10 }}>Public URL</p>
-                  <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-                    <input readOnly value={url} className="dash-focusable" style={{ ...dash.inputUrl, flex: 1, minWidth: 0 }} />
-                    <button type="button" onClick={() => void copyUrl()} style={dash.btnCopyAccent}>
-                      Copy
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Public link</p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    readOnly
+                    value={url}
+                    className="dash-focusable min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void copyUrl()}
+                    className="rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-white/35">
+                  Views: <span className="text-white/60">{views === null ? "…" : views}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/p/${d.landingSlug}?edit=true`}
+                  className="rounded-xl bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+                >
+                  Edit with AI
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowAiNote((v) => !v)}
+                  className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
+                >
+                  Quick prompts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    d.setRegenerateError(null);
+                    d.setRegenerateConfirm(true);
+                  }}
+                  disabled={d.buildingLanding}
+                  className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white disabled:opacity-50"
+                >
+                  Regenerate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void copyUrl()}
+                  className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
+                >
+                  Share
+                </button>
+              </div>
+
+              {showAiNote ? (
+                <div className="flex flex-wrap gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+                  {LANDING_EDITOR_QUICK_ACTIONS.map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, action.text);
+                        } catch {
+                          /* ignore */
+                        }
+                        router.push(`/p/${d.landingSlug}?edit=true`);
+                      }}
+                      className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] text-white/60 transition-colors hover:border-indigo-500/30 hover:text-indigo-200"
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {d.regenerateConfirm ? (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                  <p className="text-sm text-white/70">Replace your current site?</p>
+                  {d.regenerateError ? <p className="mt-2 text-xs text-red-400">{d.regenerateError}</p> : null}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        d.setRegenerateError(null);
+                        void d.handleRegenerateSiteConfirmed();
+                      }}
+                      disabled={d.buildingLanding}
+                      className="flex-1 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        d.setRegenerateConfirm(false);
+                        d.setRegenerateError(null);
+                      }}
+                      className="flex-1 rounded-lg border border-white/15 py-2 text-sm text-white/60"
+                    >
+                      No
                     </button>
                   </div>
-                  <a
-                    href={`/p/${d.landingSlug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ ...dash.btnGhostBlock, marginTop: 6, textDecoration: "none", display: "block" }}
-                  >
-                    Preview →
-                  </a>
-                  <a
-                    href={`/p/${d.landingSlug}?edit=true`}
-                    style={{ ...dash.btnGhostBlock, marginTop: 6, textDecoration: "none", display: "block" }}
-                  >
-                    Edit Page →
-                  </a>
-                  <p style={{ ...dash.small, margin: "14px 0 8px", color: "var(--text-muted)" }}>
-                    AI editor quick prompts (opens editor with text ready to send):
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {LANDING_EDITOR_QUICK_ACTIONS.map((action) => (
-                      <button
-                        key={action.label}
-                        type="button"
-                        onClick={() => {
-                          try {
-                            sessionStorage.setItem(LANDING_EDITOR_QUICK_STORAGE_KEY, action.text);
-                          } catch {
-                            /* ignore */
-                          }
-                          router.push(`/p/${d.landingSlug}?edit=true`);
-                        }}
-                        style={{
-                          fontFamily: "inherit",
-                          fontSize: 11,
-                          padding: "6px 10px",
-                          borderRadius: 6,
-                          border: "1px solid var(--border-primary)",
-                          background: "var(--bg-card)",
-                          color: "var(--text-secondary)",
-                          cursor: "pointer",
-                          lineHeight: 1.3
-                        }}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
                 </div>
+              ) : null}
 
-                {d.userId ? (
-                  <div style={{ ...dash.cardPanel }}>
-                    <p style={{ ...dash.sectionTitle, marginBottom: 10 }}>Custom Domain</p>
+              {d.userId ? (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Custom domain</p>
+                  <div className="mt-2">
                     <DomainConnect slug={d.landingSlug} userId={d.userId} />
                   </div>
-                ) : null}
+                </div>
+              ) : null}
 
-                {d.userId ? (
-                  <div style={{ ...dash.cardPanel }}>
-                    <p style={{ ...dash.sectionTitle, marginBottom: 10 }}>Payments</p>
+              {d.userId ? (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Payments</p>
+                  <div className="mt-2">
                     <StripeConnect userId={d.userId} />
                   </div>
-                ) : null}
-
-                <div style={{ ...dash.cardPanel }}>
-                  {d.regenerateConfirm ? (
-                    <div>
-                      <p style={{ ...dash.small, margin: "0 0 12px" }}>Are you sure? This will replace your current site.</p>
-                      {d.regenerateError ? (
-                        <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--danger)" }}>{d.regenerateError}</p>
-                      ) : null}
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            d.setRegenerateError(null);
-                            void d.handleRegenerateSiteConfirmed();
-                          }}
-                          disabled={d.buildingLanding}
-                          style={{ ...dash.btnPrimary, flex: 1, opacity: d.buildingLanding ? 0.6 : 1 }}
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            d.setRegenerateConfirm(false);
-                            d.setRegenerateError(null);
-                          }}
-                          style={{ ...dash.btnGhost, flex: 1 }}
-                        >
-                          No
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          d.setRegenerateError(null);
-                          d.setRegenerateConfirm(true);
-                        }}
-                        disabled={d.buildingLanding}
-                        style={{
-                          ...dash.btnPrimary,
-                          width: "100%",
-                          opacity: d.buildingLanding ? 0.6 : 1,
-                          cursor: d.buildingLanding ? "not-allowed" : "pointer"
-                        }}
-                      >
-                        Regenerate Site →
-                      </button>
-                      <p style={{ ...dash.small, margin: "10px 0 0", lineHeight: 1.5 }}>
-                        Create a fresh version of your landing page
-                      </p>
-                    </>
-                  )}
                 </div>
-              </>
-            ) : null}
+              ) : null}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </DashboardStepShell>
     </div>
   );
 }

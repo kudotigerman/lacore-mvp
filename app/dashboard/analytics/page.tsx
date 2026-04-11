@@ -13,7 +13,6 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
 import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -26,7 +25,7 @@ type LeadRow = {
   status: string | null;
 };
 
-const ACCENT = "#06B6D4";
+const ACCENT = "#6366F1";
 const BG = "#0A0A0D";
 const CARD = "#111116";
 const BORDER = "#1C1C22";
@@ -197,16 +196,6 @@ export default function DashboardAnalyticsPage() {
 
   const recentFive = leads.slice(0, 5);
 
-  const metric = (label: string, value: string | number, sub?: string) => (
-    <div style={{ ...dash.card, background: CARD, border: `1px solid ${BORDER}` }}>
-      <p style={{ ...dash.sectionTitle, marginBottom: 0 }}>{label}</p>
-      <div style={{ ...dash.metricNumber, marginTop: 8, color: TEXT }}>{value}</div>
-      {sub ? (
-        <p style={{ ...dash.metricCaption, color: viewsMeta === "unavailable" ? "#F59E0B" : "#52525B" }}>{sub}</p>
-      ) : null}
-    </div>
-  );
-
   const viewsCaption =
     viewsMeta === "unavailable"
       ? "Coming soon"
@@ -214,35 +203,34 @@ export default function DashboardAnalyticsPage() {
         ? "Coming soon"
         : undefined;
 
+  const kpi = (label: string, value: string | number, trend?: string, trendUp?: boolean) => (
+    <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+      <p className="text-xs font-medium uppercase tracking-wider text-white/40">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+      {trend ? (
+        <p className={`mt-1 text-xs ${trendUp === false ? "text-red-400" : "text-emerald-400"}`}>{trend}</p>
+      ) : null}
+    </div>
+  );
+
   return (
-    <div style={{ ...dash.pageShell, background: BG }}>
-      <DashPageHeader title="Analytics" subtitle="Track your growth and performance" />
+    <div className="min-h-full" style={{ ...dash.pageShell, background: BG }}>
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-white">Your results</h1>
+        <p className="mt-1 text-sm text-white/45">Leads, views, and pipeline at a glance</p>
+      </div>
 
       {loading ? (
         <p style={{ ...dash.body, color: TEXT_MUTED }}>Loading…</p>
       ) : (
         <>
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              gap: 12,
-              marginBottom: 24
-            }}
-            className="dash-analytics-metrics"
+            className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
           >
-            <style>{`
-              @media (max-width: 900px) {
-                .dash-analytics-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-              }
-              @media (max-width: 480px) {
-                .dash-analytics-metrics { grid-template-columns: 1fr !important; }
-              }
-            `}</style>
-            {metric("TOTAL LEADS", totalLeads)}
-            {metric("THIS WEEK", thisWeek)}
-            {metric("LANDING VIEWS", landingViews ?? 0, viewsCaption)}
-            {metric("WON DEALS", wonDeals)}
+            {kpi("Total leads", totalLeads, totalLeads > 0 ? "Active pipeline" : undefined, true)}
+            {kpi("Landing views", landingViews ?? 0, viewsCaption, (landingViews ?? 0) > 0 && viewsMeta === "ok")}
+            {kpi("Won deals", wonDeals)}
+            {kpi("This week", thisWeek, "New leads (7d)", thisWeek > 0)}
           </div>
 
           <div

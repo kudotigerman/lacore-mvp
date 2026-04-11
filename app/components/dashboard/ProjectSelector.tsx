@@ -9,32 +9,18 @@ export default function ProjectSelector() {
   const [creating, setCreating] = useState(false);
 
   if (isLoading) {
-    return <div style={{ fontSize: 11, color: "#71717A", marginTop: 10 }}>Loading projects...</div>;
+    return <div className="mt-2 text-xs text-white/35">Loading projects...</div>;
   }
 
   return (
-    <div style={{ marginTop: 12, position: "relative" }}>
+    <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          border: "1px solid #1C1C22",
-          background: "#111116",
-          color: "#FAFAFA",
-          fontSize: 12,
-          padding: "8px 10px",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
+        className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 text-xs text-white/70"
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {activeProject?.name || "Select project"}
-        </span>
-        <span style={{ color: "#71717A" }}>▾</span>
+        <span className="truncate">{activeProject?.name || "Select project"}</span>
+        <span className="text-white/35">▾</span>
       </button>
       {open ? (
         <div

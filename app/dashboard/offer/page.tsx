@@ -4,7 +4,8 @@ import { flushSync } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OfferVariant } from "@/app/api/generate-offer/route";
 import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/app/components/OnboardingWizard";
-import { DashPageHeader } from "@/components/dashboard/DashPageHeader";
+import { DashboardStepShell } from "@/components/dashboard/DashboardStepShell";
+import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { dash } from "@/components/dashboard/dashTokens";
 import type { DashboardOffer } from "@/components/dashboard/DashboardDataContext";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
@@ -70,6 +71,8 @@ export default function DashboardOfferPage() {
   const [pendingRefinement, setPendingRefinement] = useState<DashboardOffer | null>(null);
   const [saveRefineLoading, setSaveRefineLoading] = useState(false);
   const refineTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [refineOpen, setRefineOpen] = useState(false);
+  const credits = useCreditsBalance();
 
   const offer = d.offer;
   const displayOffer = offer ? (pendingRefinement ?? offer) : null;
@@ -118,7 +121,7 @@ export default function DashboardOfferPage() {
     } finally {
       setGenLoading(false);
     }
-  }, []);
+  }, [activeProject?.id]);
 
   useEffect(() => {
     if (!d.userId || onboardingAutoStarted.current) return;
@@ -330,6 +333,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
       d.setOffer(draft);
       setDraft(null);
       setEditing(false);
+      await d.refreshDashboardStatus();
     } finally {
       setSaving(false);
     }
@@ -344,8 +348,8 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
 
   const headerRight =
     offer && !editing ? (
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={dash.badgeSuccess}>Active</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-400">Active</span>
         <button
           type="button"
           onClick={() => {
@@ -354,73 +358,90 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
             setPendingRefinement(null);
             setEditing(true);
           }}
-          style={dash.btnGhostEdit}
+          className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
         >
-          Edit
+          Edit offer
         </button>
       </div>
     ) : null;
 
-  return (
-    <div style={dash.pageShell}>
-      <DashPageHeader title="Your Offer" subtitle="Your core positioning and value proposition" right={headerRight} />
+  const st = d.dashboardStatus;
+  const completedCount = st?.completedSteps ?? 0;
 
+  return (
+    <div className="min-h-full" style={dash.pageShell}>
+      <DashboardStepShell
+        stepNum={1}
+        completedCount={completedCount}
+        title={offer ? "Your offer" : "Define your offer"}
+        subtitle={
+          offer
+            ? "Your core positioning and value proposition"
+            : "Tell us what you do — AI will craft your positioning, headline, and pricing in 30 seconds."
+        }
+        isStepDone={!!offer}
+        nextStepLabel="Landing page"
+        nextStepHref="/dashboard/landing"
+        right={headerRight}
+      >
       {!offer ? (
         <>
-          <div style={{ ...dash.card }}>
-            <p style={{ ...dash.body, margin: "0 0 20px" }}>
-              You don&apos;t have an offer saved yet. Describe your business below and we&apos;ll generate three
-              strategies to choose from.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="mx-auto flex max-w-lg flex-col items-center py-4">
+            <div className="mb-6 w-16 text-indigo-400/90" aria-hidden>
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-20 w-20">
+                <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" strokeWidth="2" />
+                <path d="M20 20h24M20 28h18M20 36h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path d="M38 44l6 6 10-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="w-full space-y-5">
               <div>
-                <p style={dash.sectionTitle}>What do you do?</p>
+                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">What do you do?</label>
                 <textarea
-                  className="dash-focusable dash-offer-gen-field"
+                  className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   value={whatYouDo}
                   onChange={(e) => setWhatYouDo(e.target.value)}
-                  placeholder="e.g. I'm a fitness coach helping busy professionals lose weight..."
+                  placeholder="I'm a UX designer who helps SaaS startups..."
                   rows={4}
-                  style={{ ...textareaStyle }}
+                  style={{ ...textareaStyle, border: undefined, background: undefined }}
                 />
               </div>
               <div>
-                <p style={dash.sectionTitle}>Who is your ideal client?</p>
+                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Who is your ideal client?</label>
                 <textarea
-                  className="dash-focusable dash-offer-gen-field"
+                  className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   value={idealClient}
                   onChange={(e) => setIdealClient(e.target.value)}
-                  placeholder="e.g. Men 30-45, corporate jobs, no time to exercise..."
+                  placeholder="Founders and PMs at B2B SaaS companies..."
                   rows={4}
-                  style={{ ...textareaStyle }}
+                  style={{ ...textareaStyle, border: undefined, background: undefined }}
                 />
               </div>
               <div>
-                <p style={dash.sectionTitle}>What is your price range?</p>
+                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">What&apos;s your price range?</label>
                 <input
-                  className="dash-focusable dash-offer-gen-field"
+                  className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   type="text"
                   value={priceRange}
                   onChange={(e) => setPriceRange(e.target.value)}
-                  placeholder="e.g. $500-2000/month"
-                  style={{ ...dash.input, marginTop: 4, width: "100%", boxSizing: "border-box" as const }}
+                  placeholder="$2,000–5,000/project"
+                  style={{ ...dash.input, marginTop: 0, width: "100%", boxSizing: "border-box" as const, border: undefined, background: undefined }}
                 />
               </div>
             </div>
-            {genError ? <p style={{ margin: "16px 0 0", fontSize: 12, color: "var(--danger)" }}>{genError}</p> : null}
+            {genError ? <p className="mt-4 text-center text-sm text-red-400">{genError}</p> : null}
             <button
               type="button"
               disabled={genLoading}
               onClick={() => void generateOffer()}
-              style={{
-                ...dash.btnPrimary,
-                marginTop: 20,
-                opacity: genLoading ? 0.6 : 1,
-                cursor: genLoading ? "not-allowed" : "pointer"
-              }}
+              className="mt-6 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {genLoading ? "Generating…" : "⚡ GENERATE MY OFFER →"}
+              {genLoading ? "Generating…" : "Generate my offer →"}
             </button>
+            <p className="mt-2 text-center text-xs text-white/30">
+              Uses 5 credits
+              {credits !== null ? ` · You have ${credits} credits` : ""}
+            </p>
           </div>
 
           {variants && variants.length === 3 ? (
@@ -512,7 +533,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               You have unsaved AI improvements — review the card and click &quot;Save improved offer&quot; below.
             </p>
           ) : null}
-          <div style={{ ...dash.card }}>
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-5 py-1" style={{ boxSizing: "border-box" }}>
             {fields.map((item, idx) => {
               const src = editing && draft ? draft : displayOffer!;
               const value = src[item.key];
@@ -579,30 +600,22 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               </button>
             </div>
           ) : (
-            <div
-              style={{
-                marginTop: 24,
-                background: "#111116",
-                border: "1px solid #1C1C22",
-                borderRadius: 8,
-                padding: "20px 24px",
-                boxSizing: "border-box"
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 12,
-                  color: "#52525B",
-                  fontFamily: "inherit",
-                  letterSpacing: "0.04em"
-                }}
+            <div className="mt-6 overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04]">
+              <button
+                type="button"
+                onClick={() => setRefineOpen((o) => !o)}
+                className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-white/50 transition-colors hover:text-white/70"
               >
-                Not quite right? Refine it →
-              </p>
+                Refine it
+                <span className="text-white/35" aria-hidden>
+                  {refineOpen ? "▴" : "▾"}
+                </span>
+              </button>
+              {refineOpen ? (
+                <div className="border-t border-white/[0.06] px-4 pb-4 pt-3">
               <div
                 style={{
-                  marginTop: 14,
+                  marginTop: 0,
                   maxHeight: 200,
                   overflowY: "auto",
                   display: "flex",
@@ -724,10 +737,13 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   </button>
                 ) : null}
               </div>
+                </div>
+              ) : null}
             </div>
           )}
         </>
       )}
+      </DashboardStepShell>
     </div>
   );
 }

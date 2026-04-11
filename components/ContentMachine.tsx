@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState, type CSSProperties } from "react";
-import { dash } from "@/components/dashboard/dashTokens";
+import { useCallback, useState } from "react";
+import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Platform = "instagram" | "x" | "linkedin" | "threads" | "telegram";
@@ -48,25 +48,6 @@ function modelDisplayName(m: ModelId): string {
   return "Creative";
 }
 
-const pillBase: CSSProperties = {
-  borderRadius: 20,
-  padding: "6px 14px",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  border: "1px solid #1C1C22",
-  background: "rgba(255,255,255,0.03)",
-  color: "#71717A"
-};
-
-const pillActive: CSSProperties = {
-  ...pillBase,
-  background: "rgba(6,182,212,0.1)",
-  border: "1px solid rgba(6,182,212,0.3)",
-  color: "#06B6D4"
-};
-
 function downloadImageViaProxy(url: string) {
   window.location.href = `/api/content/proxy-image?url=${encodeURIComponent(url)}`;
 }
@@ -82,9 +63,13 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
   const [error, setError] = useState("");
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
   const [postImages, setPostImages] = useState<Record<number, PostImageState>>({});
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [creditsError, setCreditsError] = useState(false);
+  const creditsBal = useCreditsBalance();
 
   const runGenerate = useCallback(async () => {
     setError("");
+    setCreditsError(false);
     const supabase = getSupabaseClient();
     const {
       data: { session }
@@ -117,6 +102,11 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         })
       });
       const data = (await res.json()) as { posts?: { id: number; text: string }[]; error?: string };
+      if (res.status === 402) {
+        setCreditsError(true);
+        setError(data.error ?? "Not enough credits.");
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? "Generation failed.");
         return;
@@ -198,6 +188,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
 
   async function handleRegeneratePost(postId: number) {
     setError("");
+    setCreditsError(false);
     const supabase = getSupabaseClient();
     const {
       data: { session }
@@ -227,6 +218,11 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         })
       });
       const data = (await res.json()) as { posts?: { id: number; text: string }[]; error?: string };
+      if (res.status === 402) {
+        setCreditsError(true);
+        setError(data.error ?? "Not enough credits.");
+        return;
+      }
       if (!res.ok || !data.posts?.[0]) {
         setError(data.error ?? "Regenerate failed.");
         return;
@@ -251,15 +247,15 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     window.setTimeout(() => setCopiedId(null), 2000);
   }
 
-  const rowStyle: CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 10
-  };
+  const pillCls = (on: boolean) =>
+    `rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-150 border ${
+      on
+        ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-300"
+        : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/20 hover:text-white/70"
+    }`;
 
   return (
-    <div style={{ fontFamily: "inherit", maxWidth: 720 }}>
+    <div className="max-w-4xl font-inherit">
       <style>{`
         @keyframes content-machine-pulse {
           0%, 100% { opacity: 1; }
@@ -270,286 +266,176 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         }
       `}</style>
 
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ ...rowStyle, marginBottom: 10 }}>
+      <section className="mb-8 rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/35">Generate post</p>
+        <div className="mb-3 flex flex-wrap gap-2">
           {PLATFORMS.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => setPlatform(p.id)}
-              className={platform === p.id ? undefined : "content-machine-pill"}
-              style={platform === p.id ? pillActive : pillBase}
+              className={pillCls(platform === p.id)}
               title={p.label}
             >
               {p.label}
             </button>
           ))}
         </div>
-        <div style={{ ...rowStyle, marginBottom: 10 }}>
+        <div className="mb-4 flex flex-wrap gap-2">
           {POST_TYPES.map((pt) => (
-            <button
-              key={pt.id}
-              type="button"
-              onClick={() => setPostType(pt.id)}
-              className={postType === pt.id ? undefined : "content-machine-pill"}
-              style={postType === pt.id ? pillActive : pillBase}
-            >
+            <button key={pt.id} type="button" onClick={() => setPostType(pt.id)} className={pillCls(postType === pt.id)}>
               {pt.label}
             </button>
           ))}
         </div>
-        <div style={{ ...rowStyle, marginBottom: 0 }}>
-          {MODELS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setModel(m.id)}
-              className={model === m.id ? undefined : "content-machine-pill"}
-              style={model === m.id ? pillActive : pillBase}
-              title={m.hint}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
 
-        <div style={{ marginTop: 16 }}>
-          <p
-            style={{
-              margin: "0 0 8px",
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              color: "var(--text-muted)",
-              textTransform: "none"
-            }}
-          >
-            CUSTOM PROMPT (optional)
-          </p>
-          <textarea
-            value={customPrompt}
-            onChange={(e) => setCustomPrompt(e.target.value)}
-            rows={2}
-            placeholder="Describe what you want, e.g. 'Write about a client success story with 40% revenue increase'"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              background: "#16161C",
-              border: "1px solid #1C1C22",
-              borderRadius: 8,
-              padding: "10px 13px",
-              fontSize: 13,
-              resize: "vertical",
-              fontFamily: "inherit",
-              color: "var(--text-primary)",
-              outline: "none",
-              lineHeight: 1.5,
-              minHeight: 56
-            }}
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((v) => !v)}
+          className="mb-3 text-xs font-medium text-white/40 underline-offset-2 transition-colors hover:text-indigo-300"
+        >
+          {advancedOpen ? "Hide advanced" : "Advanced — model & custom prompt"}
+        </button>
+
+        {advancedOpen ? (
+          <div className="mb-4 space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="flex flex-wrap gap-2">
+              {MODELS.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setModel(m.id)}
+                  className={pillCls(model === m.id)}
+                  title={m.hint}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <div>
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/35">Custom prompt (optional)</p>
+              <textarea
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                rows={2}
+                placeholder="e.g. client story with measurable outcome"
+                className="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {creditsError ? (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+            <span className="text-sm text-amber-400">Not enough credits</span>
+            <span className="text-xs text-white/45">Use the Credits widget in the sidebar to buy more.</span>
+          </div>
+        ) : null}
 
         <button
           type="button"
           onClick={() => void runGenerate()}
           disabled={loading || !offer.trim() || !userId}
-          className={loading ? "content-machine-generating" : undefined}
-          style={{
-            width: "100%",
-            border: "none",
-            background: loading || !offer.trim() ? "#1C1C22" : "#06B6D4",
-            color: loading || !offer.trim() ? "#52525B" : "#000",
-            fontSize: 13,
-            fontWeight: 700,
-            padding: 13,
-            borderRadius: 7,
-            letterSpacing: "0.08em",
-            marginTop: 16,
-            cursor: loading || !offer.trim() ? "not-allowed" : "pointer",
-            fontFamily: "inherit"
-          }}
+          className={`w-full rounded-xl py-3.5 text-sm font-semibold transition-colors duration-150 ${
+            loading || !offer.trim()
+              ? "cursor-not-allowed bg-white/10 text-white/35 content-machine-generating"
+              : "bg-indigo-600 text-white hover:bg-indigo-500"
+          }`}
         >
-          {loading ? "Generating…" : "GENERATE"}
+          {loading ? "Generating…" : "Generate post →"}
         </button>
-        {error ? (
-          <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#ef4444" }}>{error}</p>
-        ) : null}
-      </div>
-
-      {posts.length > 0 ? (
-        <div style={{ marginBottom: 32 }}>
-          <p
-            style={{
-              margin: "0 0 16px",
-              fontSize: "11px",
-              color: "var(--text-muted)",
-              letterSpacing: "0.1em",
-              fontWeight: 600
-            }}
-          >
-            5 POSTS FOR {platformLabel(platform)} — {modelDisplayName(model).toUpperCase()}
-          </p>
-          {posts.map((post, idx) => {
-            const img = postImages[post.id];
-            return (
-              <div
-                key={`${post.id}-${idx}`}
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border-primary)",
-                  padding: 20,
-                  marginBottom: 14
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    color: "#06B6D4",
-                    marginBottom: 10
-                  }}
-                >
-                  {String(idx + 1).padStart(2, "0")}
-                </div>
-                <div
-                  style={{
-                    fontSize: "15px",
-                    lineHeight: 1.75,
-                    color: "var(--text-primary)",
-                    whiteSpace: "pre-wrap",
-                    marginBottom: 16
-                  }}
-                >
-                  {post.text}
-                </div>
-
-                {img?.loading ? (
-                  <p
-                    className="content-machine-generating"
-                    style={{
-                      margin: "0 0 12px",
-                      fontSize: "11px",
-                      color: "var(--text-muted)"
-                    }}
-                  >
-                    Generating image...
-                  </p>
-                ) : null}
-                {img?.error ? (
-                  <p style={{ margin: "0 0 12px", fontSize: "11px", color: "#ef4444" }}>{img.error}</p>
-                ) : null}
-
-                {img?.url ? (
-                  <div style={{ marginTop: 16, marginBottom: 0 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- ephemeral OpenAI URLs */}
-                    <img
-                      src={img.url}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        aspectRatio: "1",
-                        objectFit: "cover",
-                        borderRadius: 8,
-                        border: "1px solid #1C1C22",
-                        display: "block"
-                      }}
-                    />
-                    <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => downloadImageViaProxy(img.url!)}
-                        style={{
-                          ...dash.btnGhostSm,
-                          fontSize: 11,
-                          padding: "5px 12px"
-                        }}
-                      >
-                        Download
-                      </button>
-                      <button
-                        type="button"
-                        disabled={img.loading}
-                        onClick={() => void generatePostImage(post.id, post.text)}
-                        style={{
-                          ...dash.btnGhostSm,
-                          fontSize: 11,
-                          padding: "5px 12px",
-                          opacity: img.loading ? 0.5 : 1
-                        }}
-                      >
-                        New image
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 8,
-                    flexWrap: "wrap",
-                    marginTop: 12,
-                    borderTop: "1px solid #1C1C22",
-                    paddingTop: 12
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => void handleCopy(post.text, post.id)}
-                    style={{ ...dash.btnGhostSm, fontSize: 11, padding: "5px 12px" }}
-                  >
-                    {copiedId === post.id ? "Copied" : "COPY"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={regeneratingId !== null || loading}
-                    onClick={() => void handleRegeneratePost(post.id)}
-                    style={{
-                      ...dash.btnGhostSm,
-                      fontSize: 11,
-                      padding: "5px 12px",
-                      opacity: regeneratingId !== null || loading ? 0.5 : 1
-                    }}
-                  >
-                    {regeneratingId === post.id ? "…" : "Regenerate"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={img?.loading || loading || !offer.trim()}
-                    onClick={() => void generatePostImage(post.id, post.text)}
-                    style={{
-                      ...dash.btnGhostSm,
-                      fontSize: 11,
-                      padding: "5px 12px",
-                      opacity: img?.loading || loading || !offer.trim() ? 0.5 : 1
-                    }}
-                  >
-                    GENERATE IMAGE
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
-
-      {!loading && posts.length === 0 ? (
-        <p
-          style={{
-            fontSize: "14px",
-            color: "var(--text-muted)",
-            textAlign: "center",
-            padding: "60px 0",
-            margin: 0,
-            lineHeight: 1.6
-          }}
-        >
-          Select platform, post type and model above
-          <br />
-          then click GENERATE
+        <p className="mt-2 text-center text-xs text-white/30">
+          Uses credits per run
+          {creditsBal !== null ? ` · ${creditsBal} remaining` : ""}
         </p>
-      ) : null}
+        {error ? <p className="mt-2 text-center text-sm text-red-400">{error}</p> : null}
+      </section>
+
+      <section>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/35">Generated posts</p>
+        {posts.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {posts.map((post, idx) => {
+              const img = postImages[post.id];
+              return (
+                <div
+                  key={`${post.id}-${idx}`}
+                  className="flex flex-col rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 transition-opacity duration-300"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
+                      {platformLabel(platform)}
+                    </span>
+                    <span className="text-[10px] text-white/30">{modelDisplayName(model)}</span>
+                  </div>
+                  <div className="flex-1 whitespace-pre-wrap text-sm leading-relaxed text-white/85">{post.text}</div>
+
+                  {advancedOpen && img?.loading ? (
+                    <p className="content-machine-generating mt-3 text-xs text-white/40">Generating image…</p>
+                  ) : null}
+                  {advancedOpen && img?.error ? <p className="mt-2 text-xs text-red-400">{img.error}</p> : null}
+
+                  {advancedOpen && img?.url ? (
+                    <div className="mt-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- ephemeral OpenAI URLs */}
+                      <img src={img.url} alt="" className="aspect-square w-full rounded-lg border border-white/10 object-cover" />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => downloadImageViaProxy(img.url!)}
+                          className="rounded-lg border border-white/15 px-2 py-1 text-xs text-white/60 hover:text-white"
+                        >
+                          Download
+                        </button>
+                        <button
+                          type="button"
+                          disabled={img.loading}
+                          onClick={() => void generatePostImage(post.id, post.text)}
+                          className="rounded-lg border border-white/15 px-2 py-1 text-xs text-white/60 hover:text-white disabled:opacity-50"
+                        >
+                          New image
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/[0.08] pt-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleCopy(post.text, post.id)}
+                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white"
+                    >
+                      {copiedId === post.id ? "Copied" : "Copy"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={regeneratingId !== null || loading}
+                      onClick={() => void handleRegeneratePost(post.id)}
+                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white disabled:opacity-50"
+                    >
+                      {regeneratingId === post.id ? "…" : "Regenerate"}
+                    </button>
+                    {advancedOpen ? (
+                      <button
+                        type="button"
+                        disabled={img?.loading || loading || !offer.trim()}
+                        onClick={() => void generatePostImage(post.id, post.text)}
+                        className="rounded-lg border border-indigo-500/30 px-3 py-1.5 text-xs font-medium text-indigo-300 transition-colors hover:bg-indigo-500/10 disabled:opacity-50"
+                      >
+                        Image
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : !loading ? (
+          <div className="rounded-xl border border-dashed border-white/10 py-16 text-center text-sm text-white/40">
+            No posts yet. Generate your first post above.
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }
