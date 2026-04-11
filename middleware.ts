@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
     host.endsWith(".vercel.app");
 
   /**
-   * Custom domain → rewrite to /p/[slug]. Skip when path is /dashboard so session + auth run via updateSession.
+   * Custom domain → rewrite to /p/[slug]. Skip /dashboard so the app route runs (layout enforces auth).
    */
   if (!isPrimaryAppHost && !request.nextUrl.pathname.startsWith("/dashboard")) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
