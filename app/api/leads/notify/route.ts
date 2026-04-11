@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { runLeadNotifications } from "@/lib/notifyLeadOwner";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid lead data." }, { status: 403 });
     }
 
+    if (!(await checkCredits(supabase, userId, "what_to_say"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
+
     const { emailSent, telegramSent } = await runLeadNotifications({
       userId,
       name,
@@ -56,6 +67,16 @@ export async function POST(request: Request) {
       message,
       slug
     });
+
+    if (!(await deductCredits(supabase, userId, "what_to_say"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
 
     return NextResponse.json({ success: true, emailSent, telegramSent });
   } catch {

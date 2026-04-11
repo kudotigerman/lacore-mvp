@@ -72,15 +72,52 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    const projectId =
+      typeof body.project_id === "string" && body.project_id.length > 0 ? body.project_id : null;
+
     const { data: profileRow } = await supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name, plan, landing_generations_count, credits_balance")
       .eq("user_id", userId)
       .maybeSingle();
+    const prof = profileRow as {
+      display_name?: string;
+      plan?: string;
+      landing_generations_count?: number;
+      credits_balance?: number;
+    } | null;
+    const planName = typeof prof?.plan === "string" ? prof.plan : "free";
+    const genLimit =
+      planName === "free"
+        ? 1
+        : planName === "starter" || planName === "pro" || planName === "scale"
+          ? 999
+          : 1;
+    const generationCount = Number(prof?.landing_generations_count ?? 0);
+    if (generationCount >= genLimit) {
+      return new Response(
+        JSON.stringify({ error: "Generation limit reached. Upgrade your plan." }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+    const creditsBal = Number(prof?.credits_balance ?? 0);
+    if (creditsBal < 10) {
+      return new Response(
+        JSON.stringify({
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits.",
+        }),
+        {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
     const profileDisplayName =
-      typeof (profileRow as { display_name?: string } | null)?.display_name === "string"
-        ? (profileRow as { display_name: string }).display_name.trim()
-        : "";
+      typeof prof?.display_name === "string" ? prof.display_name.trim() : "";
     const brandNameLine =
       profileDisplayName.length > 0 ? profileDisplayName : "(not set in profile)";
     const displayName =
@@ -147,19 +184,44 @@ Site vibe: ${body.siteVibe || "Professional"}`;
       .split("@")[0]
       .replace(/[^a-zA-Z0-9-]/g, "-")
       .toLowerCase();
-    const existingPage = await supabase
-      .from("landing_pages")
-      .select("slug")
-      .eq("user_id", userId)
-      .maybeSingle();
+    let landingQuery = supabase.from("landing_pages").select("slug").eq("user_id", userId);
+    landingQuery = projectId
+      ? landingQuery.eq("project_id", projectId)
+      : landingQuery.is("project_id", null);
+    const existingPage = await landingQuery.maybeSingle();
     const slug =
       existingPage.data?.slug ??
       `${emailBase}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const html = renderHtml(jsonContent, headlineRaw);
 
+    const { data: deducted, error: deductErr } = await supabase.rpc("deduct_credits", {
+      p_user_id: userId,
+      p_amount: 10,
+      p_action: "generate_landing",
+    });
+    if (deductErr || deducted !== true) {
+      return new Response(
+        JSON.stringify({
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits.",
+        }),
+        {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const { error: upsertError } = await supabase.from("landing_pages").upsert(
-      { user_id: userId, slug, html_content: html, json_content: jsonContent, jsx_content: null },
+      {
+        user_id: userId,
+        project_id: projectId,
+        slug,
+        html_content: html,
+        json_content: jsonContent,
+        jsx_content: null,
+      },
       { onConflict: "slug" },
     );
 
@@ -175,6 +237,11 @@ Site vibe: ${body.siteVibe || "Professional"}`;
         },
       );
     }
+
+    await supabase
+      .from("profiles")
+      .update({ landing_generations_count: generationCount + 1 })
+      .eq("user_id", userId);
 
     return new Response(JSON.stringify({ slug, success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 120;
 
@@ -236,6 +237,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Add your offer in Layer 01 first." }, { status: 400 });
     }
 
+    if (!(await checkCredits(supabase, user.id, "generate_post"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
+
     const system = buildSystemPrompt(platform, postType);
     const userPrompt = buildUserPrompt(offer, audience || "General audience", platform, postType, customPrompt);
 
@@ -266,6 +277,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Could not parse posts from model. Try again or switch model." },
         { status: 502 }
+      );
+    }
+
+    if (!(await deductCredits(supabase, user.id, "generate_post"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
       );
     }
 

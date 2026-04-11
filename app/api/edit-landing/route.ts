@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 120;
 
@@ -224,6 +225,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    if (!(await checkCredits(supabase, user.id, "edit_landing"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
+
     let imagePublicUrl: string | undefined;
     if (imageBase64) {
       const mt = normalizeClaudeImageMediaType(imageMediaTypeRaw || "image/jpeg")!;
@@ -312,6 +323,16 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
         return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
       }
 
+      if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+        return NextResponse.json(
+          {
+            error: "insufficient_credits",
+            message: "Not enough credits. Please upgrade your plan or buy more credits."
+          },
+          { status: 402 }
+        );
+      }
+
       return NextResponse.json({ success: true, jsx });
     }
 
@@ -344,6 +365,16 @@ Return the complete updated HTML.`;
 
     if (saveError) {
       return NextResponse.json({ error: "Failed to save edited page.", details: saveError.message }, { status: 500 });
+    }
+
+    if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
     }
 
     return NextResponse.json({ success: true, html });

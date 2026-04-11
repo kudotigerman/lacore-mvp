@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@paddle/paddle-js": "^1.6.2",
+    "@paddle/paddle-node-sdk": "^3.7.0",
     "@stripe/stripe-js": "^9.0.1",
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.49.8",
     "geist": "^1.7.0",
     "gray-matter": "^4.0.3",

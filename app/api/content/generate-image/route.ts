@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 120;
 
@@ -141,6 +142,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Add your offer in Layer 01 first." }, { status: 400 });
     }
 
+    if (!(await checkCredits(supabase, user.id, "generate_image"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "OpenAI is not configured." }, { status: 500 });
@@ -153,6 +164,16 @@ export async function POST(request: Request) {
         : buildImagePrompt(platform, offer, aud, style);
 
     const url = await generateOneImage(apiKey, imagePrompt);
+
+    if (!(await deductCredits(supabase, user.id, "generate_image"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
 
     return NextResponse.json({
       images: [{ id: 1, url }]

@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import type { LandingContent } from "@/types/landing";
 import { PLANS, type PlanName } from "@/lib/plans";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 120;
 
@@ -83,6 +84,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Generation limit reached. Upgrade your plan." },
         { status: 403 }
+      );
+    }
+
+    if (!(await checkCredits(supabase, user.id, "generate_landing"))) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
       );
     }
     const brandNameLine =
@@ -246,6 +257,17 @@ Return the complete HTML document only. No explanation.`;
       .toLowerCase();
     const slug = existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
     const htmlWithSlug = injectSlug(html, slug);
+
+    const deducted = await deductCredits(supabase, user.id, "generate_landing");
+    if (!deducted) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
 
     const { error: upsertError } = await supabase
       .from("landing_pages")

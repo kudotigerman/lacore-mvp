@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { HomePricingSection } from "@/components/home/HomePricingSection";
 
 const PLACEHOLDER_EXAMPLES = [
   "I coach founders on building high-performance teams...",
@@ -497,8 +498,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      <HomePricingSection />
+
       {/* Final CTA */}
-      <section id="pricing" className="scroll-mt-20 px-4 pb-10 pt-8 sm:px-6 sm:pb-10 sm:pt-8">
+      <section id="cta-band" className="scroll-mt-20 px-4 pb-10 pt-8 sm:px-6 sm:pb-10 sm:pt-8">
         <div className="relative z-[1] mx-auto max-w-4xl overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:p-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,0.2),transparent_65%)]" />
           <div className="relative z-[2]">

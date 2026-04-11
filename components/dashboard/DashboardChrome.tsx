@@ -15,6 +15,7 @@ import {
 } from "react";
 import OnboardingWizard from "@/app/components/OnboardingWizard";
 import ProjectSelector from "@/app/components/dashboard/ProjectSelector";
+import { CreditsWidget } from "@/components/dashboard/CreditsWidget";
 import {
   buildSalesBuilderIntro,
   profileInitialsFromName,
@@ -629,6 +630,8 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        <CreditsWidget />
 
         <div
           style={{

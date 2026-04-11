@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 30;
 
@@ -64,6 +65,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing user input." }, { status: 400 });
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const authHeader = request.headers.get("authorization");
+    if (!supabaseUrl || !supabaseAnonKey || !authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const {
+      data: { user },
+      error: authErr
+    } = await supabaseAuth.auth.getUser();
+    if (authErr || !user) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const hasCredits = await checkCredits(supabaseAuth, user.id, "generate_offer");
+    if (!hasCredits) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
@@ -112,32 +142,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Claude returned invalid variants schema." }, { status: 502 });
     }
 
-    const authHeader = request.headers.get("authorization");
-    if (authHeader && project_id) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (supabaseUrl && supabaseAnonKey) {
-        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          const first = variants[0];
-          await supabase.from("offers").upsert(
-            {
-              user_id: user.id,
-              project_id,
-              offer: first.offer,
-              audience: first.audience,
-              pricing: first.pricing,
-              positioning: first.positioning,
-              headline: first.headline,
-            } as never
-          );
-        }
-      }
+    if (project_id) {
+      const first = variants[0];
+      await supabaseAuth.from("offers").upsert(
+        {
+          user_id: user.id,
+          project_id,
+          offer: first.offer,
+          audience: first.audience,
+          pricing: first.pricing,
+          positioning: first.positioning,
+          headline: first.headline
+        } as never
+      );
+    }
+
+    const deducted = await deductCredits(supabaseAuth, user.id, "generate_offer");
+    if (!deducted) {
+      return NextResponse.json(
+        {
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits."
+        },
+        { status: 402 }
+      );
     }
 
     return NextResponse.json({ variants });
