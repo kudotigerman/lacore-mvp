@@ -135,17 +135,25 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
           {isLoggedIn ? (
             <Link
               href="/dashboard/offer"
-              className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white no-underline transition hover:bg-indigo-500 sm:px-4 sm:text-sm"
+              className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition hover:bg-indigo-500"
             >
               Go to dashboard →
             </Link>
           ) : (
-            <Link
-              href="/auth"
-              className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/80 no-underline transition hover:border-white/25 hover:text-white sm:px-4 sm:text-sm"
-            >
-              Sign in
-            </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href="/auth"
+                className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 no-underline transition-colors hover:text-white"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/auth"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-indigo-500"
+              >
+                Start free →
+              </Link>
+            </div>
           )}
         </div>
       </nav>
@@ -182,7 +190,7 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
           <h1 className="font-plus-jakarta mt-8 text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
             <span className="block text-white">You say what you sell.</span>
-            <span className="mt-1 block bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
+            <span className="mt-1 block bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
               LACORE does the rest.
             </span>
           </h1>

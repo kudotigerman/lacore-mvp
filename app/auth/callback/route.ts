@@ -92,6 +92,18 @@ export async function GET(request: Request) {
     } else if (row.credits_balance == null || row.credits_balance === 0) {
       await supabase.from("profiles").update({ credits_balance: 20, plan: "free" }).eq("user_id", user.id);
     }
+
+    const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceUrl && serviceKey) {
+      const { createClient: createServiceClientDynamic } = await import("@supabase/supabase-js");
+      const serviceClient = createServiceClientDynamic(serviceUrl, serviceKey);
+      await serviceClient
+        .from("profiles")
+        .update({ credits_balance: 20, plan: "free" })
+        .eq("user_id", user.id)
+        .eq("credits_balance", 0);
+    }
   }
 
   return response;
