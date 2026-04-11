@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
@@ -17,35 +17,6 @@ export default function AuthPage() {
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    const supabase = getSupabaseClient();
-    let cancelled = false;
-
-    async function redirectIfSession() {
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
-      if (!cancelled && session?.user) {
-        router.replace("/dashboard/offer");
-      }
-    }
-    void redirectIfSession();
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) return;
-      if (event === "SIGNED_IN") {
-        router.replace("/dashboard/offer");
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

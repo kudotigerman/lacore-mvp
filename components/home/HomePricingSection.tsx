@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getPaddleInstance, initializePaddle } from "@paddle/paddle-js";
-import { createClient } from "@/lib/supabase/client";
 import { PADDLE_PRICE_IDS, TOPUP_CREDITS } from "@/lib/paddle-config";
-import type { User } from "@supabase/supabase-js";
 
 type Cycle = "monthly" | "annual";
 
@@ -67,19 +65,9 @@ function priceIdForPlan(planKey: string, cycle: Cycle): string | null {
   return null;
 }
 
-export function HomePricingSection() {
+export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [cycle, setCycle] = useState<Cycle>("monthly");
-  const [user, setUser] = useState<User | null>(null);
   const [paddleReady, setPaddleReady] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    void supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
@@ -99,7 +87,7 @@ export function HomePricingSection() {
         return;
       }
 
-      if (user) {
+      if (isLoggedIn) {
         const res = await fetch("/api/billing/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -124,11 +112,11 @@ export function HomePricingSection() {
         items: [{ priceId, quantity: 1 }]
       });
     },
-    [paddleReady, user]
+    [paddleReady, isLoggedIn]
   );
 
   const openTopup = async (priceId: string) => {
-    if (!user) {
+    if (!isLoggedIn) {
       window.location.assign("/auth");
       return;
     }

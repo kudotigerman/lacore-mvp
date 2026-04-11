@@ -516,7 +516,7 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
       </section>
 
-      <HomePricingSection />
+      <HomePricingSection isLoggedIn={isLoggedIn} />
 
       {/* Final CTA */}
       <section id="cta-band" className="scroll-mt-20 px-4 pb-10 pt-8 sm:px-6 sm:pb-10 sm:pt-8">
