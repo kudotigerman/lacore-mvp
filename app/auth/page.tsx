@@ -67,7 +67,9 @@ export default function AuthPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://www.lacore.ai/auth/callback"
+          redirectTo: "https://www.lacore.ai/auth/callback",
+          // @ts-expect-error GoTrue accepts flowType; OAuth options typings omit it
+          flowType: "pkce"
         }
       });
       if (oauthError) throw oauthError;
