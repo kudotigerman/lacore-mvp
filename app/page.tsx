@@ -146,10 +146,28 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-16 pt-12 sm:px-6 sm:pt-16 md:pt-20">
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <div className="lacore-home-orb-1" />
-          <div className="lacore-home-orb-2" />
-          <div className="lacore-home-orb-3" />
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "radial-gradient(ellipse 900px 600px at 50% -150px, rgba(99,102,241,0.22), transparent)",
+              animation: "lacore-float-slow 8s ease-in-out infinite"
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "radial-gradient(ellipse 600px 400px at 15% 60%, rgba(56,189,248,0.10), transparent)",
+              animation: "lacore-float-slow 10s ease-in-out infinite 2s"
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "radial-gradient(ellipse 500px 350px at 85% 40%, rgba(52,211,153,0.07), transparent)",
+              animation: "lacore-float-slow 12s ease-in-out infinite 4s"
+            }}
+          />
         </div>
         <div className="relative z-[1] mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs text-indigo-300">
@@ -231,22 +249,22 @@ export default function HomePage() {
                 <div className="my-4 h-px bg-white/[0.06]" />
                 <p className="text-[10px] font-medium tracking-wider text-white/25">ANALYTICS</p>
               </aside>
-              <div className="flex-1 p-5 sm:p-7">
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-indigo-400">STEP 2 OF 4</p>
-                <h3 className="text-lg font-semibold text-white sm:text-xl">Build your landing page</h3>
-                <p className="mb-4 text-sm text-white/40">Your offer is ready. Now create the page that converts.</p>
-                <div className="mb-4 h-1 w-full rounded-full bg-white/[0.08]">
+              <div className="flex-1 p-5 sm:p-8">
+                <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-indigo-400">STEP 2 OF 4</p>
+                <h3 className="text-[19px] font-semibold text-white sm:text-[21px]">Build your landing page</h3>
+                <p className="mb-4 text-[15px] text-white/40">Your offer is ready. Now create the page that converts.</p>
+                <div className="mb-4 h-1.5 w-full rounded-full bg-white/[0.08]">
                   <div className="h-full w-[35%] rounded-full bg-indigo-500" />
                 </div>
                 <div className="mb-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-white/30">OFFER</p>
-                  <p className="mt-2 text-sm leading-relaxed text-white/80">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-white/30">OFFER</p>
+                  <p className="mt-2 text-[15px] leading-relaxed text-white/80">
                     I help SaaS startups redesign their product UX to reduce churn — in 3 weeks, fixed price.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-xs font-medium text-white">Generate landing page →</span>
-                  <span className="inline-flex rounded-xl border border-white/15 px-4 py-2 text-xs font-medium text-white/55">Edit offer</span>
+                  <span className="inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white">Generate landing page →</span>
+                  <span className="inline-flex rounded-xl border border-white/15 px-4 py-2 text-[13px] font-medium text-white/55">Edit offer</span>
                 </div>
               </div>
             </div>
@@ -255,7 +273,7 @@ export default function HomePage() {
       </section>
 
       {/* Logos */}
-      <div className="mx-auto max-w-5xl border-y border-white/5 py-10 text-center">
+      <div className="mx-auto max-w-5xl border-y border-white/5 py-8 text-center">
         <p className="text-xs text-white/20">Trusted by freelancers and consultants from</p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4">
           {["Upwork", "Toptal", "Fiverr", "LinkedIn", "99designs", "Clutch"].map((name) => (
@@ -267,7 +285,7 @@ export default function HomePage() {
       </div>
 
       {/* How it works */}
-      <section id="how-it-works" className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24">
+      <section id="how-it-works" className="scroll-mt-20 px-4 py-14 sm:px-6 sm:py-14">
         <div className="animate-on-scroll mx-auto max-w-5xl text-center">
           <div className="mx-auto inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-white/45">
             How it works
@@ -333,7 +351,7 @@ export default function HomePage() {
       </section>
 
       {/* Comparison */}
-      <section className="px-4 py-12 sm:px-6 sm:py-16">
+      <section className="px-4 py-10 sm:px-6 sm:py-14">
         <h2 className="mb-10 text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
           The tools exist. The clients don&apos;t.
         </h2>
@@ -348,7 +366,7 @@ export default function HomePage() {
             <p className="mt-3 text-2xl font-bold text-white/50 sm:text-3xl">A website.</p>
             <p className="mt-2 text-sm text-white/35">But not clients.</p>
           </div>
-          <div className="bg-indigo-500/[0.08] p-8 text-center sm:text-left">
+          <div className="border border-indigo-500/20 bg-indigo-500/10 p-8 text-center sm:text-left">
             <p className="text-sm text-white/45">LACORE gives you</p>
             <p className="mt-3 text-4xl font-bold text-indigo-400 sm:text-5xl">Clients.</p>
             <p className="mt-2 text-sm text-white/45">The whole system. Automated.</p>
@@ -357,7 +375,7 @@ export default function HomePage() {
       </section>
 
       {/* Bento */}
-      <section className="animate-on-scroll px-4 py-12 sm:px-6 sm:py-20">
+      <section className="animate-on-scroll px-4 py-10 sm:px-6 sm:py-14">
         <div className="mx-auto max-w-5xl">
           <h2 className="font-plus-jakarta text-center text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
             Everything you need to go from freelancer to booked.
@@ -434,28 +452,25 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="animate-on-scroll px-4 py-12 sm:px-6 sm:py-16">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-3">
+      <section className="animate-on-scroll px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             {
-              quote:
-                "LACORE helped me land my first $3,000 client in week one. The landing page looked more professional than anything I could build myself.",
+              quote: "LACORE helped me land my first $3,000 client in week one.",
               initials: "AK",
               name: "Alex K.",
               role: "Freelance Designer · 🇺🇸",
               bg: "bg-indigo-600"
             },
             {
-              quote:
-                "From zero online presence to 5 inbound leads in 2 weeks. The AI offer generator finally made me sound like a pro.",
+              quote: "From zero online presence to 5 inbound leads in 2 weeks.",
               initials: "MS",
               name: "Maria S.",
               role: "Business Consultant · 🇪🇸",
               bg: "bg-sky-600"
             },
             {
-              quote:
-                "Set up in 20 minutes. My Calendly got 3 bookings the same day I launched. Insane ROI for a free tool.",
+              quote: "3 Calendly bookings the same day I launched.",
               initials: "JT",
               name: "James T.",
               role: "Executive Coach · 🇬🇧",
@@ -463,12 +478,12 @@ export default function HomePage() {
             }
           ].map((t) => (
             <div key={t.initials} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6">
-              <p className="text-amber-400/90">★★★★★</p>
-              <p className="mt-3 text-sm leading-relaxed text-white/75">&quot;{t.quote}&quot;</p>
+              <p className="text-amber-400">★★★★★</p>
+              <p className="mt-3 text-sm leading-relaxed text-white/60">&quot;{t.quote}&quot;</p>
               <div className="mt-5 flex items-center gap-3">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-medium text-white ${t.bg}`}>{t.initials}</div>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${t.bg}`}>{t.initials}</div>
                 <div>
-                  <p className="text-sm font-medium text-white">{t.name}</p>
+                  <p className="text-sm font-bold text-white">{t.name}</p>
                   <p className="text-xs text-white/35">{t.role}</p>
                 </div>
               </div>
@@ -478,12 +493,12 @@ export default function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section id="pricing" className="animate-on-scroll scroll-mt-20 px-4 pb-20 sm:px-6">
-        <div className="relative mx-4 overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:mx-6 sm:p-16">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,0.25),transparent_65%)]" />
+      <section id="pricing" className="animate-on-scroll scroll-mt-20 px-4 pb-14 sm:px-6">
+        <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:p-16">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,0.2),transparent_65%)]" />
           <div className="relative z-[1]">
-            <h2 className="font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to build your sales machine?</h2>
-            <p className="mx-auto mt-3 max-w-xl text-lg text-white/45">Join 2,400+ freelancers already getting leads on autopilot.</p>
+            <h2 className="text-4xl font-bold tracking-tight text-white">Ready to build your sales machine?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-white/45">Join 2,400+ freelancers already getting leads on autopilot.</p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <Link
                 href="/auth"
@@ -493,7 +508,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="#product-preview"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-7 py-4 text-base text-white/55 no-underline transition hover:text-white/80 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-7 py-4 text-base text-white/55 no-underline transition hover:border-white/25 hover:text-white/80 sm:w-auto"
               >
                 See examples
               </Link>
