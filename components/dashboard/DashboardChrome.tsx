@@ -413,10 +413,9 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         </div>
 
         <div className="px-4 py-2">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-white/30">Your progress</span>
-            <span className="text-[10px] text-white/40">
-              {completedSteps} of {progressTotal}
+          <div className="mb-1">
+            <span className="text-[10px] uppercase tracking-wider text-white/35">
+              Your progress · {completedSteps} of {progressTotal}
             </span>
           </div>
           <div className="h-0.5 overflow-hidden rounded-full bg-white/[0.08]">

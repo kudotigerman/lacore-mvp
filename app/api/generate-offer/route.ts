@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseJsClient, type SupabaseClient } from "@supabase/supabase-js";
 import { checkCredits, deductCredits } from "@/lib/credits";
+import { createClient } from "@/utils/supabase/server";
 
+export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const systemPrompt = `You are a world-class business strategist and copywriter. Given what someone sells, generate 3 distinct positioning strategies as a JSON array. Each strategy must be genuinely different in target audience, pricing model, and positioning angle.
@@ -68,22 +70,33 @@ export async function POST(request: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const authHeader = request.headers.get("authorization");
-    if (!supabaseUrl || !supabaseAnonKey || !authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    }
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    const {
+    const supabase = createClient();
+    let supabaseForDb: SupabaseClient = supabase as SupabaseClient;
+    let {
       data: { user },
       error: authErr
-    } = await supabaseAuth.auth.getUser();
+    } = await supabase.auth.getUser();
+
+    if ((!user || authErr) && authHeader?.startsWith("Bearer ") && supabaseUrl && supabaseAnonKey) {
+      const bearerClient = createSupabaseJsClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const r = await bearerClient.auth.getUser();
+      if (!r.error && r.data.user) {
+        user = r.data.user;
+        authErr = null;
+        supabaseForDb = bearerClient;
+      }
+    }
+
+    console.log("generate-offer: user=", user?.id ?? "null");
+
     if (authErr || !user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const hasCredits = await checkCredits(supabaseAuth, user.id, "generate_offer");
+    const hasCredits = await checkCredits(supabaseForDb, user.id, "generate_offer");
     if (!hasCredits) {
       return NextResponse.json(
         {
@@ -144,7 +157,7 @@ export async function POST(request: Request) {
 
     if (project_id) {
       const first = variants[0];
-      await supabaseAuth.from("offers").upsert(
+      await supabaseForDb.from("offers").upsert(
         {
           user_id: user.id,
           project_id,
@@ -157,7 +170,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const deducted = await deductCredits(supabaseAuth, user.id, "generate_offer");
+    const deducted = await deductCredits(supabaseForDb, user.id, "generate_offer");
     if (!deducted) {
       return NextResponse.json(
         {

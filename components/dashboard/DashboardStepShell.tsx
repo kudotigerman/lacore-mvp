@@ -35,8 +35,8 @@ export function DashboardStepShell({
     <>
       <div className="mb-6">
         <div className="mb-3 flex items-center gap-2">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-indigo-400">
-            Step {stepNum} of 4
+          <span className="text-[10px] font-medium uppercase tracking-widest text-indigo-400/90">
+            Step {stepNum}
           </span>
           <div className="h-px flex-1 bg-white/10" />
           <span className="text-[10px] text-white/30">{progressEncouragement(completedCount)}</span>

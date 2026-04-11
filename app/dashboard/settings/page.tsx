@@ -9,13 +9,26 @@ export default function DashboardSettingsPage() {
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [billingCredits, setBillingCredits] = useState<number | null>(null);
 
+  function applyBillingPayload(data: { plan?: string; credits_balance?: unknown }) {
+    setBillingPlan(typeof data.plan === "string" && data.plan.length > 0 ? data.plan : "free");
+    const raw = data.credits_balance;
+    const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number.parseInt(raw, 10) : NaN;
+    setBillingCredits(Number.isFinite(n) ? n : 0);
+  }
+
   const loadBilling = useCallback(async () => {
     try {
-      const res = await fetch("/api/credits/balance", { credentials: "include", cache: "no-store" });
-      if (!res.ok) return;
-      const json = (await res.json()) as { plan?: string; credits_balance?: number };
-      setBillingPlan(typeof json.plan === "string" ? json.plan : "free");
-      setBillingCredits(typeof json.credits_balance === "number" ? json.credits_balance : 0);
+      const res = await fetch("/api/credits/balance", {
+        credentials: "include",
+        cache: "no-store"
+      });
+      const data = (await res.json()) as { plan?: string; credits_balance?: unknown; error?: string };
+      if (!res.ok) {
+        setBillingPlan("free");
+        setBillingCredits(0);
+        return;
+      }
+      applyBillingPayload(data);
     } catch {
       setBillingPlan("free");
       setBillingCredits(0);
@@ -23,8 +36,14 @@ export default function DashboardSettingsPage() {
   }, []);
 
   useEffect(() => {
+    if (d.loading) return;
+    if (!d.userId) {
+      setBillingPlan("free");
+      setBillingCredits(0);
+      return;
+    }
     void loadBilling();
-  }, [loadBilling]);
+  }, [d.loading, d.userId, loadBilling]);
 
   const toggleBtn = (on: boolean) =>
     on
@@ -140,11 +159,11 @@ export default function DashboardSettingsPage() {
         <p className="mb-4 text-sm font-medium text-white">Billing</p>
         <p className="text-xs uppercase tracking-wider text-white/40">Current plan</p>
         <p className="mt-1 text-lg font-semibold capitalize text-white">
-          {billingPlan === null ? "…" : billingPlan}
+          {d.loading || (d.userId && billingPlan === null) ? "…" : (billingPlan ?? "free")}
         </p>
         <p className="mt-4 text-xs uppercase tracking-wider text-white/40">Credits balance</p>
         <p className="mt-1 text-lg font-semibold text-white">
-          {billingCredits === null ? "…" : billingCredits}
+          {d.loading || (d.userId && billingCredits === null) ? "…" : (billingCredits ?? 0)}
         </p>
         <Link
           href="/#pricing"

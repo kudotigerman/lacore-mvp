@@ -6,10 +6,10 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { getSupabaseClient } from "@/lib/supabase";
 
-type AuthMode = "signup" | "signin";
+type AuthTab = "signup" | "signin";
 
 export default function AuthPage() {
-  const [mode, setMode] = useState<AuthMode>("signup");
+  const [tab, setTab] = useState<AuthTab>("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,10 +56,8 @@ export default function AuthPage() {
 
     try {
       const supabase = getSupabaseClient();
-      if (mode === "signup") {
+      if (tab === "signup") {
         const normalizedEmail = email.trim();
-        // For easier local testing, disable email confirmations in Supabase Dashboard:
-        // Authentication -> Providers -> Email -> turn off "Confirm email".
         const redirectUrl =
           typeof window !== "undefined" ? `${window.location.origin}/dashboard/offer` : undefined;
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -96,10 +94,12 @@ export default function AuthPage() {
     try {
       const supabase = getSupabaseClient();
       const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const callback =
+        origin && `${origin}/auth/callback?next=${encodeURIComponent("/dashboard/offer")}`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: origin ? `${origin}/dashboard/offer` : "https://www.lacore.ai/dashboard/offer"
+          redirectTo: callback || "https://www.lacore.ai/auth/callback?next=%2Fdashboard%2Foffer"
         }
       });
       if (oauthError) throw oauthError;
@@ -110,78 +110,33 @@ export default function AuthPage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "var(--bg-primary)",
-        color: "var(--text-primary)",
-        padding: "24px max(24px, 5vw)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        boxSizing: "border-box"
-      }}
-    >
-      <section style={{ width: "100%", maxWidth: 560, flexShrink: 0 }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-block",
-            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-            fontSize: 11,
-            letterSpacing: "0.14em",
-            color: "var(--accent)",
-            textDecoration: "none"
-          }}
-        >
-          ← BACK TO LACORE
-        </Link>
-        <div style={{ marginTop: 12 }}>
-          <Logo size="lg" variant="dark" href="/" />
-        </div>
-        <h1
-          style={{
-            margin: "14px 0 0",
-            fontFamily: "var(--font-geist-sans), system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
-            fontSize: "clamp(2rem, 6vw, 3.5rem)",
-            lineHeight: 1.12
-          }}
-        >
-          <span style={{ display: "block", color: "var(--text-primary)" }}>YOUR SALES MACHINE</span>
-          <span style={{ display: "block", color: "var(--accent)" }}>STARTS HERE.</span>
-        </h1>
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#07080F] px-4">
+      <Link
+        href="/"
+        className="absolute left-6 top-6 text-xs text-white/35 transition-colors hover:text-white/60"
+      >
+        ← Back to lacore.ai
+      </Link>
 
+      <div className="w-full max-w-sm">
         {!emailConfirmationSent ? (
           <>
+            <div className="mb-8 flex justify-center">
+              <Logo size="lg" variant="dark" href="/" />
+            </div>
+
+            <h1 className="mb-1 text-center text-2xl font-semibold text-white">
+              {tab === "signup" ? "Create your account" : "Welcome back"}
+            </h1>
+            <p className="mb-8 text-center text-sm text-white/40">Your AI sales machine awaits.</p>
+
             <button
               type="button"
-              onClick={handleGoogleSignIn}
+              onClick={() => void handleGoogleSignIn()}
               disabled={loading}
-              style={{
-                width: "100%",
-                marginTop: 20,
-                border: "1px solid var(--border-secondary)",
-                background: "#ffffff",
-                color: "#000000",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 12,
-                letterSpacing: "0.1em",
-                padding: "14px",
-                cursor: loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10
-              }}
-              onMouseEnter={(event) => {
-                if (!loading) event.currentTarget.style.background = "var(--text-primary)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = "#ffffff";
-              }}
+              className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
                 <path
                   fill="#FFC107"
                   d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.3 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"
@@ -199,164 +154,92 @@ export default function AuthPage() {
                   d="M43.6 20.5H42V20H24v8h11.3c-1 2.9-3 5.1-5.9 6.5l6.3 5.3C39 36.9 44 31 44 24c0-1.3-.1-2.4-.4-3.5z"
                 />
               </svg>
-              CONTINUE WITH GOOGLE
+              Continue with Google
             </button>
 
-            <div
-              style={{
-                marginTop: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 10
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: "var(--border-secondary)" }} />
-              <p
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 10,
-                  color: "var(--text-muted)",
-                  letterSpacing: "0.14em"
-                }}
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/10" />
+              <span className="text-xs text-white/30">or</span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <div className="mb-4 flex rounded-xl bg-white/5 p-1">
+              <button
+                type="button"
+                onClick={() => setTab("signup")}
+                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                  tab === "signup"
+                    ? "bg-white/10 text-white"
+                    : "text-white/40 hover:text-white/60"
+                }`}
               >
-                OR
-              </p>
-              <div style={{ flex: 1, height: 1, background: "var(--border-secondary)" }} />
+                Sign up
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("signin")}
+                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+                  tab === "signin"
+                    ? "bg-white/10 text-white"
+                    : "text-white/40 hover:text-white/60"
+                }`}
+              >
+                Sign in
+              </button>
             </div>
 
-            <div style={{ marginTop: 18, display: "flex", gap: 24 }}>
-              {[
-                { key: "signup", label: "SIGN UP" },
-                { key: "signin", label: "SIGN IN" }
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setMode(tab.key as AuthMode)}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    padding: "0 0 8px",
-                    color: mode === tab.key ? "var(--accent)" : "var(--text-muted)",
-                    borderBottom: mode === tab.key ? "1px solid var(--accent)" : "1px solid transparent",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 12,
-                    letterSpacing: "0.15em",
-                    cursor: "pointer"
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <form onSubmit={handleSubmit} style={{ marginTop: 20 }}>
+            <form onSubmit={handleSubmit}>
               <input
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
-                style={{
-                  width: "100%",
-                  border: "none",
-                  borderBottom: "1px solid var(--border-primary)",
-                  background: "transparent",
-                  color: "var(--text-primary)",
-                  padding: "12px 4px",
-                  outline: "none",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 14
-                }}
+                autoComplete="email"
+                className="mb-3 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
               />
               <input
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                style={{
-                  width: "100%",
-                  marginTop: 18,
-                  border: "none",
-                  borderBottom: "1px solid var(--border-primary)",
-                  background: "transparent",
-                  color: "var(--text-primary)",
-                  padding: "12px 4px",
-                  outline: "none",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 14
-                }}
+                autoComplete={tab === "signup" ? "new-password" : "current-password"}
+                className="mb-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
               />
-              {error && (
-                <p
-                  style={{
-                    margin: "14px 0 0",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    color: "#f87171",
-                    fontSize: 12
-                  }}
-                >
-                  {error}
-                </p>
-              )}
+              {error ? <p className="mb-3 text-sm text-red-400">{error}</p> : null}
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  marginTop: 22,
-                  border: "1px solid var(--accent)",
-                  background: "transparent",
-                  color: "var(--accent)",
-                  fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                  fontSize: 12,
-                  letterSpacing: "0.18em",
-                  padding: "12px 20px",
-                  cursor: loading ? "not-allowed" : "pointer"
-                }}
+                className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading
-                  ? mode === "signup"
-                    ? "CREATING ACCOUNT..."
-                    : "SIGNING IN..."
-                  : mode === "signup"
-                    ? "CREATE ACCOUNT →"
-                    : "SIGN IN →"}
+                  ? tab === "signup"
+                    ? "Creating account…"
+                    : "Signing in…"
+                  : tab === "signup"
+                    ? "Create account →"
+                    : "Sign in →"}
               </button>
             </form>
           </>
         ) : (
-          <div style={{ marginTop: 28, textAlign: "center" }}>
-            <p
-              style={{
-                margin: 0,
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                color: "var(--accent)",
-                fontSize: 13,
-                lineHeight: 1.8
-              }}
-            >
-              CHECK YOUR EMAIL. We sent a confirmation link to {confirmationEmail}. Click it to
-              activate your account.
+          <div className="text-center">
+            <div className="mb-8 flex justify-center">
+              <Logo size="lg" variant="dark" href="/" />
+            </div>
+            <p className="mb-2 text-sm font-medium text-white">Check your email</p>
+            <p className="mb-6 text-sm leading-relaxed text-white/45">
+              We sent a confirmation link to <span className="text-white/70">{confirmationEmail}</span>.
+              Click it to activate your account.
             </p>
             <Link
               href="/"
-              style={{
-                display: "inline-block",
-                marginTop: 14,
-                border: "1px solid var(--accent)",
-                color: "var(--accent)",
-                textDecoration: "none",
-                fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                fontSize: 11,
-                letterSpacing: "0.14em",
-                padding: "8px 12px"
-              }}
+              className="inline-block text-sm text-indigo-400 transition-colors hover:text-indigo-300"
             >
-              ← BACK TO LACORE
+              ← Back to lacore.ai
             </Link>
           </div>
         )}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }
