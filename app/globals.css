@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -213,4 +215,69 @@ body::before {
   border-radius: 4px;
   font-size: 14px;
   color: #06b6d4;
+}
+
+/* LACORE marketing homepage */
+:root {
+  --font-plus-jakarta: "Plus Jakarta Sans", var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.font-plus-jakarta {
+  font-family: var(--font-plus-jakarta);
+}
+
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.animate-on-scroll.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes lacore-float-slow {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.lacore-home-orb-1 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse 800px 500px at 50% -100px, rgba(99, 102, 241, 0.25), transparent);
+  animation: lacore-float-slow 8s ease-in-out infinite;
+}
+
+.lacore-home-orb-2 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse 600px 400px at 20% 50%, rgba(56, 189, 248, 0.12), transparent);
+  animation: lacore-float-slow 10s ease-in-out infinite 2s;
+}
+
+.lacore-home-orb-3 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse 500px 300px at 80% 40%, rgba(52, 211, 153, 0.08), transparent);
+  animation: lacore-float-slow 12s ease-in-out infinite 4s;
+}
+
+.hero-placeholder-layer {
+  transition: opacity 0.45s ease;
+}
+
+.hero-placeholder-layer--out {
+  opacity: 0;
 }

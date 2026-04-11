@@ -1,1722 +1,536 @@
 "use client";
 
-import { FormEvent, Fragment, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Bebas_Neue } from "next/font/google";
-import { getSupabaseClient } from "@/lib/supabase";
 
-const landingBebas = Bebas_Neue({
-  weight: "400",
-  subsets: ["latin"]
-});
-
-const sans = "var(--font-geist-sans), system-ui, sans-serif";
-
-const STEPS = [
-  {
-    num: "01",
-    icon: "◆",
-    title: "OFFER",
-    body: "Tell LACORE what you do. Get a sharp, compelling offer in seconds."
-  },
-  {
-    num: "02",
-    icon: "⬡",
-    title: "LANDING PAGE",
-    body: "A high-converting landing page. Live in minutes. Your domain."
-  },
-  {
-    num: "03",
-    icon: "✦",
-    title: "CONTENT",
-    body: "AI-generated posts for Instagram, X, LinkedIn, Threads and Telegram."
-  },
-  {
-    num: "04",
-    icon: "◎",
-    title: "LEADS",
-    body: "Every form submission captured. See who's interested in real time."
-  },
-  {
-    num: "05",
-    icon: "⟐",
-    title: "CLOSING",
-    body: "Scripts, follow-ups, objection handling. Close more deals."
-  },
-  {
-    num: "06",
-    icon: "▦",
-    title: "ANALYTICS",
-    body: "Track what's working. Double down on what gets clients."
-  }
-] as const;
-
-const AUDIENCE_CARDS = [
-  {
-    emoji: "🎨",
-    title: "Designers & Creatives",
-    desc: "Turn your portfolio into a client machine."
-  },
-  {
-    emoji: "💼",
-    title: "Consultants",
-    desc: "Position your expertise. Attract premium clients."
-  },
-  {
-    emoji: "🧠",
-    title: "Coaches",
-    desc: "Your methodology deserves more students."
-  },
-  {
-    emoji: "🏢",
-    title: "Small Agencies",
-    desc: "Scale your pipeline without scaling your team."
-  },
-  {
-    emoji: "💻",
-    title: "Developers & Tech",
-    desc: "Ship your offer. Let LACORE find the users."
-  },
-  {
-    emoji: "✍️",
-    title: "Copywriters & Marketers",
-    desc: "Practice what you preach. Automate your own sales."
-  }
-] as const;
-
-const HERO_PLACEHOLDER_PHRASES = [
-  "I help restaurants design spaces that increase revenue...",
+const PLACEHOLDER_EXAMPLES = [
   "I coach founders on building high-performance teams...",
-  "I create brand identities for premium lifestyle brands...",
-  "I help e-commerce stores grow with paid ads...",
-  "I build custom software for logistics companies...",
-  "I consult small agencies on pricing and positioning..."
+  "I'm a UX designer who helps SaaS startups...",
+  "I help e-commerce brands grow with paid ads...",
+  "I'm a copywriter specializing in B2B SaaS..."
 ];
 
-export default function LandingPage() {
-  const router = useRouter();
+function IconOffer() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"
+        fill="currentColor"
+        className="text-indigo-400"
+      />
+    </svg>
+  );
+}
+
+function IconLanding() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" className="text-sky-400" />
+      <path d="M6 8h8M6 11h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-sky-400" />
+    </svg>
+  );
+}
+
+function IconLeads() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400" />
+      <circle cx="13" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400" />
+      <path
+        d="M4 16c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5M12 16c0-1.2 1-2.2 2.3-2.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="text-emerald-400"
+      />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="M6 10l2.5 2.5L14 7"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-amber-400"
+      />
+    </svg>
+  );
+}
+
+export default function HomePage() {
   const [heroInput, setHeroInput] = useState("");
-  const [heroInputFocused, setHeroInputFocused] = useState(false);
-  const [currentPlaceholder, setCurrentPlaceholder] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [phIndex, setPhIndex] = useState(0);
+  const [phVisible, setPhVisible] = useState(true);
 
   useEffect(() => {
-    const u = () => setIsMobile(window.innerWidth < 768);
-    u();
-    window.addEventListener("resize", u);
-    return () => window.removeEventListener("resize", u);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll(".animate-on-scroll").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
-    let cancelled = false;
+    if (heroInput.trim()) return;
+    const id = setInterval(() => {
+      setPhVisible(false);
+      window.setTimeout(() => {
+        setPhIndex((i) => (i + 1) % PLACEHOLDER_EXAMPLES.length);
+        setPhVisible(true);
+      }, 450);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [heroInput]);
 
-    async function syncSession() {
-      try {
-        const {
-          data: { session }
-        } = await supabase.auth.getSession();
-        if (!cancelled) setIsLoggedIn(Boolean(session?.user));
-      } catch {
-        if (!cancelled) setIsLoggedIn(false);
-      }
-    }
-
-    void syncSession();
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(Boolean(session?.user));
-    });
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (heroInput.trim() || heroInputFocused) return;
-
-    let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    let phraseIndex = 0;
-    let displayedLen = 0;
-    type Phase = "typing" | "pause" | "deleting";
-    let phase: Phase = "typing";
-
-    const schedule = (fn: () => void, ms: number) => {
-      if (timeoutId !== null) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        timeoutId = null;
-        if (!cancelled) fn();
-      }, ms);
-    };
-
-    const step = () => {
-      if (cancelled) return;
-      const text = HERO_PLACEHOLDER_PHRASES[phraseIndex] ?? "";
-
-      if (phase === "typing") {
-        if (displayedLen < text.length) {
-          displayedLen += 1;
-          setCurrentPlaceholder(text.slice(0, displayedLen));
-          schedule(step, 30);
-        } else {
-          phase = "pause";
-          schedule(() => {
-            if (cancelled) return;
-            phase = "deleting";
-            step();
-          }, 3000);
-        }
-      } else if (phase === "deleting") {
-        if (displayedLen > 0) {
-          displayedLen -= 1;
-          setCurrentPlaceholder(text.slice(0, displayedLen));
-          schedule(step, 15);
-        } else {
-          phraseIndex = (phraseIndex + 1) % HERO_PLACEHOLDER_PHRASES.length;
-          phase = "typing";
-          step();
-        }
-      }
-    };
-
-    setCurrentPlaceholder("");
-    displayedLen = 0;
-    phraseIndex = 0;
-    phase = "typing";
-    schedule(step, 0);
-
-    return () => {
-      cancelled = true;
-      if (timeoutId !== null) clearTimeout(timeoutId);
-    };
-  }, [heroInput, heroInputFocused]);
-
-  function scrollToSection(sectionId: string) {
-    const el = document.getElementById(sectionId);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  function scrollToId(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handleHeroSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!heroInput.trim()) return;
-    router.push(isLoggedIn ? "/dashboard" : "/auth");
+    window.location.assign("/auth");
   }
 
-  const navH = 64;
+  const showPlaceholderOverlay = !heroInput.trim();
 
   return (
-    <>
-      <style>{`
-        .pricing-section-inner {
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 0 max(24px, 5vw);
-        }
-        .pricing-grid {
-          margin-top: 48px;
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 28px;
-          max-width: 440px;
-          margin-left: auto;
-          margin-right: auto;
-          align-items: stretch;
-        }
-        @media (min-width: 768px) {
-          .pricing-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            max-width: none;
-            margin-left: 0;
-            margin-right: 0;
-          }
-        }
-        @media (min-width: 1025px) {
-          .pricing-grid {
-            gap: 20px;
-            align-items: center;
-          }
-        }
-        .pricing-card {
-          border-radius: 20px;
-          display: flex;
-          flex-direction: column;
-          box-sizing: border-box;
-          padding: 40px 36px;
-        }
-        .pricing-card--featured {
-          padding-top: 44px;
-        }
-        .pricing-price {
-          margin-top: 12px;
-          font-size: 3.5rem;
-          font-weight: 900;
-          color: var(--accent);
-          line-height: 1;
-          font-family: var(--font-geist-sans), system-ui, sans-serif;
-        }
-        @media (max-width: 1024px) {
-          .pricing-price {
-            font-size: 2.5rem;
-          }
-          .pricing-card {
-            padding: 28px 20px;
-          }
-          .pricing-card--featured {
-            padding-top: 40px;
-          }
-        }
-        @media (min-width: 1025px) {
-          .pricing-card--featured {
-            transform: scale(1.03);
-          }
-        }
-        .lacore-footer-heading {
-          margin: 0 0 20px;
-          font-family: var(--font-geist-sans), system-ui, sans-serif;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.15em;
-          color: #52525b;
-        }
-        .lacore-footer-link {
-          display: block;
-          margin-bottom: 12px;
-          font-family: var(--font-geist-sans), system-ui, sans-serif;
-          font-size: 14px;
-          color: #a1a1aa;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-        .lacore-footer-link:hover {
-          color: #f4f4f5;
-        }
-        .lacore-footer-scroll {
-          display: block;
-          margin-bottom: 12px;
-          padding: 0;
-          border: none;
-          background: none;
-          cursor: pointer;
-          text-align: left;
-          font-family: var(--font-geist-sans), system-ui, sans-serif;
-          font-size: 14px;
-          color: #a1a1aa;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-        .lacore-footer-scroll:hover {
-          color: #f4f4f5;
-        }
-        .lacore-footer-social {
-          color: #52525b;
-          font-size: 13px;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-        .lacore-footer-social:hover {
-          color: #f4f4f5;
-        }
-        .home-anchor-section {
-          scroll-margin-top: ${navH + 8}px;
-        }
-        .home-steps-row {
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          gap: 28px;
-          max-width: 1100px;
-          margin: 0 auto;
-        }
-        .home-step-arrow {
-          display: none;
-        }
-        @media (min-width: 1024px) {
-          .home-steps-row {
-            flex-direction: row;
-            flex-wrap: nowrap;
-            justify-content: center;
-            align-items: flex-start;
-            gap: 8px;
-          }
-          .home-step-arrow {
-            display: flex;
-            align-items: center;
-            color: #06b6d4;
-            font-size: 18px;
-            font-weight: 600;
-            flex-shrink: 0;
-            padding-top: 36px;
-          }
-        }
-        .home-step-card {
-          flex: 1 1 0;
-          min-width: 0;
-          text-align: center;
-        }
-        .home-audience-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-          max-width: 800px;
-          margin: 0 auto;
-        }
-        @media (min-width: 640px) {
-          .home-audience-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-        @media (min-width: 900px) {
-          .home-audience-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-        .home-pain-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 32px;
-          max-width: 900px;
-          margin: 0 auto;
-          text-align: center;
-        }
-        @media (min-width: 768px) {
-          .home-pain-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-        .home-social-stats {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 28px;
-          text-align: center;
-          align-items: center;
-        }
-        @media (min-width: 768px) {
-          .home-social-stats {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0;
-          }
-          .home-social-stat-cell {
-            border-right: 1px solid #1c1c22;
-            padding: 0 20px;
-          }
-          .home-social-stat-cell:last-child {
-            border-right: none;
-          }
-        }
-        .home-social-testimonials {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 20px;
-          max-width: 1100px;
-          margin: 0 auto;
-        }
-        @media (min-width: 900px) {
-          .home-social-testimonials {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            align-items: stretch;
-          }
-        }
-      `}</style>
-
-      <main
-        style={{
-          minHeight: "100vh",
-          background: "var(--bg-primary)",
-          color: "var(--text-primary)",
-          fontFamily: sans,
-          display: "flex",
-          flexDirection: "column"
-        }}
-      >
-        {/* NAV */}
-        <nav
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            height: navH,
-            background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            borderBottom: "1px solid var(--border-primary)",
-            display: "flex",
-            alignItems: "center",
-            padding: "0 24px"
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 1200,
-              margin: "0 auto",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16
-            }}
+    <main className="min-h-screen bg-[#07080F] text-white antialiased" style={{ fontFamily: "var(--font-geist-sans), Inter, system-ui, sans-serif" }}>
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#07080F]/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link
+            href="/"
+            className="font-plus-jakarta text-sm font-medium tracking-[0.1em] text-white no-underline"
           >
-            <Link
-              href="/"
-              className={landingBebas.className}
-              style={{
-                fontSize: 20,
-                color: "#ffffff",
-                textDecoration: "none",
-                letterSpacing: "0.02em"
-              }}
+            LACORE
+          </Link>
+          <div className="hidden items-center gap-6 md:flex">
+            <button
+              type="button"
+              onClick={() => scrollToId("how-it-works")}
+              className="text-sm text-white/55 transition hover:text-white/90"
             >
-              LACORE
-            </Link>
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/auth"}
-              style={{
-                background: "#06B6D4",
-                color: "#000000",
-                padding: "10px 20px",
-                fontSize: 13,
-                fontWeight: 700,
-                textDecoration: "none",
-                fontFamily: sans,
-                borderRadius: 6,
-                whiteSpace: "nowrap"
-              }}
+              How it works
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToId("pricing")}
+              className="text-sm text-white/55 transition hover:text-white/90"
             >
-              {isLoggedIn ? "GO TO DASHBOARD →" : "START FOR FREE →"}
+              Pricing
+            </button>
+            <Link href="/blog" className="text-sm text-white/55 no-underline transition hover:text-white/90">
+              Blog
             </Link>
           </div>
-        </nav>
-
-        <div style={{ height: navH }} />
-
-        {/* HERO */}
-        <section
-          style={{
-            minHeight: "calc(100vh - 64px)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            padding: "48px 24px 64px",
-            background: "var(--bg-primary)",
-            boxSizing: "border-box"
-          }}
-        >
-          <span
-            style={{
-              display: "inline-block",
-              border: "1px solid rgba(6,182,212,0.3)",
-              color: "#06B6D4",
-              fontSize: 12,
-              padding: "6px 16px",
-              borderRadius: 20,
-              letterSpacing: "0.08em",
-              fontWeight: 600,
-              fontFamily: sans
-            }}
+          <Link
+            href="/dashboard/offer"
+            className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white no-underline transition hover:bg-indigo-500 sm:px-4 sm:text-sm"
           >
-            YOUR BUSINESS. OUR SALES MACHINE.
-          </span>
+            Go to dashboard →
+          </Link>
+        </div>
+      </nav>
 
-          <h1
-            className={landingBebas.className}
-            style={{
-              margin: "28px 0 0",
-              lineHeight: 0.95,
-              textTransform: "uppercase",
-              maxWidth: 1100
-            }}
-          >
-            <span
-              style={{
-                display: "block",
-                fontSize: "clamp(52px, 8vw, 96px)",
-                color: "#ffffff"
-              }}
-            >
-              YOU SAY WHAT YOU SELL.
-            </span>
-            <span
-              style={{
-                display: "block",
-                fontSize: "clamp(52px, 8vw, 96px)",
-                color: "#06B6D4",
-                marginTop: 4
-              }}
-            >
-              LACORE DOES THE REST.
+      {/* Hero */}
+      <section className="relative overflow-hidden px-4 pb-16 pt-12 sm:px-6 sm:pt-16 md:pt-20">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <div className="lacore-home-orb-1" />
+          <div className="lacore-home-orb-2" />
+          <div className="lacore-home-orb-3" />
+        </div>
+        <div className="relative z-[1] mx-auto max-w-4xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs text-indigo-300">
+            <span aria-hidden>✦</span>
+            <span>AI sales system for freelancers &amp; consultants</span>
+          </div>
+          <h1 className="font-plus-jakarta mt-8 text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
+            <span className="block text-white">You say what you sell.</span>
+            <span className="mt-1 block bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
+              LACORE does the rest.
             </span>
           </h1>
-
-          <p
-            style={{
-              margin: "24px auto 0",
-              fontSize: 18,
-              color: "var(--text-secondary)",
-              maxWidth: 520,
-              lineHeight: 1.6,
-              fontFamily: sans
-            }}
-          >
-            From offer to first client — in 60 minutes. No marketing degree required.
+          <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-white/50">
+            From offer to first client — in 60 minutes.
+            <br className="hidden sm:block" />
+            <span className="sm:ml-0"> No marketing degree. No design skills. No guesswork.</span>
           </p>
 
-          <form
-            onSubmit={handleHeroSubmit}
-            style={{
-              marginTop: 32,
-              width: "100%",
-              maxWidth: 560,
-              marginLeft: "auto",
-              marginRight: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-              alignItems: "stretch"
-            }}
-          >
-            <input
-              type="text"
-              value={heroInput}
-              onChange={(e) => setHeroInput(e.target.value)}
-              onFocus={() => setHeroInputFocused(true)}
-              onBlur={() => setHeroInputFocused(false)}
-              placeholder={currentPlaceholder}
-              style={{
-                width: "100%",
-                height: 56,
-                padding: "16px 20px",
-                fontSize: 16,
-                fontFamily: sans,
-                border: "1px solid var(--border-primary)",
-                borderRadius: 8,
-                background: "var(--bg-input)",
-                color: "var(--text-primary)",
-                outline: "none",
-                boxSizing: "border-box"
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!heroInput.trim()}
-              style={{
-                width: "100%",
-                padding: "14px 24px",
-                fontSize: 13,
-                fontWeight: 700,
-                fontFamily: sans,
-                border: "none",
-                borderRadius: 8,
-                background: heroInput.trim() ? "#06B6D4" : "var(--border-primary)",
-                color: "#000000",
-                cursor: heroInput.trim() ? "pointer" : "not-allowed",
-                letterSpacing: "0.04em",
-                boxSizing: "border-box"
-              }}
-            >
-              BUILD MY SALES MACHINE →
-            </button>
-          </form>
-
-          <p
-            style={{
-              margin: "20px 0 0",
-              fontSize: 13,
-              color: "var(--text-muted)",
-              fontFamily: sans
-            }}
-          >
-            Joined by designers, consultants, coaches and agencies
-          </p>
-        </section>
-
-        {/* SOCIAL PROOF — stats */}
-        <section
-          style={{
-            background: "#111116",
-            borderTop: "1px solid #1C1C22",
-            borderBottom: "1px solid #1C1C22"
-          }}
-        >
-          <div style={{ maxWidth: 900, margin: "0 auto", padding: "60px 24px", boxSizing: "border-box" }}>
-            <div className="home-social-stats">
-              <div className="home-social-stat-cell">
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 48,
-                    fontWeight: 900,
-                    color: "#06B6D4",
-                    lineHeight: 1.05,
-                    fontFamily: sans
-                  }}
-                >
-                  200+
-                </p>
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    fontSize: 14,
-                    color: "#A1A1AA",
-                    lineHeight: 1.45,
-                    fontFamily: sans
-                  }}
-                >
-                  Freelancers using LACORE
-                </p>
-              </div>
-              <div className="home-social-stat-cell">
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 48,
-                    fontWeight: 900,
-                    color: "#06B6D4",
-                    lineHeight: 1.05,
-                    fontFamily: sans
-                  }}
-                >
-                  500+
-                </p>
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    fontSize: 14,
-                    color: "#A1A1AA",
-                    lineHeight: 1.45,
-                    fontFamily: sans
-                  }}
-                >
-                  Landing pages created
-                </p>
-              </div>
-              <div className="home-social-stat-cell">
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 48,
-                    fontWeight: 900,
-                    color: "#06B6D4",
-                    lineHeight: 1.05,
-                    fontFamily: sans
-                  }}
-                >
-                  $2M+
-                </p>
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    fontSize: 14,
-                    color: "#A1A1AA",
-                    lineHeight: 1.45,
-                    fontFamily: sans
-                  }}
-                >
-                  Revenue generated for users
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SOCIAL PROOF — testimonials */}
-        <section
-          className="home-anchor-section"
-          style={{
-            background: "var(--bg-primary)",
-            padding: "60px 24px 80px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div className="home-social-testimonials">
-            <div
-              style={{
-                background: "#111116",
-                border: "1px solid #1C1C22",
-                borderRadius: 12,
-                padding: 28,
-                boxSizing: "border-box",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 48,
-                  lineHeight: 1,
-                  color: "#06B6D4",
-                  fontFamily: "Georgia, serif",
-                  fontWeight: 400
-                }}
-                aria-hidden
-              >
-                &ldquo;
-              </span>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 15,
-                  lineHeight: 1.65,
-                  color: "#FAFAFA",
-                  fontFamily: sans
-                }}
-              >
-                LACORE helped me land my first $3,000 client in week one. The landing page looked more professional than
-                anything I could build myself.
-              </p>
-              <p style={{ margin: "auto 0 0", fontSize: 13, color: "#A1A1AA", fontFamily: sans, lineHeight: 1.5 }}>
-                Alex K., Freelance Designer, 🇺🇸
-              </p>
-            </div>
-            <div
-              style={{
-                background: "#111116",
-                border: "1px solid #1C1C22",
-                borderRadius: 12,
-                padding: 28,
-                boxSizing: "border-box",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 48,
-                  lineHeight: 1,
-                  color: "#06B6D4",
-                  fontFamily: "Georgia, serif",
-                  fontWeight: 400
-                }}
-                aria-hidden
-              >
-                &ldquo;
-              </span>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 15,
-                  lineHeight: 1.65,
-                  color: "#FAFAFA",
-                  fontFamily: sans
-                }}
-              >
-                I went from zero online presence to 5 inbound leads in 2 weeks. The AI offer generator finally made me
-                sound like a pro.
-              </p>
-              <p style={{ margin: "auto 0 0", fontSize: 13, color: "#A1A1AA", fontFamily: sans, lineHeight: 1.5 }}>
-                Maria S., Business Consultant, 🇩🇪
-              </p>
-            </div>
-            <div
-              style={{
-                background: "#111116",
-                border: "1px solid #1C1C22",
-                borderRadius: 12,
-                padding: 28,
-                boxSizing: "border-box",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 48,
-                  lineHeight: 1,
-                  color: "#06B6D4",
-                  fontFamily: "Georgia, serif",
-                  fontWeight: 400
-                }}
-                aria-hidden
-              >
-                &ldquo;
-              </span>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 15,
-                  lineHeight: 1.65,
-                  color: "#FAFAFA",
-                  fontFamily: sans
-                }}
-              >
-                Set up in 20 minutes. My Calendly got 3 bookings the same day I launched. Insane ROI for a free tool.
-              </p>
-              <p style={{ margin: "auto 0 0", fontSize: 13, color: "#A1A1AA", fontFamily: sans, lineHeight: 1.5 }}>
-                James T., Executive Coach, 🇬🇧
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* PAIN */}
-        <section
-          className="home-anchor-section"
-          style={{
-            background: "var(--bg-secondary)",
-            padding: "80px 24px",
-            textAlign: "center"
-          }}
-        >
-          <h2
-            className={landingBebas.className}
-            style={{
-              margin: 0,
-              fontSize: 48,
-              color: "#ffffff",
-              lineHeight: 1.05,
-              textTransform: "uppercase",
-              letterSpacing: "0.02em"
-            }}
-          >
-            The tools exist. The clients don&apos;t.
-          </h2>
-
-          <div className="home-pain-grid" style={{ marginTop: 48 }}>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", fontFamily: sans }}>ChatGPT gives you</p>
-              <p style={{ margin: "12px 0 0", fontSize: 32, fontWeight: 800, color: "var(--text-muted)", fontFamily: sans }}>
-                Text.
-              </p>
-              <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--text-muted)", fontFamily: sans }}>But not a system.</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", fontFamily: sans }}>Webflow gives you</p>
-              <p style={{ margin: "12px 0 0", fontSize: 32, fontWeight: 800, color: "var(--text-muted)", fontFamily: sans }}>
-                A website.
-              </p>
-              <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--text-muted)", fontFamily: sans }}>But not clients.</p>
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", fontFamily: sans }}>LACORE gives you</p>
-              <p style={{ margin: "12px 0 0", fontSize: 32, fontWeight: 800, color: "#06B6D4", fontFamily: sans }}>Clients.</p>
-              <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--text-muted)", fontFamily: sans }}>
-                The whole system. Automated.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* HOW IT WORKS */}
-        <section
-          className="home-anchor-section"
-          style={{
-            position: "relative",
-            padding: "100px 24px",
-            textAlign: "center",
-            background: "var(--bg-primary)"
-          }}
-        >
-          <span
-            id="how-it-works"
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: 1,
-              height: 1,
-              overflow: "hidden",
-              clip: "rect(0,0,0,0)",
-              whiteSpace: "nowrap"
-            }}
-            aria-hidden
-          />
-          <span
-            id="what-you-get"
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: 1,
-              height: 1,
-              overflow: "hidden",
-              clip: "rect(0,0,0,0)",
-              whiteSpace: "nowrap"
-            }}
-            aria-hidden
-          />
-
-          <h2
-            className={landingBebas.className}
-            style={{
-              margin: 0,
-              fontSize: 56,
-              lineHeight: 1.05,
-              color: "var(--text-primary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.02em"
-            }}
-          >
-            60 MINUTES TO YOUR FIRST CLIENT
-          </h2>
-          <p
-            style={{
-              margin: "16px auto 0",
-              fontSize: 16,
-              color: "var(--text-secondary)",
-              fontFamily: sans,
-              maxWidth: 520,
-              lineHeight: 1.5
-            }}
-          >
-            Six layers. One system. Zero marketing experience required.
-          </p>
-
-          <div className="home-steps-row" style={{ marginTop: 56 }}>
-            {STEPS.map((step, i) => (
-              <Fragment key={step.num}>
-                {i > 0 ? <span className="home-step-arrow" aria-hidden>→</span> : null}
-                <div className="home-step-card">
-                  <p
-                    style={{
-                      margin: 0,
-                      color: "#06B6D4",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      fontFamily: sans
-                    }}
+          <form onSubmit={handleHeroSubmit} className="mx-auto mt-10 max-w-xl">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+              <div className="relative min-w-0 flex-1">
+                <input
+                  type="text"
+                  value={heroInput}
+                  onChange={(e) => setHeroInput(e.target.value)}
+                  placeholder=" "
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-5 py-3.5 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
+                  aria-label="Describe what you sell"
+                />
+                {showPlaceholderOverlay ? (
+                  <span
+                    className={`pointer-events-none absolute left-5 top-1/2 max-w-[calc(100%-2.5rem)] -translate-y-1/2 truncate text-sm text-white/25 hero-placeholder-layer ${phVisible ? "" : "hero-placeholder-layer--out"}`}
                   >
-                    {step.num}
-                  </p>
-                  <div style={{ marginTop: 10, fontSize: 22, lineHeight: 1 }} aria-hidden>
-                    {step.icon}
-                  </div>
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: "#ffffff",
-                      fontFamily: sans
-                    }}
-                  >
-                    {step.title}
-                  </p>
-                  <p
-                    style={{
-                      margin: "8px 0 0",
-                      fontSize: 13,
-                      color: "var(--text-muted)",
-                      lineHeight: 1.5,
-                      fontFamily: sans,
-                      maxWidth: 200,
-                      marginLeft: "auto",
-                      marginRight: "auto"
-                    }}
-                  >
-                    {step.body}
-                  </p>
-                </div>
-              </Fragment>
-            ))}
-          </div>
-        </section>
-
-        {/* FOR WHO */}
-        <section
-          style={{
-            background: "var(--bg-secondary)",
-            padding: "80px 24px",
-            textAlign: "center"
-          }}
-        >
-          <h2
-            className={landingBebas.className}
-            style={{
-              margin: 0,
-              fontSize: 48,
-              lineHeight: 1.05,
-              color: "var(--text-primary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.02em"
-            }}
-          >
-            BUILT FOR PEOPLE WHO SELL EXPERTISE
-          </h2>
-
-          <div className="home-audience-grid" style={{ marginTop: 40 }}>
-            {AUDIENCE_CARDS.map((card) => (
-              <div
-                key={card.title}
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border-primary)",
-                  borderRadius: 8,
-                  padding: 24,
-                  textAlign: "left",
-                  boxSizing: "border-box"
-                }}
-              >
-                <p style={{ margin: 0, fontSize: 20, lineHeight: 1.2 }}>
-                  <span aria-hidden>{card.emoji}</span>{" "}
-                  <span style={{ fontSize: 16, fontWeight: 600, color: "#ffffff", fontFamily: sans }}>{card.title}</span>
-                </p>
-                <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, fontFamily: sans }}>
-                  {card.desc}
-                </p>
+                    {PLACEHOLDER_EXAMPLES[phIndex]}
+                  </span>
+                ) : null}
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* PRICING — unchanged */}
-        <section
-          id="pricing"
-          className="home-anchor-section"
-          style={{
-            background: "var(--bg-primary)",
-            padding: isMobile ? "60px 0" : "120px 0"
-          }}
-        >
-          <div className="pricing-section-inner">
-            <h2
-              style={{
-                margin: 0,
-                textAlign: "center",
-                fontFamily: sans,
-                fontWeight: 800,
-                fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
-                letterSpacing: "-0.02em",
-                color: "var(--text-primary)"
-              }}
-            >
-              Simple pricing. No surprises.
-            </h2>
-            <p
-              style={{
-                margin: "16px 0 0",
-                textAlign: "center",
-                fontFamily: sans,
-                fontSize: 16,
-                color: "var(--text-muted)",
-                lineHeight: 1.6
-              }}
-            >
-              Start free. Upgrade when you&apos;re ready to scale.
+              <button
+                type="submit"
+                disabled={!heroInput.trim()}
+                className="whitespace-nowrap rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Build my sales machine →
+              </button>
+            </div>
+            <p className="mt-3 text-center text-xs text-white/30">
+              <span className="text-amber-400/90">★★★★★</span>
+              {" "}Joined by 2,400+ freelancers · designers · consultants · coaches
             </p>
+          </form>
+        </div>
+      </section>
 
-            <div className="pricing-grid">
-              <div
-                className="pricing-card"
-                style={{
-                  border: "1px solid var(--border-primary)",
-                  background: "var(--bg-card)"
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    opacity: 0.5,
-                    fontFamily: sans,
-                    color: "var(--text-primary)"
-                  }}
-                >
-                  STARTER
-                </span>
-                <div className="pricing-price">FREE</div>
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    fontFamily: sans,
-                    fontSize: 14,
-                    color: "var(--text-muted)"
-                  }}
-                >
-                  During beta
-                </p>
-                <ul
-                  style={{
-                    listStyle: "none",
-                    margin: "28px 0",
-                    padding: 0,
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 14
-                  }}
-                >
-                  {[
-                    "AI offer generation",
-                    "Landing page (lacore.ai/p/yourname)",
-                    "AI visual editor",
-                    "Lead capture form",
-                    "Sales Builder AI chat",
-                    "1 active landing page"
-                  ].map((text) => (
-                    <li
-                      key={text}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        fontSize: "0.94rem",
-                        fontFamily: sans,
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.45
-                      }}
-                    >
-                      <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>
-                      <span>{text}</span>
-                    </li>
-                  ))}
+      {/* Product preview */}
+      <section id="product-preview" className="relative z-[1] px-4 sm:px-6">
+        <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/5 to-transparent px-3 pb-3 sm:mt-16 sm:px-0 sm:pb-0">
+          <div className="overflow-hidden rounded-xl border border-white/[0.08] sm:rounded-2xl">
+            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-black/40 px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+              <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
+              <span className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+              <span className="ml-2 truncate rounded-md bg-white/5 px-3 py-1 text-[11px] text-white/35">lacore.ai/dashboard/landing</span>
+            </div>
+            <div className="flex min-h-[280px] flex-col md:flex-row">
+              <aside className="w-full shrink-0 border-white/[0.06] bg-black/30 p-5 md:w-[220px] md:border-r">
+                <p className="font-plus-jakarta text-[10px] font-medium tracking-[0.12em] text-white/40">LACORE</p>
+                <div className="mt-4 rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 text-xs text-white/70">
+                  Project 1 <span className="text-white/35">▾</span>
+                </div>
+                <ul className="mt-4 space-y-1 text-[11px] font-medium tracking-wide text-white/80">
+                  <li className="flex items-center justify-between rounded-lg px-2 py-2">
+                    <span>01 OFFER</span>
+                    <span className="text-xs text-emerald-400">✓ done</span>
+                  </li>
+                  <li className="rounded-lg bg-indigo-500/15 px-2 py-2 text-indigo-300">02 LANDING PAGE</li>
+                  <li className="px-2 py-2 text-white/25">03 CONTENT</li>
+                  <li className="px-2 py-2 text-white/25">04 LEADS &amp; CLOSING</li>
                 </ul>
-                <Link
-                  href="/auth"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: 16,
-                    fontWeight: 700,
-                    borderRadius: 12,
-                    marginTop: "auto",
-                    textAlign: "center",
-                    textDecoration: "none",
-                    fontFamily: sans,
-                    fontSize: 13,
-                    letterSpacing: "0.06em",
-                    border: "2px solid var(--accent)",
-                    background: "transparent",
-                    color: "var(--accent)",
-                    display: "block"
-                  }}
-                >
-                  START FOR FREE →
-                </Link>
-              </div>
-
-              <div
-                className="pricing-card pricing-card--featured"
-                style={{
-                  position: "relative",
-                  border: "2px solid var(--accent)",
-                  background: "var(--bg-card)",
-                  boxShadow: "0 0 40px rgba(6,182,212,0.15)"
-                }}
-              >
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -16,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    background: "var(--accent)",
-                    color: "#ffffff",
-                    borderRadius: 999,
-                    padding: "6px 20px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    fontFamily: sans,
-                    letterSpacing: "0.08em",
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  MOST POPULAR
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    opacity: 0.5,
-                    fontFamily: sans,
-                    color: "var(--text-primary)"
-                  }}
-                >
-                  PRO
-                </span>
-                <div className="pricing-price">$49</div>
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    fontFamily: sans,
-                    fontSize: 14,
-                    color: "var(--text-muted)"
-                  }}
-                >
-                  /month
-                </p>
-                <ul
-                  style={{
-                    listStyle: "none",
-                    margin: "28px 0",
-                    padding: 0,
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 14
-                  }}
-                >
-                  {[
-                    "Everything in Starter",
-                    "Custom domain connection",
-                    "Content machine — daily posts to Instagram, X, Threads, LinkedIn",
-                    "AI writes in your voice",
-                    "Lead notifications (email + Telegram)",
-                    "3 active landing pages",
-                    "Analytics dashboard",
-                    "Priority support"
-                  ].map((text) => (
-                    <li
-                      key={text}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        fontSize: "0.94rem",
-                        fontFamily: sans,
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.45
-                      }}
-                    >
-                      <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/auth"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: 16,
-                    fontWeight: 700,
-                    borderRadius: 12,
-                    marginTop: "auto",
-                    textAlign: "center",
-                    textDecoration: "none",
-                    fontFamily: sans,
-                    fontSize: 13,
-                    letterSpacing: "0.06em",
-                    border: "none",
-                    background: "var(--accent)",
-                    color: "#ffffff",
-                    display: "block"
-                  }}
-                >
-                  GET PRO →
-                </Link>
-              </div>
-
-              <div
-                className="pricing-card"
-                style={{
-                  border: "1px solid var(--border-primary)",
-                  background: "var(--bg-card)"
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    opacity: 0.5,
-                    fontFamily: sans,
-                    color: "var(--text-primary)"
-                  }}
-                >
-                  SCALE
-                </span>
-                <div className="pricing-price">$99</div>
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    fontFamily: sans,
-                    fontSize: 14,
-                    color: "var(--text-muted)"
-                  }}
-                >
-                  /month
-                </p>
-                <ul
-                  style={{
-                    listStyle: "none",
-                    margin: "28px 0",
-                    padding: 0,
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 14
-                  }}
-                >
-                  {[
-                    "Everything in Pro",
-                    "All social platforms (TikTok, YouTube Shorts, Pinterest, Telegram)",
-                    "AI closing scripts — personalized for every lead",
-                    "Auto follow-up sequences",
-                    "WhatsApp & Telegram lead bot",
-                    "Stripe payments on landing page",
-                    "Unlimited landing pages",
-                    "CRM — full lead pipeline view",
-                    "Dedicated AI sales agent",
-                    "White-label option"
-                  ].map((text) => (
-                    <li
-                      key={text}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        fontSize: "0.94rem",
-                        fontFamily: sans,
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.45
-                      }}
-                    >
-                      <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>✓</span>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/auth"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    padding: 16,
-                    fontWeight: 700,
-                    borderRadius: 12,
-                    marginTop: "auto",
-                    textAlign: "center",
-                    textDecoration: "none",
-                    fontFamily: sans,
-                    fontSize: 13,
-                    letterSpacing: "0.06em",
-                    border: "2px solid var(--accent)",
-                    background: "transparent",
-                    color: "var(--accent)",
-                    display: "block"
-                  }}
-                >
-                  GET SCALE →
-                </Link>
+                <div className="my-4 h-px bg-white/[0.06]" />
+                <p className="text-[10px] font-medium tracking-wider text-white/25">ANALYTICS</p>
+              </aside>
+              <div className="flex-1 p-5 sm:p-7">
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-indigo-400">STEP 2 OF 4</p>
+                <h3 className="text-lg font-semibold text-white sm:text-xl">Build your landing page</h3>
+                <p className="mb-4 text-sm text-white/40">Your offer is ready. Now create the page that converts.</p>
+                <div className="mb-4 h-1 w-full rounded-full bg-white/[0.08]">
+                  <div className="h-full w-[35%] rounded-full bg-indigo-500" />
+                </div>
+                <div className="mb-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-white/30">OFFER</p>
+                  <p className="mt-2 text-sm leading-relaxed text-white/80">
+                    I help SaaS startups redesign their product UX to reduce churn — in 3 weeks, fixed price.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-xs font-medium text-white">Generate landing page →</span>
+                  <span className="inline-flex rounded-xl border border-white/15 px-4 py-2 text-xs font-medium text-white/55">Edit offer</span>
+                </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FINAL CTA */}
-        <section
-          style={{
-            padding: "120px 24px",
-            textAlign: "center",
-            background: "var(--bg-primary)"
-          }}
-        >
-          <h2
-            className={landingBebas.className}
-            style={{
-              margin: 0,
-              fontSize: "clamp(40px, 6vw, 72px)",
-              lineHeight: 1.05,
-              color: "#ffffff",
-              textTransform: "uppercase",
-              letterSpacing: "0.02em",
-              maxWidth: 900,
-              marginLeft: "auto",
-              marginRight: "auto"
-            }}
-          >
-            YOUR NEXT CLIENT IS 60 MINUTES AWAY.
-          </h2>
-          <p
-            style={{
-              margin: "20px 0 0",
-              fontSize: 16,
-              color: "var(--text-muted)",
-              fontFamily: sans
-            }}
-          >
-            Free to start. No credit card. No setup.
+      {/* Logos */}
+      <div className="mx-auto max-w-5xl border-y border-white/5 py-10 text-center">
+        <p className="text-xs text-white/20">Trusted by freelancers and consultants from</p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4">
+          {["Upwork", "Toptal", "Fiverr", "LinkedIn", "99designs", "Clutch"].map((name) => (
+            <span key={name} className="text-sm font-medium tracking-wide text-white/20">
+              {name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* How it works */}
+      <section id="how-it-works" className="scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24">
+        <div className="animate-on-scroll mx-auto max-w-5xl text-center">
+          <div className="mx-auto inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-white/45">
+            How it works
+          </div>
+          <h2 className="font-plus-jakarta mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">4 steps from idea to paying clients</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/45 sm:text-base">
+            LACORE turns what you do into a complete sales system — automatically.
           </p>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/auth"}
-            style={{
-              display: "inline-block",
-              marginTop: 28,
-              background: "#06B6D4",
-              color: "#000000",
-              padding: "18px 40px",
-              fontSize: 15,
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textDecoration: "none",
-              fontFamily: sans,
-              borderRadius: 8
-            }}
-          >
-            BUILD YOUR SALES MACHINE →
-          </Link>
-        </section>
 
-        {/* FOOTER — unchanged */}
-        <footer
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            background: "#060608",
-            borderTop: "1px solid #1C1C1F",
-            padding: "80px 0 40px"
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1200,
-              margin: "0 auto",
-              padding: "0 32px"
-            }}
-          >
-            {isMobile ? (
-              <>
-                <div style={{ marginBottom: 40 }}>
-                  <div
-                    style={{
-                      fontFamily: sans,
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: "#06B6D4"
-                    }}
-                  >
-                    LACORE
-                  </div>
-                  <p
-                    style={{
-                      margin: "12px 0 0",
-                      fontFamily: sans,
-                      fontSize: 14,
-                      color: "#52525B",
-                      lineHeight: 1.5,
-                      maxWidth: 280
-                    }}
-                  >
-                    From idea to first client. Automatically.
-                  </p>
-                  <div
-                    style={{
-                      marginTop: 24,
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 16
-                    }}
-                  >
-                    <a href="https://x.com" target="_blank" rel="noreferrer" className="lacore-footer-social">
-                      𝕏
-                    </a>
-                    <a href="https://threads.net" target="_blank" rel="noreferrer" className="lacore-footer-social">
-                      Threads
-                    </a>
-                    <a href="https://instagram.com" target="_blank" rel="noreferrer" className="lacore-footer-social">
-                      Instagram
-                    </a>
-                  </div>
-                </div>
+          <div className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                n: "01",
+                title: "Define your offer",
+                body: "Tell us what you do. AI writes your positioning, headline, audience and pricing in 30 seconds.",
+                Icon: IconOffer,
+                box: "bg-indigo-500/15 text-indigo-400"
+              },
+              {
+                n: "02",
+                title: "Get a landing page",
+                body: "Your public sales page is built and live in 60 seconds. No designer needed.",
+                Icon: IconLanding,
+                box: "bg-sky-500/15 text-sky-400"
+              },
+              {
+                n: "03",
+                title: "Attract leads",
+                body: "AI generates posts for Instagram, LinkedIn, X. Share content, drive traffic, capture emails.",
+                Icon: IconLeads,
+                box: "bg-emerald-500/15 text-emerald-400"
+              },
+              {
+                n: "04",
+                title: "Close deals",
+                body: "Get AI scripts for every lead — DMs, objections, follow-ups. Close faster, earn more.",
+                Icon: IconClose,
+                box: "bg-amber-500/15 text-amber-400"
+              }
+            ].map((card, i, arr) => {
+              const Icon = card.Icon;
+              return (
                 <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 32
-                  }}
+                  key={card.n}
+                  className="relative bg-[#0D0F1A] p-7 text-left"
                 >
-                  <div>
-                    <p className="lacore-footer-heading">PRODUCT</p>
-                    <button type="button" className="lacore-footer-scroll" onClick={() => scrollToSection("how-it-works")}>
-                      How it works
-                    </button>
-                    <button type="button" className="lacore-footer-scroll" onClick={() => scrollToSection("pricing")}>
-                      Pricing
-                    </button>
-                    <Link href="/dashboard" className="lacore-footer-link">
-                      Dashboard
-                    </Link>
-                    <button type="button" className="lacore-footer-scroll" onClick={() => scrollToSection("what-you-get")}>
-                      What you get
-                    </button>
+                  <p className="text-xs font-semibold text-white/25">{card.n}</p>
+                  <div className={`mt-3 flex h-10 w-10 items-center justify-center rounded-xl ${card.box}`}>
+                    <Icon />
                   </div>
-                  <div>
-                    <p className="lacore-footer-heading">RESOURCES</p>
-                    <Link href="/blog" className="lacore-footer-link">
-                      Documentation
-                    </Link>
-                    <Link href="/blog" className="lacore-footer-link">
-                      Blog
-                    </Link>
-                    <Link href="/blog" className="lacore-footer-link">
-                      Changelog
-                    </Link>
-                  </div>
-                  <div>
-                    <p className="lacore-footer-heading">LEGAL</p>
-                    <Link href="/privacy" className="lacore-footer-link">
-                      Privacy Policy
-                    </Link>
-                    <Link href="/terms" className="lacore-footer-link">
-                      Terms of Service
-                    </Link>
-                    <Link href="/cookies" className="lacore-footer-link">
-                      Cookie Policy
-                    </Link>
-                  </div>
-                  <div>
-                    <p className="lacore-footer-heading">CONNECT</p>
-                    <a href="https://x.com" target="_blank" rel="noreferrer" className="lacore-footer-link">
-                      X / Twitter
-                    </a>
-                    <a href="https://threads.net" target="_blank" rel="noreferrer" className="lacore-footer-link">
-                      Threads
-                    </a>
-                    <a href="https://instagram.com" target="_blank" rel="noreferrer" className="lacore-footer-link">
-                      Instagram
-                    </a>
-                    <a href="mailto:contact@lacore.ai" className="lacore-footer-link">
-                      contact@lacore.ai
-                    </a>
-                  </div>
+                  <h3 className="mt-4 text-base font-semibold text-white">{card.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-white/45">{card.body}</p>
+                  {i < arr.length - 1 ? (
+                    <span className="pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 text-lg text-white/20 lg:block" aria-hidden>
+                      →
+                    </span>
+                  ) : null}
                 </div>
-              </>
-            ) : (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
-                  gap: 48
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontFamily: sans,
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: "#06B6D4"
-                    }}
-                  >
-                    LACORE
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison */}
+      <section className="px-4 py-12 sm:px-6 sm:py-16">
+        <h2 className="mb-10 text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          The tools exist. The clients don&apos;t.
+        </h2>
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3">
+          <div className="bg-[#0D0F1A] p-8 text-center sm:text-left">
+            <p className="text-sm text-white/35">ChatGPT gives you</p>
+            <p className="mt-3 text-2xl font-bold text-white/50 sm:text-3xl">Text.</p>
+            <p className="mt-2 text-sm text-white/35">But not a system.</p>
+          </div>
+          <div className="bg-[#0D0F1A] p-8 text-center sm:text-left">
+            <p className="text-sm text-white/35">Webflow gives you</p>
+            <p className="mt-3 text-2xl font-bold text-white/50 sm:text-3xl">A website.</p>
+            <p className="mt-2 text-sm text-white/35">But not clients.</p>
+          </div>
+          <div className="bg-indigo-500/[0.08] p-8 text-center sm:text-left">
+            <p className="text-sm text-white/45">LACORE gives you</p>
+            <p className="mt-3 text-4xl font-bold text-indigo-400 sm:text-5xl">Clients.</p>
+            <p className="mt-2 text-sm text-white/45">The whole system. Automated.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Bento */}
+      <section className="animate-on-scroll px-4 py-12 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-plus-jakarta text-center text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
+            Everything you need to go from freelancer to booked.
+          </h2>
+          <div className="mt-10 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="md:col-span-2 rounded-2xl border border-white/[0.07] bg-[#13151F] p-6 sm:p-8">
+              <h3 className="text-lg font-semibold text-white sm:text-xl">Your landing page — live in 60 seconds</h3>
+              <p className="mt-2 text-sm text-white/45">
+                AI generates a full sales page from your offer. Share the link, start getting leads.
+              </p>
+              <div className="mt-6 rounded-xl border border-white/[0.08] bg-black/40 p-5">
+                <p className="text-base font-bold text-white sm:text-lg">Stop Losing Clients to Cheaper Designers</p>
+                <p className="mt-2 text-sm text-white/50">
+                  I help SaaS startups fix UX that kills retention — 3 weeks, guaranteed.
+                </p>
+                <span className="mt-4 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white">Book a free call →</span>
+              </div>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                {[
+                  { k: "347", l: "Page views" },
+                  { k: "12", l: "Leads" },
+                  { k: "$8,400", l: "Revenue won" }
+                ].map((s) => (
+                  <div key={s.l} className="flex-1 rounded-xl border border-white/[0.06] bg-black/20 px-5 py-3 text-center sm:text-left">
+                    <p className="text-xl font-bold text-white">{s.k}</p>
+                    <p className="text-xs text-white/35">{s.l}</p>
                   </div>
-                  <p
-                    style={{
-                      margin: "12px 0 0",
-                      fontFamily: sans,
-                      fontSize: 14,
-                      color: "#52525B",
-                      lineHeight: 1.5,
-                      maxWidth: 200
-                    }}
-                  >
-                    From idea to first client. Automatically.
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.07] bg-[#13151F] p-6">
+              <h3 className="text-lg font-semibold text-white">Content that drives traffic</h3>
+              <p className="mt-2 text-sm text-white/45">Generate posts for any platform in seconds.</p>
+              <div className="mt-4 space-y-3">
+                <div className="rounded-lg border border-white/[0.06] bg-black/30 p-3 text-xs">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-400/90">LinkedIn · Hook post</p>
+                  <p className="mt-2 text-white/60">
+                    &quot;I redesigned 47 SaaS dashboards. Here&apos;s the mistake that kills retention every time...&quot;
                   </p>
-                  <div style={{ marginTop: 24, display: "flex", gap: 16 }}>
-                    <a href="https://x.com" target="_blank" rel="noreferrer" className="lacore-footer-social">
-                      𝕏
-                    </a>
-                    <a href="https://threads.net" target="_blank" rel="noreferrer" className="lacore-footer-social">
-                      Threads
-                    </a>
-                    <a href="https://instagram.com" target="_blank" rel="noreferrer" className="lacore-footer-social">
-                      Instagram
-                    </a>
-                  </div>
+                  <span className="mt-2 inline-block text-indigo-400">Generate →</span>
                 </div>
-                <div>
-                  <p className="lacore-footer-heading">PRODUCT</p>
-                  <button type="button" className="lacore-footer-scroll" onClick={() => scrollToSection("how-it-works")}>
-                    How it works
-                  </button>
-                  <button type="button" className="lacore-footer-scroll" onClick={() => scrollToSection("pricing")}>
-                    Pricing
-                  </button>
-                  <Link href="/dashboard" className="lacore-footer-link">
-                    Dashboard
-                  </Link>
-                  <button type="button" className="lacore-footer-scroll" onClick={() => scrollToSection("what-you-get")}>
-                    What you get
-                  </button>
-                </div>
-                <div>
-                  <p className="lacore-footer-heading">RESOURCES</p>
-                  <Link href="/blog" className="lacore-footer-link">
-                    Documentation
-                  </Link>
-                  <Link href="/blog" className="lacore-footer-link">
-                    Blog
-                  </Link>
-                  <Link href="/blog" className="lacore-footer-link">
-                    Changelog
-                  </Link>
-                </div>
-                <div>
-                  <p className="lacore-footer-heading">LEGAL</p>
-                  <Link href="/privacy" className="lacore-footer-link">
-                    Privacy Policy
-                  </Link>
-                  <Link href="/terms" className="lacore-footer-link">
-                    Terms of Service
-                  </Link>
-                  <Link href="/cookies" className="lacore-footer-link">
-                    Cookie Policy
-                  </Link>
-                </div>
-                <div>
-                  <p className="lacore-footer-heading">CONNECT</p>
-                  <a href="https://x.com" target="_blank" rel="noreferrer" className="lacore-footer-link">
-                    X / Twitter
-                  </a>
-                  <a href="https://threads.net" target="_blank" rel="noreferrer" className="lacore-footer-link">
-                    Threads
-                  </a>
-                  <a href="https://instagram.com" target="_blank" rel="noreferrer" className="lacore-footer-link">
-                    Instagram
-                  </a>
-                  <a href="mailto:contact@lacore.ai" className="lacore-footer-link">
-                    contact@lacore.ai
-                  </a>
+                <div className="rounded-lg border border-white/[0.06] bg-black/30 p-3 text-xs">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-white/35">X / Twitter · Value post</p>
+                  <p className="mt-2 text-white/60">&quot;Your landing page isn&apos;t converting because...&quot;</p>
                 </div>
               </div>
-            )}
+            </div>
 
-            <div
-              style={{
-                marginTop: 64,
-                borderTop: "1px solid #1C1C1F"
-              }}
-            />
-            <div
-              style={{
-                marginTop: 32,
-                display: "flex",
-                justifyContent: isMobile ? "center" : "flex-start",
-                alignItems: "center",
-                textAlign: isMobile ? "center" : "left"
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontFamily: sans,
-                  fontSize: 13,
-                  color: "#52525B"
-                }}
-              >
-                © 2026 LACORE. All rights reserved.
+            <div className="rounded-2xl border border-white/[0.07] bg-[#13151F] p-6">
+              <h3 className="text-lg font-semibold text-white">Close every lead with AI scripts</h3>
+              <p className="mt-2 text-sm text-white/45">
+                Personalized DM scripts, objection handlers, and follow-ups for each lead.
               </p>
+              <div className="mt-4 rounded-lg border border-white/[0.06] bg-black/30 p-4 text-xs">
+                <p className="text-white/70">
+                  <span className="font-medium text-white">Maria S.</span>
+                  <span className="text-white/35"> · New lead · </span>
+                  <span className="text-amber-400/90">&quot;Too expensive&quot;</span>
+                </p>
+                <div className="my-3 h-px bg-white/[0.08]" />
+                <p className="leading-relaxed text-white/50">
+                  <span className="text-white/35">AI script: </span>
+                  &quot;Maria, I totally understand the concern. Let me show you exactly what you&apos;re getting for that investment — most clients see ROI in month one...&quot;
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-md border border-white/15 px-3 py-1.5 text-[11px] text-white/55">Copy script</span>
+                  <span className="rounded-md bg-indigo-600 px-3 py-1.5 text-[11px] font-medium text-white">Reply →</span>
+                </div>
+              </div>
             </div>
           </div>
-        </footer>
-      </main>
-    </>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="animate-on-scroll px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-3">
+          {[
+            {
+              quote:
+                "LACORE helped me land my first $3,000 client in week one. The landing page looked more professional than anything I could build myself.",
+              initials: "AK",
+              name: "Alex K.",
+              role: "Freelance Designer · 🇺🇸",
+              bg: "bg-indigo-600"
+            },
+            {
+              quote:
+                "From zero online presence to 5 inbound leads in 2 weeks. The AI offer generator finally made me sound like a pro.",
+              initials: "MS",
+              name: "Maria S.",
+              role: "Business Consultant · 🇪🇸",
+              bg: "bg-sky-600"
+            },
+            {
+              quote:
+                "Set up in 20 minutes. My Calendly got 3 bookings the same day I launched. Insane ROI for a free tool.",
+              initials: "JT",
+              name: "James T.",
+              role: "Executive Coach · 🇬🇧",
+              bg: "bg-violet-600"
+            }
+          ].map((t) => (
+            <div key={t.initials} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6">
+              <p className="text-amber-400/90">★★★★★</p>
+              <p className="mt-3 text-sm leading-relaxed text-white/75">&quot;{t.quote}&quot;</p>
+              <div className="mt-5 flex items-center gap-3">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-medium text-white ${t.bg}`}>{t.initials}</div>
+                <div>
+                  <p className="text-sm font-medium text-white">{t.name}</p>
+                  <p className="text-xs text-white/35">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section id="pricing" className="animate-on-scroll scroll-mt-20 px-4 pb-20 sm:px-6">
+        <div className="relative mx-4 overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:mx-6 sm:p-16">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,0.25),transparent_65%)]" />
+          <div className="relative z-[1]">
+            <h2 className="font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to build your sales machine?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-lg text-white/45">Join 2,400+ freelancers already getting leads on autopilot.</p>
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+              <Link
+                href="/auth"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-8 py-4 text-base font-medium text-white no-underline transition hover:bg-indigo-500 sm:w-auto"
+              >
+                Start free — takes 10 min →
+              </Link>
+              <Link
+                href="#product-preview"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-7 py-4 text-base text-white/55 no-underline transition hover:text-white/80 sm:w-auto"
+              >
+                See examples
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-white/5 px-6 py-10 text-xs text-white/25 sm:px-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-plus-jakarta text-sm font-medium tracking-[0.1em] text-white/80">LACORE</p>
+            <p className="mt-2 max-w-xs">Your business. Our sales machine.</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:items-end sm:text-right">
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <Link href="/privacy" className="text-white/25 no-underline transition hover:text-white/50">
+                Privacy
+              </Link>
+              <span aria-hidden className="text-white/15">
+                ·
+              </span>
+              <Link href="/terms" className="text-white/25 no-underline transition hover:text-white/50">
+                Terms
+              </Link>
+              <span aria-hidden className="text-white/15">
+                ·
+              </span>
+              <Link href="/cookies" className="text-white/25 no-underline transition hover:text-white/50">
+                Cookies
+              </Link>
+            </div>
+            <p>© 2026 LACORE. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 }
