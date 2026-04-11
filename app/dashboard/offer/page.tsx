@@ -458,76 +458,58 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
           </div>
 
           {variants && variants.length === 3 ? (
-            <div style={{ marginTop: 24 }}>
-              {chooseError ? (
-                <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--danger)" }}>{chooseError}</p>
-              ) : null}
-              <p style={{ ...dash.sectionTitle, marginBottom: 12 }}>Pick a strategy</p>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                  gap: 16
-                }}
-              >
+            <div className="mt-6">
+              {chooseError ? <p className="mb-3 text-xs text-red-400">{chooseError}</p> : null}
+              <p className="mb-4 text-lg font-medium text-white">Pick your strategy</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {[...variants]
                   .sort((a, b) => a.variant.localeCompare(b.variant))
-                  .map((v) => (
-                    <div
-                      key={v.variant}
-                      style={{
-                        ...dash.card,
-                        padding: 20,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10
-                      }}
-                    >
-                      <span style={{ fontSize: 36, fontWeight: 800, color: "var(--accent)", lineHeight: 1 }}>
-                        {v.variant}
-                      </span>
-                      <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.12em", color: "var(--text-muted)" }}>
-                        {v.label}
-                      </p>
-                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.25 }}>
-                        {v.headline}
-                      </h3>
-                      <p style={{ ...dash.small, margin: 0 }}>
-                        <span style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>Offer</span>
-                        <br />
-                        {v.offer}
-                      </p>
-                      <p style={{ ...dash.small, margin: 0 }}>
-                        <span style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>Audience</span>
-                        <br />
-                        {v.audience}
-                      </p>
-                      <p style={{ ...dash.small, margin: 0 }}>
-                        <span style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>Pricing</span>
-                        <br />
-                        {v.pricing}
-                      </p>
-                      <p style={{ ...dash.small, margin: 0 }}>
-                        <span style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>Positioning</span>
-                        <br />
-                        {v.positioning}
-                      </p>
-                      <button
-                        type="button"
-                        disabled={chooseLoading !== null}
-                        onClick={() => void chooseVariant(v)}
-                        style={{
-                          ...dash.btnPrimary,
-                          marginTop: 8,
-                          alignSelf: "flex-start",
-                          opacity: chooseLoading && chooseLoading !== v.variant ? 0.5 : 1,
-                          cursor: chooseLoading ? "not-allowed" : "pointer"
-                        }}
+                  .map((v) => {
+                    const isA = v.variant === "A";
+                    return (
+                      <div
+                        key={v.variant}
+                        className={`flex cursor-pointer flex-col rounded-xl border bg-white/[0.04] p-5 transition-colors hover:border-indigo-500/40 ${
+                          isA ? "border-indigo-500/30" : "border-white/10"
+                        }`}
                       >
-                        {chooseLoading === v.variant ? "Saving…" : "Use this strategy →"}
-                      </button>
-                    </div>
-                  ))}
+                        <span className="mb-3 block text-[10px] font-medium uppercase tracking-widest text-white/40">
+                          {v.variant}
+                        </span>
+                        {isA ? (
+                          <span className="mb-2 inline-block rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] text-indigo-400">
+                            ✦ Recommended
+                          </span>
+                        ) : null}
+                        <h3 className="mb-3 text-sm font-semibold leading-snug text-white">{v.headline}</h3>
+                        {v.label ? <p className="mb-3 text-xs text-white/45">{v.label}</p> : null}
+                        <div className="mb-3">
+                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Offer</p>
+                          <p className="text-xs leading-relaxed text-white/65">{v.offer}</p>
+                        </div>
+                        <div className="mb-3">
+                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Audience</p>
+                          <p className="text-xs leading-relaxed text-white/65">{v.audience}</p>
+                        </div>
+                        <div className="mb-3">
+                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Pricing</p>
+                          <p className="text-xs leading-relaxed text-white/65">{v.pricing}</p>
+                        </div>
+                        <div className="mb-3">
+                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Positioning</p>
+                          <p className="text-xs leading-relaxed text-white/65">{v.positioning}</p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={chooseLoading !== null}
+                          onClick={() => void chooseVariant(v)}
+                          className="mt-2 w-full rounded-lg bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {chooseLoading === v.variant ? "Saving…" : "Use this strategy"}
+                        </button>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           ) : null}
