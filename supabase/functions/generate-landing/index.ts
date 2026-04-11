@@ -14,7 +14,8 @@ Rules:
 - niche one of [fitness|designer|developer|coach|consultant|agency|course|local|default]
 - same language as offer
 - no lorem ipsum
-- testimonials and stats must include specific numbers`;
+- testimonials and stats must include specific numbers
+- for developer or default niche, brand/visual tone uses indigo accent #6366F1 (not cyan or teal)`;
 
 function randomFourDigits() {
   return Math.floor(1000 + Math.random() * 9000).toString();

@@ -61,8 +61,8 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
   developer: {
     accent: "#6366F1",
     accentLight: "#818CF8",
-    bgPrimary: "#020C10",
-    bgSecondary: "#051018",
+    bgPrimary: "#0A0A0D",
+    bgSecondary: "#0F0F14",
     heroStyle: "gradient-blob",
   },
   coach: {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getPaddleInstance, initializePaddle } from "@paddle/paddle-js";
+import { openPaddleCheckout, paddleInitOptions } from "@/lib/paddle-client";
 import { PADDLE_PRICE_IDS, TOPUP_CREDITS } from "@/lib/paddle-config";
 
 type Cycle = "monthly" | "annual";
@@ -72,10 +73,12 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
     if (!token) return;
-    void initializePaddle({
-      environment: process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
-      token
-    }).then(() => setPaddleReady(true));
+    void initializePaddle(
+      paddleInitOptions(
+        token,
+        process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox"
+      )
+    ).then(() => setPaddleReady(true));
   }, []);
 
   const openCheckout = useCallback(
@@ -100,7 +103,7 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
           customerId?: string;
           userId?: string;
         };
-        paddle.Checkout.open({
+        openPaddleCheckout(paddle, {
           items: [{ priceId, quantity: 1 }],
           customData: userId ? { lacore_user_id: userId } : undefined,
           customer: customerId ? { id: customerId } : { email: customerEmail ?? "" }
@@ -108,7 +111,7 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
         return;
       }
 
-      paddle.Checkout.open({
+      openPaddleCheckout(paddle, {
         items: [{ priceId, quantity: 1 }]
       });
     },
