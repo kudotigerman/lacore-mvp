@@ -1,133 +1,108 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LegalDocShell } from "@/components/legal/LegalDocShell";
+import { LacoreLegalLayout } from "@/components/legal/LacoreLegalLayout";
+import { createClient } from "@/utils/supabase/server";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | LACORE",
   description: "How LACORE collects, uses, and protects your personal information."
 };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
   return (
-    <LegalDocShell title="Privacy Policy">
-      <p>
-        LACORE (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the lacore.ai platform. This Privacy Policy
-        explains how we collect, use, disclose, and safeguard information when you use our services. By using LACORE, you
-        agree to this policy. If you do not agree, please do not use our services.
-      </p>
+    <LacoreLegalLayout isLoggedIn={!!user}>
+      <main className="mx-auto max-w-3xl px-6 py-16">
+        <h1 className="mb-2 text-3xl font-bold text-white">Privacy Policy</h1>
+        <p className="mb-12 text-sm text-white/40">Last updated: April 12, 2026</p>
 
-      <h2>What information we collect</h2>
-      <p>We may collect the following categories of information:</p>
-      <ul>
-        <li>
-          <strong>Account and contact data:</strong> email address, display name, and authentication identifiers when you
-          register or sign in (including via third-party providers where applicable).
-        </li>
-        <li>
-          <strong>Business and content data:</strong> information you provide about your business, offers, audience,
-          pricing, positioning, headlines, landing page content, lead form submissions, and materials you upload or
-          generate through the platform.
-        </li>
-        <li>
-          <strong>Usage data:</strong> how you interact with the service (e.g., features used, timestamps, approximate
-          device/browser type, and diagnostic logs) to operate and improve the product.
-        </li>
-        <li>
-          <strong>Cookies and similar technologies:</strong> as described in our{" "}
-          <Link href="/cookies" style={{ color: "var(--accent)" }}>
-            Cookie Policy
-          </Link>
-          .
-        </li>
-      </ul>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">1. Information We Collect</h2>
+          <ul className="list-disc space-y-2 pl-5 text-white/60 leading-relaxed">
+            <li>Email address (via Google OAuth or email signup)</li>
+            <li>Usage data (pages visited, features used)</li>
+            <li>Payment information (processed by Paddle; we never store card data)</li>
+          </ul>
+        </section>
 
-      <h2>How we use your information</h2>
-      <ul>
-        <li>To provide, maintain, and secure the LACORE platform and your account.</li>
-        <li>To generate and deliver AI-assisted outputs (e.g., offers, copy, content) based on your inputs.</li>
-        <li>To send service-related and transactional communications (e.g., security alerts, product updates).</li>
-        <li>To send optional notifications you have opted into (e.g., email or integrations such as Telegram).</li>
-        <li>To analyze usage in aggregate to improve features, reliability, and user experience.</li>
-        <li>To comply with legal obligations and enforce our Terms of Service.</li>
-      </ul>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">2. How We Use Your Information</h2>
+          <ul className="list-disc space-y-2 pl-5 text-white/60 leading-relaxed">
+            <li>To provide and improve LACORE services</li>
+            <li>To send transactional emails (account, billing)</li>
+            <li>To personalize your experience</li>
+          </ul>
+        </section>
 
-      <h2>Data storage</h2>
-      <p>
-        We use Supabase and other cloud infrastructure to store and process data. Servers and subprocessors may be located
-        in the European Union, the United States, or other regions where our providers operate. We implement appropriate
-        technical and organizational measures to protect your information; no method of transmission over the Internet is
-        100% secure.
-      </p>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">3. Payment Processing</h2>
+          <div className="mb-4 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-5">
+            <p className="text-sm leading-relaxed text-white/70">
+              Payments are processed by Paddle.com, our Merchant of Record. Paddle handles all payment data. We never
+              store your payment card information. See{" "}
+              <a
+                href="https://paddle.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-400 underline-offset-2 hover:text-indigo-300"
+              >
+                paddle.com/privacy
+              </a>
+              .
+            </p>
+          </div>
+        </section>
 
-      <h2>Third-party services</h2>
-      <p>We rely on service providers that may process data on our behalf, including:</p>
-      <ul>
-        <li>
-          <strong>Anthropic (Claude)</strong> and <strong>OpenAI</strong> — AI processing for features such as offer
-          generation, chat, and content tools.
-        </li>
-        <li>
-          <strong>Resend</strong> — transactional and notification email delivery.
-        </li>
-        <li>
-          <strong>Vercel</strong> — hosting and deployment of the application.
-        </li>
-        <li>
-          <strong>Stripe</strong> — payment processing when billing or paid features are enabled (subject to
-          Stripe&apos;s privacy policy).
-        </li>
-        <li>
-          <strong>Telegram</strong> — optional notifications or bot interactions when you connect or configure them.
-        </li>
-        <li>
-          <strong>Supabase</strong> — authentication, database, and related backend services.
-        </li>
-      </ul>
-      <p>
-        These providers have their own privacy policies. We recommend reviewing them. We do not sell your personal
-        information.
-      </p>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">4. Data Storage</h2>
+          <ul className="list-disc space-y-2 pl-5 text-white/60 leading-relaxed">
+            <li>Data stored on Supabase (EU servers)</li>
+            <li>We retain data while your account is active</li>
+          </ul>
+        </section>
 
-      <h2>Cookies policy</h2>
-      <p>
-        We use cookies and similar technologies for essential operation, preferences, and analytics where applicable.
-        Details are set out in our{" "}
-        <Link href="/cookies" style={{ color: "var(--accent)" }}>
-          Cookie Policy
-        </Link>
-        .
-      </p>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">5. Your Rights</h2>
+          <ul className="list-disc space-y-2 pl-5 text-white/60 leading-relaxed">
+            <li>Access, correct, or delete your data</li>
+            <li>
+              Contact:{" "}
+              <a href="mailto:support@lacore.ai" className="text-indigo-400 hover:text-indigo-300">
+                support@lacore.ai
+              </a>
+            </li>
+          </ul>
+        </section>
 
-      <h2>Your rights</h2>
-      <p>
-        Depending on your location, you may have rights to access, correct, delete, or export your personal data;
-        restrict or object to certain processing; and withdraw consent where processing is consent-based. To exercise
-        these rights, contact us at the email below. We will respond within a reasonable timeframe and as required by
-        applicable law.
-      </p>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">6. Cookies</h2>
+          <ul className="list-disc space-y-2 pl-5 text-white/60 leading-relaxed">
+            <li>Essential cookies only for authentication</li>
+            <li>No advertising cookies</li>
+          </ul>
+          <p className="mt-3 text-white/60 leading-relaxed">
+            More detail in our{" "}
+            <Link href="/cookies" className="text-indigo-400 hover:text-indigo-300">
+              Cookie Policy
+            </Link>
+            .
+          </p>
+        </section>
 
-      <h2>Data retention</h2>
-      <p>
-        We retain information for as long as your account is active or as needed to provide the service, comply with
-        legal obligations, resolve disputes, and enforce our agreements. When data is no longer required, we delete or
-        anonymize it in accordance with our practices and applicable law.
-      </p>
-
-      <h2>Changes to this policy</h2>
-      <p>
-        We may update this Privacy Policy from time to time. We will post the revised version on this page and update
-        the &quot;Last updated&quot; date. Material changes may be communicated through the service or by email where
-        appropriate. Continued use after changes constitutes acceptance of the updated policy.
-      </p>
-
-      <h2>Contact information</h2>
-      <p>
-        For privacy-related questions or requests, contact us at{" "}
-        <a href="mailto:support@lacore.ai" style={{ color: "var(--accent)" }}>
-          support@lacore.ai
-        </a>
-        .
-      </p>
-    </LegalDocShell>
+        <section className="mb-10">
+          <h2 className="mb-3 text-lg font-semibold text-white">7. Contact</h2>
+          <p className="text-white/60 leading-relaxed">
+            Email:{" "}
+            <a href="mailto:support@lacore.ai" className="text-indigo-400 hover:text-indigo-300">
+              support@lacore.ai
+            </a>
+          </p>
+        </section>
+      </main>
+    </LacoreLegalLayout>
   );
 }
