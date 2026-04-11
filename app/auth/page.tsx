@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { getSupabaseClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 type AuthTab = "signup" | "signin";
 
@@ -26,7 +26,7 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      const supabase = getSupabaseClient();
+      const supabase = createClient();
       if (tab === "signup") {
         const normalizedEmail = email.trim();
         const redirectUrl =
@@ -63,13 +63,11 @@ export default function AuthPage() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = getSupabaseClient();
+      const supabase = createClient();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://www.lacore.ai/auth/callback",
-          // @ts-expect-error GoTrue accepts flowType; OAuth options typings omit it
-          flowType: "pkce"
+          redirectTo: "https://www.lacore.ai/auth/callback"
         }
       });
       if (oauthError) throw oauthError;

@@ -1,6 +1,18 @@
-import { getSupabaseClient } from "@/lib/supabase";
+import { createBrowserClient } from "@supabase/ssr";
 
-/** Browser Supabase client (same singleton as getSupabaseClient). */
 export function createClient() {
-  return getSupabaseClient();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Missing Supabase environment variables.");
+  }
+
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      flowType: "pkce",
+      detectSessionInUrl: true,
+      persistSession: true
+    }
+  });
 }

@@ -1,22 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
-let browserClient: ReturnType<typeof createClient> | null = null;
-
+/** Browser singleton via `createBrowserClient` (see `lib/supabase/client.ts`). */
 export function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables.");
-  }
-
-  if (!browserClient) {
-    browserClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        flowType: "pkce"
-      }
-    });
-  }
-
-  return browserClient;
+  return createClient();
 }
