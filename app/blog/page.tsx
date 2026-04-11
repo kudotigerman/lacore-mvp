@@ -1,4 +1,5 @@
 import { getAllPosts } from "@/lib/blog";
+import { Logo } from "@/components/Logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -20,18 +21,7 @@ export default function BlogPage() {
           borderBottom: "1px solid var(--border-primary)"
         }}
       >
-        <Link
-          href="/"
-          style={{
-            fontWeight: 800,
-            fontSize: 16,
-            letterSpacing: "0.1em",
-            color: "white",
-            textDecoration: "none"
-          }}
-        >
-          LACORE
-        </Link>
+        <Logo size="md" variant="dark" href="/" />
         <Link
           href="/dashboard"
           style={{

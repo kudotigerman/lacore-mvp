@@ -94,29 +94,33 @@ export function HomePricingSection() {
     async (priceId: string) => {
       const paddle = paddleReady ? getPaddleInstance() : null;
       if (!paddle?.Checkout) return;
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ priceId })
-      });
-      if (res.status === 401) {
-        window.location.assign("/auth");
+
+      if (user) {
+        const res = await fetch("/api/billing/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ priceId })
+        });
+        if (!res.ok) return;
+        const { customerEmail, customerId, userId } = (await res.json()) as {
+          customerEmail?: string;
+          customerId?: string;
+          userId?: string;
+        };
+        paddle.Checkout.open({
+          items: [{ priceId, quantity: 1 }],
+          customData: userId ? { lacore_user_id: userId } : undefined,
+          customer: customerId ? { id: customerId } : { email: customerEmail ?? "" }
+        });
         return;
       }
-      if (!res.ok) return;
-      const { customerEmail, customerId, userId } = (await res.json()) as {
-        customerEmail?: string;
-        customerId?: string;
-        userId?: string;
-      };
+
       paddle.Checkout.open({
-        items: [{ priceId, quantity: 1 }],
-        customData: userId ? { lacore_user_id: userId } : undefined,
-        customer: customerId ? { id: customerId } : { email: customerEmail ?? "" }
+        items: [{ priceId, quantity: 1 }]
       });
     },
-    [paddleReady]
+    [paddleReady, user]
   );
 
   const openTopup = async (priceId: string) => {
@@ -207,20 +211,17 @@ export function HomePricingSection() {
                   ) : (
                     <button
                       type="button"
+                      disabled={!paddleReady || !priceId}
                       onClick={() => {
-                        if (!user) {
-                          window.location.assign("/auth");
-                          return;
-                        }
                         if (priceId) void openCheckout(priceId);
                       }}
-                      className={`w-full rounded-xl py-3 text-sm font-medium transition ${
+                      className={`w-full rounded-xl py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                         p.featured
                           ? "bg-indigo-600 text-white hover:bg-indigo-500"
                           : "border border-white/15 text-white/90 hover:bg-white/[0.06]"
                       }`}
                     >
-                      Get {p.name} →
+                      {!paddleReady ? "Loading…" : `Get ${p.name} →`}
                     </button>
                   )}
                 </div>

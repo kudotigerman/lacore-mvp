@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/Logo";
 
 export function LegalDocShell({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -70,20 +71,7 @@ export function LegalDocShell({ title, children }: { title: string; children: Re
             gap: 16
           }}
         >
-          <Link
-            href="/"
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              fontSize: 22,
-              color: "var(--accent)",
-              textDecoration: "none"
-            }}
-          >
-            LACORE
-          </Link>
+          <Logo size="md" variant="dark" href="/" />
           <Link
             href="/dashboard"
             style={{

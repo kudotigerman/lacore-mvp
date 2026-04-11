@@ -1,4 +1,5 @@
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
+import { Logo } from "@/components/Logo";
 import type { Metadata } from "next";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import Link from "next/link";
@@ -39,18 +40,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           borderBottom: "1px solid var(--border-primary)"
         }}
       >
-        <Link
-          href="/"
-          style={{
-            fontWeight: 800,
-            fontSize: 16,
-            letterSpacing: "0.1em",
-            color: "white",
-            textDecoration: "none"
-          }}
-        >
-          LACORE
-        </Link>
+        <Logo size="md" variant="dark" href="/" />
         <Link href="/blog" style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none" }}>
           ← All posts
         </Link>
