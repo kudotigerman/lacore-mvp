@@ -735,13 +735,27 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               >
                 Build landing page →
               </button>
-              <button
-                type="button"
-                onClick={() => setRefineOpen(true)}
-                className="shrink-0 whitespace-nowrap text-sm text-white/40 transition-colors hover:text-white/70"
-              >
-                Refine first
-              </button>
+              <div className="flex shrink-0 flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRefineOpen(true)}
+                  className="whitespace-nowrap text-sm text-white/40 transition-colors hover:text-white/70"
+                >
+                  Refine first
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaveErr(null);
+                    setDraft({ ...(pendingRefinement ?? offer) });
+                    setPendingRefinement(null);
+                    setEditing(true);
+                  }}
+                  className="whitespace-nowrap text-sm text-white/40 transition-colors hover:text-white/70"
+                >
+                  Edit fields
+                </button>
+              </div>
             </div>
           ) : null}
         </>
