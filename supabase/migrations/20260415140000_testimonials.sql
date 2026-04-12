@@ -1,14 +1,14 @@
--- Client testimonials collected via /review/[slug]; inserts via service API only
+-- Testimonials: /review/[slug] submissions and public landing display
 CREATE TABLE IF NOT EXISTS public.testimonials (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  project_id uuid REFERENCES public.projects (id) ON DELETE SET NULL,
+  user_id uuid REFERENCES auth.users (id) ON DELETE CASCADE,
+  project_id uuid REFERENCES public.projects (id),
   slug text NOT NULL,
   client_name text NOT NULL,
   client_role text,
-  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
   content text NOT NULL,
-  approved boolean NOT NULL DEFAULT true,
+  approved boolean DEFAULT true,
   created_at timestamptz DEFAULT now()
 );
 
@@ -17,22 +17,13 @@ CREATE INDEX IF NOT EXISTS testimonials_user_id_idx ON public.testimonials (user
 
 ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
 
--- Public read (anon JWT only): approved rows. Authenticated users rely on owner policy below.
+-- Replace prior migration policy names if re-running in dev
 DROP POLICY IF EXISTS "testimonials_read_approved" ON public.testimonials;
-CREATE POLICY "testimonials_read_approved"
-  ON public.testimonials
-  FOR SELECT
-  TO anon
-  USING (approved = true);
-
--- Owners see and manage all their testimonials (including unapproved)
 DROP POLICY IF EXISTS "testimonials_owner_all" ON public.testimonials;
-CREATE POLICY "testimonials_owner_all"
-  ON public.testimonials
-  FOR ALL
-  TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "public_insert" ON public.testimonials;
+DROP POLICY IF EXISTS "owner_all" ON public.testimonials;
+DROP POLICY IF EXISTS "approved_read" ON public.testimonials;
 
--- Note: inserts from the public form go through /api/testimonials/submit (service role).
--- Direct anon INSERT is not allowed (prevents forging user_id).
+CREATE POLICY "public_insert" ON public.testimonials FOR INSERT WITH CHECK (true);
+CREATE POLICY "owner_all" ON public.testimonials FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "approved_read" ON public.testimonials FOR SELECT USING (approved = true);
