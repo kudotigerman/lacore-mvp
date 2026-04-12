@@ -34,12 +34,22 @@ const TEXT = "#FAFAFA";
 const TEXT_MUTED = "#A1A1AA";
 const GRID = "#1C1C22";
 
-const STATUS_ORDER = ["new", "contacted", "in_talks", "won", "lost"] as const;
+const STATUS_ORDER = [
+  "new",
+  "contacted",
+  "replied",
+  "call_booked",
+  "proposal_sent",
+  "won",
+  "lost"
+] as const;
 
 const STATUS_COLORS: Record<(typeof STATUS_ORDER)[number], string> = {
   new: "#6366F1",
-  contacted: "#8B5CF6",
-  in_talks: "#F59E0B",
+  contacted: "#3B82F6",
+  replied: "#8B5CF6",
+  call_booked: "#A78BFA",
+  proposal_sent: "#F59E0B",
   won: "#10B981",
   lost: "#EF4444"
 };
@@ -47,7 +57,9 @@ const STATUS_COLORS: Record<(typeof STATUS_ORDER)[number], string> = {
 const STATUS_LABELS: Record<(typeof STATUS_ORDER)[number], string> = {
   new: "New",
   contacted: "Contacted",
-  in_talks: "In talks",
+  replied: "Replied",
+  call_booked: "Call booked",
+  proposal_sent: "Proposal sent",
   won: "Won",
   lost: "Lost"
 };
@@ -78,7 +90,8 @@ function buildLast30DaysSeries(): { key: string; label: string; count: number }[
 }
 
 function normalizeStatus(s: string | null | undefined): (typeof STATUS_ORDER)[number] {
-  const v = (s ?? "new").trim().toLowerCase();
+  let v = (s ?? "new").trim().toLowerCase();
+  if (v === "in_talks") v = "replied";
   if (STATUS_ORDER.includes(v as (typeof STATUS_ORDER)[number])) {
     return v as (typeof STATUS_ORDER)[number];
   }
@@ -179,7 +192,9 @@ export default function DashboardAnalyticsPage() {
     const counts: Record<(typeof STATUS_ORDER)[number], number> = {
       new: 0,
       contacted: 0,
-      in_talks: 0,
+      replied: 0,
+      call_booked: 0,
+      proposal_sent: 0,
       won: 0,
       lost: 0
     };

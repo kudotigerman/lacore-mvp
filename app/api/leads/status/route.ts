@@ -1,7 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
-const STATUSES = new Set(["new", "contacted", "in_talks", "won", "lost"]);
+const STATUSES = new Set([
+  "new",
+  "contacted",
+  "replied",
+  "call_booked",
+  "proposal_sent",
+  "won",
+  "lost"
+]);
 
 export async function PATCH(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

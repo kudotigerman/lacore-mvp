@@ -101,6 +101,12 @@ function stepLocked(
 export default function DashboardChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const data = useDashboardData();
+  const salesBuilderFabBottom =
+    pathname?.startsWith("/dashboard/offer") ||
+    pathname?.startsWith("/dashboard/content") ||
+    pathname?.startsWith("/dashboard/landing")
+      ? "bottom-20"
+      : "bottom-6";
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -410,6 +416,18 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             );
           })}
 
+          <Link
+            href="/dashboard/proposals"
+            className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] no-underline transition-colors duration-150 ${
+              pathname === "/dashboard/proposals" || pathname.startsWith("/dashboard/proposals/")
+                ? "bg-indigo-500/15 text-indigo-300"
+                : "text-white/40 hover:bg-white/5 hover:text-white/70"
+            }`}
+          >
+            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">05</span>
+            <span className="min-w-0 flex-1 leading-tight">Proposals</span>
+          </Link>
+
           <div className="mx-2 my-2 h-px bg-white/[0.06]" />
 
           <Link
@@ -629,7 +647,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setChatOpen(true)}
-              className="dash-sb-fab dash-sb-fab--closed fixed bottom-20 right-6 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500"
+              className={`dash-sb-fab dash-sb-fab--closed fixed right-6 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500 ${salesBuilderFabBottom}`}
               aria-expanded={false}
               aria-controls="dash-sales-builder-panel"
             >

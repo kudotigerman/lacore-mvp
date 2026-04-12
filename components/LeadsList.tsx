@@ -16,21 +16,39 @@ export type LeadRow = {
   status?: string | null;
 };
 
-export type LeadStatus = "new" | "contacted" | "in_talks" | "won" | "lost";
+export type LeadStatus =
+  | "new"
+  | "contacted"
+  | "replied"
+  | "call_booked"
+  | "proposal_sent"
+  | "won"
+  | "lost";
 
 export type LeadsListStatusFilter = "all" | "new" | "in_progress" | "won" | "lost";
 
-const LEAD_STATUSES: LeadStatus[] = ["new", "contacted", "in_talks", "won", "lost"];
+const LEAD_STATUSES: LeadStatus[] = [
+  "new",
+  "contacted",
+  "replied",
+  "call_booked",
+  "proposal_sent",
+  "won",
+  "lost"
+];
 
 const STATUS_UI: Record<LeadStatus, { label: string; color: string }> = {
   new: { label: "New", color: "#6366F1" },
-  contacted: { label: "Contacted", color: "#eab308" },
-  in_talks: { label: "In talks", color: "#8b5cf6" },
+  contacted: { label: "Contacted", color: "#3b82f6" },
+  replied: { label: "Replied", color: "#8b5cf6" },
+  call_booked: { label: "Call booked", color: "#a78bfa" },
+  proposal_sent: { label: "Proposal sent", color: "#f59e0b" },
   won: { label: "Won", color: "#22c55e" },
   lost: { label: "Lost", color: "#ef4444" }
 };
 
 function normalizeLeadStatus(raw: string | null | undefined): LeadStatus {
+  if (raw === "in_talks") return "replied";
   if (raw && LEAD_STATUSES.includes(raw as LeadStatus)) return raw as LeadStatus;
   return "new";
 }
@@ -173,7 +191,9 @@ export default function LeadsList({
     return leads.filter((l) => {
       const s = normalizeLeadStatus(l.status);
       if (statusFilter === "new") return s === "new";
-      if (statusFilter === "in_progress") return s === "contacted" || s === "in_talks";
+      if (statusFilter === "in_progress") {
+        return s === "contacted" || s === "replied" || s === "call_booked" || s === "proposal_sent";
+      }
       if (statusFilter === "won") return s === "won";
       if (statusFilter === "lost") return s === "lost";
       return true;

@@ -561,7 +561,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                 type="button"
                 disabled={saving}
                 onClick={() => void save()}
-                style={{ ...dash.btnPrimary, opacity: saving ? 0.6 : 1, cursor: saving ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
+                className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Save
               </button>
@@ -677,19 +677,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   type="button"
                   disabled={refineLoading || !refineInput.trim() || !d.sessionToken}
                   onClick={() => void improveOfferFromFeedback()}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 8,
-                    border: "none",
-                    background: "var(--accent)",
-                    color: "var(--on-accent)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontFamily: "inherit",
-                    cursor:
-                      refineLoading || !refineInput.trim() || !d.sessionToken ? "not-allowed" : "pointer",
-                    opacity: refineLoading || !refineInput.trim() || !d.sessionToken ? 0.5 : 1
-                  }}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {refineLoading ? "…" : "Improve →"}
                 </button>
