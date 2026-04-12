@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -39,20 +40,21 @@ const MODELS: { id: ModelId; label: string; hint: string }[] = [
 ];
 
 function platformLabel(p: Platform): string {
-  return PLATFORMS.find((x) => x.id === p)?.label.toUpperCase() ?? p;
+  return PLATFORMS.find((x) => x.id === p)?.label ?? p;
 }
 
-function modelDisplayName(m: ModelId): string {
-  if (m === "claude") return "Standard";
-  if (m === "gpt4o") return "Pro";
-  return "Creative";
+function postTypeLabel(t: PostType): string {
+  return POST_TYPES.find((x) => x.id === t)?.label ?? t;
 }
 
 function downloadImageViaProxy(url: string) {
   window.location.href = `/api/content/proxy-image?url=${encodeURIComponent(url)}`;
 }
 
+const LONG_POST_CHARS = 320;
+
 export default function ContentMachine({ offer, audience, userId }: ContentMachineProps) {
+  const router = useRouter();
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [postType, setPostType] = useState<PostType>("hook");
   const [model, setModel] = useState<ModelId>("claude");
@@ -65,6 +67,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
   const [postImages, setPostImages] = useState<Record<number, PostImageState>>({});
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [creditsError, setCreditsError] = useState(false);
+  const [expandedPosts, setExpandedPosts] = useState<Record<number, boolean>>({});
   const creditsBal = useCreditsBalance();
 
   const runGenerate = useCallback(async () => {
@@ -254,8 +257,13 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/20 hover:text-white/70"
     }`;
 
+  const platformTabCls = (on: boolean) =>
+    on
+      ? "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors"
+      : "rounded-lg px-4 py-2 text-sm text-white/40 transition-colors hover:text-white/60";
+
   return (
-    <div className="max-w-4xl font-inherit">
+    <div className="max-w-4xl pb-28 font-inherit">
       <style>{`
         @keyframes content-machine-pulse {
           0%, 100% { opacity: 1; }
@@ -268,15 +276,18 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
 
       <section className="mb-8 rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
         <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/35">Generate post</p>
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap gap-1">
           {PLATFORMS.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => setPlatform(p.id)}
-              className={pillCls(platform === p.id)}
+              className={platformTabCls(platform === p.id)}
               title={p.label}
             >
+              <span className="mr-1.5 opacity-80" aria-hidden>
+                {p.short}
+              </span>
               {p.label}
             </button>
           ))}
@@ -352,23 +363,62 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
       </section>
 
       <section>
-        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/35">Generated posts</p>
         {posts.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
             {posts.map((post, idx) => {
               const img = postImages[post.id];
+              const isLong = post.text.length > LONG_POST_CHARS;
+              const expanded = expandedPosts[post.id];
               return (
                 <div
                   key={`${post.id}-${idx}`}
-                  className="flex flex-col rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 transition-opacity duration-300"
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5 transition-colors hover:border-white/[0.15]"
                 >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
-                      {platformLabel(platform)}
-                    </span>
-                    <span className="text-[10px] text-white/30">{modelDisplayName(model)}</span>
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="text-xs font-medium uppercase tracking-wider text-white/50">
+                        {platformLabel(platform)}
+                      </span>
+                      <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] text-white/25">
+                        {postTypeLabel(postType)}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        disabled={regeneratingId !== null || loading}
+                        onClick={() => void handleRegeneratePost(post.id)}
+                        className="text-xs text-white/40 transition-colors hover:text-white/70 disabled:opacity-50"
+                      >
+                        {regeneratingId === post.id ? "…" : "Regenerate"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopy(post.text, post.id)}
+                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-indigo-500"
+                      >
+                        {copiedId === post.id ? "Copied" : "Copy"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex-1 whitespace-pre-wrap text-sm leading-relaxed text-white/85">{post.text}</div>
+                  <p
+                    className={`text-sm leading-relaxed text-white/70 whitespace-pre-wrap ${
+                      !expanded && isLong ? "line-clamp-6" : ""
+                    }`}
+                  >
+                    {post.text}
+                  </p>
+                  {isLong ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedPosts((prev) => ({ ...prev, [post.id]: !prev[post.id] }))
+                      }
+                      className="mt-2 text-xs text-indigo-400 transition-colors hover:text-indigo-300"
+                    >
+                      {expanded ? "Show less" : "Show more"}
+                    </button>
+                  ) : null}
 
                   {advancedOpen && img?.loading ? (
                     <p className="content-machine-generating mt-3 text-xs text-white/40">Generating image…</p>
@@ -399,23 +449,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                     </div>
                   ) : null}
 
-                  <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/[0.08] pt-3">
-                    <button
-                      type="button"
-                      onClick={() => void handleCopy(post.text, post.id)}
-                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white"
-                    >
-                      {copiedId === post.id ? "Copied" : "Copy"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={regeneratingId !== null || loading}
-                      onClick={() => void handleRegeneratePost(post.id)}
-                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white disabled:opacity-50"
-                    >
-                      {regeneratingId === post.id ? "…" : "Regenerate"}
-                    </button>
-                    {advancedOpen ? (
+                  {advancedOpen ? (
+                    <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/[0.08] pt-3">
                       <button
                         type="button"
                         disabled={img?.loading || loading || !offer.trim()}
@@ -424,8 +459,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                       >
                         Image
                       </button>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
@@ -436,6 +471,22 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           </div>
         ) : null}
       </section>
+
+      {posts.length > 0 ? (
+        <div className="sticky bottom-0 z-10 mt-8 flex flex-wrap items-center gap-4 border-t border-white/[0.08] bg-[#07080F]/95 px-2 py-4 backdrop-blur-sm sm:px-6">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white">Posts ready — share them to get leads</p>
+            <p className="text-xs text-white/40">Then track who visits your landing page</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/leads")}
+            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 font-medium text-white transition-colors hover:bg-indigo-500"
+          >
+            View leads & closing →
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

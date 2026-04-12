@@ -361,25 +361,6 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
     marginTop: 4
   };
 
-  const headerRight =
-    offer && !editing ? (
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-400">Active</span>
-        <button
-          type="button"
-          onClick={() => {
-            setSaveErr(null);
-            setDraft({ ...(pendingRefinement ?? offer) });
-            setPendingRefinement(null);
-            setEditing(true);
-          }}
-          className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
-        >
-          Edit offer
-        </button>
-      </div>
-    ) : null;
-
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
 
@@ -398,7 +379,6 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
         nextStepLabel="Landing page"
         nextStepHref="/dashboard/landing"
         hideNextStepBanner={!!offer}
-        right={headerRight}
       >
       {!offer ? (
         <>
@@ -741,29 +721,26 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
           )}
 
           {!editing ? (
-            <div className="mt-8 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
+            <div
+              className="sticky bottom-0 left-0 right-0 z-10 -mx-4 mt-8 flex items-center gap-4 border-t border-white/[0.08] bg-[#07080F]/95 px-8 py-4 backdrop-blur-sm sm:-mx-6"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-white">✓ Offer ready — next: build your landing page</p>
+                <p className="text-xs text-white/40">AI will create a full sales page in 60 seconds</p>
+              </div>
               <button
                 type="button"
                 onClick={() => router.push("/dashboard/landing")}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 py-4 text-base font-medium text-white transition-colors hover:bg-indigo-500"
+                className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-indigo-600 px-8 py-3 font-medium text-white transition-colors hover:bg-indigo-500"
               >
-                Continue to Landing Page
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M5 12h14M13 6l6 6-6 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                Build landing page →
               </button>
               <button
                 type="button"
                 onClick={() => setRefineOpen(true)}
-                className="text-sm text-white/40 transition-colors hover:text-white/70 sm:shrink-0"
+                className="shrink-0 whitespace-nowrap text-sm text-white/40 transition-colors hover:text-white/70"
               >
-                Refine offer first
+                Refine first
               </button>
             </div>
           ) : null}

@@ -64,8 +64,11 @@ export function CreditsWidget() {
   const planLimit: Record<string, number> = { free: 20, starter: 100, pro: 300, scale: 1000 };
   const limit = planLimit[plan] ?? 20;
   const pct = balance !== null ? Math.min((balance / limit) * 100, 100) : 0;
-  const isLow = balance !== null && balance < 20;
   const isEmpty = balance === 0;
+  /** Whole-card amber tint only when low but above the ≤5 detailed block */
+  const isLow = balance !== null && balance < 20 && balance > 5;
+
+  const handleBuyCredits = () => setShowModal(true);
 
   const handleTopup = async (priceId: string) => {
     const paddle = paddleReady ? getPaddleInstance() : null;
@@ -136,9 +139,28 @@ export function CreditsWidget() {
             />
           </div>
           {isEmpty ? <p className="mt-1 text-xs text-red-400">Buy credits to continue</p> : null}
-          {isLow && !isEmpty ? <p className="mt-1 text-xs text-amber-400">Running low — buy more</p> : null}
+          {isLow ? <p className="mt-1 text-xs text-amber-400">Running low — buy more</p> : null}
         </div>
       </div>
+
+      {balance !== null && balance > 0 && balance <= 5 ? (
+        <div className="mx-3 mb-3 rounded-xl border border-amber-500/20 bg-amber-500/8 p-3">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs text-amber-400">{balance} credits left</span>
+            <span className="text-[10px] text-amber-400/60">~{balance} AI actions</span>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBuyCredits();
+            }}
+            className="w-full rounded-lg bg-amber-500/20 py-1.5 text-xs text-amber-400 transition-colors hover:bg-amber-500/30"
+          >
+            Get more credits →
+          </button>
+        </div>
+      ) : null}
 
       {showModal ? (
         <div

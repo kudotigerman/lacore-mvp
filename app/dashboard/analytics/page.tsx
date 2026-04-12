@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -105,6 +105,7 @@ const tooltipStyle = {
 };
 
 export default function DashboardAnalyticsPage() {
+  const router = useRouter();
   const d = useDashboardData();
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [landingViews, setLandingViews] = useState<number | null>(null);
@@ -197,24 +198,9 @@ export default function DashboardAnalyticsPage() {
 
   const recentFive = leads.slice(0, 5);
 
-  const isAnalyticsEmpty = !loading && totalLeads === 0 && (landingViews ?? 0) === 0;
-
-  const viewsCaption =
-    viewsMeta === "unavailable"
-      ? "Coming soon"
-      : landingViews === 0
-        ? "Coming soon"
-        : undefined;
-
-  const kpi = (label: string, value: string | number, trend?: string, trendUp?: boolean) => (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-      <p className="text-xs font-medium uppercase tracking-wider text-white/40">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-      {trend ? (
-        <p className={`mt-1 text-xs ${trendUp === false ? "text-red-400" : "text-emerald-400"}`}>{trend}</p>
-      ) : null}
-    </div>
-  );
+  const viewsOk = viewsMeta === "ok";
+  const viewsNum = landingViews ?? 0;
+  const landingHighlight = viewsOk && viewsNum > 0;
 
   return (
     <div className="min-h-full" style={{ ...dash.pageShell, background: BG }}>
@@ -225,31 +211,81 @@ export default function DashboardAnalyticsPage() {
 
       {loading ? (
         <p style={{ ...dash.body, color: TEXT_MUTED }}>Loading…</p>
-      ) : isAnalyticsEmpty ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 text-white/20" aria-hidden>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M7 15l4-4 4 4 5-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <h3 className="mb-2 font-medium text-white">No data yet</h3>
-          <p className="mb-5 max-w-xs text-sm text-white/40">
-            Share your landing page to start getting views and leads. Your analytics will appear here.
-          </p>
-          <Link href="/dashboard/landing" className="text-sm text-indigo-400 transition-colors hover:text-indigo-300">
-            Go to Landing page →
-          </Link>
-        </div>
       ) : (
         <>
-          <div
-            className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            {kpi("Total leads", totalLeads, totalLeads > 0 ? "Active pipeline" : undefined, true)}
-            {kpi("Landing views", landingViews ?? 0, viewsCaption, (landingViews ?? 0) > 0 && viewsMeta === "ok")}
-            {kpi("Won deals", wonDeals)}
-            {kpi("This week", thisWeek, "New leads (7d)", thisWeek > 0)}
+          {totalLeads === 0 ? (
+            <div className="mb-8 rounded-2xl border border-indigo-500/15 bg-indigo-500/5 p-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15">
+                <svg
+                  className="h-6 w-6 text-indigo-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden
+                >
+                  <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M7 15l4-4 4 4 5-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <h3 className="mb-2 font-medium text-white">Share your landing page to get leads</h3>
+              <p className="mx-auto mb-4 max-w-xs text-sm text-white/40">
+                Once someone visits your page and fills the form, they&apos;ll appear here automatically
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/landing")}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500"
+                >
+                  Share landing page →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/content")}
+                  className="rounded-lg border border-white/10 px-4 py-2 text-sm text-white/50 transition-colors hover:text-white/70"
+                >
+                  Create content
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-white/40">Total leads</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{totalLeads}</p>
+              {totalLeads > 0 ? <p className="mt-1 text-xs text-emerald-400">Active pipeline</p> : null}
+            </div>
+
+            <div
+              className={`rounded-2xl p-6 border ${
+                landingHighlight ? "border-indigo-500/20 bg-indigo-500/[0.08]" : "border-white/[0.08] bg-white/[0.03]"
+              }`}
+            >
+              <p className="mb-2 text-xs uppercase tracking-wider text-white/40">Landing views</p>
+              <p className={`text-4xl font-bold ${landingHighlight ? "text-indigo-400" : "text-white"}`}>
+                {!viewsOk ? "—" : viewsNum}
+              </p>
+              {landingHighlight ? (
+                <p className="mt-1 text-xs text-indigo-400/70">People visited your page ↗</p>
+              ) : viewsMeta === "unavailable" ? (
+                <p className="mt-1 text-xs text-white/35">Coming soon</p>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-white/40">Won deals</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{wonDeals}</p>
+            </div>
+
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-white/40">This week</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{thisWeek}</p>
+              <p className={`mt-1 text-xs ${thisWeek > 0 ? "text-emerald-400" : "text-white/35"}`}>
+                +{thisWeek} this week
+              </p>
+            </div>
           </div>
 
           <div

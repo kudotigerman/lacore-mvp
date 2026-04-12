@@ -1,30 +1,25 @@
 "use client";
 
 import ContentMachine from "@/components/ContentMachine";
-import { DashboardStepShell } from "@/components/dashboard/DashboardStepShell";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 
 export default function DashboardContentPage() {
   const d = useDashboardData();
-  const st = d.dashboardStatus;
-  const completedCount = st?.completedSteps ?? 0;
-  const funnelContentDone = !!(st?.offer && st?.landing);
 
   return (
     <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
-      <DashboardStepShell
-        stepNum={3}
-        completedCount={completedCount}
-        title="Content"
-        subtitle="Generate posts for your social channels"
-        isStepDone={funnelContentDone}
-        nextStepLabel="Leads & closing"
-        nextStepHref="/dashboard/leads"
-      >
-        {d.userId ? (
-          <ContentMachine offer={d.offer?.offer ?? ""} audience={d.offer?.audience ?? ""} userId={d.userId} />
-        ) : null}
-      </DashboardStepShell>
+      <div className="mb-8">
+        <div className="mb-2 flex flex-wrap items-center gap-3">
+          <span className="text-xs font-medium uppercase tracking-wider text-indigo-400">Step 3</span>
+          <span className="text-xs text-white/20">·</span>
+          <span className="text-xs text-white/40">Share to get your first leads</span>
+        </div>
+        <h1 className="mb-1 text-2xl font-bold text-white">Content</h1>
+        <p className="text-sm text-white/40">AI posts tailored to your offer — ready to copy and share</p>
+      </div>
+      {d.userId ? (
+        <ContentMachine offer={d.offer?.offer ?? ""} audience={d.offer?.audience ?? ""} userId={d.userId} />
+      ) : null}
     </div>
   );
 }

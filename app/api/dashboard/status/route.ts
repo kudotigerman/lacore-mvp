@@ -37,21 +37,27 @@ export async function GET(req: Request) {
     });
   }
 
-  const [offerRes, landingRes, leadsRes] = await Promise.all([
+  const [offerRes, landingRes, leadsRes, contentCountRes] = await Promise.all([
     supabase.from("offers").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1),
     supabase.from("landing_pages").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1),
-    supabase.from("leads").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1)
+    supabase.from("leads").select("id").eq("user_id", user.id).eq("project_id", resolvedProjectId).limit(1),
+    supabase
+      .from("credit_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("action", "generate_post")
   ]);
 
   const hasOffer = (offerRes.data?.length ?? 0) > 0;
   const hasLanding = (landingRes.data?.length ?? 0) > 0;
   const hasLeads = (leadsRes.data?.length ?? 0) > 0;
-  const completedSteps = [hasOffer, hasLanding, hasLeads].filter(Boolean).length;
+  const hasContent = (contentCountRes.count ?? 0) > 0;
+  const completedSteps = [hasOffer, hasLanding, hasContent].filter(Boolean).length;
 
   return NextResponse.json({
     offer: hasOffer,
     landing: hasLanding,
-    content: hasOffer,
+    content: hasContent,
     leads: hasLeads,
     completedSteps
   });

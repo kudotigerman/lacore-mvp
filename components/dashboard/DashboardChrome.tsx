@@ -81,7 +81,7 @@ function stepDone(
   if (!s) return false;
   if (key === "offer") return s.offer;
   if (key === "landing") return s.landing;
-  if (key === "content") return s.offer && s.landing;
+  if (key === "content") return s.content;
   if (key === "leads") return s.leads;
   return false;
 }
@@ -168,8 +168,20 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   );
 
   const funnel = data.dashboardStatus;
-  const completedSteps = Math.min(funnel?.completedSteps ?? 0, 3);
-  const progressTotal = 3;
+  const offerDone = !!funnel?.offer;
+  const landingDone = !!funnel?.landing;
+  const contentDone = !!funnel?.content;
+  const flowCompletedCount = [offerDone, landingDone, contentDone].filter(Boolean).length;
+  const flowTotal = 3;
+  const flowPct = Math.round((flowCompletedCount / flowTotal) * 100);
+
+  const nextFlowHint = !offerDone
+    ? "Next: Offer"
+    : !landingDone
+      ? "Next: Landing page"
+      : !contentDone
+        ? "Next: Content"
+        : "Next: Leads & closing";
 
   const apiSalesContext = useMemo(
     () => ({
@@ -336,17 +348,23 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         </div>
 
         <div className="px-4 py-2">
-          <div className="mb-1">
-            <span className="text-[10px] uppercase tracking-wider text-white/35">
-              Your progress · {completedSteps} of {progressTotal}
-            </span>
-          </div>
-          <div className="h-0.5 overflow-hidden rounded-full bg-white/[0.08]">
-            <div
-              className="h-full rounded-full bg-indigo-500 transition-all duration-500"
-              style={{ width: `${(completedSteps / progressTotal) * 100}%` }}
-            />
-          </div>
+          {flowCompletedCount === 0 ? (
+            <p className="px-2 text-[10px] text-white/30">Start with Step 1 →</p>
+          ) : (
+            <div className="px-2">
+              <div className="mb-1 flex justify-between text-[10px] text-white/30">
+                <span>Your sales system</span>
+                <span>{flowPct}%</span>
+              </div>
+              <div className="h-0.5 rounded-full bg-white/[0.08]">
+                <div
+                  className="h-0.5 rounded-full bg-indigo-500 transition-all duration-500"
+                  style={{ width: `${flowPct}%` }}
+                />
+              </div>
+              <p className="pt-1 text-[9px] text-white/25">{nextFlowHint}</p>
+            </div>
+          )}
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
