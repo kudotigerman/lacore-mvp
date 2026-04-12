@@ -660,7 +660,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
       ) : (
         <>
           {pendingRefinement ? (
-            <div className="mb-5 rounded-xl border border-indigo-500/35 bg-indigo-500/[0.1] px-4 py-3 text-[13px] leading-relaxed text-indigo-100">
+            <div className="mb-3 rounded-xl border border-indigo-500/35 bg-indigo-500/[0.1] px-4 py-3 text-[13px] leading-relaxed text-indigo-100">
               You have unsaved AI improvements — open <strong className="text-white">Refine with AI</strong> below and
               click &quot;Save improved offer&quot;.
             </div>
@@ -728,38 +728,41 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
             </div>
           ) : displayOffer ? (
             <>
-              <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.14] via-[var(--card-bg)] to-[var(--content-bg)] px-6 py-8 md:px-8 md:py-10 shadow-[0_0_72px_-24px_rgba(99,102,241,0.45)]">
+              <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.14] via-[var(--card-bg)] to-[var(--content-bg)] px-5 py-5 shadow-[0_0_72px_-24px_rgba(99,102,241,0.45)] md:px-6">
                 <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-indigo-500/[0.12] blur-3xl" aria-hidden />
                 <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-violet-600/[0.08] blur-3xl" aria-hidden />
-                <span className="relative inline-flex rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-100">
-                  Offer ready
-                </span>
-                <h2 className="relative mt-5 max-w-4xl text-[22px] font-medium leading-snug tracking-tight text-white md:text-2xl">
-                  {displayOffer.headline}
-                </h2>
-                <p className={`relative mt-4 max-w-3xl text-[15px] font-normal leading-relaxed text-white/70`}>
-                  {displayOffer.offer}
-                </p>
+                <div className="relative">
+                  <span className="inline-flex rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-100">
+                    Offer ready
+                  </span>
+                  <h2 className="mt-3 max-w-4xl text-[22px] font-medium leading-snug tracking-tight text-white md:text-2xl">
+                    {displayOffer.headline}
+                  </h2>
+                  <p className={`mt-2 max-w-3xl text-[15px] font-normal leading-relaxed text-white/70`}>
+                    {displayOffer.offer}
+                  </p>
+                </div>
+                <div className="relative mt-3 border-t border-white/[0.1] pt-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                    <div>
+                      <p className={fieldLabelClass}>Audience</p>
+                      <p className={`mt-1 ${fieldValueClass}`}>{audienceShort(displayOffer.audience)}</p>
+                    </div>
+                    <div>
+                      <p className={fieldLabelClass}>Price point</p>
+                      <p className={`mt-1 ${fieldValueClass}`}>{displayOffer.pricing}</p>
+                    </div>
+                    <div>
+                      <p className={fieldLabelClass}>Guarantee</p>
+                      <p className={`mt-1 ${fieldValueClass}`}>{guaranteePillText(displayOffer)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 px-4 py-4">
-                  <p className={fieldLabelClass}>Audience</p>
-                  <p className={`mt-1.5 ${fieldValueClass}`}>{audienceShort(displayOffer.audience)}</p>
-                </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 px-4 py-4">
-                  <p className={fieldLabelClass}>Price point</p>
-                  <p className={`mt-1.5 ${fieldValueClass}`}>{displayOffer.pricing}</p>
-                </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 px-4 py-4">
-                  <p className={fieldLabelClass}>Guarantee</p>
-                  <p className={`mt-1.5 ${fieldValueClass}`}>{guaranteePillText(displayOffer)}</p>
-                </div>
-              </div>
-
-              <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="md:col-span-2 rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 md:p-6">
-                  <div className="mb-4 flex items-center gap-3">
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="md:col-span-2 rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-3 md:p-4">
+                  <div className="mb-2 flex items-center gap-2">
                     <IndigoIconBox>
                       <IconDoc />
                     </IndigoIconBox>
@@ -767,8 +770,8 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   </div>
                   <p className={`${fieldValueClass} whitespace-pre-wrap`}>{displayOffer.offer}</p>
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 md:p-6">
-                  <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-3 md:p-4">
+                  <div className="mb-2 flex items-center gap-2">
                     <IndigoIconBox>
                       <IconTarget />
                     </IndigoIconBox>
@@ -776,8 +779,8 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   </div>
                   <p className={`${fieldValueClass} whitespace-pre-wrap`}>{displayOffer.positioning}</p>
                 </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 md:p-6">
-                  <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-3 md:p-4">
+                  <div className="mb-2 flex items-center gap-2">
                     <IndigoIconBox>
                       <IconTag />
                     </IndigoIconBox>
@@ -787,11 +790,11 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                 </div>
               </div>
 
-              <div className="mt-8 overflow-hidden rounded-xl border border-white/[0.1] bg-[var(--card-bg)]/60 shadow-sm">
+              <div className="mt-3 overflow-hidden rounded-xl border border-white/[0.1] bg-[var(--card-bg)]/60 shadow-sm">
                 <button
                   type="button"
                   onClick={() => setRefineOpen((o) => !o)}
-                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.02]"
                 >
                   <div>
                     <p className="text-sm font-semibold text-white">Refine with AI</p>
@@ -802,7 +805,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   </span>
                 </button>
                 {refineOpen ? (
-                  <div className="border-t border-white/[0.06] px-5 pb-5 pt-4">
+                  <div className="border-t border-white/[0.06] px-4 pb-4 pt-3">
                     <div
                       className="flex max-h-[200px] flex-col gap-2.5 overflow-y-auto"
                       style={{ scrollbarGutter: "stable" }}
@@ -877,7 +880,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
           ) : null}
 
           {!editing ? (
-            <div className="sticky bottom-0 left-0 right-0 z-10 -mx-4 mt-10 flex flex-col gap-4 border-t border-white/[0.1] bg-[#07080F]/95 px-5 py-4 backdrop-blur-md sm:-mx-6 sm:flex-row sm:flex-wrap sm:items-center sm:px-8">
+            <div className="sticky bottom-0 left-0 right-0 z-10 -mx-4 mt-5 flex flex-col gap-4 border-t border-white/[0.1] bg-[#07080F]/95 px-5 py-4 backdrop-blur-md sm:-mx-6 sm:flex-row sm:flex-wrap sm:items-center sm:px-8">
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-400">
                   ✓
