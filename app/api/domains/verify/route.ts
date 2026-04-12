@@ -11,6 +11,47 @@ function normalizeDomainInput(d: string): string {
     .replace(/^www\./, "");
 }
 
+async function fetchVerifiedFromVercel(
+  vercelToken: string,
+  projectId: string,
+  normalized: string,
+  canonicalDomain: string
+): Promise<boolean> {
+  const v9Res = await fetch(`https://api.vercel.com/v9/domains/${encodeURIComponent(normalized)}`, {
+    headers: { Authorization: `Bearer ${vercelToken}` }
+  });
+  if (v9Res.ok) {
+    try {
+      const j = (await v9Res.json()) as { verified?: boolean };
+      if (j.verified === true) return true;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  const apex = normalized.replace(/^www\./, "");
+  const tryHosts = Array.from(
+    new Set(
+      [canonicalDomain, normalized, apex, `www.${apex}`].filter((h) => typeof h === "string" && h.length > 0)
+    )
+  );
+
+  for (const host of tryHosts) {
+    const vercelRes = await fetch(
+      `https://api.vercel.com/v10/projects/${projectId}/domains/${encodeURIComponent(host)}`,
+      { headers: { Authorization: `Bearer ${vercelToken}` } }
+    );
+    if (!vercelRes.ok) continue;
+    try {
+      const j = (await vercelRes.json()) as { verified?: boolean };
+      if (j.verified === true) return true;
+    } catch {
+      continue;
+    }
+  }
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   const token = await requireUser(req);
   if (!token.ok) return token.response;
@@ -48,33 +89,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Vercel is not configured." }, { status: 500 });
   }
 
-  const tryHosts = Array.from(
-    new Set(
-      [canonicalDomain, normalized, `www.${normalized}`].filter((h) => typeof h === "string" && h.length > 0)
-    )
-  );
-
-  let verified = false;
-  let verificationList: unknown[] = [];
-
-  for (const host of tryHosts) {
-    const vercelRes = await fetch(
-      `https://api.vercel.com/v10/projects/${projectId}/domains/${encodeURIComponent(host)}`,
-      { headers: { Authorization: `Bearer ${vercelToken}` } }
-    );
-    if (!vercelRes.ok) continue;
-    let j: { verified?: boolean; verification?: unknown[] } = {};
-    try {
-      j = (await vercelRes.json()) as { verified?: boolean; verification?: unknown[] };
-    } catch {
-      continue;
-    }
-    if (j.verified === true) {
-      verified = true;
-      verificationList = j.verification || [];
-      break;
-    }
-  }
+  const verified = await fetchVerifiedFromVercel(vercelToken, projectId, normalized, canonicalDomain);
 
   await service
     .from("custom_domains")
@@ -82,8 +97,5 @@ export async function POST(req: NextRequest) {
     .eq("domain", canonicalDomain)
     .eq("user_id", token.user.id);
 
-  return NextResponse.json({
-    verified,
-    verification: verificationList
-  });
+  return NextResponse.json({ verified });
 }

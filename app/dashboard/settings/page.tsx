@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { ConnectDomainSettings } from "@/components/dashboard/ConnectDomainSettings";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 
 export default function DashboardSettingsPage() {
@@ -153,6 +154,23 @@ export default function DashboardSettingsPage() {
         >
           {d.profileSaving ? "Saving…" : "Save integrations"}
         </button>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-1 text-sm font-medium text-white">Connect domain</p>
+        <p className="mb-4 text-xs leading-relaxed text-white/40">
+          Use your own domain for a landing page. Add the DNS records we show, then we check verification automatically
+          every 15 seconds for up to 5 minutes (or use Check status anytime).
+        </p>
+        {!d.loading ? (
+          <ConnectDomainSettings
+            userId={d.userId}
+            activeProjectId={d.activeProject?.id}
+            defaultSlug={d.landingSlug}
+          />
+        ) : (
+          <p className="text-sm text-white/40">Loading…</p>
+        )}
       </div>
 
       <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">

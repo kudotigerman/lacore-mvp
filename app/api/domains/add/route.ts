@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, serviceSupabase, userOwnsLandingSlug } from "../_auth";
 
+const CNAME_TARGET = "cname.vercel-dns.com";
+const A_RECORD = "76.76.21.21";
+
 export async function POST(req: NextRequest) {
   const token = await requireUser(req);
   if (!token.ok) return token.response;
@@ -100,6 +103,8 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
+    cname_target: CNAME_TARGET,
+    a_record: A_RECORD,
     verification: vercelData.verification || [],
     apexName: vercelData.apexName,
     verified: vercelData.verified || false
