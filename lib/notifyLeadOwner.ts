@@ -47,7 +47,7 @@ async function sendOwnerEmail(
       subject: `New lead from ${name || "someone"} — ${slug}`,
       html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #06B6D4;">New Lead on LACORE</h2>
+        <h2 style="color: #6366F1;">New Lead on LACORE</h2>
         <p><strong>Name:</strong> ${safeName}</p>
         <p><strong>Email:</strong> <a href="mailto:${encodeURIComponent(leadEmail)}">${safeLeadEmail}</a></p>
         <p><strong>Message:</strong> ${safeMessage}</p>

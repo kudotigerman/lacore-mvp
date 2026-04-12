@@ -16,8 +16,8 @@ export const dashPremiumCss = `
   --nav-inactive: #71717A;
   --border: #1C1C22;
   --border-secondary: #27272E;
-  --accent: #06B6D4;
-  --accent-subtle: rgba(6,182,212,0.08);
+  --accent: #6366F1;
+  --accent-subtle: rgba(99,102,241,0.08);
   --success: #22c55e;
   --danger: #ef4444;
 }
@@ -34,11 +34,11 @@ export const dashPremiumCss = `
 }
 .dash-premium-root .dash-focusable:focus {
   outline: none;
-  border-color: rgba(6,182,212,0.5) !important;
+  border-color: rgba(99,102,241,0.5) !important;
 }
 .dash-premium-root textarea.dash-chat-input:focus {
   outline: none;
-  border-color: rgba(6,182,212,0.4) !important;
+  border-color: rgba(99,102,241,0.4) !important;
 }
 .dash-premium-root .dash-nav-item:hover:not(.dash-nav-item-active) {
   background: rgba(255,255,255,0.03) !important;
@@ -164,8 +164,8 @@ export const dash = {
   } satisfies CSSProperties,
 
   btnPrimary: {
-    background: "#06B6D4",
-    color: "#000",
+    background: "#6366F1",
+    color: "#FFFFFF",
     padding: "8px 16px",
     fontSize: 13,
     fontWeight: 600,
@@ -176,8 +176,8 @@ export const dash = {
   } satisfies CSSProperties,
 
   btnPrimarySm: {
-    background: "#06B6D4",
-    color: "#000",
+    background: "#6366F1",
+    color: "#FFFFFF",
     padding: "6px 14px",
     fontSize: 11,
     fontWeight: 600,
@@ -188,8 +188,8 @@ export const dash = {
   } satisfies CSSProperties,
 
   btnSettingsSave: {
-    background: "#06B6D4",
-    color: "#000",
+    background: "#6366F1",
+    color: "#FFFFFF",
     padding: "9px 20px",
     fontSize: 13,
     fontWeight: 600,
@@ -253,9 +253,9 @@ export const dash = {
   } satisfies CSSProperties,
 
   btnCopyAccent: {
-    background: "rgba(6,182,212,0.08)",
-    border: "1px solid rgba(6,182,212,0.2)",
-    color: "#06B6D4",
+    background: "rgba(99,102,241,0.08)",
+    border: "1px solid rgba(99,102,241,0.2)",
+    color: "#6366F1",
     fontSize: 12,
     padding: "6px 12px",
     borderRadius: 5,
@@ -316,8 +316,8 @@ export const dash = {
   badgeLive: {
     fontSize: 9,
     fontWeight: 600,
-    color: "#06B6D4",
-    background: "rgba(6,182,212,0.08)",
+    color: "#6366F1",
+    background: "rgba(99,102,241,0.08)",
     padding: "2px 6px",
     borderRadius: 3
   } satisfies CSSProperties,

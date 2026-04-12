@@ -130,8 +130,8 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
 
   const s: Record<string, CSSProperties> = {
     btn: {
-      background: "#06B6D4",
-      color: "#000",
+      background: "#6366F1",
+      color: "#FFFFFF",
       border: "none",
       padding: "10px 20px",
       fontSize: "12px",
@@ -180,15 +180,19 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
   };
 
   const guideBox: CSSProperties = {
-    background: "rgba(6,182,212,0.05)",
-    border: "1px solid rgba(6,182,212,0.15)",
+    background: "rgba(99,102,241,0.05)",
+    border: "1px solid rgba(99,102,241,0.15)",
     padding: "16px",
     marginBottom: "20px"
   };
 
   if (step === "idle") {
     return (
-      <button type="button" style={s.btn} onClick={() => setStep("form")}>
+      <button
+        type="button"
+        className="w-full rounded-lg border border-white/15 py-2 text-xs text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/70"
+        onClick={() => setStep("form")}
+      >
         + CONNECT DOMAIN
       </button>
     );
@@ -207,7 +211,7 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
       >
         <span
           style={{
-            color: "#06B6D4",
+            color: "#6366F1",
             fontSize: "11px",
             fontWeight: 700,
             letterSpacing: "0.06em",
@@ -229,7 +233,7 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
               fontSize: "11px",
               fontWeight: 700,
               letterSpacing: "0.1em",
-              color: "#06B6D4",
+              color: "#6366F1",
               marginBottom: "12px"
             }}
           >
@@ -320,10 +324,10 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
             <span style={{ color: "var(--text-muted)" }}>TYPE</span>
             <span style={{ color: "var(--text-muted)" }}>NAME</span>
             <span style={{ color: "var(--text-muted)" }}>VALUE</span>
-            <span style={{ color: "#06B6D4" }}>A</span>
+            <span style={{ color: "#6366F1" }}>A</span>
             <span style={{ color: "var(--text-primary)" }}>@</span>
             <span style={{ color: "var(--text-primary)" }}>76.76.21.21</span>
-            <span style={{ color: "#06B6D4", marginTop: "8px" }}>CNAME</span>
+            <span style={{ color: "#6366F1", marginTop: "8px" }}>CNAME</span>
             <span style={{ color: "var(--text-primary)", marginTop: "8px" }}>www</span>
             <span style={{ color: "var(--text-primary)", marginTop: "8px" }}>cname.vercel-dns.com</span>
           </div>
@@ -462,7 +466,7 @@ export default function DomainConnect({ slug, userId }: DomainConnectProps) {
             href={`https://${savedDomain?.domain}`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "#06B6D4", textDecoration: "none" }}
+            style={{ color: "#6366F1", textDecoration: "none" }}
           >
             {savedDomain?.domain}
           </a>

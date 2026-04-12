@@ -16,8 +16,8 @@
   --text-muted: #52525b;
   --border-primary: #1c1c22;
   --border-secondary: #27272e;
-  --accent: #06b6d4;
-  --on-accent: #09090b;
+  --accent: #6366f1;
+  --on-accent: #ffffff;
   --success: #22c55e;
   --error: #f87171;
   --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
@@ -39,8 +39,8 @@
   --text-muted: #a1a1aa;
   --border-primary: #e4e2dc;
   --border-secondary: #d4d2cc;
-  --accent: #0891b2;
-  --on-accent: #09090b;
+  --accent: #6366f1;
+  --on-accent: #ffffff;
   --success: #22c55e;
   --error: #f87171;
   --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
@@ -197,12 +197,12 @@ body::before {
 }
 
 .blog-content a {
-  color: #06b6d4;
+  color: #6366f1;
   text-decoration: underline;
 }
 
 .blog-content blockquote {
-  border-left: 3px solid #06b6d4;
+  border-left: 3px solid #6366f1;
   padding-left: 20px;
   margin: 24px 0;
   color: var(--text-muted);
@@ -214,7 +214,7 @@ body::before {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 14px;
-  color: #06b6d4;
+  color: #6366f1;
 }
 
 /* LACORE marketing homepage */

@@ -23,7 +23,7 @@ export type LeadsListStatusFilter = "all" | "new" | "in_progress" | "won" | "los
 const LEAD_STATUSES: LeadStatus[] = ["new", "contacted", "in_talks", "won", "lost"];
 
 const STATUS_UI: Record<LeadStatus, { label: string; color: string }> = {
-  new: { label: "New", color: "#06B6D4" },
+  new: { label: "New", color: "#6366F1" },
   contacted: { label: "Contacted", color: "#eab308" },
   in_talks: { label: "In talks", color: "#8b5cf6" },
   won: { label: "Won", color: "#22c55e" },
@@ -371,8 +371,8 @@ export default function LeadsList({
         style={{
           marginTop: 12,
           padding: "12px 14px",
-          background: "rgba(6,182,212,0.06)",
-          border: "1px solid rgba(6,182,212,0.2)",
+          background: "rgba(99,102,241,0.06)",
+          border: "1px solid rgba(99,102,241,0.2)",
           borderRadius: 8
         }}
       >

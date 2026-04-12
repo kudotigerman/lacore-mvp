@@ -53,8 +53,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: "0.08em",
-              color: "#06B6D4",
-              background: "rgba(6,182,212,0.08)",
+              color: "#6366F1",
+              background: "rgba(99,102,241,0.08)",
               padding: "2px 8px",
               borderRadius: 4
             }}
@@ -87,16 +87,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           </p>
           <Link
             href="/auth"
-            style={{
-              background: "#06B6D4",
-              color: "#000",
-              padding: "12px 28px",
-              fontSize: 13,
-              fontWeight: 700,
-              textDecoration: "none",
-              display: "inline-block",
-              borderRadius: 6
-            }}
+            className="inline-block rounded-md bg-indigo-600 px-7 py-3 text-[13px] font-bold text-white no-underline transition-colors hover:bg-indigo-500"
           >
             START FOR FREE →
           </Link>

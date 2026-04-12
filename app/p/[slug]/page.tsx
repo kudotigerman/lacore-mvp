@@ -345,7 +345,7 @@ function PublicLandingPageContent() {
           background: "var(--bg-primary)",
           border: "1px solid var(--border-primary)",
           padding: "48px 40px 40px",
-          boxShadow: "0 0 0 1px rgba(6,182,212,0.08), 0 24px 80px rgba(0,0,0,0.55)"
+          boxShadow: "0 0 0 1px rgba(99,102,241,0.08), 0 24px 80px rgba(0,0,0,0.55)"
         }}
       >
         <button

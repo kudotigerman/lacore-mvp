@@ -629,7 +629,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setChatOpen(true)}
-              className="dash-sb-fab dash-sb-fab--closed fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500"
+              className="dash-sb-fab dash-sb-fab--closed fixed bottom-20 right-6 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500"
               aria-expanded={false}
               aria-controls="dash-sales-builder-panel"
             >

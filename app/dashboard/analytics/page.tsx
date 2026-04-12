@@ -37,7 +37,7 @@ const GRID = "#1C1C22";
 const STATUS_ORDER = ["new", "contacted", "in_talks", "won", "lost"] as const;
 
 const STATUS_COLORS: Record<(typeof STATUS_ORDER)[number], string> = {
-  new: "#06B6D4",
+  new: "#6366F1",
   contacted: "#8B5CF6",
   in_talks: "#F59E0B",
   won: "#10B981",
