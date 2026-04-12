@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DomainConnect from "@/components/DomainConnect";
@@ -11,7 +12,6 @@ import StripeConnect from "@/components/StripeConnect";
 import { LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
 import { dashToast } from "@/lib/dash-toast";
 import { getSupabaseClient } from "@/lib/supabase";
-import Link from "next/link";
 
 const LANDING_AI_QUICK_PROMPTS = [
   "Change colors",
@@ -69,6 +69,11 @@ export default function DashboardLandingPage() {
     dashToast("Link copied to clipboard!");
   }
 
+  function shareOpen() {
+    if (!publicUrl) return;
+    window.open(publicUrl, "_blank", "noopener,noreferrer");
+  }
+
   const url = landingUrl;
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -84,6 +89,7 @@ export default function DashboardLandingPage() {
         isStepDone={stepDone}
         nextStepLabel="Content"
         nextStepHref="/dashboard/content"
+        hideNextStepBanner={!!d.landingSlug}
       >
         {!d.offer ? (
           <p className="text-sm text-white/45">Add your offer first on the Offer page.</p>
@@ -113,15 +119,14 @@ export default function DashboardLandingPage() {
             {d.buildError ? <p className="mt-4 text-center text-sm text-red-400">{d.buildError}</p> : null}
           </div>
         ) : (
-          <div className="flex flex-wrap items-start gap-8">
-            <div className="min-w-0 flex-[1.2] basis-[320px]">
-              <div className="relative h-[min(70vh,560px)] w-full min-h-[400px] overflow-hidden rounded-xl border border-white/8 bg-white/3">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-stretch">
+            <div className="min-h-[min(85vh,900px)] min-w-0 flex-1">
+              <div className="relative h-full min-h-[inherit] w-full overflow-hidden rounded-xl border border-white/[0.08] bg-transparent">
                 <iframe
                   src={`/p/${d.landingSlug}`}
-                  className="h-full w-full min-h-[400px] border-0 rounded-xl"
-                  style={{ minHeight: "400px" }}
-                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  className="block h-full min-h-[min(85vh,900px)] w-full border-0 bg-transparent"
                   title="Landing page preview"
+                  sandbox="allow-scripts allow-same-origin allow-forms"
                   onError={() => setPreviewError(true)}
                 />
                 {previewError ? (
@@ -139,22 +144,8 @@ export default function DashboardLandingPage() {
                 ) : null}
               </div>
             </div>
-            <div className="flex min-w-[260px] flex-1 basis-[280px] flex-col gap-4">
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Checklist</p>
-                <ul className="mt-3 space-y-2 text-sm text-white/55">
-                  <li className="flex items-center gap-2">
-                    <span className="text-emerald-400">✓</span> Page created
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-white/25">○</span> Custom domain
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-white/25">○</span> Payment connected
-                  </li>
-                </ul>
-              </div>
 
+            <div className="flex w-full shrink-0 flex-col gap-4 lg:w-[380px]">
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Public link</p>
                 <div className="mt-2 flex gap-2">
@@ -176,32 +167,89 @@ export default function DashboardLandingPage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 <Link
                   href={`/p/${d.landingSlug}?edit=true`}
-                  className="rounded-xl bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+                  className="w-full rounded-xl bg-indigo-600 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-500"
                 >
-                  Open AI editor
+                  Open AI editor →
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    d.setRegenerateError(null);
-                    d.setRegenerateConfirm(true);
-                  }}
-                  disabled={d.buildingLanding}
-                  className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white disabled:opacity-50"
-                >
-                  Regenerate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void copyUrl()}
-                  className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
-                >
-                  Share
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      d.setRegenerateError(null);
+                      d.setRegenerateConfirm(true);
+                    }}
+                    disabled={d.buildingLanding}
+                    className="flex-1 rounded-xl border border-white/15 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white disabled:opacity-50"
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => shareOpen()}
+                    className="flex-1 rounded-xl border border-white/15 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
+                  >
+                    Share ↗
+                  </button>
+                </div>
               </div>
+
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Checklist</p>
+                <ul className="mt-3 space-y-2 text-sm text-white/55">
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span> Page created
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white/25">○</span> Add your Calendly link
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white/25">○</span> Share on social media
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white/25">○</span> Custom domain
+                  </li>
+                </ul>
+              </div>
+
+              <Link
+                href="/dashboard/content"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+              >
+                Continue →
+              </Link>
+
+              {d.regenerateConfirm ? (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                  <p className="text-sm text-white/70">Replace your current site?</p>
+                  {d.regenerateError ? <p className="mt-2 text-xs text-red-400">{d.regenerateError}</p> : null}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        d.setRegenerateError(null);
+                        void d.handleRegenerateSiteConfirmed();
+                      }}
+                      disabled={d.buildingLanding}
+                      className="flex-1 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        d.setRegenerateConfirm(false);
+                        d.setRegenerateError(null);
+                      }}
+                      className="flex-1 rounded-lg border border-white/15 py-2 text-sm text-white/60"
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
                 <p className="mb-3 text-sm font-medium text-white">Edit with AI</p>
@@ -241,36 +289,6 @@ export default function DashboardLandingPage() {
                   Apply
                 </button>
               </div>
-
-              {d.regenerateConfirm ? (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-                  <p className="text-sm text-white/70">Replace your current site?</p>
-                  {d.regenerateError ? <p className="mt-2 text-xs text-red-400">{d.regenerateError}</p> : null}
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        d.setRegenerateError(null);
-                        void d.handleRegenerateSiteConfirmed();
-                      }}
-                      disabled={d.buildingLanding}
-                      className="flex-1 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-50"
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        d.setRegenerateConfirm(false);
-                        d.setRegenerateError(null);
-                      }}
-                      className="flex-1 rounded-lg border border-white/15 py-2 text-sm text-white/60"
-                    >
-                      No
-                    </button>
-                  </div>
-                </div>
-              ) : null}
 
               {d.userId ? (
                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">

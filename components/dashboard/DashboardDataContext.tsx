@@ -6,7 +6,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode
 } from "react";
@@ -113,9 +112,7 @@ type DashboardDataContextValue = {
   buildingLanding: boolean;
   buildError: string | null;
   buildLogVisible: number;
-  buildProgressWidth: number;
   buildingLogMessages: string[];
-  buildLogEndRef: React.MutableRefObject<HTMLDivElement | null>;
   handleBuildLandingPage: () => Promise<void>;
   regenerateConfirm: boolean;
   setRegenerateConfirm: (v: boolean) => void;
@@ -158,8 +155,6 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [buildingLanding, setBuildingLanding] = useState(false);
   const [buildError, setBuildError] = useState<string | null>(null);
   const [buildLogVisible, setBuildLogVisible] = useState(0);
-  const [buildProgressWidth, setBuildProgressWidth] = useState(0);
-  const buildLogEndRef = useRef<HTMLDivElement | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [regenerateConfirm, setRegenerateConfirm] = useState(false);
@@ -177,14 +172,11 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
 
   const buildingLogMessages = useMemo(
     () => [
-      "Analyzing your business...",
-      "Detecting niche...",
-      "Choosing design system...",
-      "Writing hero section...",
-      "Building services grid...",
-      "Generating pricing tiers...",
-      "Adding animations...",
-      "Finalizing your page..."
+      "Analyzing your offer...",
+      "Crafting your headline...",
+      "Writing your copy...",
+      "Designing the layout...",
+      "Adding finishing touches..."
     ],
     []
   );
@@ -480,18 +472,16 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         }
         setLandingSlug(result.slug ?? null);
         await refreshDashboardStatus();
-        router.push(`/p/${result.slug}?edit=true`);
       } catch (err) {
         setBuildError(err instanceof Error ? err.message : "Failed to build landing page.");
       } finally {
         setBuildingLanding(false);
       }
-    }, [offer, sessionToken, email, router, activeProject?.id, refreshDashboardStatus]);
+    }, [offer, sessionToken, email, activeProject?.id, refreshDashboardStatus]);
 
   useEffect(() => {
     if (!buildingLanding) {
       setBuildLogVisible(0);
-      setBuildProgressWidth(0);
       return;
     }
     let count = 1;
@@ -500,17 +490,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       if (count <= buildingLogMessages.length) setBuildLogVisible(count);
       else window.clearInterval(intervalId);
     }, 1500);
-    const progressTimeout = window.setTimeout(() => setBuildProgressWidth(95), 50);
     return () => {
       window.clearInterval(intervalId);
-      window.clearTimeout(progressTimeout);
     };
   }, [buildingLanding, buildingLogMessages.length]);
-
-  useEffect(() => {
-    if (!buildingLanding) return;
-    buildLogEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [buildingLanding, buildLogVisible]);
 
   const handleRegenerateSiteConfirmed = useCallback(async () => {
     if (!userId || !activeProject?.id) return;
@@ -551,9 +534,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       buildingLanding,
       buildError,
       buildLogVisible,
-      buildProgressWidth,
       buildingLogMessages,
-      buildLogEndRef,
       handleBuildLandingPage,
       regenerateConfirm,
       setRegenerateConfirm,
@@ -592,9 +573,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       buildingLanding,
       buildError,
       buildLogVisible,
-      buildProgressWidth,
       buildingLogMessages,
-      buildLogEndRef,
       handleBuildLandingPage,
       regenerateConfirm,
       regenerateError,

@@ -1,6 +1,7 @@
 "use client";
 
 import { flushSync } from "react-dom";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OfferVariant } from "@/app/api/generate-offer/route";
 import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/lib/onboarding-keys";
@@ -49,6 +50,7 @@ const fields = [
 
 export default function DashboardOfferPage() {
   const d = useDashboardData();
+  const router = useRouter();
   const { activeProject } = useProjectContext();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<DashboardOffer | null>(null);
@@ -395,6 +397,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
         isStepDone={!!offer}
         nextStepLabel="Landing page"
         nextStepHref="/dashboard/landing"
+        hideNextStepBanner={!!offer}
         right={headerRight}
       >
       {!offer ? (
@@ -736,6 +739,34 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               ) : null}
             </div>
           )}
+
+          {!editing ? (
+            <div className="mt-8 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/landing")}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 py-4 text-base font-medium text-white transition-colors hover:bg-indigo-500"
+              >
+                Continue to Landing Page
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRefineOpen(true)}
+                className="text-sm text-white/40 transition-colors hover:text-white/70 sm:shrink-0"
+              >
+                Refine offer first
+              </button>
+            </div>
+          ) : null}
         </>
       )}
       </DashboardStepShell>

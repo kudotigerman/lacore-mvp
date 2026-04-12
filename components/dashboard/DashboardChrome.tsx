@@ -22,6 +22,7 @@ import {
   useDashboardData
 } from "@/components/dashboard/DashboardDataContext";
 import { dashPremiumCss } from "@/components/dashboard/dashTokens";
+import { LandingGenerationLoader } from "@/components/dashboard/LandingGenerationLoader";
 
 const CHAT_STORAGE_KEY = "lacore-chat-history";
 
@@ -99,7 +100,6 @@ function stepLocked(
 
 export default function DashboardChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [isMobile, setIsMobile] = useState(false);
   const data = useDashboardData();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([]);
@@ -118,13 +118,6 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
     }
     window.addEventListener(DASH_TOAST_EVENT, onToast);
     return () => window.removeEventListener(DASH_TOAST_EVENT, onToast);
-  }, []);
-
-  useEffect(() => {
-    const u = () => setIsMobile(window.innerWidth < 900);
-    u();
-    window.addEventListener("resize", u);
-    return () => window.removeEventListener("resize", u);
   }, []);
 
   useEffect(() => {
@@ -314,85 +307,15 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         }
       `}</style>
 
-      {data.buildingLanding && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            display: "flex",
-            background: "var(--content-bg)",
-            overflow: "hidden"
-          }}
-        >
-          <aside
-            style={{
-              width: isMobile ? "100%" : 360,
-              flexShrink: 0,
-              borderRight: isMobile ? "none" : "1px solid #1C1C22",
-              borderBottom: isMobile ? "1px solid #1C1C22" : "none",
-              display: "flex",
-              flexDirection: "column",
-              maxHeight: isMobile ? "42vh" : "100%",
-              background: "var(--sidebar-bg)"
-            }}
-          >
-            <div style={{ flexShrink: 0, padding: "20px 20px 16px", borderBottom: "1px solid #1C1C22" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "var(--success)",
-                    animation: "dash-build-pulse 2s ease-in-out infinite",
-                    flexShrink: 0
-                  }}
-                />
-                <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)" }}>LACORE AGENT</span>
-              </div>
-            </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-              {data.buildingLogMessages.slice(0, data.buildLogVisible).map((text, idx) => (
-                <div
-                  key={`${idx}-${text}`}
-                  style={{
-                    background: "var(--card-bg)",
-                    border: "1px solid var(--card-border)",
-                    borderRadius: 8,
-                    padding: "10px 12px",
-                    fontSize: 12,
-                    color: "var(--text-secondary)"
-                  }}
-                >
-                  {text}
-                </div>
-              ))}
-              <div ref={data.buildLogEndRef} />
-            </div>
-          </aside>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: 24, background: "var(--content-bg)" }}>
-            <div style={{ width: "100%", maxWidth: 360, margin: "0 auto" }}>
-              <div style={{ height: 3, background: "#1C1C22", borderRadius: 2, overflow: "hidden" }}>
-                <div
-                  style={{
-                    height: 3,
-                    width: `${data.buildProgressWidth}%`,
-                    background: "var(--accent)",
-                    transition: "width 90s linear"
-                  }}
-                />
-              </div>
-              <p style={{ margin: "14px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
-                {data.buildLogVisible > 0
-                  ? data.buildingLogMessages[data.buildLogVisible - 1]
-                  : "Starting..."}
-              </p>
-              <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--text-muted)" }}>Generating your landing page...</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {data.buildingLanding ? (
+        <LandingGenerationLoader
+          currentStep={
+            data.buildLogVisible > 0
+              ? (data.buildingLogMessages[data.buildLogVisible - 1] ?? data.buildingLogMessages[0] ?? "Starting...")
+              : (data.buildingLogMessages[0] ?? "Starting...")
+          }
+        />
+      ) : null}
 
       <aside
         className="dash-sidebar-col border-r border-white/[0.06] bg-[#060608]"

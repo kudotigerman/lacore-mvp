@@ -17,15 +17,15 @@ body { font-family: 'Inter', sans-serif; background: #0A0A0D; color: #FAFAFA; ov
 img { max-width: 100%; height: auto; display: block; }
 a { text-decoration: none; color: inherit; }
 
-DETECT NICHE from user's offer and apply (each row: pick accent_light + accent_hover as lighter/darker partners of accent):
-- FITNESS/HEALTH: accent=#EF4444, accent_light=#FCA5A5, accent_hover=#DC2626, hero-image=https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80
-- DESIGNER/CREATIVE: accent=#8B5CF6, accent_light=#C4B5FD, accent_hover=#7C3AED, hero-image=https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1400&q=80  
-- DEVELOPER/TECH: accent=#6366F1, accent_light=#818CF8, accent_hover=#4F46E5, hero-image=https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1400&q=80
-- COACH/CONSULTANT: accent=#10B981, accent_light=#6EE7B7, accent_hover=#059669, hero-image=https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400&q=80
-- AGENCY: accent=#F59E0B, accent_light=#FCD34D, accent_hover=#D97706, hero-image=https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80
-- DEFAULT: accent=#6366F1, accent_light=#818CF8, accent_hover=#4F46E5, hero-image=https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80
+ACCENT COLOR (choose ONE palette for the whole page — when unsure, use INDIGO DEFAULT):
+- DEFAULT for almost all services: tech, AI, SaaS, software, consulting, business coaching, design, creative freelance, marketing, agencies, B2B, professional services → accent=#6366F1, accent_light=#818CF8, accent_hover=#4F46E5, hero-image=https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&q=80
+- EMERALD (ONLY for wellness, fitness, nutrition, health coaching, eco/sustainability, organic/nature brands) → accent=#10B981, accent_light=#6EE7B7, accent_hover=#059669, hero-image=https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80
+- AMBER (ONLY for food, restaurant, hospitality, craft, cooking, culinary) → accent=#F59E0B, accent_light=#FCD34D, accent_hover=#D97706, hero-image=https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&q=80
+- FITNESS/STRENGTH with aggressive positioning (gym, combat sports) may use accent=#EF4444, accent_light=#FCA5A5, accent_hover=#DC2626, hero-image=https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1400&q=80 — do NOT use red for generic coaching/consulting; those use indigo.
 
-Never use cyan, teal, or sky blue as the primary accent (do not use #06B6D4, #00BCD4, #0EA5E9, #22D3EE, or similar). Developer/tech and default niches must use indigo #6366F1 (and the accent_light / accent_hover from the row above). Use ACCENT_COLOR from the matched niche row only.
+DEFAULT accent color for ALL typical service businesses is #6366F1 (indigo). Use emerald/green ONLY for wellness, fitness, nutrition, eco/sustainability. Use amber ONLY for food, restaurant, craft businesses. For tech, AI, consulting, coaching, design, agencies = ALWAYS indigo unless the offer clearly matches emerald or amber rules above.
+
+Never use cyan, teal, or sky blue as the primary accent (no #06B6D4, #00BCD4, #0EA5E9, #22D3EE). Use ACCENT_COLOR from the single matched row only.
 
 Use ACCENT_COLOR, ACCENT_COLOR_LIGHT, and ACCENT_COLOR_HOVER as variables below for all accent uses.
 Primary solid buttons: background ACCENT_COLOR; on hover set background to ACCENT_COLOR_HOVER (not opacity-only).
@@ -324,7 +324,8 @@ document.getElementById('lacore-form').addEventListener('submit',async function(
 === INSTRUCTIONS FOR FILLING CONTENT ===
 Based on the user's offer, replace ALL CAPS variables with compelling content:
 - BRAND_NAME: extract from user's profile display_name or from offer
-- HERO_HEADLINE: split into 2 lines, first plain, second with accent. Max 8 words total. ALL CAPS. Hit the main pain/desire.
+- HERO_HEADLINE_LINE1: First line of the H1 — main headline in plain color (#FAFAFA). Clear, compelling; can be a full sentence. Must NOT duplicate or overlap the accent line.
+- HERO_HEADLINE_ACCENT: Second line of the H1 inside the gradient span — exactly 3-5 words MAX. A SHORT punchy phrase (urgency, outcome, or tagline), NOT a repeat, substring, or paraphrase of line 1. BAD: if line 1 is "Transform Your Business With Enterprise AI", accent must NOT be "Enterprise AI Implementation" or any phrase that repeats the same idea. GOOD examples: "Starting This Week", "Guaranteed Results", "Built for Scale", "Ready in 30 Days".
 - HERO_SUBHEADLINE: 1-2 sentences, specific, no fluff. Mention the target audience.
 - SOCIAL_PROOF_TEXT: "Trusted by X+ [niche] professionals"
 - STAT_1/2/3: Specific numbers relevant to the offer (revenue, clients, days, %, etc.)

@@ -18,6 +18,7 @@ export function DashboardStepShell({
   isStepDone,
   nextStepLabel,
   nextStepHref,
+  hideNextStepBanner,
   right,
   children
 }: {
@@ -28,6 +29,8 @@ export function DashboardStepShell({
   isStepDone?: boolean;
   nextStepLabel?: string;
   nextStepHref?: string;
+  /** When true, hide the top "Step complete / Continue →" strip (use an in-page CTA instead). */
+  hideNextStepBanner?: boolean;
   right?: ReactNode;
   children: ReactNode;
 }) {
@@ -50,7 +53,7 @@ export function DashboardStepShell({
         </div>
       </div>
 
-      {isStepDone && nextStepLabel && nextStepHref ? (
+      {isStepDone && nextStepLabel && nextStepHref && !hideNextStepBanner ? (
         <div className="mb-6 flex items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/8 p-4">
           <div>
             <p className="text-sm font-medium text-indigo-300">Step {stepNum} complete!</p>
