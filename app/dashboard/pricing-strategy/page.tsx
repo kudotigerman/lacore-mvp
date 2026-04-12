@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
-import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { PricingStrategyResult } from "@/types/dashboard-ai";
 
 export default function PricingStrategyPage() {
   const d = useDashboardData();
-  const { activeProject } = useProjectContext();
+  const { activeProject } = d;
   const [businessType, setBusinessType] = useState("");
   const [niche, setNiche] = useState("");
   const [currentPrice, setCurrentPrice] = useState("");
@@ -20,25 +19,34 @@ export default function PricingStrategyPage() {
   const [result, setResult] = useState<PricingStrategyResult | null>(null);
 
   useEffect(() => {
-    async function loadLast() {
-      if (!d.userId || !activeProject?.id) return;
+    const userId = d.userId;
+    const projectId = activeProject?.id;
+    if (!userId || !projectId) return;
+
+    async function load(uid: string, pid: string) {
       const supabase = getSupabaseClient();
       const { input, result: saved } = await fetchLatestSavedResult(supabase, {
-        userId: d.userId,
-        projectId: activeProject.id,
+        userId: uid,
+        projectId: pid,
         type: "pricing"
       });
       if (input) {
-        if (typeof input.businessType === "string") setBusinessType(input.businessType);
-        if (typeof input.niche === "string") setNiche(input.niche);
-        if (typeof input.currentPrice === "string") setCurrentPrice(input.currentPrice);
-        if (typeof input.experience === "string") setExperience(input.experience);
+        setBusinessType(typeof input.businessType === "string" ? input.businessType : "");
+        setNiche(typeof input.niche === "string" ? input.niche : "");
+        setCurrentPrice(typeof input.currentPrice === "string" ? input.currentPrice : "");
+        setExperience(typeof input.experience === "string" ? input.experience : "");
       }
-      if (saved && typeof saved === "object" && saved !== null && "recommendedPrice" in saved) {
+      if (
+        saved &&
+        typeof saved === "object" &&
+        saved !== null &&
+        "recommendedPrice" in saved &&
+        Array.isArray((saved as PricingStrategyResult).tiers)
+      ) {
         setResult(saved as PricingStrategyResult);
       }
     }
-    void loadLast();
+    void load(userId, projectId);
   }, [d.userId, activeProject?.id]);
 
   async function handleGenerate() {

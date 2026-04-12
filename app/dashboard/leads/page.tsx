@@ -317,11 +317,11 @@ export default function DashboardLeadsPage() {
                 Add lead manually
               </button>
 
-              <div className="-mx-8 flex gap-3 overflow-x-auto px-8 pb-4 lg:grid lg:max-w-none lg:grid-cols-7 lg:overflow-visible lg:px-0">
+              <div className="flex min-w-0 gap-3 overflow-x-auto pb-4">
                 {COLUMNS.map((col) => {
                   const colLeads = getLeadsByStatus(col.id);
                   return (
-                    <div key={col.id} className="w-56 flex-shrink-0 lg:w-auto">
+                    <div key={col.id} className="w-[200px] flex-shrink-0">
                       <div className={`mb-3 border-t-2 pt-3 ${col.color}`}>
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-white/70">{col.label}</span>

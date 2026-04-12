@@ -5,13 +5,11 @@ import { DashboardStepShell } from "@/components/dashboard/DashboardStepShell";
 import { LandingEditorSplitView } from "@/components/dashboard/LandingEditorSplitView";
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
-import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
-  const { userId, setLandingSlug } = d;
-  const { activeProject } = useProjectContext();
+  const { userId, setLandingSlug, activeProject } = d;
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
 
@@ -39,17 +37,25 @@ export default function DashboardLandingPage() {
   }, [refreshViews]);
 
   useEffect(() => {
+    const projectId = activeProject?.id;
+    const uid = userId;
+    if (!projectId || !uid) return;
+
+    console.log("Loading landing for project:", projectId);
+
     async function loadExistingLanding() {
-      if (!activeProject?.id || !userId) return;
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from("landing_pages")
         .select("slug")
-        .eq("project_id", activeProject.id)
-        .eq("user_id", userId)
+        .eq("project_id", projectId)
+        .eq("user_id", uid)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      console.log("Found landing:", data);
+
       if (error || !data) return;
       const row = data as { slug?: string };
       if (row.slug) setLandingSlug(row.slug);

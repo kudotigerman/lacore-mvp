@@ -42,14 +42,14 @@ export function LeadKanbanCard({
           onSelect();
         }
       }}
-      className={`group w-full cursor-pointer rounded-xl border p-3 text-left transition-colors ${
+      className={`group min-w-0 w-full cursor-pointer rounded-xl border border-white/[0.08] bg-white/[0.04] p-3 text-left transition-colors ${
         selected
           ? "border-indigo-500/50 bg-indigo-500/10"
-          : "border-white/[0.08] bg-white/[0.04] hover:border-white/[0.15]"
+          : "hover:border-white/[0.15]"
       }`}
     >
       <p className="mb-1 truncate text-sm font-medium text-white">{lead.name?.trim() || lead.email}</p>
-      <p className="mb-3 truncate text-xs text-white/40">{lead.email}</p>
+      <p className="mb-2 truncate text-xs text-white/40">{lead.email}</p>
       {lead.message ? (
         <p className="mb-3 line-clamp-2 text-xs italic text-white/40">&quot;{lead.message}&quot;</p>
       ) : null}

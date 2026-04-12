@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
-import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { OutreachResult } from "@/types/dashboard-ai";
@@ -38,7 +37,7 @@ function CopyBlock({ title, text }: { title: string; text: string }) {
 
 export default function OutreachPage() {
   const d = useDashboardData();
-  const { activeProject } = useProjectContext();
+  const { activeProject } = d;
   const [prospect, setProspect] = useState("");
   const [channel, setChannel] = useState("LinkedIn");
   const [tone, setTone] = useState<(typeof TONES)[number]>("Friendly");
@@ -47,16 +46,25 @@ export default function OutreachPage() {
   const [outreach, setOutreach] = useState<OutreachResult | null>(null);
 
   useEffect(() => {
-    async function loadLast() {
-      if (!d.userId || !activeProject?.id) return;
+    const userId = d.userId;
+    const projectId = activeProject?.id;
+    if (!userId || !projectId) return;
+
+    async function load(uid: string, pid: string) {
       const supabase = getSupabaseClient();
       const { input, result } = await fetchLatestSavedResult(supabase, {
-        userId: d.userId,
-        projectId: activeProject.id,
+        userId: uid,
+        projectId: pid,
         type: "outreach"
       });
       if (input) {
-        if (typeof input.prospect === "string") setProspect(input.prospect);
+        const desc =
+          typeof input.clientDescription === "string"
+            ? input.clientDescription
+            : typeof input.prospect === "string"
+              ? input.prospect
+              : "";
+        setProspect(desc);
         if (typeof input.channel === "string" && OUTREACH_CHANNELS.some((c) => c.value === input.channel)) {
           setChannel(input.channel);
         }
@@ -75,7 +83,7 @@ export default function OutreachPage() {
         setOutreach(result as OutreachResult);
       }
     }
-    void loadLast();
+    void load(userId, projectId);
   }, [d.userId, activeProject?.id]);
 
   async function handleGenerate() {

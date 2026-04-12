@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { dashToast } from "@/lib/dash-toast";
-import { useProjectContext } from "@/app/contexts/ProjectContext";
+import { useProjectContext, type Project } from "@/app/contexts/ProjectContext";
 
 export type DashboardOffer = {
   offer: string;
@@ -96,6 +96,8 @@ export function profileInitialsFromName(displayName: string, emailAddr: string):
 
 type DashboardDataContextValue = {
   loading: boolean;
+  /** Same as ProjectContext — exposed so dashboard pages can key loads on project without extra hooks. */
+  activeProject: Project | null;
   userId: string | null;
   email: string;
   sessionToken: string | null;
@@ -518,6 +520,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       loading,
+      activeProject,
       userId,
       email,
       sessionToken,
@@ -560,6 +563,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     }),
     [
       loading,
+      activeProject,
       userId,
       email,
       sessionToken,

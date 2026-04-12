@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
-import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { SequenceMessage } from "@/types/dashboard-ai";
@@ -31,7 +30,7 @@ const CHANNEL_IDS = new Set<ChannelId>(CHANNELS.map((c) => c.id));
 
 function SequencesPageInner() {
   const d = useDashboardData();
-  const { activeProject } = useProjectContext();
+  const { activeProject } = d;
   const searchParams = useSearchParams();
   const leadName = searchParams.get("leadName")?.trim() ?? "";
   const leadContext = searchParams.get("leadContext")?.trim() ?? "";
@@ -43,25 +42,28 @@ function SequencesPageInner() {
   const [messages, setMessages] = useState<SequenceMessage[] | null>(null);
 
   useEffect(() => {
-    async function loadLast() {
-      if (!d.userId || !activeProject?.id) return;
+    const userId = d.userId;
+    const projectId = activeProject?.id;
+    if (!userId || !projectId) return;
+
+    async function load(uid: string, pid: string) {
       const supabase = getSupabaseClient();
       const { input, result } = await fetchLatestSavedResult(supabase, {
-        userId: d.userId,
-        projectId: activeProject.id,
+        userId: uid,
+        projectId: pid,
         type: "sequence"
       });
       if (input) {
         const ch = input.channel;
         if (typeof ch === "string" && CHANNEL_IDS.has(ch as ChannelId)) setChannel(ch as ChannelId);
-        if (typeof input.goal === "string" && GOALS.includes(input.goal)) setGoal(input.goal);
+        if (typeof input.goal === "string") setGoal(input.goal);
       }
       if (result && typeof result === "object" && result !== null) {
         const msgs = (result as { messages?: unknown }).messages;
         if (Array.isArray(msgs) && msgs.length > 0) setMessages(msgs as SequenceMessage[]);
       }
     }
-    void loadLast();
+    void load(userId, projectId);
   }, [d.userId, activeProject?.id]);
 
   async function copyMessage(text: string) {
@@ -186,6 +188,11 @@ function SequencesPageInner() {
           onChange={(e) => setGoal(e.target.value)}
           className="w-full max-w-lg rounded-xl border border-white/10 bg-[#0a0a12] px-4 py-3 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
         >
+          {!GOALS.includes(goal) ? (
+            <option key={goal} value={goal}>
+              {goal}
+            </option>
+          ) : null}
           {GOALS.map((g) => (
             <option key={g} value={g}>
               {g}

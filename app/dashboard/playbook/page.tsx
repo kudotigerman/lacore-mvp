@@ -3,6 +3,79 @@
 import Link from "next/link";
 import { useState } from "react";
 
+const guideIcons = {
+  rocket: (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-indigo-400"
+      aria-hidden
+    >
+      <path d="M4.5 16.5c-1.5 1.5-1 4.5 2 4 .5-2 2-3.5 4-4l-6-6c-.5 2 .5 4.5-1.5 6.5z" />
+      <path d="M9 10c2-2 5-3 8-3 0 3-1 6-3 8" />
+      <path d="M14.5 9.5 9 15" />
+      <circle cx="14" cy="10" r="1" />
+    </svg>
+  ),
+  money: (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-indigo-400"
+      aria-hidden
+    >
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  ),
+  handshake: (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-indigo-400"
+      aria-hidden
+    >
+      <path d="M20.5 7.5L12 16l-4-4-6 6" />
+      <path d="M15 7h6v6" />
+    </svg>
+  ),
+  megaphone: (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-indigo-400"
+      aria-hidden
+    >
+      <path d="M3 11l19-9-9 19-2-8-8-2z" />
+    </svg>
+  )
+} as const;
+
+type GuideIconKey = keyof typeof guideIcons;
+
 type Step = {
   day?: string;
   action: string;
@@ -14,7 +87,7 @@ type Step = {
 type Guide = {
   id: string;
   title: string;
-  icon: string;
+  iconKey: GuideIconKey;
   steps: Step[];
 };
 
@@ -22,7 +95,7 @@ const guides: Guide[] = [
   {
     id: "first-client",
     title: "Get your first client in 7 days",
-    icon: "🚀",
+    iconKey: "rocket",
     steps: [
       {
         day: "Day 1",
@@ -64,7 +137,7 @@ const guides: Guide[] = [
   {
     id: "pricing",
     title: "Price yourself confidently",
-    icon: "💰",
+    iconKey: "money",
     steps: [
       {
         action: "Run the pricing analysis",
@@ -89,7 +162,7 @@ const guides: Guide[] = [
   {
     id: "lead-to-client",
     title: "Turn a lead into a paying client",
-    icon: "🤝",
+    iconKey: "handshake",
     steps: [
       {
         action: "Respond within 1 hour",
@@ -120,7 +193,7 @@ const guides: Guide[] = [
   {
     id: "content",
     title: "What to post to get inbound leads",
-    icon: "📱",
+    iconKey: "megaphone",
     steps: [
       {
         action: "Hook post — your biggest result",
@@ -168,8 +241,10 @@ export default function PlaybookPage() {
                 onClick={() => setOpen(isOpen ? null : guide.id)}
                 className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] p-5 transition-colors hover:border-white/15"
               >
-                <div className="flex items-center gap-3 text-left">
-                  <span className="text-2xl">{guide.icon}</span>
+                <div className="flex min-w-0 items-center gap-3 text-left">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
+                    {guideIcons[guide.iconKey]}
+                  </div>
                   <span className="text-base font-semibold text-white">{guide.title}</span>
                 </div>
                 <span className="text-xs text-white/30">{isOpen ? "▲" : "▼"}</span>
