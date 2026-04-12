@@ -41,8 +41,6 @@ export default function DashboardLandingPage() {
     const uid = userId;
     if (!projectId || !uid) return;
 
-    console.log("Loading landing for project:", projectId);
-
     async function loadExistingLanding() {
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
@@ -53,8 +51,6 @@ export default function DashboardLandingPage() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-
-      console.log("Found landing:", data);
 
       if (error || !data) return;
       const row = data as { slug?: string };
