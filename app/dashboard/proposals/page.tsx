@@ -11,6 +11,39 @@ import { ContextualTip } from "@/components/dashboard/ContextualTip";
 
 export type ProposalSection = { title: string; content: string };
 
+type ProposalSummary = {
+  id: string;
+  client_name: string;
+  client_problem: string;
+  created_at: string;
+};
+
+function parseProposalContent(raw: unknown): ProposalSection[] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const sections = (raw as { sections?: unknown }).sections;
+  if (!Array.isArray(sections)) return null;
+  const out: ProposalSection[] = [];
+  for (const s of sections) {
+    if (!s || typeof s !== "object") continue;
+    const title = typeof (s as ProposalSection).title === "string" ? (s as ProposalSection).title : "";
+    const content = typeof (s as ProposalSection).content === "string" ? (s as ProposalSection).content : "";
+    if (title && content) out.push({ title, content });
+  }
+  return out.length ? out : null;
+}
+
+function formatProposalDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  } catch {
+    return "—";
+  }
+}
+
 function ProposalsPageInner() {
   const d = useDashboardData();
   const { activeProject } = useProjectContext();
@@ -22,18 +55,85 @@ function ProposalsPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [proposal, setProposal] = useState<ProposalSection[] | null>(null);
   const [proposalId, setProposalId] = useState<string | null>(null);
+  const [proposalCreatedAt, setProposalCreatedAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkLeadId, setLinkLeadId] = useState("");
   const [linkSaving, setLinkSaving] = useState(false);
+  const [allProposals, setAllProposals] = useState<ProposalSummary[]>([]);
+  const [loadingProposals, setLoadingProposals] = useState(true);
 
   useEffect(() => {
-    const c = searchParams.get("client");
-    const p = searchParams.get("problem") ?? searchParams.get("hint");
-    if (c) setClientName(c);
-    if (p) setClientProblem(p);
-  }, [searchParams]);
+    let cancelled = false;
+    async function loadProposalsAndMaybeLast() {
+      if (!d.userId || !activeProject?.id) {
+        setAllProposals([]);
+        setLoadingProposals(false);
+        return;
+      }
+      setLoadingProposals(true);
+      const supabase = getSupabaseClient();
+      const { data: list } = await supabase
+        .from("proposals")
+        .select("id, client_name, client_problem, created_at")
+        .eq("user_id", d.userId)
+        .eq("project_id", activeProject.id)
+        .order("created_at", { ascending: false })
+        .limit(40);
+      if (cancelled) return;
+      setAllProposals((list as ProposalSummary[] | null) ?? []);
+
+      const c = searchParams.get("client");
+      const p = searchParams.get("problem") ?? searchParams.get("hint");
+      if (c || p) {
+        if (c) setClientName(c);
+        if (p) setClientProblem(p);
+        setProposal(null);
+        setProposalId(null);
+        setProposalCreatedAt(null);
+        setLoadingProposals(false);
+        return;
+      }
+
+      const { data: last } = await supabase
+        .from("proposals")
+        .select("*")
+        .eq("user_id", d.userId)
+        .eq("project_id", activeProject.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (last) {
+        const row = last as {
+          id: string;
+          client_name: string;
+          client_problem: string;
+          content: unknown;
+          created_at: string;
+        };
+        setClientName(row.client_name ?? "");
+        setClientProblem(row.client_problem ?? "");
+        const sections = parseProposalContent(row.content);
+        if (sections?.length) {
+          setProposal(sections);
+          setProposalId(row.id);
+          setProposalCreatedAt(row.created_at);
+        } else {
+          setProposal(null);
+          setProposalId(null);
+          setProposalCreatedAt(null);
+        }
+      }
+      setLoadingProposals(false);
+    }
+    void loadProposalsAndMaybeLast();
+    return () => {
+      cancelled = true;
+    };
+  }, [d.userId, activeProject?.id, searchParams]);
 
   const loadLeads = useCallback(async () => {
     if (!d.userId) return;
@@ -54,10 +154,32 @@ function ProposalsPageInner() {
     void loadLeads();
   }, [loadLeads]);
 
+  async function loadProposalById(p: ProposalSummary) {
+    const supabase = getSupabaseClient();
+    const { data, error: qErr } = await supabase.from("proposals").select("*").eq("id", p.id).single();
+    if (qErr || !data) return;
+    const row = data as {
+      id: string;
+      client_name: string;
+      client_problem: string;
+      content: unknown;
+      created_at: string;
+    };
+    setClientName(row.client_name ?? "");
+    setClientProblem(row.client_problem ?? "");
+    const sections = parseProposalContent(row.content);
+    if (sections?.length) {
+      setProposal(sections);
+      setProposalId(row.id);
+      setProposalCreatedAt(row.created_at);
+    }
+  }
+
   const handleGenerate = async () => {
     setError(null);
     setProposal(null);
     setProposalId(null);
+    setProposalCreatedAt(null);
     const supabase = getSupabaseClient();
     const {
       data: { session }
@@ -105,6 +227,18 @@ function ProposalsPageInner() {
       }
       setProposal(sections);
       setProposalId(json.proposal?.id ?? null);
+      setProposalCreatedAt(new Date().toISOString());
+      if (d.userId && activeProject?.id) {
+        const supabase2 = getSupabaseClient();
+        const { data: list } = await supabase2
+          .from("proposals")
+          .select("id, client_name, client_problem, created_at")
+          .eq("user_id", d.userId)
+          .eq("project_id", activeProject.id)
+          .order("created_at", { ascending: false })
+          .limit(40);
+        setAllProposals((list as ProposalSummary[] | null) ?? []);
+      }
     } catch {
       setError("Network error.");
     } finally {
@@ -174,6 +308,10 @@ function ProposalsPageInner() {
         text="Pro tip: The more specific the client's problem, the better the proposal. Instead of 'needs more clients', try 'losing leads because follow-up takes too long'."
       />
 
+      {loadingProposals ? (
+        <p className="mb-4 text-sm text-white/35">Loading proposals…</p>
+      ) : null}
+
       <div className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -221,7 +359,9 @@ function ProposalsPageInner() {
           <div className="flex flex-col gap-3 border-b border-indigo-500/20 bg-indigo-500/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-semibold text-white">Proposal for {clientName}</h3>
-              <p className="mt-0.5 text-xs text-white/40">Generated {new Date().toLocaleDateString()}</p>
+              <p className="mt-0.5 text-xs text-white/40">
+                Generated {proposalCreatedAt ? formatProposalDate(proposalCreatedAt) : "—"}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -248,6 +388,26 @@ function ProposalsPageInner() {
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {allProposals.length > 0 ? (
+        <div className="mt-8">
+          <h3 className="mb-3 text-xs uppercase tracking-wider text-white/30">Previous proposals</h3>
+          {allProposals.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => void loadProposalById(p)}
+              className="mb-2 w-full rounded-xl border border-white/6 bg-white/[0.02] px-4 py-3 text-left transition-colors hover:border-white/15"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-white/70">{p.client_name}</p>
+                <p className="shrink-0 text-xs text-white/30">{formatProposalDate(p.created_at)}</p>
+              </div>
+              <p className="mt-0.5 truncate text-xs text-white/40">{p.client_problem}</p>
+            </button>
+          ))}
         </div>
       ) : null}
 

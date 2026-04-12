@@ -12,6 +12,7 @@ export type LeadRow = {
   name: string | null;
   email: string;
   message: string | null;
+  phone?: string | null;
   created_at: string;
   status?: string | null;
 };

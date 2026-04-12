@@ -65,6 +65,8 @@ export async function POST(request: Request) {
       pricing?: string;
       positioning?: string;
       headline?: string;
+      leadName?: string;
+      leadContext?: string;
     };
 
     const channel = typeof body.channel === "string" ? body.channel.trim() : "";
@@ -117,16 +119,21 @@ export async function POST(request: Request) {
     }
 
     const channelHuman = CHANNEL_LABELS[channel] ?? channel;
-    const ctx = [
+    const leadName = typeof body.leadName === "string" ? body.leadName.trim() : "";
+    const leadContext = typeof body.leadContext === "string" ? body.leadContext.trim() : "";
+    const ctxLines = [
       `Goal: ${goal}`,
       `Channel: ${channelHuman}`,
+      ...(leadName ? [`Target lead name: ${leadName}`] : []),
+      ...(leadContext ? [`What we know about this lead / their message: ${leadContext}`] : []),
       "",
       `Headline: ${body.headline?.trim() || "—"}`,
       `Offer: ${body.offer?.trim() || "—"}`,
       `Audience: ${body.audience?.trim() || "—"}`,
       `Pricing: ${body.pricing?.trim() || "—"}`,
       `Positioning: ${body.positioning?.trim() || "—"}`
-    ].join("\n");
+    ];
+    const ctx = ctxLines.join("\n");
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

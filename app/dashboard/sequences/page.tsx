@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { useProjectContext } from "@/app/contexts/ProjectContext";
@@ -28,9 +29,13 @@ type ChannelId = (typeof CHANNELS)[number]["id"];
 
 const CHANNEL_IDS = new Set<ChannelId>(CHANNELS.map((c) => c.id));
 
-export default function SequencesPage() {
+function SequencesPageInner() {
   const d = useDashboardData();
   const { activeProject } = useProjectContext();
+  const searchParams = useSearchParams();
+  const leadName = searchParams.get("leadName")?.trim() ?? "";
+  const leadContext = searchParams.get("leadContext")?.trim() ?? "";
+
   const [channel, setChannel] = useState<ChannelId>("email");
   const [goal, setGoal] = useState(GOALS[0]!);
   const [loading, setLoading] = useState(false);
@@ -89,7 +94,9 @@ export default function SequencesPage() {
           audience: d.offer?.audience,
           pricing: d.offer?.pricing,
           positioning: d.offer?.positioning,
-          headline: d.offer?.headline
+          headline: d.offer?.headline,
+          ...(leadName ? { leadName } : {}),
+          ...(leadContext ? { leadContext } : {})
         })
       });
       const json = (await res.json()) as {
@@ -115,7 +122,7 @@ export default function SequencesPage() {
           userId: d.userId,
           projectId: activeProject.id,
           type: "sequence",
-          input: { channel, goal },
+          input: { channel, goal, leadName: leadName || undefined, leadContext: leadContext || undefined },
           result: { messages: json.sequence.messages }
         });
         if (saveErr) console.warn("saved_results sequence:", saveErr.message);
@@ -136,6 +143,17 @@ export default function SequencesPage() {
           Ready-made message series for email, DMs, and more — tuned to your offer.
         </p>
       </div>
+
+      {leadName ? (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/8 p-3">
+          <span className="text-sm text-indigo-400" aria-hidden>
+            👤
+          </span>
+          <p className="text-sm text-white/70">
+            Writing sequence for <span className="font-medium text-indigo-400">{leadName}</span>
+          </p>
+        </div>
+      ) : null}
 
       <ContextualTip
         icon="✉️"
@@ -212,5 +230,19 @@ export default function SequencesPage() {
           ))
         : null}
     </div>
+  );
+}
+
+export default function SequencesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-full p-6 text-sm text-white/40" style={{ background: "var(--content-bg)" }}>
+          Loading…
+        </div>
+      }
+    >
+      <SequencesPageInner />
+    </Suspense>
   );
 }

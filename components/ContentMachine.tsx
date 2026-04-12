@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -13,7 +13,15 @@ interface ContentMachineProps {
   offer: string;
   audience: string;
   userId: string;
+  projectId: string | null;
 }
+
+type PostItem = {
+  id: string;
+  text: string;
+  platform: Platform;
+  postType: PostType;
+};
 
 type PostImageState = { url?: string; loading: boolean; error: string };
 
@@ -39,6 +47,19 @@ const MODELS: { id: ModelId; label: string; hint: string }[] = [
   { id: "gemini", label: "Creative", hint: "Unconventional and bold" }
 ];
 
+const PLATFORM_SET = new Set<string>(PLATFORMS.map((p) => p.id));
+const POST_TYPE_SET = new Set<string>(POST_TYPES.map((p) => p.id));
+
+function asPlatform(raw: string | null | undefined): Platform {
+  const p = (raw ?? "").trim();
+  return PLATFORM_SET.has(p) ? (p as Platform) : "instagram";
+}
+
+function asPostType(raw: string | null | undefined): PostType {
+  const t = (raw ?? "").trim();
+  return POST_TYPE_SET.has(t) ? (t as PostType) : "hook";
+}
+
 function platformLabel(p: Platform): string {
   return PLATFORMS.find((x) => x.id === p)?.label ?? p;
 }
@@ -53,22 +74,57 @@ function downloadImageViaProxy(url: string) {
 
 const LONG_POST_CHARS = 320;
 
-export default function ContentMachine({ offer, audience, userId }: ContentMachineProps) {
+export default function ContentMachine({ offer, audience, userId, projectId }: ContentMachineProps) {
   const router = useRouter();
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [postType, setPostType] = useState<PostType>("hook");
   const [model, setModel] = useState<ModelId>("claude");
   const [customPrompt, setCustomPrompt] = useState("");
-  const [posts, setPosts] = useState<{ id: number; text: string }[]>([]);
+  const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
-  const [postImages, setPostImages] = useState<Record<number, PostImageState>>({});
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [postImages, setPostImages] = useState<Record<string, PostImageState>>({});
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [creditsError, setCreditsError] = useState(false);
-  const [expandedPosts, setExpandedPosts] = useState<Record<number, boolean>>({});
+  const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
+  const [postsLoading, setPostsLoading] = useState(false);
   const creditsBal = useCreditsBalance();
+
+  const fetchGeneratedPosts = useCallback(async () => {
+    if (!userId || !projectId) {
+      setPosts([]);
+      return;
+    }
+    setPostsLoading(true);
+    const supabase = getSupabaseClient();
+    const { data, error: qErr } = await supabase
+      .from("generated_posts")
+      .select("id, platform, post_type, content")
+      .eq("project_id", projectId)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setPostsLoading(false);
+    if (qErr || !data?.length) {
+      if (qErr) console.warn("generated_posts:", qErr.message);
+      return;
+    }
+    const rows = data as { id: string; platform: string; post_type: string | null; content: string }[];
+    setPosts(
+      rows.map((row) => ({
+        id: row.id,
+        text: row.content,
+        platform: asPlatform(row.platform),
+        postType: asPostType(row.post_type ?? undefined)
+      }))
+    );
+  }, [userId, projectId]);
+
+  useEffect(() => {
+    void fetchGeneratedPosts();
+  }, [fetchGeneratedPosts]);
 
   const runGenerate = useCallback(async () => {
     setError("");
@@ -118,16 +174,59 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         setError("No posts returned.");
         return;
       }
-      setPosts(data.posts);
+
+      if (projectId) {
+        const insertRows = data.posts.map((p) => ({
+          user_id: userId,
+          project_id: projectId,
+          platform,
+          post_type: postType,
+          content: p.text
+        }));
+        const { data: inserted, error: insErr } = await supabase
+          .from("generated_posts")
+          .insert(insertRows as never)
+          .select("id, platform, post_type, content");
+        if (!insErr && inserted?.length) {
+          const rows = inserted as { id: string; platform: string; post_type: string | null; content: string }[];
+          setPosts(
+            rows.map((row) => ({
+              id: row.id,
+              text: row.content,
+              platform: asPlatform(row.platform),
+              postType: asPostType(row.post_type ?? undefined)
+            }))
+          );
+        } else {
+          if (insErr) console.warn("generated_posts insert:", insErr.message);
+          setPosts(
+            data.posts.map((p, i) => ({
+              id: `local-${Date.now()}-${i}`,
+              text: p.text,
+              platform,
+              postType
+            }))
+          );
+        }
+      } else {
+        setPosts(
+          data.posts.map((p, i) => ({
+            id: `local-${Date.now()}-${i}`,
+            text: p.text,
+            platform,
+            postType
+          }))
+        );
+      }
       setPostImages({});
     } catch {
       setError("Network error.");
     } finally {
       setLoading(false);
     }
-  }, [audience, customPrompt, offer, model, platform, postType, userId]);
+  }, [audience, customPrompt, offer, model, platform, postType, userId, projectId]);
 
-  async function generatePostImage(postId: number, postText: string) {
+  async function generatePostImage(postId: string, postText: string) {
     setPostImages((prev) => ({
       ...prev,
       [postId]: { ...prev[postId], loading: true, error: "", url: prev[postId]?.url }
@@ -145,6 +244,9 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
       return;
     }
 
+    const post = posts.find((p) => p.id === postId);
+    const imgPlatform = post?.platform ?? platform;
+
     try {
       const res = await fetch("/api/content/generate-image", {
         method: "POST",
@@ -153,7 +255,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           Authorization: `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          platform,
+          platform: imgPlatform,
           style: "professional",
           offer: offer.trim(),
           audience: audience.trim(),
@@ -189,7 +291,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     }
   }
 
-  async function handleRegeneratePost(postId: number) {
+  async function handleRegeneratePost(postId: string) {
     setError("");
     setCreditsError(false);
     const supabase = getSupabaseClient();
@@ -202,6 +304,10 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     }
     if (!offer.trim()) return;
 
+    const target = posts.find((p) => p.id === postId);
+    const regenPlatform = target?.platform ?? platform;
+    const regenPostType = target?.postType ?? postType;
+
     setRegeneratingId(postId);
     try {
       const res = await fetch("/api/content/generate", {
@@ -211,8 +317,8 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
           Authorization: `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          platform,
-          postType,
+          platform: regenPlatform,
+          postType: regenPostType,
           model,
           offer: offer.trim(),
           audience: audience.trim(),
@@ -231,7 +337,9 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         return;
       }
       const newText = data.posts[0].text;
-      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, text: newText } : p)));
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, text: newText } : p))
+      );
       setPostImages((prev) => {
         const next = { ...prev };
         delete next[postId];
@@ -244,7 +352,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
     }
   }
 
-  async function handleCopy(text: string, id: number) {
+  async function handleCopy(text: string, id: string) {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
     window.setTimeout(() => setCopiedId(null), 2000);
@@ -339,22 +447,34 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
         {creditsError ? (
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
             <span className="text-sm text-amber-400">Not enough credits</span>
-            <span className="text-xs text-white/45">Use the Credits widget in the sidebar to buy more.</span>
+            <span className="text-xs text-white/45">Use the Credits widget in the sidebar to buy more credits.</span>
           </div>
         ) : null}
 
-        <button
-          type="button"
-          onClick={() => void runGenerate()}
-          disabled={loading || !offer.trim() || !userId}
-          className={`w-full rounded-xl py-3.5 text-sm font-semibold transition-colors duration-150 ${
-            loading || !offer.trim()
-              ? "cursor-not-allowed bg-white/10 text-white/35 content-machine-generating"
-              : "bg-indigo-600 text-white hover:bg-indigo-500"
-          }`}
-        >
-          {loading ? "Generating…" : "Generate post →"}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => void runGenerate()}
+            disabled={loading || !offer.trim() || !userId}
+            className={`flex-1 rounded-xl py-3.5 text-sm font-semibold transition-colors duration-150 ${
+              loading || !offer.trim()
+                ? "cursor-not-allowed bg-white/10 text-white/35 content-machine-generating"
+                : "bg-indigo-600 text-white hover:bg-indigo-500"
+            }`}
+          >
+            {loading ? "Generating…" : "Generate post →"}
+          </button>
+          {posts.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => void runGenerate()}
+              disabled={loading || !offer.trim() || !userId}
+              className="rounded-xl border border-white/15 px-4 py-3.5 text-sm font-medium text-white/60 transition-colors hover:border-indigo-500/40 hover:text-indigo-300 disabled:opacity-40"
+            >
+              Generate new
+            </button>
+          ) : null}
+        </div>
         <p className="mt-2 text-center text-xs text-white/30">
           Uses credits per run
           {creditsBal !== null ? ` · ${creditsBal} remaining` : ""}
@@ -363,6 +483,9 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
       </section>
 
       <section>
+        {postsLoading && posts.length === 0 ? (
+          <p className="py-8 text-center text-sm text-white/40">Loading saved posts…</p>
+        ) : null}
         {posts.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
             {posts.map((post, idx) => {
@@ -377,10 +500,10 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="text-xs font-medium uppercase tracking-wider text-white/50">
-                        {platformLabel(platform)}
+                        {platformLabel(post.platform)}
                       </span>
                       <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] text-white/25">
-                        {postTypeLabel(postType)}
+                        {postTypeLabel(post.postType)}
                       </span>
                     </div>
                     <div className="flex shrink-0 gap-2">
@@ -465,7 +588,7 @@ export default function ContentMachine({ offer, audience, userId }: ContentMachi
               );
             })}
           </div>
-        ) : !loading ? (
+        ) : !loading && !postsLoading ? (
           <div className="rounded-xl border border-dashed border-white/10 py-16 text-center text-sm text-white/40">
             No posts yet. Generate your first post above.
           </div>

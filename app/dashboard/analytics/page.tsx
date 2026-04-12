@@ -2,59 +2,40 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
-import { dash } from "@/components/dashboard/dashTokens";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type LeadRow = {
   id: string;
   created_at: string;
   name: string | null;
-  email: string | null;
+  email: string;
+  slug?: string | null;
   status: string | null;
 };
 
-const ACCENT = "#6366F1";
-const BG = "#0A0A0D";
-const CARD = "#111116";
-const BORDER = "#1C1C22";
-const TEXT = "#FAFAFA";
-const TEXT_MUTED = "#A1A1AA";
-const GRID = "#1C1C22";
-
-const STATUS_ORDER = [
+const FUNNEL_STATUSES = [
   "new",
   "contacted",
   "replied",
   "call_booked",
   "proposal_sent",
-  "won",
-  "lost"
+  "won"
 ] as const;
 
-const STATUS_COLORS: Record<(typeof STATUS_ORDER)[number], string> = {
-  new: "#6366F1",
-  contacted: "#3B82F6",
-  replied: "#8B5CF6",
-  call_booked: "#A78BFA",
-  proposal_sent: "#F59E0B",
-  won: "#10B981",
-  lost: "#EF4444"
-};
+type FunnelStatus = (typeof FUNNEL_STATUSES)[number];
 
-const STATUS_LABELS: Record<(typeof STATUS_ORDER)[number], string> = {
+const FUNNEL_STAGES: { label: string; status: FunnelStatus; color: string }[] = [
+  { label: "New", status: "new", color: "bg-white/20" },
+  { label: "Contacted", status: "contacted", color: "bg-blue-500/60" },
+  { label: "Replied", status: "replied", color: "bg-indigo-500/60" },
+  { label: "Call Booked", status: "call_booked", color: "bg-violet-500/60" },
+  { label: "Proposal", status: "proposal_sent", color: "bg-amber-500/60" },
+  { label: "Won", status: "won", color: "bg-emerald-500/60" }
+];
+
+const STATUS_LABELS: Record<FunnelStatus | "lost", string> = {
   new: "New",
   contacted: "Contacted",
   replied: "Replied",
@@ -64,41 +45,25 @@ const STATUS_LABELS: Record<(typeof STATUS_ORDER)[number], string> = {
   lost: "Lost"
 };
 
-function toLocalDateKey(iso: string): string {
-  const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+const STATUS_BADGE_COLORS: Record<FunnelStatus | "lost", string> = {
+  new: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+  contacted: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  replied: "bg-violet-500/20 text-violet-300 border-violet-500/30",
+  call_booked: "bg-violet-500/25 text-violet-300 border-violet-500/35",
+  proposal_sent: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+  won: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  lost: "bg-red-500/20 text-red-400 border-red-500/30"
+};
 
-function buildLast30DaysSeries(): { key: string; label: string; count: number }[] {
-  const out: { key: string; label: string; count: number }[] = [];
-  const anchor = new Date();
-  anchor.setHours(12, 0, 0, 0);
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(anchor);
-    d.setDate(d.getDate() - i);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const key = `${y}-${m}-${day}`;
-    const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    out.push({ key, label, count: 0 });
-  }
-  return out;
-}
-
-function normalizeStatus(s: string | null | undefined): (typeof STATUS_ORDER)[number] {
+function normalizeStatus(s: string | null | undefined): FunnelStatus | "lost" {
   let v = (s ?? "new").trim().toLowerCase();
   if (v === "in_talks") v = "replied";
-  if (STATUS_ORDER.includes(v as (typeof STATUS_ORDER)[number])) {
-    return v as (typeof STATUS_ORDER)[number];
-  }
+  const all = [...FUNNEL_STATUSES, "lost"] as const;
+  if ((all as readonly string[]).includes(v)) return v as FunnelStatus | "lost";
   return "new";
 }
 
-function formatShortDate(iso: string): string {
+function formatDate(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString("en-US", {
       month: "short",
@@ -110,23 +75,34 @@ function formatShortDate(iso: string): string {
   }
 }
 
-const tooltipStyle = {
-  backgroundColor: CARD,
-  border: `1px solid ${BORDER}`,
-  borderRadius: 8,
-  color: TEXT
-};
+function StatusBadge({ status }: { status: string | null | undefined }) {
+  const n = normalizeStatus(status);
+  const cls = STATUS_BADGE_COLORS[n] ?? STATUS_BADGE_COLORS.new;
+  return (
+    <span className={`inline-block rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
+      {STATUS_LABELS[n] ?? n}
+    </span>
+  );
+}
+
+function leadSource(slug: string | null | undefined): string {
+  const s = (slug ?? "").trim().toLowerCase();
+  return s === "manual" ? "Manual" : "Landing";
+}
 
 export default function DashboardAnalyticsPage() {
   const router = useRouter();
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [landingViews, setLandingViews] = useState<number | null>(null);
-  const [viewsMeta, setViewsMeta] = useState<"ok" | "unavailable">("ok");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!d.userId) {
+    const projectId = activeProject?.id;
+    if (!d.userId || !projectId) {
+      setLeads([]);
+      setLandingViews(null);
       setLoading(false);
       return;
     }
@@ -135,14 +111,16 @@ export default function DashboardAnalyticsPage() {
       const supabase = getSupabaseClient();
       const { data: leadData, error: leadError } = await supabase
         .from("leads")
-        .select("id, created_at, name, email, status")
+        .select("id, created_at, name, email, slug, status")
         .eq("user_id", d.userId!)
+        .eq("project_id", projectId)
         .order("created_at", { ascending: false });
 
       const { data: landingData, error: landingError } = await supabase
         .from("landing_pages")
         .select("views")
-        .eq("user_id", d.userId!);
+        .eq("user_id", d.userId!)
+        .eq("project_id", projectId);
 
       if (cancelled) return;
 
@@ -152,14 +130,12 @@ export default function DashboardAnalyticsPage() {
         setLeads(leadData as LeadRow[]);
       }
 
-      if (landingError || !landingData) {
+      if (landingError || !landingData?.length) {
         setLandingViews(0);
-        setViewsMeta("unavailable");
       } else {
         const rows = landingData as { views: number | null }[];
         const sum = rows.reduce((a, r) => a + (Number(r.views) || 0), 0);
         setLandingViews(sum);
-        setViewsMeta("ok");
       }
 
       setLoading(false);
@@ -168,64 +144,60 @@ export default function DashboardAnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [d.userId]);
+  }, [d.userId, activeProject?.id]);
 
   const totalLeads = leads.length;
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const thisWeek = leads.filter((r) => new Date(r.created_at).getTime() >= weekAgo).length;
+  const newThisWeek = leads.filter((r) => new Date(r.created_at).getTime() >= weekAgo).length;
   const wonDeals = leads.filter((r) => normalizeStatus(r.status) === "won").length;
+  const landingViewsNum = landingViews ?? 0;
 
-  const timeSeries = useMemo(() => {
-    const series = buildLast30DaysSeries();
-    const map = new Map(series.map((s) => [s.key, s]));
-    for (const lead of leads) {
-      const k = toLocalDateKey(lead.created_at);
-      const slot = map.get(k);
-      if (slot) slot.count += 1;
-    }
-    return series;
-  }, [leads]);
+  const metrics = useMemo(
+    () => [
+      {
+        label: "Total leads",
+        value: String(totalLeads),
+        sub: `+${newThisWeek} this week`,
+        color: totalLeads > 0 ? "text-white" : "text-white/30"
+      },
+      {
+        label: "Landing views",
+        value: String(landingViewsNum),
+        sub: "People visited your page",
+        color: landingViewsNum > 0 ? "text-indigo-400" : "text-white/30",
+        highlight: landingViewsNum > 0
+      },
+      {
+        label: "Won deals",
+        value: String(wonDeals),
+        sub: wonDeals > 0 ? "🎉 Keep going!" : "Close your first deal",
+        color: wonDeals > 0 ? "text-emerald-400" : "text-white/30"
+      },
+      {
+        label: "Conversion rate",
+        value: totalLeads > 0 ? `${Math.round((wonDeals / totalLeads) * 100)}%` : "—",
+        sub: "Leads → Won deals",
+        color: "text-white"
+      }
+    ],
+    [totalLeads, newThisWeek, wonDeals, landingViewsNum]
+  );
 
-  const hasLeadsInRange = useMemo(() => timeSeries.some((s) => s.count > 0), [timeSeries]);
+  function countInFunnel(status: FunnelStatus): number {
+    return leads.filter((l) => normalizeStatus(l.status) === status).length;
+  }
 
-  const statusChartData = useMemo(() => {
-    const counts: Record<(typeof STATUS_ORDER)[number], number> = {
-      new: 0,
-      contacted: 0,
-      replied: 0,
-      call_booked: 0,
-      proposal_sent: 0,
-      won: 0,
-      lost: 0
-    };
-    for (const lead of leads) {
-      counts[normalizeStatus(lead.status)] += 1;
-    }
-    return STATUS_ORDER.map((status) => ({
-      status,
-      label: STATUS_LABELS[status],
-      count: counts[status],
-      fill: STATUS_COLORS[status]
-    }));
-  }, [leads]);
-
-  const hasAnyLead = totalLeads > 0;
-
-  const recentFive = leads.slice(0, 5);
-
-  const viewsOk = viewsMeta === "ok";
-  const viewsNum = landingViews ?? 0;
-  const landingHighlight = viewsOk && viewsNum > 0;
+  const recentLeads = leads.slice(0, 10);
 
   return (
-    <div className="min-h-full" style={{ ...dash.pageShell, background: BG }}>
+    <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-white">Your results</h1>
         <p className="mt-1 text-sm text-white/45">Leads, views, and pipeline at a glance</p>
       </div>
 
       {loading ? (
-        <p style={{ ...dash.body, color: TEXT_MUTED }}>Loading…</p>
+        <p className="text-sm text-white/40">Loading…</p>
       ) : (
         <>
           {totalLeads === 0 ? (
@@ -266,212 +238,95 @@ export default function DashboardAnalyticsPage() {
             </div>
           ) : null}
 
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-white/40">Total leads</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{totalLeads}</p>
-              {totalLeads > 0 ? <p className="mt-1 text-xs text-emerald-400">Active pipeline</p> : null}
-            </div>
-
-            <div
-              className={`rounded-2xl p-6 border ${
-                landingHighlight ? "border-indigo-500/20 bg-indigo-500/[0.08]" : "border-white/[0.08] bg-white/[0.03]"
-              }`}
-            >
-              <p className="mb-2 text-xs uppercase tracking-wider text-white/40">Landing views</p>
-              <p className={`text-4xl font-bold ${landingHighlight ? "text-indigo-400" : "text-white"}`}>
-                {!viewsOk ? "—" : viewsNum}
-              </p>
-              {landingHighlight ? (
-                <p className="mt-1 text-xs text-indigo-400/70">People visited your page ↗</p>
-              ) : viewsMeta === "unavailable" ? (
-                <p className="mt-1 text-xs text-white/35">Coming soon</p>
-              ) : null}
-            </div>
-
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-white/40">Won deals</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{wonDeals}</p>
-            </div>
-
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-white/40">This week</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{thisWeek}</p>
-              <p className={`mt-1 text-xs ${thisWeek > 0 ? "text-emerald-400" : "text-white/35"}`}>
-                +{thisWeek} this week
-              </p>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 16,
-              marginBottom: 24
-            }}
-            className="dash-analytics-charts"
-          >
-            <style>{`
-              @media (max-width: 960px) {
-                .dash-analytics-charts { grid-template-columns: 1fr !important; }
-              }
-            `}</style>
-
-            <div style={{ ...dash.card, background: CARD, border: `1px solid ${BORDER}`, minHeight: 340 }}>
-              <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Leads over time</p>
-              <p style={{ fontSize: 12, color: TEXT_MUTED, margin: "0 0 12px" }}>Last 30 days</p>
-              <div style={{ position: "relative", width: "100%", height: 260 }}>
-                {hasLeadsInRange ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeries} margin={{ top: 4, right: 8, left: -18, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fill: TEXT_MUTED, fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={{ stroke: BORDER }}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tick={{ fill: TEXT_MUTED, fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={{ stroke: BORDER }}
-                        width={36}
-                      />
-                      <Tooltip
-                        contentStyle={tooltipStyle}
-                        labelStyle={{ color: TEXT_MUTED }}
-                        formatter={(value) => [String(value ?? 0), "Leads"]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="count"
-                        stroke={ACCENT}
-                        strokeWidth={2}
-                        dot={{ fill: ACCENT, r: 3, strokeWidth: 0 }}
-                        activeDot={{ r: 5, fill: ACCENT }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
+          {totalLeads > 0 ? (
+            <>
+              <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {metrics.map((m) => (
                   <div
-                    style={{
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: `1px dashed ${BORDER}`,
-                      borderRadius: 8,
-                      color: "#52525B",
-                      fontSize: 14
-                    }}
+                    key={m.label}
+                    className={`rounded-xl border p-5 ${
+                      "highlight" in m && m.highlight
+                        ? "border-indigo-500/25 bg-indigo-500/[0.06]"
+                        : "border-white/[0.08] bg-white/[0.03]"
+                    }`}
                   >
-                    No leads yet
+                    <p className="text-xs uppercase tracking-wider text-white/40">{m.label}</p>
+                    <p className={`mt-2 text-3xl font-bold ${m.color}`}>{m.value}</p>
+                    <p className="mt-1 text-xs text-white/35">{m.sub}</p>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
 
-            <div style={{ ...dash.card, background: CARD, border: `1px solid ${BORDER}`, minHeight: 340 }}>
-              <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Leads by status</p>
-              <div style={{ position: "relative", width: "100%", height: 280 }}>
-                {hasAnyLead ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={statusChartData}
-                      layout="vertical"
-                      margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke={GRID} horizontal={false} />
-                      <XAxis type="number" allowDecimals={false} tick={{ fill: TEXT_MUTED, fontSize: 10 }} axisLine={{ stroke: BORDER }} />
-                      <YAxis
-                        type="category"
-                        dataKey="label"
-                        width={88}
-                        tick={{ fill: TEXT_MUTED, fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={{ stroke: BORDER }}
-                      />
-                      <Tooltip
-                        contentStyle={tooltipStyle}
-                        formatter={(value) => [String(value ?? 0), "Leads"]}
-                      />
-                      <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={28}>
-                        {statusChartData.map((entry) => (
-                          <Cell key={entry.status} fill={entry.fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div
-                    style={{
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: `1px dashed ${BORDER}`,
-                      borderRadius: 8,
-                      color: "#52525B",
-                      fontSize: 14
-                    }}
-                  >
-                    No leads yet
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ ...dash.card, background: CARD, border: `1px solid ${BORDER}` }}>
-            <p style={{ ...dash.sectionTitle, marginBottom: 16 }}>Recent leads</p>
-            {recentFive.length === 0 ? (
-              <p style={{ ...dash.body, margin: 0, color: TEXT_MUTED }}>No leads yet.</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {recentFive.map((r, i) => {
-                  const st = normalizeStatus(r.status);
-                  const pillBg = `${STATUS_COLORS[st]}33`;
-                  return (
-                    <div
-                      key={r.id}
-                      style={{
-                        padding: "12px 0",
-                        borderBottom: i === recentFive.length - 1 ? "none" : `1px solid ${BORDER}`,
-                        fontSize: 13,
-                        color: TEXT_MUTED
-                      }}
-                    >
-                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: TEXT, fontWeight: 600 }}>{r.name?.trim() || "—"}</span>
-                        <span style={{ color: TEXT_MUTED }}>{r.email?.trim() || "—"}</span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            background: pillBg,
-                            color: STATUS_COLORS[st],
-                            border: `1px solid ${STATUS_COLORS[st]}55`
-                          }}
-                        >
-                          {STATUS_LABELS[st]}
-                        </span>
-                        <span style={{ color: "#52525B", marginLeft: "auto", fontSize: 12 }}>
-                          {formatShortDate(r.created_at)}
-                        </span>
+              <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
+                <h2 className="mb-4 text-sm font-semibold text-white">Pipeline funnel</h2>
+                <div className="space-y-2">
+                  {FUNNEL_STAGES.map((stage) => {
+                    const count = countInFunnel(stage.status);
+                    const pct = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
+                    return (
+                      <div key={stage.status} className="flex items-center gap-3">
+                        <span className="w-24 shrink-0 text-right text-xs text-white/40">{stage.label}</span>
+                        <div className="h-6 flex-1 overflow-hidden rounded-lg bg-white/5">
+                          <div
+                            className={`flex h-full items-center rounded-lg px-2 transition-all ${stage.color}`}
+                            style={{ width: `${Math.max(pct, count > 0 ? 8 : 3)}%` }}
+                          >
+                            {count > 0 ? (
+                              <span className="text-[10px] font-medium text-white">{count}</span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <span className="w-8 shrink-0 text-xs text-white/30">{pct}%</span>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            )}
-          </div>
+
+              <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+                <div className="border-b border-white/6 px-6 py-4">
+                  <h2 className="text-sm font-semibold text-white">Recent leads</h2>
+                </div>
+                <div className="overflow-x-auto px-4 py-2 sm:px-6">
+                  <table className="w-full min-w-[520px]">
+                    <thead>
+                      <tr className="border-b border-white/6 text-left text-xs text-white/30">
+                        <th className="pb-3 pr-4">Lead</th>
+                        <th className="pb-3 pr-4">Source</th>
+                        <th className="pb-3 pr-4">Status</th>
+                        <th className="pb-3 pr-4">Date</th>
+                        <th className="pb-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentLeads.map((lead) => (
+                        <tr key={lead.id} className="border-b border-white/4 last:border-0 hover:bg-white/[0.02]">
+                          <td className="py-3 pr-4">
+                            <p className="text-sm text-white">{lead.name?.trim() || lead.email}</p>
+                            <p className="text-xs text-white/30">{lead.email}</p>
+                          </td>
+                          <td className="py-3 pr-4 text-xs text-white/45">{leadSource(lead.slug)}</td>
+                          <td className="py-3 pr-4">
+                            <StatusBadge status={lead.status} />
+                          </td>
+                          <td className="py-3 pr-4 text-xs text-white/30">{formatDate(lead.created_at)}</td>
+                          <td className="py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => router.push("/dashboard/leads")}
+                              className="text-xs text-indigo-400 hover:text-indigo-300"
+                            >
+                              View →
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          ) : null}
         </>
       )}
     </div>

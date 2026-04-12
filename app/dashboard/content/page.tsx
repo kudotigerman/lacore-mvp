@@ -2,9 +2,11 @@
 
 import ContentMachine from "@/components/ContentMachine";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 
 export default function DashboardContentPage() {
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
 
   return (
     <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
@@ -18,7 +20,12 @@ export default function DashboardContentPage() {
         <p className="text-sm text-white/40">AI posts tailored to your offer — ready to copy and share</p>
       </div>
       {d.userId ? (
-        <ContentMachine offer={d.offer?.offer ?? ""} audience={d.offer?.audience ?? ""} userId={d.userId} />
+        <ContentMachine
+          offer={d.offer?.offer ?? ""}
+          audience={d.offer?.audience ?? ""}
+          userId={d.userId}
+          projectId={activeProject?.id ?? null}
+        />
       ) : null}
     </div>
   );

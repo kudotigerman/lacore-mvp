@@ -63,6 +63,13 @@ export default function DashboardLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<LeadRow | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [showAddLead, setShowAddLead] = useState(false);
+  const [addName, setAddName] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addPhone, setAddPhone] = useState("");
+  const [addMessage, setAddMessage] = useState("");
+  const [addSaving, setAddSaving] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -140,6 +147,67 @@ export default function DashboardLeadsPage() {
     router.push(`/dashboard/proposals?${params.toString()}`);
   }
 
+  function writeSequenceForLead(lead: LeadRow) {
+    const params = new URLSearchParams();
+    const name = lead.name?.trim() || lead.email.split("@")[0] || "";
+    params.set("leadName", name);
+    const ctx =
+      lead.message?.trim() ||
+      `Email: ${lead.email}${lead.phone ? ` · Phone: ${lead.phone}` : ""}`;
+    params.set("leadContext", ctx);
+    router.push(`/dashboard/sequences?${params.toString()}`);
+  }
+
+  async function submitManualLead() {
+    if (!activeProject?.id) {
+      setAddError("Select a project first.");
+      return;
+    }
+    setAddError(null);
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      setAddError("Sign in required.");
+      return;
+    }
+    if (!addEmail.trim()) {
+      setAddError("Email is required.");
+      return;
+    }
+    setAddSaving(true);
+    try {
+      const res = await fetch("/api/leads/manual", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          project_id: activeProject.id,
+          name: addName.trim(),
+          email: addEmail.trim(),
+          phone: addPhone.trim() || undefined,
+          message: addMessage.trim() || undefined
+        })
+      });
+      const j = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setAddError(j.error ?? "Could not add lead.");
+        return;
+      }
+      setShowAddLead(false);
+      setAddName("");
+      setAddEmail("");
+      setAddPhone("");
+      setAddMessage("");
+      setRefreshNonce((n) => n + 1);
+    } finally {
+      setAddSaving(false);
+    }
+  }
+
   return (
     <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
       <DashboardStepShell
@@ -176,6 +244,14 @@ export default function DashboardLeadsPage() {
             )}
             <button
               type="button"
+              onClick={() => setShowAddLead(true)}
+              className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 text-xs text-white/40 transition-colors hover:border-indigo-500/40 hover:text-indigo-400"
+            >
+              <span>+</span>
+              Add lead manually
+            </button>
+            <button
+              type="button"
               onClick={() => setRefreshNonce((n) => n + 1)}
               className="mt-6 text-xs text-white/40 underline transition-colors hover:text-white/60"
             >
@@ -185,15 +261,62 @@ export default function DashboardLeadsPage() {
         ) : (
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
             <div className="min-w-0 flex-1">
-              <div className="mb-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setRefreshNonce((n) => n + 1)}
-                  className="rounded-lg border border-white/15 px-3 py-1 text-xs text-white/50 hover:text-white/70"
-                >
-                  Refresh
-                </button>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-1 flex-col gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-4 sm:max-w-xl">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl" aria-hidden>
+                      💡
+                    </span>
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-white">How leads appear here</p>
+                      <p className="text-sm leading-relaxed text-white/50">
+                        When someone visits your landing page and fills the contact form — they automatically appear in{" "}
+                        <span className="text-indigo-400">New</span> column. Move them through stages as you work the
+                        deal.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-indigo-400 hover:text-indigo-300"
+                          >
+                            View your landing page ↗
+                          </a>
+                        ) : null}
+                        {url ? <span className="text-white/20">·</span> : null}
+                        <button
+                          type="button"
+                          onClick={() => router.push("/dashboard/landing")}
+                          className="text-xs text-white/40 hover:text-white/60"
+                        >
+                          Edit landing page
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+                  <button
+                    type="button"
+                    onClick={() => setRefreshNonce((n) => n + 1)}
+                    className="rounded-lg border border-white/15 px-3 py-1 text-xs text-white/50 hover:text-white/70"
+                  >
+                    Refresh
+                  </button>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddLead(true)}
+                className="mb-6 flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 text-xs text-white/40 transition-colors hover:border-indigo-500/40 hover:text-indigo-400"
+              >
+                <span>+</span>
+                Add lead manually
+              </button>
+
               <div className="-mx-8 flex gap-3 overflow-x-auto px-8 pb-4 lg:grid lg:max-w-none lg:grid-cols-7 lg:overflow-visible lg:px-0">
                 {COLUMNS.map((col) => {
                   const colLeads = getLeadsByStatus(col.id);
@@ -220,6 +343,7 @@ export default function DashboardLeadsPage() {
                               onSelect={() => setSelected(lead)}
                               onMoveToNext={() => void moveToNextStatus(lead.id, stNorm)}
                               onGenerateProposal={() => generateProposalForLead(lead)}
+                              onWriteSequence={() => writeSequenceForLead(lead)}
                             />
                           );
                         })}
@@ -243,6 +367,80 @@ export default function DashboardLeadsPage() {
             </div>
           </div>
         )}
+
+        {showAddLead ? (
+          <div
+            className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/60 px-4"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0D0F1A] p-6">
+              <h3 className="mb-1 text-lg font-semibold text-white">Add lead manually</h3>
+              <p className="mb-4 text-sm text-white/45">Creates a lead in the New column for this project.</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-white/40">Name</label>
+                  <input
+                    value={addName}
+                    onChange={(e) => setAddName(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                    placeholder="Jane Doe"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-white/40">Email *</label>
+                  <input
+                    type="email"
+                    value={addEmail}
+                    onChange={(e) => setAddEmail(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                    placeholder="jane@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-white/40">Phone (optional)</label>
+                  <input
+                    value={addPhone}
+                    onChange={(e) => setAddPhone(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                    placeholder="+1 …"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs uppercase tracking-wider text-white/40">Message (optional)</label>
+                  <textarea
+                    value={addMessage}
+                    onChange={(e) => setAddMessage(e.target.value)}
+                    rows={3}
+                    className="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                    placeholder="Notes from a call, LinkedIn DM, etc."
+                  />
+                </div>
+              </div>
+              {addError ? <p className="mt-3 text-sm text-red-400">{addError}</p> : null}
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddLead(false);
+                    setAddError(null);
+                  }}
+                  className="rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white/70"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={addSaving || !addEmail.trim()}
+                  onClick={() => void submitManualLead()}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-40"
+                >
+                  {addSaving ? "Saving…" : "Add lead"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </DashboardStepShell>
     </div>
   );

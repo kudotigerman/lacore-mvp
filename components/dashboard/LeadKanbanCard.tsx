@@ -20,7 +20,8 @@ export function LeadKanbanCard({
   showMove,
   onSelect,
   onMoveToNext,
-  onGenerateProposal
+  onGenerateProposal,
+  onWriteSequence
 }: {
   lead: LeadRow;
   selected: boolean;
@@ -28,6 +29,7 @@ export function LeadKanbanCard({
   onSelect: () => void;
   onMoveToNext: () => void;
   onGenerateProposal: () => void;
+  onWriteSequence: () => void;
 }) {
   return (
     <div
@@ -52,7 +54,7 @@ export function LeadKanbanCard({
         <p className="mb-3 line-clamp-2 text-xs italic text-white/40">&quot;{lead.message}&quot;</p>
       ) : null}
       <p className="mb-3 text-[10px] text-white/25">{formatDate(lead.created_at)}</p>
-      <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
         {showMove ? (
           <button
             type="button"
@@ -65,9 +67,16 @@ export function LeadKanbanCard({
         <button
           type="button"
           onClick={() => onGenerateProposal()}
-          className={`rounded-lg border border-white/10 py-1.5 text-[10px] text-white/50 transition-colors hover:border-indigo-500/30 hover:text-indigo-400 ${showMove ? "flex-1" : "w-full"}`}
+          className={`min-w-0 rounded-lg border border-white/10 py-1.5 text-[10px] text-white/50 transition-colors hover:border-indigo-500/30 hover:text-indigo-400 ${showMove ? "flex-1" : "w-full"}`}
         >
           Proposal
+        </button>
+        <button
+          type="button"
+          onClick={() => onWriteSequence()}
+          className="w-full rounded-lg border border-white/10 py-1.5 text-[10px] text-white/40 transition-colors hover:border-indigo-500/30 hover:text-indigo-400"
+        >
+          Sequence
         </button>
       </div>
     </div>
