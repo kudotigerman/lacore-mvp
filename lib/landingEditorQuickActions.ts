@@ -1,4 +1,4 @@
-/** sessionStorage key: dashboard quick actions navigate to /p/[slug]?edit=true with prefill */
+/** sessionStorage key: dashboard landing editor reads prefill on mount (see LandingEditorSplitView) */
 export const LANDING_EDITOR_QUICK_STORAGE_KEY = "lacore_landing_editor_prefill";
 
 export const LANDING_EDITOR_QUICK_ACTIONS = [
