@@ -47,6 +47,7 @@ export default function DashboardLeadsPage() {
   const [addMessage, setAddMessage] = useState("");
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [panelEnter, setPanelEnter] = useState(false);
 
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -83,6 +84,16 @@ export default function DashboardLeadsPage() {
   useEffect(() => {
     void fetchLeads();
   }, [fetchLeads, refreshNonce]);
+
+  useEffect(() => {
+    if (!selected) {
+      setPanelEnter(false);
+      return;
+    }
+    setPanelEnter(false);
+    const t = window.setTimeout(() => setPanelEnter(true), 10);
+    return () => window.clearTimeout(t);
+  }, [selected?.id]);
 
   async function copyLanding() {
     if (!url) return;
@@ -236,8 +247,8 @@ export default function DashboardLeadsPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-            <div className="min-w-0 flex-1">
+          <div className="flex min-h-0 w-full flex-col gap-8 overflow-x-hidden lg:flex-row lg:items-stretch lg:gap-0 lg:overflow-hidden">
+            <div className="min-w-0 flex-1 lg:min-w-0">
               <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex flex-1 flex-col gap-3 rounded-xl border border-white/8 bg-white/[0.03] p-4 sm:max-w-xl">
                   <div className="flex items-start gap-3">
@@ -339,22 +350,24 @@ export default function DashboardLeadsPage() {
                 })}
               </div>
             </div>
-            <div className="min-w-0 lg:w-[min(100%,420px)] lg:flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
-              <LeadClosingPanel
-                lead={selected}
-                sessionToken={d.sessionToken}
-                salesContext={d.salesBuilderContext}
-                onMoveToNext={
-                  selected
-                    ? () => void moveToNextStatus(selected.id, normalizePipelineStatus(selected.status))
-                    : undefined
-                }
-                canMoveNext={
-                  !!selected && nextForwardStatus(normalizePipelineStatus(selected.status)) !== null
-                }
-                onCreateProposal={selected ? () => generateProposalForLead(selected) : undefined}
-              />
-            </div>
+
+            {selected ? (
+              <aside
+                className={`fixed inset-0 z-[60] flex h-full min-h-0 flex-col border-white/[0.08] bg-[var(--content-bg)] transition-transform duration-200 ease-out lg:static lg:inset-auto lg:z-auto lg:h-[min(100vh-8rem,900px)] lg:w-[400px] lg:max-w-[400px] lg:flex-shrink-0 lg:border-l lg:bg-transparent lg:shadow-none ${
+                  panelEnter ? "translate-x-0" : "translate-x-full"
+                } `}
+              >
+                <LeadClosingPanel
+                  lead={selected}
+                  sessionToken={d.sessionToken}
+                  salesContext={d.salesBuilderContext}
+                  onClose={() => setSelected(null)}
+                  onMoveToNext={() => void moveToNextStatus(selected.id, normalizePipelineStatus(selected.status))}
+                  canMoveNext={nextForwardStatus(normalizePipelineStatus(selected.status)) !== null}
+                  onCreateProposal={() => generateProposalForLead(selected)}
+                />
+              </aside>
+            ) : null}
           </div>
         )}
 

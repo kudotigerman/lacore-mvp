@@ -81,7 +81,8 @@ export default function LeadClosingPanel({
   salesContext,
   onMoveToNext,
   canMoveNext,
-  onCreateProposal
+  onCreateProposal,
+  onClose
 }: {
   lead: LeadRow | null;
   sessionToken: string | null;
@@ -89,6 +90,8 @@ export default function LeadClosingPanel({
   onMoveToNext?: () => void;
   canMoveNext?: boolean;
   onCreateProposal?: () => void;
+  /** Shown as top-right X when provided (slide-in panel). */
+  onClose?: () => void;
 }) {
   const [tab, setTab] = useState<ClosingTab>("strategy");
   const [result, setResult] = useState<ClosingPayload | null>(null);
@@ -147,20 +150,7 @@ export default function LeadClosingPanel({
   }
 
   if (!lead) {
-    return (
-      <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.1] bg-gradient-to-b from-white/[0.04] to-transparent p-8 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-            <path d="M12 3v4M5.6 5.6l2.8 2.8M3 12h4M5.6 18.4l2.8-2.8M12 21v-4M18.4 18.4l-2.8-2.8M21 12h-4M18.4 5.6l-2.8 2.8" strokeLinecap="round" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </div>
-        <p className="text-sm font-medium text-white/55">AI Closing Assistant</p>
-        <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-white/35">
-          Select a lead to open the AI closing assistant.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   const offerHint =
@@ -169,7 +159,30 @@ export default function LeadClosingPanel({
       : "Add an offer on the Offer page for sharper AI advice.";
 
   return (
-    <div className="flex h-[min(100vh-8rem,900px)] min-h-[360px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(99,102,241,0.06)]">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(99,102,241,0.06)] max-lg:rounded-xl lg:min-h-[360px] lg:p-5">
+      {/* Panel chrome: title + close */}
+      <div className="shrink-0 border-b border-white/[0.08] pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="mb-1 flex items-center gap-2">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              <span className="text-xs font-medium text-white">LACORE AI</span>
+            </div>
+            <p className="text-xs text-white/40">Closing assistant</p>
+          </div>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close closing assistant"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/15 text-lg leading-none text-white/60 transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       {/* Lead header (fixed) */}
       <div className="shrink-0 rounded-xl border border-white/[0.08] bg-gradient-to-br from-indigo-500/[0.08] to-transparent p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
