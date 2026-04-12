@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { redirect } from "next/navigation";
 import { DashboardDataProvider } from "@/components/dashboard/DashboardDataContext";
 import DashboardChrome from "@/components/dashboard/DashboardChrome";
+import { DashboardOnboardingGate } from "@/components/dashboard/DashboardOnboardingGate";
 import { ProjectProvider } from "@/app/contexts/ProjectContext";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -34,7 +35,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <ProjectProvider>
       <DashboardDataProvider>
-        <DashboardChrome>{children}</DashboardChrome>
+        <DashboardChrome>
+          <DashboardOnboardingGate>{children}</DashboardOnboardingGate>
+        </DashboardChrome>
       </DashboardDataProvider>
     </ProjectProvider>
   );

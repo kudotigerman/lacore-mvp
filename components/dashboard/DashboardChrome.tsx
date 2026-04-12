@@ -428,6 +428,43 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             <span className="min-w-0 flex-1 leading-tight">Proposals</span>
           </Link>
 
+          <Link
+            href="/dashboard/pricing-strategy"
+            className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] no-underline transition-colors duration-150 ${
+              pathname === "/dashboard/pricing-strategy" ||
+              pathname.startsWith("/dashboard/pricing-strategy/")
+                ? "bg-indigo-500/15 text-indigo-300"
+                : "text-white/40 hover:bg-white/5 hover:text-white/70"
+            }`}
+          >
+            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">06</span>
+            <span className="min-w-0 flex-1 leading-tight">Pricing</span>
+          </Link>
+
+          <Link
+            href="/dashboard/sequences"
+            className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] no-underline transition-colors duration-150 ${
+              pathname === "/dashboard/sequences" || pathname.startsWith("/dashboard/sequences/")
+                ? "bg-indigo-500/15 text-indigo-300"
+                : "text-white/40 hover:bg-white/5 hover:text-white/70"
+            }`}
+          >
+            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">07</span>
+            <span className="min-w-0 flex-1 leading-tight">Sequences</span>
+          </Link>
+
+          <Link
+            href="/dashboard/outreach"
+            className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] no-underline transition-colors duration-150 ${
+              pathname === "/dashboard/outreach" || pathname.startsWith("/dashboard/outreach/")
+                ? "bg-indigo-500/15 text-indigo-300"
+                : "text-white/40 hover:bg-white/5 hover:text-white/70"
+            }`}
+          >
+            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">08</span>
+            <span className="min-w-0 flex-1 leading-tight">Outreach</span>
+          </Link>
+
           <div className="mx-2 my-2 h-px bg-white/[0.06]" />
 
           <Link
