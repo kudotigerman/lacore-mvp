@@ -159,8 +159,8 @@ export function LandingEditorSplitView({
 
   return (
     <div className="flex h-[calc(100vh-3rem)] min-h-0 w-full max-w-[100vw] overflow-hidden rounded-xl border border-white/[0.08] bg-[#07080F] -mx-8 -my-6 sm:h-[calc(100vh-3rem)]">
-      <div className="flex w-80 shrink-0 flex-col border-r border-white/[0.08] bg-[#0D0F1A]">
-        <div className="border-b border-white/[0.08] px-4 py-3">
+      <div className="flex h-full min-h-0 w-80 shrink-0 flex-col border-r border-white/[0.08] bg-[#0D0F1A]">
+        <div className="shrink-0 border-b border-white/[0.08] px-4 py-3">
           <div className="mb-1 flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
             <span className="text-xs font-medium text-white">LACORE AI</span>
@@ -168,134 +168,138 @@ export function LandingEditorSplitView({
           <p className="text-xs text-white/40">Tell me what to change</p>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={
-                msg.role === "assistant"
-                  ? "rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-xs leading-relaxed text-white/80"
-                  : "ml-4 rounded-xl bg-white/5 px-3 py-2 text-xs leading-relaxed text-white/60"
-              }
-            >
-              {msg.content}
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t border-white/[0.06] px-4 py-2">
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action}
-                type="button"
-                onClick={() => setInput(action)}
-                className="rounded-lg border border-white/10 px-2 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+          <div className="space-y-3 px-4 py-3">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={
+                  msg.role === "assistant"
+                    ? "rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-xs leading-relaxed text-white/80"
+                    : "ml-4 rounded-xl bg-white/5 px-3 py-2 text-xs leading-relaxed text-white/60"
+                }
               >
-                {action}
-              </button>
+                {msg.content}
+              </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="e.g. Make the headline more urgent..."
-              className="h-16 flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void handleEdit();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => void handleEdit()}
-              disabled={isEditing || !input.trim()}
-              className="self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
-            >
-              {isEditing ? "…" : "Apply"}
-            </button>
-          </div>
-        </div>
 
-        <div className="space-y-2 border-t border-white/[0.08] px-4 py-3">
-          <div className="mb-2">
-            <div className="mb-1 flex justify-between text-[10px] text-white/30">
-              <span>Setup progress</span>
-              <span>{percent}%</span>
+          <div className="border-t border-white/[0.06] px-4 py-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/45">Ask the AI</p>
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  onClick={() => setInput(action)}
+                  className="rounded-lg border border-white/10 px-2 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
+                >
+                  {action}
+                </button>
+              ))}
             </div>
-            <div className="h-1 rounded-full bg-white/[0.08]">
-              <div
-                className="h-1 rounded-full bg-indigo-500 transition-all"
-                style={{ width: `${percent}%` }}
+            <div className="flex gap-2">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Describe what to change on your page — e.g. stronger headline, add Calendly, warmer colors…"
+                rows={3}
+                className="dash-focusable min-h-[4.25rem] flex-1 resize-y rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-sm leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleEdit();
+                  }
+                }}
               />
+              <button
+                type="button"
+                onClick={() => void handleEdit()}
+                disabled={isEditing || !input.trim()}
+                className="self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+              >
+                {isEditing ? "…" : "Apply"}
+              </button>
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <input
-              readOnly
-              value={publicUrl}
-              className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.08] bg-white/5 px-3 py-1.5 font-mono text-xs text-white/50"
-            />
-            <button
-              type="button"
-              onClick={() => void handleCopy()}
-              className="shrink-0 rounded-lg border border-indigo-500/20 px-2 py-1.5 text-xs text-indigo-400 transition-colors hover:border-indigo-500/40 hover:text-indigo-300"
-            >
-              {copied ? "✓" : "Copy"}
-            </button>
-          </div>
+          <div className="space-y-2 border-t border-white/[0.08] px-4 py-3 pb-4">
+            <div className="mb-2">
+              <div className="mb-1 flex justify-between text-[10px] text-white/30">
+                <span>Setup progress</span>
+                <span>{percent}%</span>
+              </div>
+              <div className="h-1 rounded-full bg-white/[0.08]">
+                <div
+                  className="h-1 rounded-full bg-indigo-500 transition-all"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
 
-          <div className="flex gap-2">
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs text-white/50 transition-colors hover:text-white/80"
-            >
-              Preview ↗
-            </a>
-            <button
-              type="button"
-              onClick={handleRegenerate}
-              className="flex-1 rounded-lg border border-white/10 py-2 text-xs text-white/50 transition-colors hover:text-white/80"
-            >
-              Regenerate
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/content")}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
-          >
-            Continue to Content
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path
-                d="M2 6h8M6 2l4 4-4 4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={publicUrl}
+                className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.08] bg-white/5 px-3 py-1.5 font-mono text-xs text-white/50"
               />
-            </svg>
-          </button>
-
-          <p className="text-center text-[10px] text-white/25">
-            {v} views · {copied ? "Link copied!" : "Share to get leads"}
-          </p>
-
-          {d.userId ? (
-            <div className="space-y-2 border-t border-white/[0.06] pt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Domain &amp; payments</p>
-              <DomainConnect slug={slug} userId={d.userId} />
-              <StripeConnect userId={d.userId} />
-              <LandingTestimonialsPanel slug={slug} />
+              <button
+                type="button"
+                onClick={() => void handleCopy()}
+                className="shrink-0 rounded-lg border border-indigo-500/20 px-2 py-1.5 text-xs text-indigo-400 transition-colors hover:border-indigo-500/40 hover:text-indigo-300"
+              >
+                {copied ? "✓" : "Copy"}
+              </button>
             </div>
-          ) : null}
+
+            <div className="flex gap-2">
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs text-white/50 transition-colors hover:text-white/80"
+              >
+                Preview ↗
+              </a>
+              <button
+                type="button"
+                onClick={handleRegenerate}
+                className="flex-1 rounded-lg border border-white/10 py-2 text-xs text-white/50 transition-colors hover:text-white/80"
+              >
+                Regenerate
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/content")}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+            >
+              Continue to Content
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                <path
+                  d="M2 6h8M6 2l4 4-4 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            <p className="text-center text-[10px] text-white/25">
+              {v} views · {copied ? "Link copied!" : "Share to get leads"}
+            </p>
+
+            {d.userId ? (
+              <div className="space-y-2 border-t border-white/[0.06] pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Domain &amp; payments</p>
+                <DomainConnect slug={slug} userId={d.userId} />
+                <StripeConnect userId={d.userId} />
+                <LandingTestimonialsPanel slug={slug} />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
