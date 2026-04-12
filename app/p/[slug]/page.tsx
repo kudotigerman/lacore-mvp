@@ -2,7 +2,6 @@
 
 import { Component, type ErrorInfo, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { loadStripe } from "@stripe/stripe-js";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 import LandingPage from "@/app/components/landing/LandingPage";
@@ -17,10 +16,6 @@ type PublicStripeSettings = {
   payment_type: string;
   button_text: string;
   checkout_ready: boolean;
-};
-
-type StripeWithRedirect = {
-  redirectToCheckout: (options: { sessionId: string }) => Promise<{ error?: { message?: string } }>;
 };
 
 /** Opens external links in a new tab inside srcDoc iframes so parent Next.js route is not navigated. */
@@ -289,29 +284,17 @@ function PublicLandingPageContent() {
     if (!slug || stripePayLoading || !publicStripe?.checkout_ready) return;
     setStripePayLoading(true);
     try {
-      const res = await fetch("/api/stripe/checkout-session", {
+      const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug })
       });
-      const data = (await res.json()) as {
-        sessionId?: string;
-        publishableKey?: string;
-        error?: string;
-      };
-      if (!res.ok || !data.sessionId || !data.publishableKey) {
+      const data = (await res.json()) as { checkout_url?: string; error?: string };
+      if (!res.ok || !data.checkout_url) {
         window.alert(data.error ?? "Could not start checkout.");
         return;
       }
-      const stripe = await loadStripe(data.publishableKey);
-      if (!stripe) {
-        window.alert("Stripe failed to load.");
-        return;
-      }
-      const { error } = await (stripe as unknown as StripeWithRedirect).redirectToCheckout({
-        sessionId: data.sessionId
-      });
-      if (error?.message) window.alert(error.message);
+      window.location.href = data.checkout_url;
     } finally {
       setStripePayLoading(false);
     }
@@ -571,6 +554,33 @@ function PublicLandingPageContent() {
                   }}
                 >
                   ⚡ Built with LACORE
+                </button>
+              ) : null}
+              {publicStripe?.checkout_ready ? (
+                <button
+                  type="button"
+                  onClick={() => void handleStripeCheckout()}
+                  disabled={stripePayLoading}
+                  style={{
+                    position: "fixed",
+                    bottom: 20,
+                    left: 20,
+                    zIndex: 9999,
+                    border: "none",
+                    background: "var(--accent)",
+                    color: "var(--on-accent, #000)",
+                    borderRadius: 6,
+                    padding: "14px 22px",
+                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    letterSpacing: "0.06em",
+                    cursor: stripePayLoading ? "wait" : "pointer",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+                    opacity: stripePayLoading ? 0.85 : 1
+                  }}
+                >
+                  {stripePayLoading ? "…" : publicStripe.button_text}
                 </button>
               ) : null}
             </>

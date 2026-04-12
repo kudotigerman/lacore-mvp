@@ -5,6 +5,7 @@ import { join } from "path";
 import type { LandingContent } from "@/types/landing";
 import { PLANS, type PlanName } from "@/lib/plans";
 import { checkCredits, deductCredits } from "@/lib/credits";
+import { injectStripeCheckoutHtml } from "@/lib/injectStripeCheckoutHtml";
 
 export const maxDuration = 120;
 
@@ -256,7 +257,35 @@ Return the complete HTML document only. No explanation.`;
       .replace(/[^a-zA-Z0-9-]/g, "-")
       .toLowerCase();
     const slug = existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
-    const htmlWithSlug = injectSlug(html, slug);
+    let htmlWithSlug = injectSlug(html, slug);
+
+    const { data: stripeRow } = await supabase
+      .from("stripe_settings")
+      .select("publishable_key, secret_key, price_id, button_text")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const sr = stripeRow as {
+      publishable_key?: string;
+      secret_key?: string | null;
+      price_id?: string | null;
+      button_text?: string | null;
+    } | null;
+    const stripeReady =
+      sr &&
+      sr.publishable_key?.startsWith("pk_") &&
+      sr.secret_key?.startsWith("sk_") &&
+      Boolean(sr.price_id?.trim());
+    if (stripeReady) {
+      const siteOrigin =
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+        "https://www.lacore.ai";
+      htmlWithSlug = injectStripeCheckoutHtml(htmlWithSlug, {
+        slug,
+        buttonText: sr.button_text?.trim() || "Book Now",
+        siteOrigin
+      });
+    }
 
     const deducted = await deductCredits(supabase, user.id, "generate_landing");
     if (!deducted) {

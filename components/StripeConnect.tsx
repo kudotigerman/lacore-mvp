@@ -95,19 +95,22 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
       return;
     }
 
-    const res = await fetch("/api/stripe/save", {
+    const body: Record<string, string> = {
+      publishable_key: publishableKey,
+      price_id: priceId,
+      payment_type: paymentType,
+      button_text: buttonText.trim() || "Book Now"
+    };
+    const sk = secretKey.trim();
+    if (sk) body.secret_key = sk;
+
+    const res = await fetch("/api/stripe/connect", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({
-        publishableKey,
-        secretKey: secretKey.trim() || undefined,
-        priceId,
-        paymentType,
-        buttonText
-      })
+      body: JSON.stringify(body)
     });
 
     const data = (await res.json()) as { error?: string };
@@ -127,7 +130,15 @@ export default function StripeConnect({ userId }: StripeConnectProps) {
 
   async function handleDisconnect() {
     const supabase = getSupabaseClient();
-    await supabase.from("stripe_settings").delete().eq("user_id", userId);
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      await fetch("/api/stripe/disconnect", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+    }
     setConnected(false);
     setPublishableKey("");
     setSecretKey("");

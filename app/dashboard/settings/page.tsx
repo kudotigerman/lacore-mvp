@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ConnectDomainSettings } from "@/components/dashboard/ConnectDomainSettings";
+import { ConnectStripeSettings } from "@/components/dashboard/ConnectStripeSettings";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 
 export default function DashboardSettingsPage() {
@@ -154,6 +155,14 @@ export default function DashboardSettingsPage() {
         >
           {d.profileSaving ? "Saving…" : "Save integrations"}
         </button>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+        <p className="mb-1 text-sm font-medium text-white">Connect Stripe</p>
+        <p className="mb-4 text-xs leading-relaxed text-white/40">
+          Accept payments on your public landing page via Stripe Checkout. Use test keys while you set things up.
+        </p>
+        {!d.loading ? <ConnectStripeSettings userId={d.userId} /> : <p className="text-sm text-white/40">Loading…</p>}
       </div>
 
       <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
