@@ -21,6 +21,30 @@ const REFINE_QUICK = [
   "Add guarantee"
 ] as const;
 
+const OFFER_INSPIRATION = [
+  {
+    who: "UX Designer",
+    offer:
+      "I help SaaS startups reduce churn by redesigning their onboarding — in 3 weeks, fixed price.",
+    result: "$8K/month",
+    idealClient: "SaaS founders and product teams losing users after signup or trial"
+  },
+  {
+    who: "Business Coach",
+    offer:
+      "I help burned-out executives find clarity and build a 90-day action plan — guaranteed results.",
+    result: "$5K/client",
+    idealClient: "Senior leaders and executives feeling stuck or overwhelmed at work"
+  },
+  {
+    who: "SMM Agency",
+    offer:
+      "We grow Instagram accounts for fitness brands from 0 to 10K followers in 60 days — or we work for free.",
+    result: "$3K/month retainer",
+    idealClient: "Fitness and wellness brands that want serious Instagram growth"
+  }
+] as const;
+
 function parseOfferRefinementJson(raw: string): DashboardOffer | null {
   let s = raw.trim();
   if (s.startsWith("```")) {
@@ -66,6 +90,7 @@ export default function DashboardOfferPage() {
   const [chooseLoading, setChooseLoading] = useState<"A" | "B" | "C" | null>(null);
   const [chooseError, setChooseError] = useState<string | null>(null);
   const onboardingAutoStarted = useRef(false);
+  const whatYouDoRef = useRef<HTMLTextAreaElement>(null);
 
   const [refineLog, setRefineLog] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
   const [refineInput, setRefineInput] = useState("");
@@ -90,6 +115,15 @@ export default function DashboardOfferPage() {
 
   const offer = d.offer;
   const displayOffer = offer ? (pendingRefinement ?? offer) : null;
+
+  function prefillForm(ex: (typeof OFFER_INSPIRATION)[number]) {
+    setWhatYouDo(ex.offer);
+    setIdealClient(ex.idealClient);
+    setPriceRange(ex.result);
+    requestAnimationFrame(() => {
+      whatYouDoRef.current?.focus();
+    });
+  }
 
   const executeGenerate = useCallback(async (w: string, ideal: string, price: string) => {
     const userInput = [
@@ -390,10 +424,33 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                 <path d="M38 44l6 6 10-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </div>
+
+            <div className="mb-8 w-full">
+              <p className="mb-3 text-xs uppercase tracking-wider text-white/30">Examples that work</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {OFFER_INSPIRATION.map((ex, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => prefillForm(ex)}
+                    className="group rounded-xl border border-white/8 bg-white/[0.03] p-4 text-left transition-colors hover:border-indigo-500/30 hover:bg-indigo-500/5"
+                  >
+                    <p className="mb-1 text-xs text-indigo-400">{ex.who}</p>
+                    <p className="mb-2 text-xs leading-relaxed text-white/60">{ex.offer}</p>
+                    <p className="text-xs text-emerald-400">{ex.result}</p>
+                    <p className="mt-2 text-[10px] text-white/20 transition-colors group-hover:text-indigo-400">
+                      Use this example →
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="w-full space-y-5">
               <div>
                 <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">What do you do?</label>
                 <textarea
+                  ref={whatYouDoRef}
                   className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   value={whatYouDo}
                   onChange={(e) => setWhatYouDo(e.target.value)}

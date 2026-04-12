@@ -7,6 +7,7 @@ import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { LeadRow } from "@/components/LeadsList";
 import { dashToast } from "@/lib/dash-toast";
+import { ContextualTip } from "@/components/dashboard/ContextualTip";
 
 export type ProposalSection = { title: string; content: string };
 
@@ -167,6 +168,11 @@ function ProposalsPageInner() {
           AI writes a winning proposal in 30 seconds — personalized for each client
         </p>
       </div>
+
+      <ContextualTip
+        icon="💡"
+        text="Pro tip: The more specific the client's problem, the better the proposal. Instead of 'needs more clients', try 'losing leads because follow-up takes too long'."
+      />
 
       <div className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">

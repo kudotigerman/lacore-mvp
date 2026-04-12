@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
+import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { OutreachResult } from "@/types/dashboard-ai";
 
 const TONES = ["Friendly", "Professional", "Direct", "Curious"] as const;
@@ -35,12 +38,45 @@ function CopyBlock({ title, text }: { title: string; text: string }) {
 
 export default function OutreachPage() {
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
   const [prospect, setProspect] = useState("");
   const [channel, setChannel] = useState("LinkedIn");
   const [tone, setTone] = useState<(typeof TONES)[number]>("Friendly");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [outreach, setOutreach] = useState<OutreachResult | null>(null);
+
+  useEffect(() => {
+    async function loadLast() {
+      if (!d.userId || !activeProject?.id) return;
+      const supabase = getSupabaseClient();
+      const { input, result } = await fetchLatestSavedResult(supabase, {
+        userId: d.userId,
+        projectId: activeProject.id,
+        type: "outreach"
+      });
+      if (input) {
+        if (typeof input.prospect === "string") setProspect(input.prospect);
+        if (typeof input.channel === "string" && OUTREACH_CHANNELS.some((c) => c.value === input.channel)) {
+          setChannel(input.channel);
+        }
+        if (typeof input.tone === "string" && (TONES as readonly string[]).includes(input.tone)) {
+          setTone(input.tone as (typeof TONES)[number]);
+        }
+      }
+      if (
+        result &&
+        typeof result === "object" &&
+        result !== null &&
+        "primary" in result &&
+        "alternative" in result &&
+        "followUp" in result
+      ) {
+        setOutreach(result as OutreachResult);
+      }
+    }
+    void loadLast();
+  }, [d.userId, activeProject?.id]);
 
   async function handleGenerate() {
     setError(null);
@@ -90,6 +126,16 @@ export default function OutreachPage() {
         return;
       }
       setOutreach(json.outreach);
+      if (d.userId && activeProject?.id) {
+        const { error: saveErr } = await upsertSavedResult(supabase, {
+          userId: d.userId,
+          projectId: activeProject.id,
+          type: "outreach",
+          input: { prospect, channel, tone },
+          result: json.outreach
+        });
+        if (saveErr) console.warn("saved_results outreach:", saveErr.message);
+      }
     } catch {
       setError("Network error.");
     } finally {
@@ -106,6 +152,11 @@ export default function OutreachPage() {
           Describe who you&apos;re reaching out to — get a primary message, an alternative, and a follow-up.
         </p>
       </div>
+
+      <ContextualTip
+        icon="🎯"
+        text="The more you know about the client, the better. Include their industry, what they post about, their obvious pain point — AI will personalize perfectly."
+      />
 
       <div className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
         <label className="mb-2 block text-xs uppercase tracking-wider text-white/40">Who is the client?</label>

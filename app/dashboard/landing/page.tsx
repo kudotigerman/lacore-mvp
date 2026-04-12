@@ -10,6 +10,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
+  const { userId, setLandingSlug } = d;
   const { activeProject } = useProjectContext();
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
@@ -37,9 +38,36 @@ export default function DashboardLandingPage() {
     refreshViews();
   }, [refreshViews]);
 
+  useEffect(() => {
+    async function loadExistingLanding() {
+      if (!activeProject?.id || !userId) return;
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("landing_pages")
+        .select("slug")
+        .eq("project_id", activeProject.id)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error || !data) return;
+      const row = data as { slug?: string };
+      if (row.slug) setLandingSlug(row.slug);
+    }
+    void loadExistingLanding();
+  }, [activeProject?.id, userId, setLandingSlug]);
+
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
   const stepDone = !!d.landingSlug;
+
+  if (d.loading) {
+    return (
+      <div className="flex min-h-full items-center justify-center" style={{ background: "var(--content-bg)" }}>
+        <p className="text-sm text-white/40">Loading…</p>
+      </div>
+    );
+  }
 
   if (d.landingSlug && d.offer) {
     return (

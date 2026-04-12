@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
+import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { PricingStrategyResult } from "@/types/dashboard-ai";
 
 export default function PricingStrategyPage() {
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
   const [businessType, setBusinessType] = useState("");
   const [niche, setNiche] = useState("");
   const [currentPrice, setCurrentPrice] = useState("");
@@ -14,6 +18,28 @@ export default function PricingStrategyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PricingStrategyResult | null>(null);
+
+  useEffect(() => {
+    async function loadLast() {
+      if (!d.userId || !activeProject?.id) return;
+      const supabase = getSupabaseClient();
+      const { input, result: saved } = await fetchLatestSavedResult(supabase, {
+        userId: d.userId,
+        projectId: activeProject.id,
+        type: "pricing"
+      });
+      if (input) {
+        if (typeof input.businessType === "string") setBusinessType(input.businessType);
+        if (typeof input.niche === "string") setNiche(input.niche);
+        if (typeof input.currentPrice === "string") setCurrentPrice(input.currentPrice);
+        if (typeof input.experience === "string") setExperience(input.experience);
+      }
+      if (saved && typeof saved === "object" && saved !== null && "recommendedPrice" in saved) {
+        setResult(saved as PricingStrategyResult);
+      }
+    }
+    void loadLast();
+  }, [d.userId, activeProject?.id]);
 
   async function handleGenerate() {
     setError(null);
@@ -60,6 +86,18 @@ export default function PricingStrategyPage() {
         return;
       }
       setResult(json.result);
+      if (d.userId && activeProject?.id) {
+        const { error: saveErr } = await upsertSavedResult(supabase, {
+          userId: d.userId,
+          projectId: activeProject.id,
+          type: "pricing",
+          input: { businessType, niche, currentPrice, experience },
+          result: json.result
+        });
+        if (saveErr) {
+          console.warn("saved_results pricing:", saveErr.message);
+        }
+      }
     } catch {
       setError("Network error.");
     } finally {
@@ -78,6 +116,11 @@ export default function PricingStrategyPage() {
           AI analyzes your niche and experience — concrete prices, tiers, and how to present them.
         </p>
       </div>
+
+      <ContextualTip
+        icon="📊"
+        text="Most service providers undercharge by 40-60%. Be honest about your current price — AI will tell you if you're leaving money on the table."
+      />
 
       <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">

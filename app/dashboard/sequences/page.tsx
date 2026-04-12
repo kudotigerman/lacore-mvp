@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
+import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
+import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { SequenceMessage } from "@/types/dashboard-ai";
 
 const CHANNELS = [
@@ -23,13 +26,38 @@ const GOALS = [
 
 type ChannelId = (typeof CHANNELS)[number]["id"];
 
+const CHANNEL_IDS = new Set<ChannelId>(CHANNELS.map((c) => c.id));
+
 export default function SequencesPage() {
   const d = useDashboardData();
+  const { activeProject } = useProjectContext();
   const [channel, setChannel] = useState<ChannelId>("email");
   const [goal, setGoal] = useState(GOALS[0]!);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<SequenceMessage[] | null>(null);
+
+  useEffect(() => {
+    async function loadLast() {
+      if (!d.userId || !activeProject?.id) return;
+      const supabase = getSupabaseClient();
+      const { input, result } = await fetchLatestSavedResult(supabase, {
+        userId: d.userId,
+        projectId: activeProject.id,
+        type: "sequence"
+      });
+      if (input) {
+        const ch = input.channel;
+        if (typeof ch === "string" && CHANNEL_IDS.has(ch as ChannelId)) setChannel(ch as ChannelId);
+        if (typeof input.goal === "string" && GOALS.includes(input.goal)) setGoal(input.goal);
+      }
+      if (result && typeof result === "object" && result !== null) {
+        const msgs = (result as { messages?: unknown }).messages;
+        if (Array.isArray(msgs) && msgs.length > 0) setMessages(msgs as SequenceMessage[]);
+      }
+    }
+    void loadLast();
+  }, [d.userId, activeProject?.id]);
 
   async function copyMessage(text: string) {
     await navigator.clipboard.writeText(text);
@@ -82,6 +110,16 @@ export default function SequencesPage() {
         return;
       }
       setMessages(json.sequence.messages);
+      if (d.userId && activeProject?.id) {
+        const { error: saveErr } = await upsertSavedResult(supabase, {
+          userId: d.userId,
+          projectId: activeProject.id,
+          type: "sequence",
+          input: { channel, goal },
+          result: { messages: json.sequence.messages }
+        });
+        if (saveErr) console.warn("saved_results sequence:", saveErr.message);
+      }
     } catch {
       setError("Network error.");
     } finally {
@@ -98,6 +136,11 @@ export default function SequencesPage() {
           Ready-made message series for email, DMs, and more — tuned to your offer.
         </p>
       </div>
+
+      <ContextualTip
+        icon="✉️"
+        text="The best sequences don't sell in message 1. Message 1 = curiosity. Message 2 = value. Message 3 = soft offer. Message 4 = close."
+      />
 
       <p className="mb-2 text-xs uppercase tracking-wider text-white/40">Channel</p>
       <div className="mb-2 flex flex-wrap gap-2">

@@ -57,6 +57,10 @@ export function LandingEditorSplitView({
     }
   }, [slug]);
 
+  useEffect(() => {
+    setIframeKey((k) => k + 1);
+  }, [slug]);
+
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(publicUrl);
     setCopied(true);

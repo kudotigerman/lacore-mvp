@@ -477,6 +477,21 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           >
             Analytics
           </Link>
+
+          <div className="mt-4 border-t border-white/6 pt-4">
+            <p className="mb-2 px-3 text-[10px] uppercase tracking-wider text-white/20">Learn</p>
+            <Link
+              href="/dashboard/playbook"
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs no-underline transition-colors ${
+                pathname === "/dashboard/playbook" || pathname.startsWith("/dashboard/playbook/")
+                  ? "text-white/70"
+                  : "text-white/40 hover:text-white/70"
+              }`}
+            >
+              <span>📖</span>
+              Playbook
+            </Link>
+          </div>
         </nav>
 
         <CreditsWidget />
