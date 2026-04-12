@@ -2,7 +2,7 @@
 
 import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { OfferVariant } from "@/app/api/generate-offer/route";
 import { ONBOARDING_GENERATING_KEY, ONBOARDING_INPUT_KEY } from "@/lib/onboarding-keys";
 import { dashToast } from "@/lib/dash-toast";
@@ -45,6 +45,35 @@ const OFFER_INSPIRATION = [
   }
 ] as const;
 
+function offerStrengthLabel(o: DashboardOffer): "Strong offer" | "Good offer" | "Needs work" {
+  const longOffer = o.offer.trim().length > 100;
+  const hasPricing = Boolean(o.pricing?.trim());
+  const hasAudience = Boolean(o.audience?.trim());
+  const n = [longOffer, hasPricing, hasAudience].filter(Boolean).length;
+  if (n >= 3) return "Strong offer";
+  if (n === 2) return "Good offer";
+  return "Needs work";
+}
+
+function guaranteePillText(o: DashboardOffer): "Full refund" | "No guarantee" {
+  const blob = `${o.offer} ${o.positioning} ${o.pricing}`.toLowerCase();
+  if (
+    /\b(money-?back|money\s+back|full\s+refund|refund|risk-?\s*free|double\s+your\s+money)\b/.test(blob) ||
+    /\b(guarantee|guaranteed)\b/.test(blob) ||
+    /\bor\s+we\s+work\s+for\s+free\b/.test(blob) ||
+    /\b100%\s*satisfaction\b/.test(blob)
+  ) {
+    return "Full refund";
+  }
+  return "No guarantee";
+}
+
+function audienceShort(s: string, max = 44): string {
+  const t = s.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
 function parseOfferRefinementJson(raw: string): DashboardOffer | null {
   let s = raw.trim();
   if (s.startsWith("```")) {
@@ -71,6 +100,62 @@ const fields = [
   { label: "POSITIONING", key: "positioning" as const, multiline: true },
   { label: "HEADLINE", key: "headline" as const, multiline: false }
 ];
+
+const fieldLabelClass = "text-[11px] font-semibold uppercase tracking-wider text-white/40";
+const fieldValueClass = "text-[15px] font-normal leading-relaxed text-white/90";
+
+function OfferStrengthBadgeUi({ offer }: { offer: DashboardOffer }) {
+  const label = offerStrengthLabel(offer);
+  const ring =
+    label === "Strong offer"
+      ? "border-emerald-500/35 bg-emerald-500/[0.12] text-emerald-300"
+      : label === "Good offer"
+        ? "border-amber-500/35 bg-amber-500/[0.12] text-amber-200"
+        : "border-red-500/40 bg-red-500/[0.1] text-red-300";
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-[11px] font-semibold tracking-wide ${ring}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function IndigoIconBox({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-500/25 bg-indigo-500/[0.08] text-indigo-400 [&_svg]:shrink-0">
+      {children}
+    </div>
+  );
+}
+
+function IconDoc() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2v6h6M8 13h8M8 17h8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconTarget() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconTag() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <path d="M12 2H4v9l8 11 8-11V2h-8z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 6h.01M13.5 6h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function DashboardOfferPage() {
   const d = useDashboardData();
@@ -406,8 +491,8 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
         title={offer ? "Your offer" : "Define your offer"}
         subtitle={
           offer
-            ? "Your core positioning and value proposition"
-            : "Tell us what you do — AI will craft your positioning, headline, and pricing in 30 seconds."
+            ? "Review, refine, or build your landing page."
+            : "The clearest offers win. Tell AI what you do and who you help."
         }
         isStepDone={!!offer}
         nextStepLabel="Landing page"
@@ -416,29 +501,34 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
       >
       {!offer ? (
         <>
-          <div className="mx-auto flex max-w-lg flex-col items-center py-4">
-            <div className="mb-6 w-16 text-indigo-400/90" aria-hidden>
-              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-20 w-20">
-                <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" strokeWidth="2" />
-                <path d="M20 20h24M20 28h18M20 36h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M38 44l6 6 10-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+          <div className="mx-auto max-w-xl px-1 pb-6 pt-2">
+            <div className="flex flex-col items-center text-center">
+              <div
+                className="mb-8 flex h-28 w-28 items-center justify-center rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.18] via-indigo-500/[0.06] to-transparent text-indigo-400 shadow-[0_0_80px_-20px_rgba(99,102,241,0.55)]"
+                aria-hidden
+              >
+                <svg viewBox="0 0 64 64" fill="none" className="h-14 w-14" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" strokeWidth="2" />
+                  <path d="M20 20h24M20 28h18M20 36h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M38 44l6 6 10-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
             </div>
 
-            <div className="mb-8 w-full">
-              <p className="mb-3 text-xs uppercase tracking-wider text-white/30">Examples that work</p>
+            <div className="mb-10 w-full">
+              <p className={`mb-3 ${fieldLabelClass}`}>Examples that work</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {OFFER_INSPIRATION.map((ex, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => prefillForm(ex)}
-                    className="group rounded-xl border border-white/8 bg-white/[0.03] p-4 text-left transition-colors hover:border-indigo-500/30 hover:bg-indigo-500/5"
+                    className="group rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/80 p-4 text-left shadow-sm transition-all hover:border-indigo-500/35 hover:shadow-[0_0_32px_-8px_rgba(99,102,241,0.35)]"
                   >
-                    <p className="mb-1 text-xs text-indigo-400">{ex.who}</p>
-                    <p className="mb-2 text-xs leading-relaxed text-white/60">{ex.offer}</p>
-                    <p className="text-xs text-emerald-400">{ex.result}</p>
-                    <p className="mt-2 text-[10px] text-white/20 transition-colors group-hover:text-indigo-400">
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-indigo-400">{ex.who}</p>
+                    <p className="mb-2 text-[13px] leading-relaxed text-white/55">{ex.offer}</p>
+                    <p className="text-[13px] font-medium text-emerald-400/95">{ex.result}</p>
+                    <p className="mt-2.5 text-[10px] text-white/25 transition-colors group-hover:text-indigo-400">
                       Use this example →
                     </p>
                   </button>
@@ -446,12 +536,12 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               </div>
             </div>
 
-            <div className="w-full space-y-5">
-              <div>
-                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">What do you do?</label>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-5 shadow-sm">
+                <label className={`mb-2 block ${fieldLabelClass}`}>What do you do?</label>
                 <textarea
                   ref={whatYouDoRef}
-                  className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
+                  className="dash-focusable dash-offer-gen-field w-full rounded-lg border border-white/10 bg-[var(--input-bg)] px-4 py-3 text-[15px] text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   value={whatYouDo}
                   onChange={(e) => setWhatYouDo(e.target.value)}
                   placeholder="I'm a UX designer who helps SaaS startups..."
@@ -459,10 +549,10 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   style={{ ...textareaStyle, border: undefined, background: undefined }}
                 />
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Who is your ideal client?</label>
+              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-5 shadow-sm">
+                <label className={`mb-2 block ${fieldLabelClass}`}>Who is your ideal client?</label>
                 <textarea
-                  className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
+                  className="dash-focusable dash-offer-gen-field w-full rounded-lg border border-white/10 bg-[var(--input-bg)] px-4 py-3 text-[15px] text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   value={idealClient}
                   onChange={(e) => setIdealClient(e.target.value)}
                   placeholder="Founders and PMs at B2B SaaS companies..."
@@ -470,15 +560,22 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   style={{ ...textareaStyle, border: undefined, background: undefined }}
                 />
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">What&apos;s your price range?</label>
+              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-5 shadow-sm">
+                <label className={`mb-2 block ${fieldLabelClass}`}>What&apos;s your price range?</label>
                 <input
-                  className="dash-focusable dash-offer-gen-field w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50"
+                  className="dash-focusable dash-offer-gen-field w-full rounded-lg border border-white/10 bg-[var(--input-bg)] px-4 py-3 text-[15px] text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   type="text"
                   value={priceRange}
                   onChange={(e) => setPriceRange(e.target.value)}
                   placeholder="$2,000–5,000/project"
-                  style={{ ...dash.input, marginTop: 0, width: "100%", boxSizing: "border-box" as const, border: undefined, background: undefined }}
+                  style={{
+                    ...dash.input,
+                    marginTop: 0,
+                    width: "100%",
+                    boxSizing: "border-box" as const,
+                    border: undefined,
+                    background: undefined
+                  }}
                 />
               </div>
             </div>
@@ -487,21 +584,27 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               type="button"
               disabled={genLoading}
               onClick={() => void generateOffer()}
-              className="mt-6 w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-8 w-full rounded-xl bg-indigo-600 py-4 text-[15px] font-semibold text-white shadow-[0_12px_40px_-8px_rgba(99,102,241,0.55)] transition-all hover:bg-indigo-500 hover:shadow-[0_16px_48px_-8px_rgba(99,102,241,0.6)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
-              {genLoading ? "Generating…" : "Generate my offer →"}
+              {genLoading ? "Generating…" : "Generate offer →"}
             </button>
-            <p className="mt-2 text-center text-xs text-white/30">
+            <p className="mt-3 text-center text-[11px] text-white/35">
               Uses 5 credits
               {credits !== null ? ` · You have ${credits} credits` : ""}
             </p>
           </div>
 
           {variants && variants.length === 3 ? (
-            <div className="mt-6">
-              {chooseError ? <p className="mb-3 text-xs text-red-400">{chooseError}</p> : null}
-              <p className="mb-4 text-lg font-medium text-white">Pick your strategy</p>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="mx-auto mt-2 max-w-6xl border-t border-white/[0.06] pt-10">
+              {chooseError ? <p className="mb-4 text-sm text-red-400">{chooseError}</p> : null}
+              <div className="mb-6 text-center">
+                <p className={`inline-block rounded-full border border-indigo-500/25 bg-indigo-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-indigo-300`}>
+                  Choose one
+                </p>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-white">Pick your strategy</h3>
+                <p className="mt-1 text-sm text-white/40">Three angles — select the one that fits you best.</p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 {[...variants]
                   .sort((a, b) => a.variant.localeCompare(b.variant))
                   .map((v) => {
@@ -509,41 +612,41 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                     return (
                       <div
                         key={v.variant}
-                        className={`flex cursor-pointer flex-col rounded-xl border bg-white/[0.04] p-5 transition-colors hover:border-indigo-500/40 ${
-                          isA ? "border-indigo-500/30" : "border-white/10"
+                        className={`relative flex flex-col rounded-2xl border bg-gradient-to-b from-white/[0.06] to-transparent p-6 transition-all hover:border-indigo-500/40 ${
+                          isA ? "border-indigo-500/40 shadow-[0_0_48px_-12px_rgba(99,102,241,0.35)]" : "border-white/[0.08]"
                         }`}
                       >
-                        <span className="mb-3 block text-[10px] font-medium uppercase tracking-widest text-white/40">
-                          {v.variant}
-                        </span>
                         {isA ? (
-                          <span className="mb-2 inline-block rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] text-indigo-400">
-                            ✦ Recommended
+                          <span className="absolute right-4 top-4 rounded-full bg-indigo-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300">
+                            Recommended
                           </span>
                         ) : null}
-                        <h3 className="mb-3 text-sm font-semibold leading-snug text-white">{v.headline}</h3>
-                        {v.label ? <p className="mb-3 text-xs text-white/45">{v.label}</p> : null}
-                        <div className="mb-3">
-                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Offer</p>
-                          <p className="text-xs leading-relaxed text-white/65">{v.offer}</p>
-                        </div>
-                        <div className="mb-3">
-                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Audience</p>
-                          <p className="text-xs leading-relaxed text-white/65">{v.audience}</p>
-                        </div>
-                        <div className="mb-3">
-                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Pricing</p>
-                          <p className="text-xs leading-relaxed text-white/65">{v.pricing}</p>
-                        </div>
-                        <div className="mb-3">
-                          <p className="mb-1 text-[10px] uppercase tracking-wider text-white/30">Positioning</p>
-                          <p className="text-xs leading-relaxed text-white/65">{v.positioning}</p>
+                        <span className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Strategy {v.variant}</span>
+                        <h4 className="mb-2 pr-16 text-base font-medium leading-snug text-white">{v.headline}</h4>
+                        {v.label ? <p className="mb-4 text-[13px] text-white/45">{v.label}</p> : null}
+                        <div className="flex flex-1 flex-col gap-3 text-[13px] leading-relaxed">
+                          <div>
+                            <p className={`mb-1 ${fieldLabelClass}`}>Offer</p>
+                            <p className="text-white/65">{v.offer}</p>
+                          </div>
+                          <div>
+                            <p className={`mb-1 ${fieldLabelClass}`}>Audience</p>
+                            <p className="text-white/65">{v.audience}</p>
+                          </div>
+                          <div>
+                            <p className={`mb-1 ${fieldLabelClass}`}>Pricing</p>
+                            <p className="text-white/65">{v.pricing}</p>
+                          </div>
+                          <div>
+                            <p className={`mb-1 ${fieldLabelClass}`}>Positioning</p>
+                            <p className="text-white/65">{v.positioning}</p>
+                          </div>
                         </div>
                         <button
                           type="button"
                           disabled={chooseLoading !== null}
                           onClick={() => void chooseVariant(v)}
-                          className="mt-2 w-full rounded-lg bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {chooseLoading === v.variant ? "Saving…" : "Use this strategy"}
                         </button>
@@ -557,40 +660,36 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
       ) : (
         <>
           {pendingRefinement ? (
-            <p
-              style={{
-                margin: "0 0 12px",
-                fontSize: 12,
-                color: "var(--accent)",
-                fontFamily: "inherit"
-              }}
-            >
-              You have unsaved AI improvements — review the card and click &quot;Save improved offer&quot; below.
-            </p>
+            <div className="mb-5 rounded-xl border border-indigo-500/35 bg-indigo-500/[0.1] px-4 py-3 text-[13px] leading-relaxed text-indigo-100">
+              You have unsaved AI improvements — open <strong className="text-white">Refine with AI</strong> below and
+              click &quot;Save improved offer&quot;.
+            </div>
           ) : null}
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-5 py-1" style={{ boxSizing: "border-box" }}>
-            {fields.map((item, idx) => {
-              const src = editing && draft ? draft : displayOffer!;
-              const value = src[item.key];
-              const last = idx === fields.length - 1;
-              return (
-                <div
-                  key={item.key}
-                  style={{
-                    paddingTop: 16,
-                    paddingBottom: 16,
-                    borderBottom: last ? "none" : "1px solid #1C1C22"
-                  }}
-                >
-                  <p style={dash.sectionTitle}>{item.label}</p>
-                  {editing && draft ? (
-                    item.multiline ? (
+
+          {editing && draft ? (
+            <div className="space-y-4 pb-6">
+              {fields.map((item) => {
+                const icon =
+                  item.key === "pricing" ? (
+                    <IconTag />
+                  ) : item.key === "positioning" || item.key === "audience" ? (
+                    <IconTarget />
+                  ) : (
+                    <IconDoc />
+                  );
+                return (
+                  <div key={item.key} className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 shadow-sm">
+                    <div className="mb-3 flex items-center gap-3">
+                      <IndigoIconBox>{icon}</IndigoIconBox>
+                      <p className={`m-0 ${fieldLabelClass}`}>{item.label}</p>
+                    </div>
+                    {item.multiline ? (
                       <textarea
                         className="dash-focusable"
                         value={draft[item.key]}
                         onChange={(e) => setDraft({ ...draft, [item.key]: e.target.value })}
                         style={textareaStyle}
-                        rows={4}
+                        rows={item.key === "headline" ? 2 : 4}
                       />
                     ) : (
                       <input
@@ -598,208 +697,247 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                         type="text"
                         value={draft[item.key]}
                         onChange={(e) => setDraft({ ...draft, [item.key]: e.target.value })}
-                        style={{ ...dash.input, marginTop: 4 }}
+                        style={{ ...dash.input, marginTop: 0 }}
                       />
-                    )
-                  ) : (
-                    <div style={{ fontSize: 15, color: "#FFFFFF", marginTop: 4, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-                      {value}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {editing ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
-              {saveErr ? <p style={{ margin: 0, fontSize: 12, color: "var(--danger)" }}>{saveErr}</p> : null}
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => void save()}
-                className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(false);
-                  setDraft(null);
-                  setSaveErr(null);
-                }}
-                style={{ ...dash.btnGhost, alignSelf: "flex-start" }}
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div className="mt-6 overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04]">
-              <button
-                type="button"
-                onClick={() => setRefineOpen((o) => !o)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-white/50 transition-colors hover:text-white/70"
-              >
-                Refine it
-                <span className="text-white/35" aria-hidden>
-                  {refineOpen ? "▴" : "▾"}
-                </span>
-              </button>
-              {refineOpen ? (
-                <div className="border-t border-white/[0.06] px-4 pb-4 pt-3">
-              <div
-                style={{
-                  marginTop: 0,
-                  maxHeight: 200,
-                  overflowY: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10
-                }}
-              >
-                {refineLog.slice(-5).map((m, i) => (
-                  <div
-                    key={`${m.role}-${i}-${m.text.slice(0, 24)}`}
-                    style={{
-                      alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                      maxWidth: "92%",
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      background: m.role === "user" ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${m.role === "user" ? "rgba(99,102,241,0.25)" : "#1C1C22"}`,
-                      fontSize: 12,
-                      lineHeight: 1.55,
-                      color: m.role === "user" ? "#E4E4E7" : "#A1A1AA",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word"
-                    }}
-                  >
-                    {m.text}
+                    )}
                   </div>
-                ))}
-              </div>
-              <textarea
-                ref={refineTextareaRef}
-                value={refineInput}
-                onChange={(e) => setRefineInput(e.target.value)}
-                placeholder="e.g. Make it more aggressive, focus on ROI, target enterprise clients..."
-                disabled={refineLoading}
-                rows={3}
-                className="dash-focusable dash-offer-gen-field"
-                style={{
-                  width: "100%",
-                  marginTop: 12,
-                  padding: 12,
-                  borderRadius: 8,
-                  border: "1px solid #1C1C22",
-                  background: "#0A0A0D",
-                  color: "#FAFAFA",
-                  fontFamily: "inherit",
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  resize: "none",
-                  boxSizing: "border-box",
-                  outline: "none"
-                }}
-              />
-              <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {REFINE_QUICK.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled={refineLoading}
-                    onClick={() => applyRefineQuick(label)}
-                    style={{
-                      padding: "5px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #1C1C22",
-                      background: "rgba(255,255,255,0.04)",
-                      color: "#A1A1AA",
-                      fontSize: 11,
-                      fontFamily: "inherit",
-                      cursor: refineLoading ? "not-allowed" : "pointer",
-                      opacity: refineLoading ? 0.5 : 1
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              {refineError ? (
-                <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--danger)" }}>{refineError}</p>
-              ) : null}
-              <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                );
+              })}
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
+                {saveErr ? <p className="w-full text-sm text-red-400">{saveErr}</p> : null}
                 <button
                   type="button"
-                  disabled={refineLoading || !refineInput.trim() || !d.sessionToken}
-                  onClick={() => void improveOfferFromFeedback()}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={saving}
+                  onClick={() => void save()}
+                  className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {refineLoading ? "…" : "Improve →"}
-                </button>
-                {pendingRefinement ? (
-                  <button
-                    type="button"
-                    disabled={saveRefineLoading}
-                    onClick={() => void saveRefinedOffer()}
-                    style={{
-                      padding: "8px 16px",
-                      borderRadius: 8,
-                      border: "1px solid var(--accent)",
-                      background: "transparent",
-                      color: "var(--accent)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      fontFamily: "inherit",
-                      cursor: saveRefineLoading ? "not-allowed" : "pointer",
-                      opacity: saveRefineLoading ? 0.6 : 1
-                    }}
-                  >
-                    {saveRefineLoading ? "Saving…" : "Save improved offer"}
-                  </button>
-                ) : null}
-              </div>
-                </div>
-              ) : null}
-            </div>
-          )}
-
-          {!editing ? (
-            <div
-              className="sticky bottom-0 left-0 right-0 z-10 -mx-4 mt-8 flex items-center gap-4 border-t border-white/[0.08] bg-[#07080F]/95 px-8 py-4 backdrop-blur-sm sm:-mx-6"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white">✓ Offer ready — next: build your landing page</p>
-                <p className="text-xs text-white/40">AI will create a full sales page in 60 seconds</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard/landing")}
-                className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-indigo-600 px-8 py-3 font-medium text-white transition-colors hover:bg-indigo-500"
-              >
-                Build landing page →
-              </button>
-              <div className="flex shrink-0 flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRefineOpen(true)}
-                  className="whitespace-nowrap text-sm text-white/40 transition-colors hover:text-white/70"
-                >
-                  Refine first
+                  Save changes
                 </button>
                 <button
                   type="button"
                   onClick={() => {
+                    setEditing(false);
+                    setDraft(null);
                     setSaveErr(null);
-                    setDraft({ ...(pendingRefinement ?? offer) });
-                    setPendingRefinement(null);
-                    setEditing(true);
                   }}
-                  className="whitespace-nowrap text-sm text-white/40 transition-colors hover:text-white/70"
+                  style={dash.btnGhost}
                 >
-                  Edit fields
+                  Cancel
                 </button>
+              </div>
+            </div>
+          ) : displayOffer ? (
+            <>
+              <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.14] via-[var(--card-bg)] to-[var(--content-bg)] px-6 py-8 md:px-8 md:py-10 shadow-[0_0_72px_-24px_rgba(99,102,241,0.45)]">
+                <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-indigo-500/[0.12] blur-3xl" aria-hidden />
+                <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-violet-600/[0.08] blur-3xl" aria-hidden />
+                <span className="relative inline-flex rounded-full border border-indigo-400/40 bg-indigo-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-100">
+                  Offer ready
+                </span>
+                <h2 className="relative mt-5 max-w-4xl text-[22px] font-medium leading-snug tracking-tight text-white md:text-2xl">
+                  {displayOffer.headline}
+                </h2>
+                <p className={`relative mt-4 max-w-3xl text-[15px] font-normal leading-relaxed text-white/70`}>
+                  {displayOffer.offer}
+                </p>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 px-4 py-4">
+                  <p className={fieldLabelClass}>Audience</p>
+                  <p className={`mt-1.5 ${fieldValueClass}`}>{audienceShort(displayOffer.audience)}</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 px-4 py-4">
+                  <p className={fieldLabelClass}>Price point</p>
+                  <p className={`mt-1.5 ${fieldValueClass}`}>{displayOffer.pricing}</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 px-4 py-4">
+                  <p className={fieldLabelClass}>Guarantee</p>
+                  <p className={`mt-1.5 ${fieldValueClass}`}>{guaranteePillText(displayOffer)}</p>
+                </div>
+              </div>
+
+              <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2 rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 md:p-6">
+                  <div className="mb-4 flex items-center gap-3">
+                    <IndigoIconBox>
+                      <IconDoc />
+                    </IndigoIconBox>
+                    <p className={`m-0 ${fieldLabelClass}`}>Core offer</p>
+                  </div>
+                  <p className={`${fieldValueClass} whitespace-pre-wrap`}>{displayOffer.offer}</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 md:p-6">
+                  <div className="mb-4 flex items-center gap-3">
+                    <IndigoIconBox>
+                      <IconTarget />
+                    </IndigoIconBox>
+                    <p className={`m-0 ${fieldLabelClass}`}>Positioning</p>
+                  </div>
+                  <p className={`${fieldValueClass} whitespace-pre-wrap`}>{displayOffer.positioning}</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 md:p-6">
+                  <div className="mb-4 flex items-center gap-3">
+                    <IndigoIconBox>
+                      <IconTag />
+                    </IndigoIconBox>
+                    <p className={`m-0 ${fieldLabelClass}`}>Pricing</p>
+                  </div>
+                  <p className={`${fieldValueClass} whitespace-pre-wrap`}>{displayOffer.pricing}</p>
+                </div>
+              </div>
+
+              <div className="mt-8 overflow-hidden rounded-xl border border-white/[0.1] bg-[var(--card-bg)]/60 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setRefineOpen((o) => !o)}
+                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-white">Refine with AI</p>
+                    <p className="mt-0.5 text-[11px] text-white/40">Tune copy with feedback — same flow as before.</p>
+                  </div>
+                  <span className="shrink-0 text-lg text-indigo-400/80" aria-hidden>
+                    {refineOpen ? "▴" : "▾"}
+                  </span>
+                </button>
+                {refineOpen ? (
+                  <div className="border-t border-white/[0.06] px-5 pb-5 pt-4">
+                    <div
+                      className="flex max-h-[200px] flex-col gap-2.5 overflow-y-auto"
+                      style={{ scrollbarGutter: "stable" }}
+                    >
+                      {refineLog.slice(-5).map((m, i) => (
+                        <div
+                          key={`${m.role}-${i}-${m.text.slice(0, 24)}`}
+                          className={`max-w-[92%] rounded-lg border px-3 py-2.5 text-xs leading-relaxed ${
+                            m.role === "user"
+                              ? "self-end border-indigo-500/30 bg-indigo-500/10 text-zinc-200"
+                              : "self-start border-white/[0.08] bg-white/[0.04] text-zinc-400"
+                          }`}
+                          style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                        >
+                          {m.text}
+                        </div>
+                      ))}
+                    </div>
+                    <textarea
+                      ref={refineTextareaRef}
+                      value={refineInput}
+                      onChange={(e) => setRefineInput(e.target.value)}
+                      placeholder="e.g. Make it more aggressive, focus on ROI, target enterprise clients..."
+                      disabled={refineLoading}
+                      rows={3}
+                      className="dash-focusable dash-offer-gen-field mt-4 w-full rounded-lg border border-white/[0.1] bg-[var(--input-bg)] px-3 py-2.5 text-[13px] text-white"
+                      style={{
+                        lineHeight: 1.5,
+                        resize: "none",
+                        boxSizing: "border-box",
+                        outline: "none"
+                      }}
+                    />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {REFINE_QUICK.map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          disabled={refineLoading}
+                          onClick={() => applyRefineQuick(label)}
+                          className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] text-zinc-400 transition-colors hover:border-indigo-500/30 hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {refineError ? <p className="mt-3 text-xs text-red-400">{refineError}</p> : null}
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={refineLoading || !refineInput.trim() || !d.sessionToken}
+                        onClick={() => void improveOfferFromFeedback()}
+                        className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {refineLoading ? "…" : "Improve →"}
+                      </button>
+                      {pendingRefinement ? (
+                        <button
+                          type="button"
+                          disabled={saveRefineLoading}
+                          onClick={() => void saveRefinedOffer()}
+                          className="rounded-lg border border-indigo-400/50 bg-transparent px-4 py-2 text-xs font-bold text-indigo-300 transition-colors hover:bg-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {saveRefineLoading ? "Saving…" : "Save improved offer"}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          {!editing ? (
+            <div className="sticky bottom-0 left-0 right-0 z-10 -mx-4 mt-10 flex flex-col gap-4 border-t border-white/[0.1] bg-[#07080F]/95 px-5 py-4 backdrop-blur-md sm:-mx-6 sm:flex-row sm:flex-wrap sm:items-center sm:px-8">
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-400">
+                  ✓
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white">Offer ready — next: build your landing page</p>
+                  <p className="mt-0.5 text-xs text-white/40">AI will create a full sales page in 60 seconds</p>
+                  <div className="mt-3 flex flex-wrap gap-4 sm:hidden">
+                    <button
+                      type="button"
+                      onClick={() => setRefineOpen(true)}
+                      className="text-xs font-medium text-white/45 transition-colors hover:text-white/75"
+                    >
+                      Refine first
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSaveErr(null);
+                        setDraft({ ...(pendingRefinement ?? offer) });
+                        setPendingRefinement(null);
+                        setEditing(true);
+                      }}
+                      className="text-xs font-medium text-white/45 transition-colors hover:text-white/75"
+                    >
+                      Edit fields
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {displayOffer ? <OfferStrengthBadgeUi offer={displayOffer} /> : null}
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/landing")}
+                  className="w-full shrink-0 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_32px_-8px_rgba(99,102,241,0.5)] transition-all hover:bg-indigo-500 sm:w-auto"
+                >
+                  Build landing page →
+                </button>
+                <div className="hidden gap-4 sm:flex sm:shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setRefineOpen(true)}
+                    className="whitespace-nowrap text-sm text-white/45 transition-colors hover:text-white/75"
+                  >
+                    Refine first
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveErr(null);
+                      setDraft({ ...(pendingRefinement ?? offer) });
+                      setPendingRefinement(null);
+                      setEditing(true);
+                    }}
+                    className="whitespace-nowrap text-sm text-white/45 transition-colors hover:text-white/75"
+                  >
+                    Edit fields
+                  </button>
+                </div>
               </div>
             </div>
           ) : null}
