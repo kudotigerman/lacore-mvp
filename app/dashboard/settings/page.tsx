@@ -157,7 +157,7 @@ export default function DashboardSettingsPage() {
         </button>
       </div>
 
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
+      <div id="stripe" className="scroll-mt-6 rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
         <p className="mb-1 text-sm font-medium text-white">Connect Stripe</p>
         <p className="mb-4 text-xs leading-relaxed text-white/40">
           Accept payments on your public landing page via Stripe Checkout. Use test keys while you set things up.

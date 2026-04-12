@@ -7,7 +7,7 @@ import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import { LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
 import { dashToast } from "@/lib/dash-toast";
-import StripeConnect from "@/components/StripeConnect";
+import { LandingStripeStatus } from "@/components/dashboard/LandingStripeStatus";
 import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimonialsPanel";
 
 const QUICK_ACTIONS = [
@@ -295,7 +295,7 @@ export function LandingEditorSplitView({
               <div className="space-y-2 border-t border-white/[0.06] pt-3">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Domain &amp; payments</p>
                 <DomainConnect slug={slug} userId={d.userId} />
-                <StripeConnect userId={d.userId} />
+                <LandingStripeStatus />
                 <LandingTestimonialsPanel slug={slug} />
               </div>
             ) : null}
