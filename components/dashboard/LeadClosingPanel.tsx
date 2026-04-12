@@ -159,7 +159,7 @@ export default function LeadClosingPanel({
       : "Add an offer on the Offer page for sharper AI advice.";
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(99,102,241,0.06)] max-lg:rounded-xl lg:min-h-[360px] lg:p-5">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(99,102,241,0.06)] max-lg:rounded-xl lg:min-h-[360px] lg:p-5">
       {/* Panel chrome: title + close */}
       <div className="shrink-0 border-b border-white/[0.08] pb-3">
         <div className="flex items-start justify-between gap-3">
@@ -183,8 +183,10 @@ export default function LeadClosingPanel({
         </div>
       </div>
 
-      {/* Lead header (fixed) */}
-      <div className="shrink-0 rounded-xl border border-white/[0.08] bg-gradient-to-br from-indigo-500/[0.08] to-transparent p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex flex-col gap-3 pt-3 pb-4">
+      {/* Lead header */}
+      <div className="rounded-xl border border-white/[0.08] bg-gradient-to-br from-indigo-500/[0.08] to-transparent p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs font-medium uppercase tracking-wider text-indigo-400/90">Selected lead</p>
@@ -211,9 +213,9 @@ export default function LeadClosingPanel({
         <p className="mt-3 text-[11px] text-white/35">Added {formatLeadDate(lead.created_at)}</p>
       </div>
 
-      {/* Status-aware coach (fixed) */}
+      {/* Status-aware coach */}
       {coach && normalized ? (
-        <div className="shrink-0 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.06] p-4">
+        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/[0.06] p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-400">Pipeline coaching</p>
           <p className="mt-2 text-sm font-medium text-white/90">{coach.stageLine}</p>
           <p className="mt-2 text-xs leading-relaxed text-white/55">
@@ -229,13 +231,13 @@ export default function LeadClosingPanel({
       ) : null}
 
       {err ? (
-        <div className="shrink-0 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">
           {err}
         </div>
       ) : null}
 
-      {/* Generate (fixed) */}
-      <div className="shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+      {/* Generate */}
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-white/40">AI closing strategy</p>
@@ -253,10 +255,10 @@ export default function LeadClosingPanel({
         <p className="mt-2 text-[10px] text-white/30">Uses 1 credit · Powered by Claude</p>
       </div>
 
-      {/* Tabs (fixed) + scrollable strategy / messages / objections */}
+      {/* Tabs + strategy / messages / objections */}
       {result ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02]">
-          <div className="flex shrink-0 border-b border-white/[0.08] p-1">
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="flex border-b border-white/[0.08] p-1">
             {(
               [
                 ["strategy", "Strategy"] as const,
@@ -278,7 +280,7 @@ export default function LeadClosingPanel({
               </button>
             ))}
           </div>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
+          <div className="space-y-3 p-4">
             {tab === "strategy" ? (
               <>
                 <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] p-3">
@@ -345,13 +347,13 @@ export default function LeadClosingPanel({
           </div>
         </div>
       ) : loading ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-6 text-center text-sm text-white/40">
+        <div className="flex items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-10 text-center text-sm text-white/40">
           Drafting your closing plan…
         </div>
       ) : null}
 
-      {/* Quick actions (pinned to bottom of panel) */}
-      <div className="mt-auto shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+      {/* Quick actions */}
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-white/40">Quick actions</p>
         <div className="flex flex-col gap-2">
           {canMoveNext && onMoveToNext ? (
@@ -378,6 +380,8 @@ export default function LeadClosingPanel({
           >
             Open in email app
           </a>
+        </div>
+      </div>
         </div>
       </div>
     </div>
