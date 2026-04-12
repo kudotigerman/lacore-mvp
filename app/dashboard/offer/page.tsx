@@ -68,10 +68,14 @@ function guaranteePillText(o: DashboardOffer): "Full refund" | "No guarantee" {
   return "No guarantee";
 }
 
-function audienceShort(s: string, max = 44): string {
+function audienceShort(s: string): string {
   const t = s.trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
+  return t.length > 40 ? `${t.slice(0, 40)}…` : t;
+}
+
+function pricingShort(s: string): string {
+  const t = s.trim();
+  return t.length > 60 ? `${t.slice(0, 60)}…` : t;
 }
 
 function parseOfferRefinementJson(raw: string): DashboardOffer | null {
@@ -750,7 +754,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                     </div>
                     <div>
                       <p className={fieldLabelClass}>Price point</p>
-                      <p className={`mt-1 ${fieldValueClass}`}>{displayOffer.pricing}</p>
+                      <p className={`mt-1 ${fieldValueClass}`}>{pricingShort(displayOffer.pricing)}</p>
                     </div>
                     <div>
                       <p className={fieldLabelClass}>Guarantee</p>
