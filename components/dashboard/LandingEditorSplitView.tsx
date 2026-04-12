@@ -8,6 +8,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickActions";
 import { dashToast } from "@/lib/dash-toast";
 import StripeConnect from "@/components/StripeConnect";
+import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimonialsPanel";
 
 const QUICK_ACTIONS = [
   "Change colors",
@@ -292,6 +293,7 @@ export function LandingEditorSplitView({
               <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Domain &amp; payments</p>
               <DomainConnect slug={slug} userId={d.userId} />
               <StripeConnect userId={d.userId} />
+              <LandingTestimonialsPanel slug={slug} />
             </div>
           ) : null}
         </div>

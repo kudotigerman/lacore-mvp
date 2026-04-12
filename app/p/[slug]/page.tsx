@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 import LandingPage from "@/app/components/landing/LandingPage";
+import { PublicTestimonialsSection } from "@/components/landing/PublicTestimonialsSection";
 import type { LandingContent } from "@/types/landing";
 
 const FRIENDLY_COMPILE_MESSAGE =
@@ -529,7 +530,10 @@ function PublicLandingPageContent() {
             </div>
           ) : jsonContent ? (
             <>
-              <LandingPage content={jsonContent} slug={slug} showBrandWatermark={showPublicBrandUi} />
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <LandingPage content={jsonContent} slug={slug} showBrandWatermark={showPublicBrandUi} />
+                <PublicTestimonialsSection slug={slug} />
+              </div>
               {showPublicBrandUi ? (
                 <button
                   type="button"
@@ -586,12 +590,15 @@ function PublicLandingPageContent() {
             </>
           ) : useLiveReact ? (
             <>
-              <div style={{ width: "100%", height: "100vh" }}>
-                <LiveLandingView
-                  jsxSource={jsxContent}
-                  height="100vh"
-                  key={jsxContent.slice(0, 120) + jsxContent.length}
-                />
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ width: "100%", height: "100vh", flexShrink: 0 }}>
+                  <LiveLandingView
+                    jsxSource={jsxContent}
+                    height="100vh"
+                    key={jsxContent.slice(0, 120) + jsxContent.length}
+                  />
+                </div>
+                <PublicTestimonialsSection slug={slug} />
               </div>
               {showPublicBrandUi ? (
                 <button
@@ -649,18 +656,22 @@ function PublicLandingPageContent() {
             </>
           ) : (
             <>
-              <iframe
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                srcDoc={htmlSrcDoc}
-                title="Landing page preview"
-                style={{
-                  width: "100%",
-                  height: "100vh",
-                  minHeight: "100vh",
-                  border: "none",
-                  display: "block"
-                }}
-              />
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <iframe
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  srcDoc={htmlSrcDoc}
+                  title="Landing page preview"
+                  style={{
+                    width: "100%",
+                    height: "100vh",
+                    minHeight: "100vh",
+                    border: "none",
+                    display: "block",
+                    flexShrink: 0
+                  }}
+                />
+                <PublicTestimonialsSection slug={slug} />
+              </div>
               {showPublicBrandUi ? (
                 <button
                   type="button"
