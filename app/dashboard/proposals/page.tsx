@@ -44,6 +44,11 @@ function formatProposalDate(iso: string): string {
   }
 }
 
+function publicProposalUrl(id: string): string {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.lacore.ai").replace(/\/$/, "");
+  return `${base}/proposal/${id}`;
+}
+
 function ProposalsPageInner() {
   const d = useDashboardData();
   const { activeProject } = useProjectContext();
@@ -264,6 +269,15 @@ function ProposalsPageInner() {
     void loadLeads();
   };
 
+  async function copyPublicProposalLink(id: string) {
+    try {
+      await navigator.clipboard.writeText(publicProposalUrl(id));
+      dashToast("Public proposal link copied");
+    } catch {
+      dashToast("Could not copy link");
+    }
+  }
+
   const handleLinkConfirm = async () => {
     if (!proposalId || !linkLeadId) return;
     const supabase = getSupabaseClient();
@@ -371,6 +385,25 @@ function ProposalsPageInner() {
               >
                 {copied ? "✓ Copied" : "Copy text"}
               </button>
+              {proposalId ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void copyPublicProposalLink(proposalId)}
+                    className="rounded-lg border border-indigo-500/35 px-3 py-1.5 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/10"
+                  >
+                    Share link
+                  </button>
+                  <a
+                    href={publicProposalUrl(proposalId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/60 transition-colors hover:text-white/90"
+                  >
+                    Open public page ↗
+                  </a>
+                </>
+              ) : null}
               <button
                 type="button"
                 onClick={handleSaveToLead}
@@ -395,18 +428,39 @@ function ProposalsPageInner() {
         <div className="mt-8">
           <h3 className="mb-3 text-xs uppercase tracking-wider text-white/30">Previous proposals</h3>
           {allProposals.map((p) => (
-            <button
+            <div
               key={p.id}
-              type="button"
-              onClick={() => void loadProposalById(p)}
-              className="mb-2 w-full rounded-xl border border-white/6 bg-white/[0.02] px-4 py-3 text-left transition-colors hover:border-white/15"
+              className="mb-2 flex overflow-hidden rounded-xl border border-white/6 bg-white/[0.02] transition-colors hover:border-white/15"
             >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm text-white/70">{p.client_name}</p>
-                <p className="shrink-0 text-xs text-white/30">{formatProposalDate(p.created_at)}</p>
+              <button
+                type="button"
+                onClick={() => void loadProposalById(p)}
+                className="min-w-0 flex-1 px-4 py-3 text-left"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-white/70">{p.client_name}</p>
+                  <p className="shrink-0 text-xs text-white/30">{formatProposalDate(p.created_at)}</p>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-white/40">{p.client_problem}</p>
+              </button>
+              <div className="flex w-[88px] shrink-0 flex-col justify-center gap-1 border-l border-white/10 px-2 py-2">
+                <button
+                  type="button"
+                  onClick={() => void copyPublicProposalLink(p.id)}
+                  className="rounded-lg py-1.5 text-center text-[10px] font-medium text-indigo-400 transition-colors hover:bg-white/5"
+                >
+                  Copy link
+                </button>
+                <a
+                  href={publicProposalUrl(p.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg py-1.5 text-center text-[10px] font-medium text-white/45 transition-colors hover:bg-white/5 hover:text-white/75"
+                >
+                  Open ↗
+                </a>
               </div>
-              <p className="mt-0.5 truncate text-xs text-white/40">{p.client_problem}</p>
-            </button>
+            </div>
           ))}
         </div>
       ) : null}
