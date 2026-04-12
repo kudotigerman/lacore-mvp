@@ -9,6 +9,7 @@ import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { useProjectContext } from "@/app/contexts/ProjectContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import type { LeadRow } from "@/components/LeadsList";
+import { normalizePipelineStatus, nextForwardStatus, type PipelineColumnId } from "@/lib/leadPipeline";
 
 function MailInboxIcon() {
   return (
@@ -30,30 +31,6 @@ const COLUMNS = [
 ] as const;
 
 type ColumnId = (typeof COLUMNS)[number]["id"];
-
-const FORWARD_ORDER: Exclude<ColumnId, "lost">[] = [
-  "new",
-  "contacted",
-  "replied",
-  "call_booked",
-  "proposal_sent",
-  "won"
-];
-
-function normalizePipelineStatus(raw: string | null | undefined): ColumnId {
-  const v = (raw ?? "new").trim().toLowerCase();
-  if (v === "in_talks") return "replied";
-  const ids = COLUMNS.map((c) => c.id);
-  if (ids.includes(v as ColumnId)) return v as ColumnId;
-  return "new";
-}
-
-function nextForwardStatus(current: ColumnId): ColumnId | null {
-  if (current === "lost") return null;
-  const i = FORWARD_ORDER.indexOf(current as (typeof FORWARD_ORDER)[number]);
-  if (i < 0 || i >= FORWARD_ORDER.length - 1) return null;
-  return FORWARD_ORDER[i + 1]!;
-}
 
 export default function DashboardLeadsPage() {
   const d = useDashboardData();
@@ -115,7 +92,7 @@ export default function DashboardLeadsPage() {
   const getLeadsByStatus = (colId: ColumnId) =>
     leads.filter((l) => normalizePipelineStatus(l.status) === colId);
 
-  async function moveToNextStatus(leadId: string, currentStatus: ColumnId) {
+  async function moveToNextStatus(leadId: string, currentStatus: PipelineColumnId) {
     const next = nextForwardStatus(currentStatus);
     if (!next) return;
     const supabase = getSupabaseClient();
@@ -362,8 +339,21 @@ export default function DashboardLeadsPage() {
                 })}
               </div>
             </div>
-            <div className="min-w-0 lg:w-[min(100%,420px)] lg:flex-shrink-0">
-              <LeadClosingPanel lead={selected} sessionToken={d.sessionToken} salesContext={d.salesBuilderContext} />
+            <div className="min-w-0 lg:w-[min(100%,420px)] lg:flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
+              <LeadClosingPanel
+                lead={selected}
+                sessionToken={d.sessionToken}
+                salesContext={d.salesBuilderContext}
+                onMoveToNext={
+                  selected
+                    ? () => void moveToNextStatus(selected.id, normalizePipelineStatus(selected.status))
+                    : undefined
+                }
+                canMoveNext={
+                  !!selected && nextForwardStatus(normalizePipelineStatus(selected.status)) !== null
+                }
+                onCreateProposal={selected ? () => generateProposalForLead(selected) : undefined}
+              />
             </div>
           </div>
         )}
