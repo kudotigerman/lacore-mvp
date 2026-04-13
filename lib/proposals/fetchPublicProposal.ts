@@ -9,6 +9,9 @@ export type PublicProposalPayload = {
   client_problem: string;
   created_at: string;
   user_id: string;
+  status: string | null;
+  signed_at: string | null;
+  signed_by_name: string | null;
   sections: ProposalSection[];
   senderDisplayName: string | null;
 };
@@ -51,6 +54,9 @@ type ProposalRow = {
   content: unknown;
   created_at: string;
   user_id: string;
+  status?: string | null;
+  signed_at?: string | null;
+  signed_by_name?: string | null;
   is_public?: boolean | null;
 };
 
@@ -79,7 +85,7 @@ export const fetchPublicProposalById = cache(async (id: string): Promise<PublicP
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  const baseColumns = "id, client_name, client_problem, content, created_at, user_id";
+  const baseColumns = "id, client_name, client_problem, content, created_at, user_id, status, signed_at, signed_by_name";
 
   let row: ProposalRow | null = null;
   let checkedIsPublic = false;
@@ -154,6 +160,9 @@ export const fetchPublicProposalById = cache(async (id: string): Promise<PublicP
     client_problem: row.client_problem,
     created_at: row.created_at,
     user_id: row.user_id,
+    status: typeof row.status === "string" ? row.status : null,
+    signed_at: typeof row.signed_at === "string" ? row.signed_at : null,
+    signed_by_name: typeof row.signed_by_name === "string" ? row.signed_by_name : null,
     sections,
     senderDisplayName: displayName
   };

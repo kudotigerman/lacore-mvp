@@ -16,6 +16,9 @@ type ProposalSummary = {
   client_name: string;
   client_problem: string;
   created_at: string;
+  status: string | null;
+  signed_at: string | null;
+  signed_by_name: string | null;
 };
 
 function parseProposalContent(raw: unknown): ProposalSection[] | null {
@@ -47,6 +50,32 @@ function formatProposalDate(iso: string): string {
 function publicProposalUrl(id: string): string {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.lacore.ai").replace(/\/$/, "");
   return `${base}/proposal/${id}`;
+}
+
+function formatStatusDate(iso: string | null): string {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+function statusMeta(row: ProposalSummary): { label: string; className: string } {
+  const status = (row.status || "").toLowerCase();
+  if (status === "paid") {
+    return { label: "Paid", className: "border-emerald-400/40 bg-emerald-500/15 text-emerald-300" };
+  }
+  if (status === "signed" || row.signed_at) {
+    const signer = row.signed_by_name?.trim() || "Client";
+    const date = formatStatusDate(row.signed_at);
+    const suffix = date ? ` · ${signer} · ${date}` : ` · ${signer}`;
+    return { label: `Signed ✓${suffix}`, className: "border-emerald-400/40 bg-emerald-500/15 text-emerald-300" };
+  }
+  if (status === "sent") {
+    return { label: "Sent", className: "border-amber-400/40 bg-amber-500/15 text-amber-300" };
+  }
+  return { label: "Draft", className: "border-slate-400/30 bg-slate-500/10 text-slate-300" };
 }
 
 function ProposalsPageInner() {
@@ -82,7 +111,7 @@ function ProposalsPageInner() {
       const supabase = getSupabaseClient();
       const { data: list } = await supabase
         .from("proposals")
-        .select("id, client_name, client_problem, created_at")
+        .select("id, client_name, client_problem, created_at, status, signed_at, signed_by_name")
         .eq("user_id", d.userId)
         .eq("project_id", activeProject.id)
         .order("created_at", { ascending: false })
@@ -189,7 +218,7 @@ function ProposalsPageInner() {
     const supabase = getSupabaseClient();
     const { data: list } = await supabase
       .from("proposals")
-      .select("id, client_name, client_problem, created_at")
+      .select("id, client_name, client_problem, created_at, status, signed_at, signed_by_name")
       .eq("user_id", d.userId)
       .eq("project_id", activeProject.id)
       .order("created_at", { ascending: false })
@@ -318,7 +347,7 @@ function ProposalsPageInner() {
         const supabase2 = getSupabaseClient();
         const { data: list } = await supabase2
           .from("proposals")
-          .select("id, client_name, client_problem, created_at")
+          .select("id, client_name, client_problem, created_at, status, signed_at, signed_by_name")
           .eq("user_id", d.userId)
           .eq("project_id", activeProject.id)
           .order("created_at", { ascending: false })
@@ -523,6 +552,13 @@ function ProposalsPageInner() {
                   <p className="shrink-0 text-xs text-white/30">{formatProposalDate(p.created_at)}</p>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-white/40">{p.client_problem}</p>
+                <div className="mt-2">
+                  <span
+                    className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold ${statusMeta(p).className}`}
+                  >
+                    {statusMeta(p).label}
+                  </span>
+                </div>
               </button>
               <div className="flex w-[140px] shrink-0 flex-col justify-center gap-1 border-l border-white/10 px-2 py-2">
                 <button

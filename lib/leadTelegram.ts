@@ -47,6 +47,19 @@ async function sendTelegramMessage(chatId: string, text: string): Promise<boolea
   return res.ok;
 }
 
+export async function sendTelegramTextToUser(userId: string, text: string): Promise<boolean> {
+  try {
+    const client = getServiceClient();
+    if (!client) return false;
+    const chatId = await resolveTelegramChatId(client, userId);
+    if (!chatId) return false;
+    return sendTelegramMessage(chatId, text);
+  } catch (error) {
+    console.error("sendTelegramTextToUser:", error);
+    return false;
+  }
+}
+
 export async function sendNewLeadTelegramNotification(input: {
   userId: string;
   name?: string | null;

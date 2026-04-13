@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       client_problem: row.client_problem,
       content: row.content
     } as never)
-    .select("id, client_name, client_problem, created_at")
+    .select("id, client_name, client_problem, created_at, status, signed_at, signed_by_name")
     .single();
 
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });

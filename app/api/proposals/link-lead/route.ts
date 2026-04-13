@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data: proposal, error: pErr } = await supabase
     .from("proposals")
-    .select("id, user_id")
+    .select("id, user_id, status")
     .eq("id", proposalId)
     .maybeSingle();
 
@@ -54,9 +54,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Lead not found." }, { status: 404 });
   }
 
+  const proposalRow = proposal as { status?: string | null };
+  const nextStatus =
+    proposalRow.status === "paid" || proposalRow.status === "signed" ? proposalRow.status : "sent";
+
   const { error: uErr } = await supabase
     .from("proposals")
-    .update({ lead_id: leadId } as never)
+    .update({ lead_id: leadId, status: nextStatus } as never)
     .eq("id", proposalId)
     .eq("user_id", user.id);
 

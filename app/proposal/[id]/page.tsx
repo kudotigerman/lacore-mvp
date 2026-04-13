@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { fetchPublicProposalById, siteBaseUrl } from "@/lib/proposals/fetchPublicProposal";
 import { ProposalAcceptButton } from "./ProposalAcceptButton";
+import { ProposalSignatureCard } from "./ProposalSignatureCard";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -61,7 +62,7 @@ export default async function PublicProposalPage({ params }: Props) {
       className={`${jakarta.className} min-h-screen bg-white text-slate-900 antialiased print:bg-white print:text-black`}
     >
       <header className="border-b border-slate-100 bg-white print:border-slate-200">
-        <div className="mx-auto max-w-3xl px-4 pb-10 pt-12 sm:px-6 sm:pt-16">
+        <div className="mx-auto w-full max-w-[600px] px-4 pb-10 pt-10 sm:pt-14">
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-indigo-600">Proposal</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             {data.client_name}
@@ -84,7 +85,7 @@ export default async function PublicProposalPage({ params }: Props) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+      <main className="mx-auto w-full max-w-[600px] px-4 py-10 sm:py-14">
         <div className="space-y-10 sm:space-y-12">
           {data.sections.map((section) => (
             <article
@@ -99,13 +100,18 @@ export default async function PublicProposalPage({ params }: Props) {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center gap-4 border-t border-slate-100 pt-10 print:hidden">
+        <div className="mt-10 space-y-4 border-t border-slate-100 pt-8 print:hidden">
+          <ProposalSignatureCard
+            proposalId={data.id}
+            initialSignedAt={data.signed_at}
+            initialSignedByName={data.signed_by_name}
+          />
           <ProposalAcceptButton />
         </div>
       </main>
 
       <footer className="mt-auto border-t border-slate-100 bg-slate-50/50 py-8 print:bg-white">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
+        <div className="mx-auto w-full max-w-[600px] px-4 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-500/90">Powered by LACORE</p>
           <p className="mt-2 text-xs text-slate-400">
             Professional proposals for freelancers and consultants ·{" "}
