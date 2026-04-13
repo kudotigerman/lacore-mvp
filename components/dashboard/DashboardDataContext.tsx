@@ -453,11 +453,16 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       try {
         const supabase = getSupabaseClient();
         const {
-          data: { session }
-        } = await supabase.auth.getSession();
-        const sessionToken = session?.access_token;
-        if (!sessionToken) {
-          throw new Error("Not authenticated");
+          data: { session },
+          error: sessionError
+        } = await supabase.auth.refreshSession();
+        let sessionToken: string;
+        if (sessionError || !session?.access_token) {
+          const { data: { session: fallbackSession } } = await supabase.auth.getSession();
+          if (!fallbackSession?.access_token) throw new Error("Not authenticated");
+          sessionToken = fallbackSession.access_token;
+        } else {
+          sessionToken = session.access_token;
         }
         setSessionToken(sessionToken);
 
@@ -465,6 +470,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         if (!supabaseUrl || !(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "")) {
           throw new Error("Missing Supabase configuration.");
         }
+        console.log("anon key present:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
         const response = await fetch(`${supabaseUrl}/functions/v1/generate-landing`, {
           method: "POST",
           headers: {
