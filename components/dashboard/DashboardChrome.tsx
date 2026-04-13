@@ -389,7 +389,9 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             max-height: none;
             overflow: auto;
           }
-          .dash-sidebar-col { width: 100% !important; height: auto !important; border-right: none !important; border-bottom: 1px solid #1C1C22; flex-shrink: 0; }
+          .dash-sidebar-col {
+            display: none !important;
+          }
           .dash-main-col { flex: 1; min-height: 0; overflow: visible !important; }
         }
       `}</style>
@@ -405,13 +407,11 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       ) : null}
 
       <aside
-        className="dash-sidebar-col hidden border-r border-white/[0.06] bg-[#060608] lg:flex"
+        className="dash-sidebar-col hidden flex-col border-r border-white/[0.06] bg-[#060608] lg:flex"
         style={{
           width: SIDEBAR_W,
           flexShrink: 0,
           height: "100vh",
-          display: "flex",
-          flexDirection: "column",
           boxSizing: "border-box"
         }}
       >
@@ -658,18 +658,10 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => void data.handleSignOut()}
-            className="dash-sidebar-footer-link"
+            className="dash-sidebar-footer-link mt-1 hidden w-full cursor-pointer border-0 bg-transparent p-0 text-left font-inherit lg:block"
             style={{
-              display: "block",
-              padding: 0,
-              border: "none",
-              background: "none",
               fontSize: 11,
-              color: "#3F3F46",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              textAlign: "left",
-              marginTop: 4
+              color: "#3F3F46"
             }}
           >
             Sign out
@@ -834,7 +826,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setChatOpen(true)}
-              className={`dash-sb-fab dash-sb-fab--closed fixed right-6 z-40 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500 ${salesBuilderFabBottom}`}
+              className={`dash-sb-fab dash-sb-fab--closed fixed right-6 z-40 hidden items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-500 lg:flex ${salesBuilderFabBottom}`}
               aria-expanded={false}
               aria-controls="dash-sales-builder-panel"
             >
