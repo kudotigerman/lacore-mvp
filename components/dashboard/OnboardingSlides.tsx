@@ -3,12 +3,25 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
+import { getSupabaseClient } from "@/lib/supabase";
 
 const ONBOARDING_KEY = "lacore_onboarding_done";
+
+const ROLE_OPTIONS = [
+  "Designer",
+  "Consultant",
+  "Coach",
+  "Developer",
+  "Agency",
+  "Real Estate Agent"
+] as const;
 
 export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [roleSaved, setRoleSaved] = useState(false);
+  const [roleSaving, setRoleSaving] = useState(false);
+  const [roleError, setRoleError] = useState<string | null>(null);
 
   function finishAndDismiss() {
     try {
@@ -26,6 +39,31 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
   function handleStartBuilding() {
     finishAndDismiss();
     router.push("/dashboard/offer");
+  }
+
+  async function handleSelectRole(role: string) {
+    setRoleError(null);
+    setRoleSaving(true);
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        setRoleError("Sign in required.");
+        return;
+      }
+      const { error } = await supabase.from("profiles").update({ role }).eq("user_id", session.user.id);
+      if (error) {
+        setRoleError(error.message);
+        return;
+      }
+      setRoleSaved(true);
+    } catch {
+      setRoleError("Could not save. Try again.");
+    } finally {
+      setRoleSaving(false);
+    }
   }
 
   const steps = [
@@ -81,7 +119,41 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
       </div>
     </div>,
 
-    <div key="4" className="text-center">
+    <div key="4" className="w-full px-0">
+      <h2 className="mb-4 text-center text-lg font-semibold text-white">What best describes you?</h2>
+      <div className="grid grid-cols-2 gap-2">
+        {ROLE_OPTIONS.map((label) => (
+          <button
+            key={label}
+            type="button"
+            disabled={roleSaving || roleSaved}
+            onClick={() => void handleSelectRole(label)}
+            className={`rounded-xl border px-2 py-2.5 text-center text-xs font-medium transition-colors disabled:cursor-default ${
+              roleSaved
+                ? "border-white/10 bg-white/[0.04] text-white/35"
+                : "border-white/15 bg-white/[0.04] text-white/80 hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {roleError ? <p className="mt-3 text-center text-xs text-red-400">{roleError}</p> : null}
+      {roleSaving ? <p className="mt-3 text-center text-xs text-white/40">Saving…</p> : null}
+      {roleSaved ? (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={handleStartBuilding}
+            className="rounded-xl bg-indigo-600 px-10 py-4 text-base font-medium text-white transition-colors hover:bg-indigo-500"
+          >
+            Start building →
+          </button>
+        </div>
+      ) : null}
+    </div>,
+
+    <div key="5" className="text-center">
       <h2 className="mb-3 text-2xl font-bold text-white">Ready to get your first client?</h2>
       <p className="mb-8 text-white/50">Start by defining what you sell. Takes 2 minutes.</p>
       <button
@@ -94,11 +166,13 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
     </div>
   ];
 
+  const dotIndices = slides.map((_, i) => i);
+
   return (
     <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0D0F1A] p-8">
         <div className="mb-8 flex justify-center gap-2">
-          {[0, 1, 2, 3].map((i) => (
+          {dotIndices.map((i) => (
             <div
               key={i}
               className={`h-1 rounded-full transition-all ${
@@ -118,13 +192,25 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
           >
             Skip
           </button>
-          {currentSlide < 3 ? (
+          {currentSlide === 3 && !roleSaved ? (
+            <span className="text-xs text-white/30">Choose a role to continue</span>
+          ) : null}
+          {currentSlide <= 2 ? (
             <button
               type="button"
               onClick={() => setCurrentSlide((s) => s + 1)}
               className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
             >
               Continue →
+            </button>
+          ) : null}
+          {currentSlide === 3 && roleSaved ? (
+            <button
+              type="button"
+              onClick={() => setCurrentSlide(4)}
+              className="text-sm text-white/40 transition-colors hover:text-white/65"
+            >
+              One more tip →
             </button>
           ) : null}
         </div>

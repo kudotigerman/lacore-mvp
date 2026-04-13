@@ -184,6 +184,8 @@ export default function DashboardAnalyticsPage() {
   const newThisWeek = leads.filter((r) => new Date(r.created_at).getTime() >= weekAgo).length;
   const wonDeals = leads.filter((r) => normalizeStatus(r.status) === "won").length;
   const landingViewsNum = landingViews ?? 0;
+  const hasRealAnalyticsSignal = totalLeads > 0 || landingViewsNum > 0;
+  const showSamplePlaceholder = !loading && !hasRealAnalyticsSignal;
 
   const metrics = useMemo(
     () => [
@@ -272,6 +274,40 @@ export default function DashboardAnalyticsPage() {
         <p className="text-sm text-white/40">Loading…</p>
       ) : (
         <>
+          {showSamplePlaceholder ? (
+            <div className="mb-8">
+              <div className="mb-4 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white/55">
+                📊 Sample data — your real stats will appear here as you get leads
+              </div>
+              <div
+                className="pointer-events-none select-none space-y-3 opacity-[0.38]"
+                aria-hidden
+              >
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    { label: "Total leads", value: "12", sub: "+3 this week (sample)" },
+                    { label: "Landing views", value: "47", sub: "People visited your page (sample)", highlight: true },
+                    { label: "Won deals", value: "3", sub: "🎉 Keep going! (sample)" },
+                    { label: "Conversion rate", value: "25%", sub: "Leads → Won deals (sample)" }
+                  ].map((m) => (
+                    <div
+                      key={m.label}
+                      className={`rounded-xl border p-5 ${
+                        "highlight" in m && m.highlight
+                          ? "border-indigo-500/25 bg-indigo-500/[0.06]"
+                          : "border-white/[0.08] bg-white/[0.03]"
+                      }`}
+                    >
+                      <p className="text-xs uppercase tracking-wider text-white/40">{m.label}</p>
+                      <p className="mt-2 text-3xl font-bold text-white/50">{m.value}</p>
+                      <p className="mt-1 text-xs text-white/35">{m.sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {totalLeads === 0 ? (
             <div className="mb-8 rounded-2xl border border-indigo-500/15 bg-indigo-500/5 p-8 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15">
@@ -310,7 +346,7 @@ export default function DashboardAnalyticsPage() {
             </div>
           ) : null}
 
-          {totalLeads > 0 ? (
+          {hasRealAnalyticsSignal ? (
             <>
               <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {metrics.map((m) => (
@@ -427,28 +463,36 @@ export default function DashboardAnalyticsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentLeads.map((lead) => (
-                        <tr key={lead.id} className="border-b border-white/4 last:border-0 hover:bg-white/[0.02]">
-                          <td className="py-3 pr-4">
-                            <p className="text-sm text-white">{lead.name?.trim() || lead.email}</p>
-                            <p className="text-xs text-white/30">{lead.email}</p>
-                          </td>
-                          <td className="py-3 pr-4 text-xs text-white/45">{leadSource(lead.slug)}</td>
-                          <td className="py-3 pr-4">
-                            <StatusBadge status={lead.status} />
-                          </td>
-                          <td className="py-3 pr-4 text-xs text-white/30">{formatDate(lead.created_at)}</td>
-                          <td className="py-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => router.push("/dashboard/leads")}
-                              className="text-xs text-indigo-400 hover:text-indigo-300"
-                            >
-                              View →
-                            </button>
+                      {recentLeads.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-sm text-white/35">
+                            No leads yet — share your landing page to fill this table.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        recentLeads.map((lead) => (
+                          <tr key={lead.id} className="border-b border-white/4 last:border-0 hover:bg-white/[0.02]">
+                            <td className="py-3 pr-4">
+                              <p className="text-sm text-white">{lead.name?.trim() || lead.email}</p>
+                              <p className="text-xs text-white/30">{lead.email}</p>
+                            </td>
+                            <td className="py-3 pr-4 text-xs text-white/45">{leadSource(lead.slug)}</td>
+                            <td className="py-3 pr-4">
+                              <StatusBadge status={lead.status} />
+                            </td>
+                            <td className="py-3 pr-4 text-xs text-white/30">{formatDate(lead.created_at)}</td>
+                            <td className="py-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => router.push("/dashboard/leads")}
+                                className="text-xs text-indigo-400 hover:text-indigo-300"
+                              >
+                                View →
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

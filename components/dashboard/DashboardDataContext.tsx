@@ -48,6 +48,10 @@ export type DashboardFunnelStatus = {
   content: boolean;
   leads: boolean;
   completedSteps: number;
+  /** Sum of landing_pages.views for active project */
+  landingViewsTotal: number;
+  leadsTotalCount: number;
+  hasWonLead: boolean;
 };
 
 const UI_THEME_STORAGE_KEY = "lacore-theme";
@@ -229,7 +233,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         landing: !!j.landing,
         content: !!j.content,
         leads: !!j.leads,
-        completedSteps: typeof j.completedSteps === "number" ? j.completedSteps : 0
+        completedSteps: typeof j.completedSteps === "number" ? j.completedSteps : 0,
+        landingViewsTotal: typeof j.landingViewsTotal === "number" ? j.landingViewsTotal : 0,
+        leadsTotalCount: typeof j.leadsTotalCount === "number" ? j.leadsTotalCount : 0,
+        hasWonLead: !!j.hasWonLead
       });
     } catch {
       /* ignore */
@@ -352,7 +359,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             landing: !!j.landing,
             content: !!j.content,
             leads: !!j.leads,
-            completedSteps: typeof j.completedSteps === "number" ? j.completedSteps : 0
+            completedSteps: typeof j.completedSteps === "number" ? j.completedSteps : 0,
+            landingViewsTotal: typeof j.landingViewsTotal === "number" ? j.landingViewsTotal : 0,
+            leadsTotalCount: typeof j.leadsTotalCount === "number" ? j.leadsTotalCount : 0,
+            hasWonLead: !!j.hasWonLead
           });
         }
       } catch {

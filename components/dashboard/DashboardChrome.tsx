@@ -25,6 +25,7 @@ import { dashPremiumCss } from "@/components/dashboard/dashTokens";
 import { LandingGenerationLoader } from "@/components/dashboard/LandingGenerationLoader";
 
 const CHAT_STORAGE_KEY = "lacore-chat-history";
+const CHECKLIST_COLLAPSED_KEY = "lacore_checklist_collapsed";
 
 type DashChatMessage = { role: "user" | "assistant"; text: string };
 
@@ -112,8 +113,30 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [checklistCollapsed, setChecklistCollapsed] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInitDone = useRef(false);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(CHECKLIST_COLLAPSED_KEY);
+      if (v === "false") setChecklistCollapsed(false);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleChecklistCollapsed() {
+    setChecklistCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(CHECKLIST_COLLAPSED_KEY, next ? "true" : "false");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     function onToast(e: Event) {
@@ -180,6 +203,44 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   const flowCompletedCount = [offerDone, landingDone, contentDone].filter(Boolean).length;
   const flowTotal = 3;
   const flowPct = Math.round((flowCompletedCount / flowTotal) * 100);
+
+  const checklistItems = useMemo(
+    () => [
+      {
+        id: "offer",
+        label: "Create your offer",
+        href: "/dashboard/offer",
+        done: !!funnel?.offer
+      },
+      {
+        id: "landing",
+        label: "Build your landing page",
+        href: "/dashboard/landing",
+        done: !!funnel?.landing
+      },
+      {
+        id: "share",
+        label: "Share your landing page",
+        href: "/dashboard/landing",
+        done: (funnel?.landingViewsTotal ?? 0) > 0
+      },
+      {
+        id: "lead",
+        label: "Get your first lead",
+        href: "/dashboard/leads",
+        done: (funnel?.leadsTotalCount ?? 0) > 0
+      },
+      {
+        id: "won",
+        label: "Close first deal",
+        href: "/dashboard/leads",
+        done: !!funnel?.hasWonLead
+      }
+    ],
+    [funnel]
+  );
+  const checklistDoneCount = checklistItems.filter((i) => i.done).length;
+  const checklistAllDone = checklistDoneCount === checklistItems.length;
 
   const nextFlowHint = !offerDone
     ? "Next: Offer"
@@ -371,6 +432,52 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
               <p className="pt-1 text-[9px] text-white/25">{nextFlowHint}</p>
             </div>
           )}
+        </div>
+
+        <div className="border-b border-white/[0.06] px-3 pb-2 pt-0">
+          <button
+            type="button"
+            onClick={toggleChecklistCollapsed}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider text-white/35 transition-colors hover:bg-white/[0.04] hover:text-white/50"
+            aria-expanded={!checklistCollapsed}
+          >
+            <span>Launch checklist</span>
+            <span className="text-white/25">{checklistCollapsed ? "▸" : "▾"}</span>
+          </button>
+          {!checklistCollapsed ? (
+            <div className="mt-1 space-y-1.5 px-1 pb-1">
+              <p className="px-1 text-[10px] text-white/30">
+                {checklistDoneCount}/{checklistItems.length} complete
+              </p>
+              {checklistAllDone ? (
+                <p className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-1.5 text-[10px] font-medium leading-snug text-emerald-300/95">
+                  Your sales system is live! 🎉
+                </p>
+              ) : null}
+              {checklistItems.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="flex items-start gap-2 rounded-md px-1 py-1 text-[11px] no-underline transition-colors hover:bg-white/[0.04]"
+                >
+                  <span
+                    className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border text-[9px] ${
+                      item.done
+                        ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-400"
+                        : "border-white/20 bg-transparent text-transparent"
+                    }`}
+                    aria-hidden
+                  >
+                    {item.done ? "✓" : ""}
+                  </span>
+                  <span className={`min-w-0 flex-1 leading-snug ${item.done ? "text-white/45" : "text-white/65"}`}>
+                    {item.label}
+                  </span>
+                  <span className="shrink-0 text-indigo-400/80">→</span>
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
