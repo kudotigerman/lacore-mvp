@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseJsClient, type SupabaseClient } from "@supabase/supabase-js";
+import { aiComplete, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
 import { checkCredits, deductCredits } from "@/lib/credits";
 import { createClient } from "@/utils/supabase/server";
 
@@ -109,41 +110,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
+    if (!hasAiProviderConfigured()) {
+      return NextResponse.json({ error: "Server AI is not configured." }, { status: 500 });
     }
 
-    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2500,
+    let text: string;
+    try {
+      text = await aiComplete({
         system: systemPrompt,
-        messages: [{ role: "user", content: userInput.trim() }]
-      })
-    });
-
-    if (!anthropicResponse.ok) {
-      const details = await anthropicResponse.text();
-      return NextResponse.json(
-        { error: "Claude request failed.", details },
-        { status: anthropicResponse.status }
-      );
+        user: userInput.trim(),
+        maxTokens: 2500,
+      });
+    } catch {
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
-
-    const completion = (await anthropicResponse.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
-
-    const text = completion.content?.find((item) => item.type === "text")?.text?.trim();
+    text = text.trim();
     if (!text) {
-      return NextResponse.json({ error: "No text returned from Claude." }, { status: 502 });
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
     }
 
     let variants: OfferVariant[] | null = null;
@@ -154,7 +137,7 @@ export async function POST(request: Request) {
     }
 
     if (!variants) {
-      return NextResponse.json({ error: "Claude returned invalid variants schema." }, { status: 502 });
+      return NextResponse.json({ error: "AI returned an invalid offer format. Please try again." }, { status: 502 });
     }
 
     if (project_id) {

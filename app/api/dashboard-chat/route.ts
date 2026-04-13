@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { aiCompleteMessages, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
 
 export const maxDuration = 60;
 
@@ -113,10 +114,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Last message must be from user." }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!apiKey || !supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !hasAiProviderConfigured()) {
       return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
     }
 
@@ -139,34 +139,19 @@ export async function POST(request: Request) {
 
     const system = buildSystemPrompt(normalizeSalesContext(body));
 
-    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
+    let reply: string;
+    try {
+      reply = await aiCompleteMessages({
         system,
-        messages: anthropicMessages
-      })
-    });
-
-    if (!anthropicResponse.ok) {
-      const details = await anthropicResponse.text();
-      return NextResponse.json({ error: "Assistant request failed.", details }, { status: 502 });
+        messages: anthropicMessages,
+        maxTokens: 4096,
+      });
+    } catch {
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
-
-    const completion = (await anthropicResponse.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
-
-    const reply = completion.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
-
+    reply = reply.trim();
     if (!reply) {
-      return NextResponse.json({ error: "Empty assistant response." }, { status: 502 });
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
     }
 
     return NextResponse.json({ reply });

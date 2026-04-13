@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { compileLandingJsx } from "@/lib/compileLandingJsx";
+import { AI_BUSY_USER_MESSAGE } from "@/lib/claudeWithRetry";
 import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 120;
@@ -132,34 +133,46 @@ function tryCompileJsx(jsx: string): { ok: true } | { ok: false; message: string
 }
 
 async function callClaude(apiKey: string, system: string, userContent: ClaudeUserContent): Promise<string> {
-  const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 12000,
-      system,
-      messages: [{ role: "user", content: userContent }]
-    })
-  });
-
-  if (!anthropicResponse.ok) {
-    const details = await anthropicResponse.text();
-    throw new Error(`Claude request failed: ${anthropicResponse.status} ${details}`);
-  }
-
-  const completion = (await anthropicResponse.json()) as {
-    content?: Array<{ type: string; text?: string }>;
+  const payload = {
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 12000,
+    system,
+    messages: [{ role: "user" as const, content: userContent }],
   };
-  const raw = completion.content?.find((item) => item.type === "text")?.text?.trim();
-  if (!raw) {
-    throw new Error("Empty response from Claude.");
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (anthropicResponse.ok) {
+      const completion = (await anthropicResponse.json()) as {
+        content?: Array<{ type: string; text?: string }>;
+      };
+      const raw = completion.content?.find((item) => item.type === "text")?.text?.trim();
+      if (!raw) {
+        throw new Error(AI_BUSY_USER_MESSAGE);
+      }
+      return cleanClaudeCode(raw);
+    }
+
+    const retryable =
+      anthropicResponse.status === 529 ||
+      anthropicResponse.status === 503 ||
+      anthropicResponse.status === 429;
+    if (retryable && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+      continue;
+    }
+    throw new Error(AI_BUSY_USER_MESSAGE);
   }
-  return cleanClaudeCode(raw);
+  throw new Error(AI_BUSY_USER_MESSAGE);
 }
 
 export async function POST(request: Request) {
@@ -269,9 +282,8 @@ Return the complete updated component.`;
       let jsx: string;
       try {
         jsx = await callClaude(apiKey, editJsxSystemPrompt, userContent);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Claude request failed.";
-        return NextResponse.json({ error: msg }, { status: 502 });
+      } catch {
+        return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
       }
 
       jsx = ensureExportDefaultLandingPage(jsx);
@@ -295,9 +307,8 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
         const retryContent = buildClaudeUserContent(retryText, imageBase64 || undefined, imageMediaTypeRaw);
         try {
           jsx = await callClaude(apiKey, editJsxSystemPrompt, retryContent);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : "Claude request failed on retry.";
-          return NextResponse.json({ error: msg }, { status: 502 });
+        } catch {
+          return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
         }
         jsx = ensureExportDefaultLandingPage(jsx);
         shapeErr = validateJsxShape(jsx);
@@ -348,13 +359,12 @@ Return the complete updated HTML.`;
     let html: string;
     try {
       html = await callClaude(apiKey, editHtmlSystemPrompt, htmlContent);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Claude request failed.";
-      return NextResponse.json({ error: msg }, { status: 502 });
+    } catch {
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
 
     if (!html.startsWith("<!DOCTYPE html>")) {
-      return NextResponse.json({ error: "Invalid HTML returned from Claude." }, { status: 502 });
+      return NextResponse.json({ error: "Invalid HTML returned. Please try again." }, { status: 502 });
     }
 
     const { error: saveError } = await supabase

@@ -275,11 +275,12 @@ Return the complete updated HTML.`;
     });
 
     if (!anthropicRes.ok) {
-      const details = await anthropicRes.text();
       return new Response(
-        JSON.stringify({ error: "Claude request failed.", details }),
+        JSON.stringify({
+          error: "Our AI is temporarily busy. Please try again in a moment.",
+        }),
         {
-          status: 502,
+          status: 503,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
@@ -288,7 +289,9 @@ Return the complete updated HTML.`;
     const streamBody = anthropicRes.body;
     if (!streamBody) {
       return new Response(
-        JSON.stringify({ error: "No response body from Claude." }),
+        JSON.stringify({
+          error: "Our AI is temporarily busy. Please try again in a moment.",
+        }),
         {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -344,7 +347,7 @@ Return the complete updated HTML.`;
 
     if (!html.startsWith("<!DOCTYPE html>") && !html.startsWith("<html")) {
       return new Response(
-        JSON.stringify({ error: "Invalid HTML returned from Claude." }),
+        JSON.stringify({ error: "Invalid HTML returned. Please try again." }),
         {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

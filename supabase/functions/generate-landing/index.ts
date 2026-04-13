@@ -155,11 +155,12 @@ Site vibe: ${body.siteVibe || "Professional"}`;
     });
 
     if (!anthropicRes.ok) {
-      const details = await anthropicRes.text();
       return new Response(
-        JSON.stringify({ error: "Claude request failed.", details }),
+        JSON.stringify({
+          error: "Our AI is temporarily busy. Please try again in a moment.",
+        }),
         {
-          status: 502,
+          status: 503,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );

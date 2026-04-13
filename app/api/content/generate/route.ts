@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { aiComplete, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
 import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 120;
@@ -104,29 +105,6 @@ function normalizeFive(posts: { id: number; text: string }[]): { id: number; tex
     throw new Error(`Expected 5 posts, got ${posts.length}.`);
   }
   return posts.slice(0, 5).map((p, i) => ({ id: i + 1, text: p.text }));
-}
-
-async function runClaude(system: string, userPrompt: string, apiKey: string): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      system,
-      messages: [{ role: "user", content: userPrompt }]
-    })
-  });
-  if (!res.ok) {
-    const details = await res.text();
-    throw new Error(`Claude error: ${details.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-  return data.content?.find((c) => c.type === "text")?.text?.trim() ?? "";
 }
 
 async function runOpenAI(system: string, userPrompt: string, apiKey: string): Promise<string> {
@@ -252,9 +230,14 @@ export async function POST(request: Request) {
 
     let text = "";
     if (model === "claude") {
-      const key = process.env.ANTHROPIC_API_KEY;
-      if (!key) return NextResponse.json({ error: "Claude is not configured." }, { status: 500 });
-      text = await runClaude(system, userPrompt, key);
+      if (!hasAiProviderConfigured()) {
+        return NextResponse.json({ error: "AI generation is not configured." }, { status: 500 });
+      }
+      try {
+        text = await aiComplete({ system, user: userPrompt, maxTokens: 4096 });
+      } catch {
+        return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
+      }
     } else if (model === "gpt4o") {
       const key = process.env.OPENAI_API_KEY;
       if (!key) return NextResponse.json({ error: "OpenAI is not configured." }, { status: 500 });
@@ -265,8 +248,11 @@ export async function POST(request: Request) {
       text = await runGemini(system, userPrompt, key);
     }
 
-    if (!text) {
-      return NextResponse.json({ error: "Empty model response." }, { status: 502 });
+    if (!text.trim()) {
+      return NextResponse.json(
+        { error: model === "claude" ? AI_BUSY_USER_MESSAGE : "Empty model response." },
+        { status: 502 }
+      );
     }
 
     let posts: { id: number; text: string }[];

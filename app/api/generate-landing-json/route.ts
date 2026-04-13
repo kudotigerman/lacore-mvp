@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { aiComplete, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
 import type { LandingContent } from "@/types/landing";
 
 type Payload = {
@@ -62,9 +63,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "Missing environment variables." }, { status: 500 });
+    if (!hasAiProviderConfigured()) {
+      return NextResponse.json({ error: "Server AI is not configured." }, { status: 500 });
     }
 
     const userMessage = `Generate JSON landing content.
@@ -75,34 +75,22 @@ Pricing: ${body.pricing}
 Positioning: ${body.positioning}
 Suggested headline: ${body.headline}`;
 
-    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 6000,
-        temperature: 0.8,
+    let text: string;
+    try {
+      text = await aiComplete({
         system: systemPrompt,
-        messages: [{ role: "user", content: userMessage }],
-      }),
-    });
-
-    if (!anthropicResponse.ok) {
-      const details = await anthropicResponse.text();
-      return NextResponse.json({ error: "Claude request failed.", details }, { status: 502 });
+        user: userMessage,
+        maxTokens: 6000,
+      });
+    } catch {
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
-
-    const parsed = (await anthropicResponse.json()) as {
-      content?: Array<{ type?: string; text?: string }>;
-    };
-    const text = parsed.content?.find((x) => x.type === "text")?.text ?? "";
     const json = parseClaudeJson(text);
     if (!json) {
-      return NextResponse.json({ error: "Invalid JSON returned from Claude." }, { status: 502 });
+      return NextResponse.json(
+        { error: "Could not parse landing content from AI. Please try again." },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ success: true, data: json });

@@ -572,7 +572,7 @@ export default function LeadClosingPanel({
             {loading ? "Generating…" : result ? "Regenerate" : "Generate closing strategy"}
           </button>
         </div>
-        <p className="mt-2 text-[10px] text-white/30">Uses 1 credit · Powered by Claude</p>
+        <p className="mt-2 text-[10px] text-white/30">Uses 1 credit</p>
       </div>
 
       {/* Tabs + strategy / messages / objections */}

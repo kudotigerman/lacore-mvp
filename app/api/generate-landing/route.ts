@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import type { LandingContent } from "@/types/landing";
+import { AI_BUSY_USER_MESSAGE } from "@/lib/claudeWithRetry";
 import { PLANS, type PlanName } from "@/lib/plans";
 import { checkCredits, deductCredits } from "@/lib/credits";
 import { injectStripeCheckoutHtml } from "@/lib/injectStripeCheckoutHtml";
@@ -40,6 +41,30 @@ function cleanHtml(raw: string): string {
     .replace(/^```(?:html)?\s*/im, "")
     .replace(/\s*```\s*$/im, "")
     .trim();
+}
+
+async function fetchAnthropicStreamingLanding(apiKey: string, body: Record<string, unknown>): Promise<Response> {
+  let last: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
+    });
+    last = res;
+    if (res.ok) return res;
+    const retryable = res.status === 529 || res.status === 503 || res.status === 429;
+    if (retryable && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+      continue;
+    }
+    return res;
+  }
+  return last!;
 }
 
 export async function POST(request: Request) {
@@ -124,8 +149,7 @@ export async function POST(request: Request) {
     });
 
     if (!jsonResponse.ok) {
-      const details = await jsonResponse.text();
-      return NextResponse.json({ error: "Claude request failed.", details }, { status: 502 });
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
     }
 
     const generated = (await jsonResponse.json()) as {
@@ -161,31 +185,22 @@ Contact form slug value: SLUG_VALUE
 
 Return the complete HTML document only. No explanation.`;
 
-    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 12000,
-        temperature: 0.8,
-        stream: true,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userMessage }],
-      }),
+    const anthropicResponse = await fetchAnthropicStreamingLanding(apiKey, {
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 12000,
+      temperature: 0.8,
+      stream: true,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }],
     });
 
     if (!anthropicResponse.ok) {
-      const details = await anthropicResponse.text();
-      return NextResponse.json({ error: "Claude request failed.", details }, { status: 502 });
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
 
     const streamBody = anthropicResponse.body;
     if (!streamBody) {
-      return NextResponse.json({ error: "No response body from Claude." }, { status: 502 });
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
     }
 
     const reader = streamBody.getReader();

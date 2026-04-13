@@ -511,7 +511,7 @@ export default function DashboardAnalyticsPage() {
                     <p className="mt-1 text-xs text-white/40">Actionable coaching from your pipeline data.</p>
                   </div>
                   <span className="rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
-                    Powered by Claude
+                    Powered by LACORE AI
                   </span>
                 </div>
                 <button

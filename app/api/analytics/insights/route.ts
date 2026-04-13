@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseJsClient, type SupabaseClient } from "@supabase/supabase-js";
+import { aiComplete, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
 import { checkCredits, deductCredits } from "@/lib/credits";
 import { upsertSavedResult } from "@/lib/saved-results";
 import { createClient } from "@/utils/supabase/server";
@@ -146,37 +147,23 @@ export async function GET(request: Request) {
       2
     );
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
+    if (!hasAiProviderConfigured()) {
+      return NextResponse.json({ error: "Server AI is not configured." }, { status: 500 });
     }
 
-    const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2048,
+    let text: string;
+    try {
+      text = await aiComplete({
         system: SYSTEM,
-        messages: [{ role: "user", content: userContent }]
-      })
-    });
-
-    if (!anthropicResponse.ok) {
-      const details = await anthropicResponse.text();
-      return NextResponse.json({ error: "Claude request failed.", details }, { status: anthropicResponse.status });
+        user: userContent,
+        maxTokens: 2048,
+      });
+    } catch {
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
-
-    const completion = (await anthropicResponse.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
-    const text = completion.content?.find((item) => item.type === "text")?.text?.trim();
+    text = text.trim();
     if (!text) {
-      return NextResponse.json({ error: "No text returned from Claude." }, { status: 502 });
+      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
     }
 
     const insights = parseInsights(text);
