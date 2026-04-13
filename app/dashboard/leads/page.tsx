@@ -125,7 +125,7 @@ export default function DashboardLeadsPage() {
       data: { session }
     } = await supabase.auth.getSession();
     if (!session?.access_token) return;
-    const res = await fetch("/api/leads/status", {
+    const res = await fetch("/api/leads/update", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
