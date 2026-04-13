@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { sendNewLeadTelegramNotification } from "@/lib/leadTelegram";
 
 export type LeadNotifyInput = {
   userId: string;
@@ -14,10 +15,6 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-function escapeTelegramHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 async function sendOwnerEmail(
@@ -57,34 +54,6 @@ async function sendOwnerEmail(
         <p style="color: #888; font-size: 12px;">Sent by LACORE — lacore.ai</p>
       </div>
     `
-    })
-  });
-
-  return res.ok;
-}
-
-async function sendTelegramNotify(
-  chatId: string,
-  name: string,
-  leadEmail: string,
-  message: string,
-  slug: string
-): Promise<boolean> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return false;
-
-  const n = escapeTelegramHtml(name || "—");
-  const e = escapeTelegramHtml(leadEmail);
-  const m = escapeTelegramHtml(message || "No message");
-  const s = escapeTelegramHtml(slug);
-
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: `🔔 <b>New Lead!</b>\n\n👤 ${n}\n📧 ${e}\n💬 ${m}\n🔗 ${s}\n\n⚡ Sent via LACORE`,
-      parse_mode: "HTML"
     })
   });
 
@@ -135,7 +104,13 @@ export async function runLeadNotifications(input: LeadNotifyInput): Promise<{
 
   const telegramTask = async (): Promise<boolean> => {
     if (!telegramChatId) return false;
-    return sendTelegramNotify(telegramChatId, input.name, input.email, input.message, input.slug);
+    return sendNewLeadTelegramNotification({
+      userId: input.userId,
+      name: input.name,
+      email: input.email,
+      message: input.message,
+      slug: input.slug
+    });
   };
 
   const [emailSettled, telegramSettled] = await Promise.allSettled([emailTask(), telegramTask()]);

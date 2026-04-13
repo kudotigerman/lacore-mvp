@@ -10,6 +10,8 @@ export default function DashboardSettingsPage() {
   const d = useDashboardData();
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [billingCredits, setBillingCredits] = useState<number | null>(null);
+  const [telegramTestLoading, setTelegramTestLoading] = useState(false);
+  const [telegramTestMessage, setTelegramTestMessage] = useState<string | null>(null);
 
   function applyBillingPayload(data: { plan?: string; credits_balance?: unknown }) {
     setBillingPlan(typeof data.plan === "string" && data.plan.length > 0 ? data.plan : "free");
@@ -51,6 +53,34 @@ export default function DashboardSettingsPage() {
     on
       ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-300"
       : "border-white/10 bg-transparent text-white/50";
+
+  const handleSendTelegramTest = useCallback(async () => {
+    if (!d.sessionToken) {
+      setTelegramTestMessage("Session expired. Refresh and try again.");
+      return;
+    }
+    setTelegramTestLoading(true);
+    setTelegramTestMessage(null);
+    try {
+      const res = await fetch("/api/telegram/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${d.sessionToken}`
+        }
+      });
+      const json = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok || !json.success) {
+        setTelegramTestMessage(json.error || "Failed to send test notification.");
+        return;
+      }
+      setTelegramTestMessage("Test notification sent.");
+    } catch {
+      setTelegramTestMessage("Failed to send test notification.");
+    } finally {
+      setTelegramTestLoading(false);
+    }
+  }, [d.sessionToken]);
 
   return (
     <div className="min-h-full max-w-xl">
@@ -120,8 +150,19 @@ export default function DashboardSettingsPage() {
           />
         </label>
         <p className="mt-2 text-xs leading-relaxed text-white/35">
-          To get your Chat ID: open Telegram → find @lacorebot → send /start → the bot replies with your Chat ID.
+          Send /start to @lacorebot to get your chat ID.
         </p>
+        <div className="mt-3">
+          <button
+            type="button"
+            disabled={telegramTestLoading}
+            onClick={() => void handleSendTelegramTest()}
+            className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/80 transition-colors hover:border-white/25 hover:text-white disabled:opacity-60"
+          >
+            {telegramTestLoading ? "Sending..." : "Send test notification"}
+          </button>
+          {telegramTestMessage ? <p className="mt-2 text-xs text-white/50">{telegramTestMessage}</p> : null}
+        </div>
         <p className="mt-3 text-xs text-white/30">Use Save below to persist notification settings.</p>
       </div>
 

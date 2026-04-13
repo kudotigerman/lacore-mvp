@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { sendWonDealTelegramNotification } from "@/lib/leadTelegram";
 
 const STATUSES = new Set([
   "new",
@@ -44,6 +45,16 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid leadId or status." }, { status: 400 });
   }
 
+  const { data: existingLead, error: existingLeadError } = await supabase
+    .from("leads")
+    .select("id, status")
+    .eq("id", leadId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingLeadError) return NextResponse.json({ error: existingLeadError.message }, { status: 500 });
+  if (!existingLead) return NextResponse.json({ error: "Lead not found." }, { status: 404 });
+
   const { data, error } = await supabase
     .from("leads")
     .update({ status })
@@ -54,6 +65,14 @@ export async function PATCH(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: "Lead not found." }, { status: 404 });
+
+  if (existingLead.status !== "won" && status === "won") {
+    void sendWonDealTelegramNotification({
+      userId: user.id,
+      name: typeof data.name === "string" ? data.name : null,
+      dealValue: typeof data.deal_value === "number" ? data.deal_value : null
+    }).catch((err) => console.error("won deal telegram notify:", err));
+  }
 
   return NextResponse.json({ lead: data });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import { sendNewLeadTelegramNotification } from "@/lib/leadTelegram";
 
 export async function POST(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -74,6 +75,15 @@ export async function POST(req: NextRequest) {
   if (insErr) {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
+
+  void sendNewLeadTelegramNotification({
+    userId: user.id,
+    name: name || null,
+    email,
+    phone: phone || null,
+    message: message || null,
+    slug: "manual"
+  }).catch((err) => console.error("manual lead telegram notify:", err));
 
   return NextResponse.json({ lead });
 }
