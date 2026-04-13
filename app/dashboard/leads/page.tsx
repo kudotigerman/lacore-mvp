@@ -365,6 +365,14 @@ export default function DashboardLeadsPage() {
                   onMoveToNext={() => void moveToNextStatus(selected.id, normalizePipelineStatus(selected.status))}
                   canMoveNext={nextForwardStatus(normalizePipelineStatus(selected.status)) !== null}
                   onCreateProposal={() => generateProposalForLead(selected)}
+                  onLeadUpdated={(updated) => {
+                    setLeads((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)));
+                    setSelected((s) => (s?.id === updated.id ? { ...s, ...updated } : s));
+                  }}
+                  onLeadDeleted={(leadId) => {
+                    setLeads((prev) => prev.filter((l) => l.id !== leadId));
+                    setSelected(null);
+                  }}
                 />
               </aside>
             ) : null}

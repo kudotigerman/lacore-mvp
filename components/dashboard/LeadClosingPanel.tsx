@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { LeadRow } from "@/components/LeadsList";
 import type { SalesBuilderContextPayload } from "@/components/dashboard/DashboardDataContext";
 import {
@@ -75,6 +75,30 @@ function statusBadgeClass(status: PipelineColumnId): string {
   return map[status];
 }
 
+type EditField = "name" | "email" | "phone" | "message";
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+  );
+}
+
+const EDIT_INPUT =
+  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none";
+
 export default function LeadClosingPanel({
   lead,
   sessionToken,
@@ -82,7 +106,9 @@ export default function LeadClosingPanel({
   onMoveToNext,
   canMoveNext,
   onCreateProposal,
-  onClose
+  onClose,
+  onLeadUpdated,
+  onLeadDeleted
 }: {
   lead: LeadRow | null;
   sessionToken: string | null;
@@ -92,11 +118,21 @@ export default function LeadClosingPanel({
   onCreateProposal?: () => void;
   /** Shown as top-right X when provided (slide-in panel). */
   onClose?: () => void;
+  onLeadUpdated?: (lead: LeadRow) => void;
+  onLeadDeleted?: (leadId: string) => void;
 }) {
   const [tab, setTab] = useState<ClosingTab>("strategy");
   const [result, setResult] = useState<ClosingPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EditField | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saveFlash, setSaveFlash] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const saveLeadLock = useRef(false);
+  const escapeRef = useRef(false);
+  const editInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   const normalized = useMemo(
     () => (lead ? normalizePipelineStatus(lead.status) : null),
@@ -111,7 +147,122 @@ export default function LeadClosingPanel({
     setResult(null);
     setErr(null);
     setTab("strategy");
+    setEditing(null);
+    setDeleteConfirm(false);
   }, [lead?.id]);
+
+  useLayoutEffect(() => {
+    if (!editing) return;
+    const el = editInputRef.current;
+    if (!el) return;
+    el.focus();
+    if (el instanceof HTMLInputElement) el.select();
+  }, [editing]);
+
+  const fieldDisplayValue = useCallback(
+    (field: EditField, row: LeadRow): string => {
+      switch (field) {
+        case "name":
+          return row.name?.trim() ?? "";
+        case "email":
+          return row.email ?? "";
+        case "phone":
+          return row.phone?.trim() ?? "";
+        case "message":
+          return row.message?.trim() ?? "";
+        default:
+          return "";
+      }
+    },
+    []
+  );
+
+  const startEdit = useCallback(
+    (field: EditField) => {
+      if (!lead) return;
+      setDraft(fieldDisplayValue(field, lead));
+      setEditing(field);
+    },
+    [lead, fieldDisplayValue]
+  );
+
+  const commitEditing = useCallback(async () => {
+    if (!sessionToken || !lead || !editing || saveLeadLock.current) return;
+    const field = editing;
+    const current = fieldDisplayValue(field, lead);
+    if (draft === current) {
+      setEditing(null);
+      return;
+    }
+
+    saveLeadLock.current = true;
+    try {
+      const body: Record<string, string> = { lead_id: lead.id };
+      if (field === "name") body.name = draft;
+      if (field === "email") body.email = draft;
+      if (field === "phone") body.phone = draft;
+      if (field === "message") body.message = draft;
+
+      const res = await fetch("/api/leads/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify(body)
+      });
+      const json = (await res.json()) as { lead?: LeadRow; error?: string };
+      if (!res.ok) {
+        setErr(json.error ?? "Could not save lead.");
+        return;
+      }
+      if (json.lead) {
+        onLeadUpdated?.(json.lead as LeadRow);
+        setSaveFlash(true);
+        window.setTimeout(() => setSaveFlash(false), 1000);
+      }
+      setEditing(null);
+    } catch {
+      setErr("Network error.");
+    } finally {
+      saveLeadLock.current = false;
+    }
+  }, [sessionToken, lead, editing, draft, fieldDisplayValue, onLeadUpdated]);
+
+  const cancelEditing = useCallback(() => {
+    escapeRef.current = true;
+    setEditing(null);
+    window.setTimeout(() => {
+      escapeRef.current = false;
+    }, 100);
+  }, []);
+
+  async function confirmDeleteLead() {
+    if (!sessionToken || !lead) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/leads/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({ lead_id: lead.id })
+      });
+      const json = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok) {
+        setErr(json.error ?? "Could not delete lead.");
+        return;
+      }
+      setDeleteConfirm(false);
+      onLeadDeleted?.(lead.id);
+      onClose?.();
+    } catch {
+      setErr("Network error.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function generateClosingStrategy() {
     if (!sessionToken || !lead?.id) return;
@@ -188,13 +339,140 @@ export default function LeadClosingPanel({
       {/* Lead header */}
       <div className="rounded-xl border border-white/[0.08] bg-gradient-to-br from-indigo-500/[0.08] to-transparent p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-indigo-400/90">Selected lead</p>
-            <p className="mt-1 truncate text-lg font-semibold text-white">{lead.name?.trim() || lead.email}</p>
-            <p className="truncate text-sm text-white/50">{lead.email}</p>
-            {lead.phone?.trim() ? (
-              <p className="mt-0.5 text-sm text-white/45">{lead.phone}</p>
-            ) : null}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-indigo-400/90">Selected lead</p>
+              {saveFlash ? (
+                <span className="text-[10px] font-medium text-emerald-400/75 transition-opacity">Saved</span>
+              ) : null}
+            </div>
+
+            <div className="group relative mt-1 flex min-w-0 items-center gap-1.5">
+              {editing === "name" ? (
+                <input
+                  ref={(el) => {
+                    editInputRef.current = el;
+                  }}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelEditing();
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      void commitEditing();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (escapeRef.current) return;
+                    void commitEditing();
+                  }}
+                  className={`${EDIT_INPUT} text-lg font-semibold`}
+                  placeholder="Name"
+                  aria-label="Lead name"
+                />
+              ) : (
+                <>
+                  <p className="min-w-0 flex-1 truncate text-lg font-semibold text-white">
+                    {lead.name?.trim() || lead.email}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => startEdit("name")}
+                    aria-label="Edit name"
+                    className="shrink-0 rounded-md p-1 text-white/30 transition-all hover:bg-white/5 hover:text-white/55 group-hover:text-white/45 [@media(hover:none)]:text-white/35"
+                  >
+                    <PencilIcon className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="group relative mt-1 flex min-w-0 items-center gap-1.5">
+              {editing === "email" ? (
+                <input
+                  ref={(el) => {
+                    editInputRef.current = el;
+                  }}
+                  type="email"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelEditing();
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      void commitEditing();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (escapeRef.current) return;
+                    void commitEditing();
+                  }}
+                  className={EDIT_INPUT}
+                  aria-label="Lead email"
+                />
+              ) : (
+                <>
+                  <p className="min-w-0 flex-1 truncate text-sm text-white/50">{lead.email}</p>
+                  <button
+                    type="button"
+                    onClick={() => startEdit("email")}
+                    aria-label="Edit email"
+                    className="shrink-0 rounded-md p-1 text-white/30 transition-all hover:bg-white/5 hover:text-white/55 group-hover:text-white/45 [@media(hover:none)]:text-white/35"
+                  >
+                    <PencilIcon className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="group relative mt-0.5 flex min-w-0 items-center gap-1.5">
+              {editing === "phone" ? (
+                <input
+                  ref={(el) => {
+                    editInputRef.current = el;
+                  }}
+                  type="tel"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelEditing();
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      void commitEditing();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (escapeRef.current) return;
+                    void commitEditing();
+                  }}
+                  className={EDIT_INPUT}
+                  placeholder="Phone"
+                  aria-label="Lead phone"
+                />
+              ) : (
+                <>
+                  <p
+                    className={`min-w-0 flex-1 truncate text-sm ${lead.phone?.trim() ? "text-white/45" : "text-white/30 italic"}`}
+                  >
+                    {lead.phone?.trim() || "Add phone"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => startEdit("phone")}
+                    aria-label="Edit phone"
+                    className="shrink-0 rounded-md p-1 text-white/30 transition-all hover:bg-white/5 hover:text-white/55 group-hover:text-white/45 [@media(hover:none)]:text-white/35"
+                  >
+                    <PencilIcon className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           {normalized ? (
             <span
@@ -204,12 +482,50 @@ export default function LeadClosingPanel({
             </span>
           ) : null}
         </div>
-        {lead.message?.trim() ? (
-          <div className="mt-3 border-t border-white/10 pt-3">
+
+        <div className="group mt-3 border-t border-white/10 pt-3">
+          <div className="flex items-start justify-between gap-2">
             <p className="text-[10px] font-medium uppercase tracking-wider text-white/35">Their message</p>
-            <p className="mt-1 text-sm leading-relaxed text-white/65">&quot;{lead.message.trim()}&quot;</p>
+            {editing !== "message" ? (
+              <button
+                type="button"
+                onClick={() => startEdit("message")}
+                aria-label="Edit message"
+                className="shrink-0 rounded-md p-1 text-white/30 transition-all hover:bg-white/5 hover:text-white/55 group-hover:text-white/45 [@media(hover:none)]:text-white/35"
+              >
+                <PencilIcon className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
           </div>
-        ) : null}
+          {editing === "message" ? (
+            <textarea
+              ref={(el) => {
+                editInputRef.current = el;
+              }}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  cancelEditing();
+                }
+              }}
+              onBlur={() => {
+                if (escapeRef.current) return;
+                void commitEditing();
+              }}
+              rows={4}
+              className={`${EDIT_INPUT} mt-1 resize-y`}
+              placeholder="Notes from the lead…"
+              aria-label="Lead message"
+            />
+          ) : (
+            <p className="mt-1 text-sm leading-relaxed text-white/65">
+              {lead.message?.trim() ? `“${lead.message.trim()}”` : <span className="text-white/35">No message</span>}
+            </p>
+          )}
+        </div>
+
         <p className="mt-3 text-[11px] text-white/35">Added {formatLeadDate(lead.created_at)}</p>
       </div>
 
@@ -381,6 +697,40 @@ export default function LeadClosingPanel({
             Open in email app
           </a>
         </div>
+      </div>
+
+      <div className="pt-1">
+        {deleteConfirm ? (
+          <div className="rounded-lg border border-red-500/20 bg-red-500/[0.06] p-3">
+            <p className="mb-3 text-xs leading-relaxed text-red-200/85">Delete this lead permanently?</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void confirmDeleteLead()}
+                className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/30 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteConfirm(false)}
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/50 transition-colors hover:text-white/70 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDeleteConfirm(true)}
+            className="text-[11px] font-medium text-red-500/45 transition-colors hover:text-red-400/80"
+          >
+            Delete lead
+          </button>
+        )}
       </div>
         </div>
       </div>
