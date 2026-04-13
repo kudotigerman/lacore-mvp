@@ -168,7 +168,7 @@ async function callOpenAI(
   systemPrompt: string,
   userMessage: string,
 ): Promise<string> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -183,11 +183,16 @@ async function callOpenAI(
       ],
     }),
   });
-  const data = await response.json() as {
+  const openaiData = await openaiResponse.json() as {
     choices?: Array<{ message?: { content?: string | null } }>;
   };
-  if (!response.ok) return "";
-  const t = data.choices?.[0]?.message?.content;
+  console.log("OpenAI fallback status:", openaiResponse.status);
+  console.log(
+    "OpenAI fallback body:",
+    JSON.stringify(openaiData).substring(0, 200),
+  );
+  if (!openaiResponse.ok) return "";
+  const t = openaiData.choices?.[0]?.message?.content;
   return typeof t === "string" ? t : "";
 }
 
@@ -390,6 +395,12 @@ Site vibe: ${body.siteVibe || "Professional"}`;
       );
     }
 
+    const generated = jsonContent;
+    console.log(
+      "JSON step result:",
+      JSON.stringify(generated).substring(0, 200),
+    );
+
     const emailBase = body.userEmail
       .split("@")[0]
       .replace(/[^a-zA-Z0-9-]/g, "-")
@@ -435,7 +446,7 @@ IMPORTANT: Use the style config colors throughout ALL inline styles. Replace all
     let htmlRaw = "";
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const anthropicHtmlRes = await fetch(
+        const response = await fetch(
           "https://api.anthropic.com/v1/messages",
           {
             method: "POST",
@@ -454,17 +465,18 @@ IMPORTANT: Use the style config colors throughout ALL inline styles. Replace all
             }),
           },
         );
-        const parsedHtml = await anthropicHtmlRes.json() as {
+        console.log("Anthropic attempt", attempt, "status:", response.status);
+        const parsedHtml = await response.json() as {
           content?: Array<{ text?: string }>;
           error?: { type?: string };
         };
-        if (anthropicHtmlRes.ok) {
+        if (response.ok) {
           htmlRaw = parsedHtml.content?.[0]?.text ?? "";
           if (htmlRaw) break;
           break;
         }
         if (
-          isRetryableAnthropicResponse(anthropicHtmlRes.status, parsedHtml) &&
+          isRetryableAnthropicResponse(response.status, parsedHtml) &&
           attempt < 2
         ) {
           await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
