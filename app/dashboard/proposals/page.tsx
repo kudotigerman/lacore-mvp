@@ -68,6 +68,7 @@ function ProposalsPageInner() {
   const [linkSaving, setLinkSaving] = useState(false);
   const [allProposals, setAllProposals] = useState<ProposalSummary[]>([]);
   const [loadingProposals, setLoadingProposals] = useState(true);
+  const [proposalActionBusyId, setProposalActionBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,6 +178,86 @@ function ProposalsPageInner() {
       setProposal(sections);
       setProposalId(row.id);
       setProposalCreatedAt(row.created_at);
+    }
+  }
+
+  async function refreshProposalList() {
+    if (!d.userId || !activeProject?.id) {
+      setAllProposals([]);
+      return;
+    }
+    const supabase = getSupabaseClient();
+    const { data: list } = await supabase
+      .from("proposals")
+      .select("id, client_name, client_problem, created_at")
+      .eq("user_id", d.userId)
+      .eq("project_id", activeProject.id)
+      .order("created_at", { ascending: false })
+      .limit(40);
+    setAllProposals((list as ProposalSummary[] | null) ?? []);
+  }
+
+  async function duplicateProposal(p: ProposalSummary) {
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setProposalActionBusyId(p.id);
+    try {
+      const res = await fetch("/api/proposals/duplicate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ proposal_id: p.id })
+      });
+      const json = (await res.json()) as { proposal?: ProposalSummary; error?: string };
+      if (!res.ok || !json.proposal) {
+        dashToast(json.error ?? "Could not duplicate proposal.");
+        return;
+      }
+      await refreshProposalList();
+      await loadProposalById(json.proposal);
+      dashToast("Proposal duplicated.");
+    } finally {
+      setProposalActionBusyId(null);
+    }
+  }
+
+  async function deleteProposal(p: ProposalSummary) {
+    const ok = window.confirm(`Delete proposal for ${p.client_name}?`);
+    if (!ok) return;
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setProposalActionBusyId(p.id);
+    try {
+      const res = await fetch("/api/proposals/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ proposal_id: p.id })
+      });
+      const json = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok) {
+        dashToast(json.error ?? "Could not delete proposal.");
+        return;
+      }
+      setAllProposals((prev) => prev.filter((x) => x.id !== p.id));
+      if (proposalId === p.id) {
+        setProposal(null);
+        setProposalId(null);
+        setProposalCreatedAt(null);
+      }
+      dashToast("Proposal deleted.");
+    } finally {
+      setProposalActionBusyId(null);
     }
   }
 
@@ -430,7 +511,7 @@ function ProposalsPageInner() {
           {allProposals.map((p) => (
             <div
               key={p.id}
-              className="mb-2 flex overflow-hidden rounded-xl border border-white/6 bg-white/[0.02] transition-colors hover:border-white/15"
+              className="group mb-2 flex overflow-hidden rounded-xl border border-white/6 bg-white/[0.02] transition-colors hover:border-white/15"
             >
               <button
                 type="button"
@@ -443,7 +524,30 @@ function ProposalsPageInner() {
                 </div>
                 <p className="mt-0.5 truncate text-xs text-white/40">{p.client_problem}</p>
               </button>
-              <div className="flex w-[88px] shrink-0 flex-col justify-center gap-1 border-l border-white/10 px-2 py-2">
+              <div className="flex w-[140px] shrink-0 flex-col justify-center gap-1 border-l border-white/10 px-2 py-2">
+                <button
+                  type="button"
+                  onClick={() => void loadProposalById(p)}
+                  className="rounded-lg py-1.5 text-center text-[10px] font-semibold text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/5"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  disabled={proposalActionBusyId === p.id}
+                  onClick={() => void duplicateProposal(p)}
+                  className="rounded-lg py-1.5 text-center text-[10px] font-medium text-white/55 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/5 hover:text-white/80 disabled:opacity-40"
+                >
+                  Duplicate
+                </button>
+                <button
+                  type="button"
+                  disabled={proposalActionBusyId === p.id}
+                  onClick={() => void deleteProposal(p)}
+                  className="rounded-lg py-1.5 text-center text-[10px] font-medium text-red-400/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 disabled:opacity-40"
+                >
+                  Delete
+                </button>
                 <button
                   type="button"
                   onClick={() => void copyPublicProposalLink(p.id)}

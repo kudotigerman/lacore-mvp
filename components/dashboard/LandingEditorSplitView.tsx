@@ -32,6 +32,7 @@ export function LandingEditorSplitView({
   views: number | null;
   onViewsRefresh: () => void;
 }) {
+  const undoStorageKey = `lacore_landing_prev_${slug}`;
   const d = useDashboardData();
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMsg[]>(() => [
@@ -46,6 +47,8 @@ export function LandingEditorSplitView({
   const [iframeKey, setIframeKey] = useState(0);
   const [copied, setCopied] = useState(false);
   const [regenerateConfirm, setRegenerateConfirm] = useState(false);
+  const [undoVisible, setUndoVisible] = useState(false);
+  const [undoBusy, setUndoBusy] = useState(false);
 
   useEffect(() => {
     try {
@@ -60,6 +63,7 @@ export function LandingEditorSplitView({
 
   useEffect(() => {
     setIframeKey((k) => k + 1);
+    setUndoVisible(false);
   }, [slug]);
 
   const handleCopy = useCallback(async () => {
@@ -146,6 +150,78 @@ export function LandingEditorSplitView({
     d.setRegenerateError(null);
     setRegenerateConfirm(true);
   }, [d]);
+
+  async function handleConfirmRegenerate() {
+    d.setRegenerateError(null);
+    const supabase = getSupabaseClient();
+    try {
+      const { data, error } = await supabase
+        .from("landing_pages")
+        .select("html_content")
+        .eq("slug", slug)
+        .eq("user_id", d.userId ?? "")
+        .maybeSingle();
+      if (!error) {
+        const html = (data as { html_content?: string | null } | null)?.html_content?.trim();
+        if (html) {
+          localStorage.setItem(
+            undoStorageKey,
+            JSON.stringify({
+              html,
+              expiresAt: Date.now() + 60_000
+            })
+          );
+        }
+      }
+    } catch {
+      /* ignore local backup failures */
+    }
+
+    await d.handleRegenerateSiteConfirmed();
+    setRegenerateConfirm(false);
+
+    try {
+      const raw = localStorage.getItem(undoStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { expiresAt?: number };
+      if (typeof parsed.expiresAt === "number" && parsed.expiresAt > Date.now()) {
+        setUndoVisible(true);
+        window.setTimeout(() => setUndoVisible(false), 60_000);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function handleUndoLanding() {
+    setUndoBusy(true);
+    const supabase = getSupabaseClient();
+    try {
+      const raw = localStorage.getItem(undoStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { html?: string; expiresAt?: number };
+      if (!parsed.html || !parsed.expiresAt || parsed.expiresAt < Date.now()) {
+        localStorage.removeItem(undoStorageKey);
+        setUndoVisible(false);
+        return;
+      }
+      const { error } = await supabase
+        .from("landing_pages")
+        .update({ html_content: parsed.html } as never)
+        .eq("slug", slug)
+        .eq("user_id", d.userId ?? "");
+      if (error) throw new Error(error.message);
+      setIframeKey((k) => k + 1);
+      onViewsRefresh();
+      setUndoVisible(false);
+      localStorage.removeItem(undoStorageKey);
+      dashToast("Previous landing version restored.");
+    } catch {
+      dashToast("Could not restore previous version.");
+    } finally {
+      setUndoBusy(false);
+    }
+  }
 
   const checklistItems = [
     { label: "Page created", done: true },
@@ -269,6 +345,16 @@ export function LandingEditorSplitView({
                 Regenerate
               </button>
             </div>
+            {undoVisible ? (
+              <button
+                type="button"
+                disabled={undoBusy}
+                onClick={() => void handleUndoLanding()}
+                className="text-left text-[11px] text-indigo-300/90 underline transition-colors hover:text-indigo-200 disabled:opacity-50"
+              >
+                {undoBusy ? "Restoring…" : "Undo — restore previous version"}
+              </button>
+            ) : null}
 
             <button
               type="button"
@@ -355,9 +441,7 @@ export function LandingEditorSplitView({
               <button
                 type="button"
                 onClick={() => {
-                  d.setRegenerateError(null);
-                  void d.handleRegenerateSiteConfirmed();
-                  setRegenerateConfirm(false);
+                  void handleConfirmRegenerate();
                 }}
                 disabled={d.buildingLanding}
                 className="flex-1 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-50"

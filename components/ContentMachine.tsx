@@ -90,6 +90,9 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
   const [creditsError, setCreditsError] = useState(false);
   const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
   const [postsLoading, setPostsLoading] = useState(false);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [postActionBusyId, setPostActionBusyId] = useState<string | null>(null);
   const creditsBal = useCreditsBalance();
 
   const fetchGeneratedPosts = useCallback(async () => {
@@ -358,6 +361,80 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
     window.setTimeout(() => setCopiedId(null), 2000);
   }
 
+  function startEditPost(post: PostItem) {
+    setEditingPostId(post.id);
+    setEditingText(post.text);
+  }
+
+  async function saveEditPost(postId: string) {
+    const content = editingText.trim();
+    if (!content) return;
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setPostActionBusyId(postId);
+    try {
+      const res = await fetch("/api/content/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ post_id: postId, content })
+      });
+      const json = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? "Could not save post.");
+        return;
+      }
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, text: content } : p)));
+      setEditingPostId(null);
+      setEditingText("");
+    } finally {
+      setPostActionBusyId(null);
+    }
+  }
+
+  async function deletePost(postId: string) {
+    const ok = window.confirm("Delete this post?");
+    if (!ok) return;
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setPostActionBusyId(postId);
+    try {
+      const res = await fetch("/api/content/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ post_id: postId })
+      });
+      const json = (await res.json()) as { success?: boolean; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? "Could not delete post.");
+        return;
+      }
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      setPostImages((prev) => {
+        const next = { ...prev };
+        delete next[postId];
+        return next;
+      });
+      if (editingPostId === postId) {
+        setEditingPostId(null);
+        setEditingText("");
+      }
+    } finally {
+      setPostActionBusyId(null);
+    }
+  }
+
   const pillCls = (on: boolean) =>
     `rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-150 border ${
       on
@@ -495,7 +572,7 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
               return (
                 <div
                   key={`${post.id}-${idx}`}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-5 transition-colors hover:border-white/[0.15]"
+                  className="group rounded-xl border border-white/[0.08] bg-white/[0.04] p-5 transition-colors hover:border-white/[0.15]"
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
@@ -507,6 +584,23 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
                       </span>
                     </div>
                     <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        disabled={postActionBusyId === post.id}
+                        onClick={() => void deletePost(post.id)}
+                        className="rounded p-1 text-xs text-red-400/0 transition-all group-hover:text-red-400/75 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                        aria-label="Delete post"
+                      >
+                        ✕
+                      </button>
+                      <button
+                        type="button"
+                        disabled={postActionBusyId === post.id}
+                        onClick={() => startEditPost(post)}
+                        className="text-xs text-white/40 transition-colors hover:text-white/70 disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
                       <button
                         type="button"
                         disabled={regeneratingId !== null || loading}
@@ -524,13 +618,44 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
                       </button>
                     </div>
                   </div>
-                  <p
-                    className={`text-sm leading-relaxed text-white/70 whitespace-pre-wrap ${
-                      !expanded && isLong ? "line-clamp-6" : ""
-                    }`}
-                  >
-                    {post.text}
-                  </p>
+                  {editingPostId === post.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        rows={6}
+                        className="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm leading-relaxed text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingPostId(null);
+                            setEditingText("");
+                          }}
+                          className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/50 hover:text-white/70"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={postActionBusyId === post.id || !editingText.trim()}
+                          onClick={() => void saveEditPost(post.id)}
+                          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p
+                      className={`text-sm leading-relaxed text-white/70 whitespace-pre-wrap ${
+                        !expanded && isLong ? "line-clamp-6" : ""
+                      }`}
+                    >
+                      {post.text}
+                    </p>
+                  )}
                   {isLong ? (
                     <button
                       type="button"
