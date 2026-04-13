@@ -638,7 +638,7 @@ export default function DashboardLeadsPage() {
 
             {selected ? (
               <aside
-                className={`fixed inset-x-0 bottom-0 top-auto z-[60] flex h-[92vh] min-h-0 flex-col rounded-t-2xl border border-white/[0.08] bg-[var(--content-bg)] transition-transform duration-200 ease-out lg:static lg:inset-auto lg:z-auto lg:h-[min(100vh-8rem,900px)] lg:w-[400px] lg:max-w-[400px] lg:flex-shrink-0 lg:rounded-none lg:border-l lg:bg-transparent lg:shadow-none ${
+                className={`fixed inset-x-0 bottom-0 top-auto z-[60] flex h-[calc(100dvh-4.5rem)] max-h-[calc(100dvh-4.5rem)] min-h-0 flex-col overflow-hidden rounded-t-2xl border border-white/[0.08] bg-[var(--content-bg)] transition-transform duration-200 ease-out lg:static lg:inset-auto lg:z-auto lg:h-[min(100vh-8rem,900px)] lg:max-h-none lg:w-[400px] lg:max-w-[400px] lg:flex-shrink-0 lg:rounded-none lg:border-l lg:bg-transparent lg:shadow-none ${
                   panelEnter ? "translate-y-0 lg:translate-x-0" : "translate-y-full lg:translate-x-full"
                 } `}
                 onTouchStart={(e) => setPanelTouchStartY(e.touches[0]?.clientY ?? null)}

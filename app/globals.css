@@ -306,6 +306,10 @@ body::before {
 }
 
 @media (max-width: 1023px) {
+  .dashboard-main {
+    padding-bottom: 72px;
+  }
+
   .dash-shell-root input,
   .dash-shell-root select,
   .dash-shell-root textarea {

@@ -333,7 +333,7 @@ export default function DashboardAnalyticsPage() {
                 className="pointer-events-none select-none space-y-3 opacity-[0.38]"
                 aria-hidden
               >
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                   {[
                     { label: "Total leads", value: "12", sub: "+3 this week (sample)" },
                     { label: "Landing views", value: "47", sub: "People visited your page (sample)", highlight: true },
@@ -398,7 +398,7 @@ export default function DashboardAnalyticsPage() {
 
           {hasRealAnalyticsSignal ? (
             <>
-              <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {metrics.map((m) => (
                   <div
                     key={m.label}
@@ -415,7 +415,7 @@ export default function DashboardAnalyticsPage() {
                 ))}
               </div>
 
-              <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="mb-8 grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
                   <p className="text-xs uppercase tracking-wider text-white/40">Total revenue</p>
                   <p
@@ -444,6 +444,13 @@ export default function DashboardAnalyticsPage() {
                     {String(revenueBlock.wonThisMonth)}
                   </p>
                   <p className="mt-1 text-xs text-white/35">Won leads added this calendar month</p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
+                  <p className="text-xs uppercase tracking-wider text-white/40">Won deals total</p>
+                  <p className={`mt-2 text-3xl font-bold ${wonDeals > 0 ? "text-emerald-300" : "text-white/30"}`}>
+                    {String(wonDeals)}
+                  </p>
+                  <p className="mt-1 text-xs text-white/35">All-time closed won leads</p>
                 </div>
               </div>
 
@@ -478,9 +485,9 @@ export default function DashboardAnalyticsPage() {
                     const count = countInFunnel(stage.status);
                     const pct = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
                     return (
-                      <div key={stage.status} className="flex items-center gap-3">
-                        <span className="w-24 shrink-0 text-right text-xs text-white/40">{stage.label}</span>
-                        <div className="h-6 flex-1 overflow-hidden rounded-lg bg-white/5">
+                      <div key={stage.status} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="w-full text-left text-xs text-white/40 sm:w-24 sm:shrink-0 sm:text-right">{stage.label}</span>
+                        <div className="h-6 w-full flex-1 overflow-hidden rounded-lg bg-white/5">
                           <div
                             className={`flex h-full items-center rounded-lg px-2 transition-all ${stage.color}`}
                             style={{ width: `${Math.max(pct, count > 0 ? 8 : 3)}%` }}
@@ -490,7 +497,7 @@ export default function DashboardAnalyticsPage() {
                             ) : null}
                           </div>
                         </div>
-                        <span className="w-8 shrink-0 text-xs text-white/30">{pct}%</span>
+                        <span className="w-full text-right text-xs text-white/30 sm:w-8 sm:shrink-0">{pct}%</span>
                       </div>
                     );
                   })}

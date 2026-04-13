@@ -168,7 +168,7 @@ export default function DashboardSettingsPage() {
           type="button"
           disabled={d.profileSaving}
           onClick={() => void d.handleSaveProfile()}
-          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
+          className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
         >
           {d.profileSaving ? "Saving…" : "Save"}
         </button>
@@ -204,7 +204,7 @@ export default function DashboardSettingsPage() {
               <button
                 type="button"
                 onClick={() => void handleDisconnectTelegram()}
-                className="mt-3 rounded-xl border border-red-500/25 px-4 py-2 text-sm text-red-200 transition-colors hover:border-red-500/40"
+                className="mt-3 w-full rounded-xl border border-red-500/25 px-4 py-2 text-sm text-red-200 transition-colors hover:border-red-500/40"
               >
                 Disconnect
               </button>
@@ -254,7 +254,7 @@ export default function DashboardSettingsPage() {
           type="button"
           disabled={d.profileSaving}
           onClick={() => void d.handleSaveProfile()}
-          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
+          className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
         >
           {d.profileSaving ? "Saving…" : "Save integrations"}
         </button>
@@ -324,7 +324,7 @@ export default function DashboardSettingsPage() {
         <button
           type="button"
           onClick={() => void d.handleSignOut()}
-          className="rounded-xl border border-white/15 px-5 py-2.5 text-sm font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white"
+          className="w-full rounded-xl border border-white/15 px-5 py-2.5 text-sm font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white"
         >
           Sign out
         </button>
@@ -341,7 +341,7 @@ export default function DashboardSettingsPage() {
             window.location.href =
               "mailto:support@lacore.ai?subject=Delete%20my%20LACORE%20account&body=Please%20delete%20my%20account%20associated%20with%20this%20email.";
           }}
-          className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-500"
+          className="w-full rounded-xl bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-500"
         >
           Request account deletion
         </button>

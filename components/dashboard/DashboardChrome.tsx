@@ -347,12 +347,10 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
 
   return (
     <main
-      className="dash-shell-root dash-premium-root"
+      className="dash-shell-root dash-premium-root lg:h-screen lg:overflow-hidden"
       style={{
         display: "flex",
-        height: "100vh",
-        maxHeight: "100vh",
-        overflow: "hidden",
+        minHeight: "100vh",
         background: "var(--content-bg)",
         color: "var(--text-primary)",
         fontFamily: "inherit"
@@ -383,7 +381,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           background: rgba(255,255,255,0.1) !important;
           color: #FFFFFF !important;
         }
-        @media (max-width: 900px) {
+        @media (max-width: 1023px) {
           .dash-shell-root {
             flex-direction: column;
             height: auto;
@@ -680,12 +678,10 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       </aside>
 
       <div
-        className="dash-main-col px-4 pb-24 pt-4 lg:px-8 lg:py-6"
+        className="dash-main-col dashboard-main min-h-screen overflow-y-auto px-4 pb-24 pt-4 lg:min-h-0 lg:px-8 lg:py-6"
         style={{
           flex: 1,
           minWidth: 0,
-          height: "100vh",
-          overflow: "auto",
           boxSizing: "border-box",
           background: "var(--content-bg)"
         }}

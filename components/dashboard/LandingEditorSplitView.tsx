@@ -235,8 +235,8 @@ export function LandingEditorSplitView({
   const v = views ?? 0;
 
   return (
-    <div className="flex h-[calc(100vh-6.5rem)] min-h-0 w-full max-w-[100vw] overflow-hidden rounded-xl border border-white/[0.08] bg-[#07080F] lg:-mx-8 lg:-my-6 lg:h-[calc(100vh-3rem)]">
-      <div className="flex h-full min-h-0 w-full shrink-0 flex-col border-r-0 border-white/[0.08] bg-[#0D0F1A] lg:w-80 lg:border-r">
+    <div className="flex h-auto min-h-[calc(100dvh-7rem)] w-full max-w-[100vw] overflow-visible rounded-xl border border-white/[0.08] bg-[#07080F] lg:-mx-8 lg:-my-6 lg:h-[calc(100vh-3rem)] lg:min-h-0 lg:overflow-hidden">
+      <div className="flex h-auto min-h-[calc(100dvh-7rem)] w-full shrink-0 flex-col border-r-0 border-white/[0.08] bg-[#0D0F1A] lg:h-full lg:min-h-0 lg:w-80 lg:border-r">
         <div className="shrink-0 border-b border-white/[0.08] px-4 py-3">
           <div className="mb-1 flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
