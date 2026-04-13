@@ -366,6 +366,8 @@ Site vibe: ${body.siteVibe || "Professional"}`;
     });
 
     if (!anthropicJsonRes.ok) {
+      const errBody = await anthropicJsonRes.text().catch(() => "unreadable");
+      console.error("JSON step Anthropic error:", anthropicJsonRes.status, errBody);
       return new Response(
         JSON.stringify({
           error: "Our AI is temporarily busy. Please try again in a moment.",
