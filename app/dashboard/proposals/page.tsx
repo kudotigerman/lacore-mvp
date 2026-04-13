@@ -226,6 +226,34 @@ function ProposalsPageInner() {
     setAllProposals((list as ProposalSummary[] | null) ?? []);
   }
 
+  async function setProposalStatus(p: ProposalSummary, status: "sent" | "paid") {
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    setProposalActionBusyId(p.id);
+    try {
+      const res = await fetch("/api/proposals/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ proposal_id: p.id, status })
+      });
+      const json = (await res.json()) as { proposal?: ProposalSummary; error?: string };
+      if (!res.ok || !json.proposal) {
+        dashToast(json.error ?? "Could not update proposal status.");
+        return;
+      }
+      setAllProposals((prev) => prev.map((x) => (x.id === p.id ? { ...x, ...json.proposal } : x)));
+      dashToast(status === "sent" ? "Proposal marked as Sent." : "Proposal marked as Paid.");
+    } finally {
+      setProposalActionBusyId(null);
+    }
+  }
+
   async function duplicateProposal(p: ProposalSummary) {
     const supabase = getSupabaseClient();
     const {
@@ -499,6 +527,28 @@ function ProposalsPageInner() {
                 <>
                   <button
                     type="button"
+                    disabled={proposalActionBusyId === proposalId}
+                    onClick={() => {
+                      const current = allProposals.find((p) => p.id === proposalId);
+                      if (current) void setProposalStatus(current, "sent");
+                    }}
+                    className="rounded-lg border border-amber-500/35 px-3 py-1.5 text-xs text-amber-300 transition-colors hover:bg-amber-500/10 disabled:opacity-40"
+                  >
+                    Mark as Sent
+                  </button>
+                  <button
+                    type="button"
+                    disabled={proposalActionBusyId === proposalId}
+                    onClick={() => {
+                      const current = allProposals.find((p) => p.id === proposalId);
+                      if (current) void setProposalStatus(current, "paid");
+                    }}
+                    className="rounded-lg border border-emerald-500/35 px-3 py-1.5 text-xs text-emerald-300 transition-colors hover:bg-emerald-500/10 disabled:opacity-40"
+                  >
+                    Mark as Paid
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => void copyPublicProposalLink(proposalId)}
                     className="rounded-lg border border-indigo-500/35 px-3 py-1.5 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/10"
                   >
@@ -590,6 +640,22 @@ function ProposalsPageInner() {
                   className="rounded-lg py-1.5 text-center text-[10px] font-medium text-indigo-400 transition-colors hover:bg-white/5"
                 >
                   Copy link
+                </button>
+                <button
+                  type="button"
+                  disabled={proposalActionBusyId === p.id}
+                  onClick={() => void setProposalStatus(p, "sent")}
+                  className="rounded-lg px-2 py-1.5 text-center text-[10px] font-medium text-amber-300 transition-colors hover:bg-white/5 disabled:opacity-40"
+                >
+                  Mark sent
+                </button>
+                <button
+                  type="button"
+                  disabled={proposalActionBusyId === p.id}
+                  onClick={() => void setProposalStatus(p, "paid")}
+                  className="rounded-lg px-2 py-1.5 text-center text-[10px] font-medium text-emerald-300 transition-colors hover:bg-white/5 disabled:opacity-40"
+                >
+                  Mark paid
                 </button>
                 <a
                   href={publicProposalUrl(p.id)}

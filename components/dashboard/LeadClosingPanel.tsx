@@ -309,6 +309,9 @@ export default function LeadClosingPanel({
     salesContext.offer?.trim() && salesContext.offer !== "(Not saved yet — user can generate an offer from the home page.)"
       ? "Your saved offer will be used automatically when you generate a strategy."
       : "Add an offer on the Offer page for sharper AI advice.";
+  const referralText = `Hi ${lead.name?.trim() || "there"}, working with you was great! If you know anyone who could use ${
+    salesContext.headline?.trim() || "my service"
+  }, I'd really appreciate an introduction.`;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(99,102,241,0.06)] max-lg:rounded-xl lg:min-h-[360px] lg:p-5">
@@ -734,6 +737,30 @@ export default function LeadClosingPanel({
           ) : null}
         </div>
       </div>
+
+      {normalized === "won" ? (
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
+          <p className="mb-2 text-sm font-semibold text-white">Ask for a referral 🤝</p>
+          <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm leading-relaxed text-white/75">
+            {referralText}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard.writeText(referralText)}
+              className="min-h-11 flex-1 rounded-xl border border-white/15 px-3 py-2 text-sm text-white/75 transition-colors hover:border-white/25 hover:text-white"
+            >
+              Copy
+            </button>
+            <a
+              href={`mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent("Quick favor")}&body=${encodeURIComponent(referralText)}`}
+              className="min-h-11 flex flex-1 items-center justify-center rounded-xl border border-indigo-500/35 px-3 py-2 text-sm text-indigo-300 transition-colors hover:bg-indigo-500/10"
+            >
+              Send via email
+            </a>
+          </div>
+        </div>
+      ) : null}
 
       <div className="pt-1">
         {deleteConfirm ? (

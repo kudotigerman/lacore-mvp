@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser(token);
   if (userErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { lead_id?: string; amount?: number; description?: string; send_email?: boolean };
+  let body: { lead_id?: string; amount?: number; description?: string; send_email?: boolean; deposit?: boolean };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
   const description = typeof body.description === "string" ? body.description.trim() : "";
   const amount = typeof body.amount === "number" ? body.amount : Number.NaN;
   const sendEmail = body.send_email === true;
+  const isDeposit = body.deposit === true;
   if (!leadId || !description || !Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: "lead_id, amount, and description are required." }, { status: 400 });
   }
@@ -122,10 +123,10 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           from: "LACORE <leads@lacore.ai>",
           to: [leadEmail],
-          subject: `Invoice from ${displayName}`,
+          subject: `${isDeposit ? "Deposit request" : "Invoice"} from ${displayName}`,
           html: `
             <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
-              <h2>Invoice from ${safeName}</h2>
+              <h2>${isDeposit ? "Deposit request" : "Invoice"} from ${safeName}</h2>
               <p><strong>Amount:</strong> ${safeAmount}</p>
               <p><strong>Description:</strong> ${safeDescription}</p>
               <p style="margin-top:24px;">

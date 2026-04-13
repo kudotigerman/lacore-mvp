@@ -62,6 +62,8 @@ export default function DashboardLeadsPage() {
   const [invoiceSaving, setInvoiceSaving] = useState(false);
   const [invoiceError, setInvoiceError] = useState<string | null>(null);
   const [invoiceSuccess, setInvoiceSuccess] = useState<string | null>(null);
+  const [depositAmountInput, setDepositAmountInput] = useState("");
+  const [depositSaving, setDepositSaving] = useState(false);
 
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -130,6 +132,9 @@ export default function DashboardLeadsPage() {
     setInvoiceAmountInput(Number.isFinite(rawDeal) && rawDeal > 0 ? String(rawDeal) : "");
     setInvoiceDescription("Services as discussed");
     setInvoiceSendEmail(!!lead.email?.trim());
+    const rawDeal = typeof lead.deal_value === "number" ? lead.deal_value : Number.parseFloat(String(lead.deal_value ?? ""));
+    const defaultDeposit = Number.isFinite(rawDeal) && rawDeal > 0 ? rawDeal * 0.5 : 0;
+    setDepositAmountInput(defaultDeposit > 0 ? defaultDeposit.toFixed(2).replace(/\.00$/, "") : "");
     setInvoiceError(null);
     setInvoiceSuccess(null);
   }
@@ -301,6 +306,54 @@ export default function DashboardLeadsPage() {
       setInvoiceError("Could not send invoice.");
     } finally {
       setInvoiceSaving(false);
+    }
+  }
+
+  async function sendDepositNow() {
+    if (!invoiceModalLeadId || !d.sessionToken) return;
+    setInvoiceError(null);
+    setInvoiceSuccess(null);
+    const amount = Number.parseFloat(depositAmountInput.replace(/[$,\s]/g, ""));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setInvoiceError("Enter a valid deposit amount.");
+      return;
+    }
+    setDepositSaving(true);
+    try {
+      const res = await fetch("/api/invoice/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${d.sessionToken}`
+        },
+        body: JSON.stringify({
+          lead_id: invoiceModalLeadId,
+          amount,
+          description: `Deposit — ${invoiceDescription.trim() || "Services as discussed"}`,
+          send_email: invoiceSendEmail,
+          deposit: true
+        })
+      });
+      const json = (await res.json()) as { success?: boolean; payment_link?: string; error?: string; redirect?: string };
+      if (!res.ok || !json.success || !json.payment_link) {
+        if (json.redirect) router.push(json.redirect);
+        setInvoiceError(json.error || "Could not send deposit request.");
+        return;
+      }
+      await navigator.clipboard.writeText(json.payment_link);
+      setInvoiceSuccess("Deposit request sent! Payment link copied to clipboard");
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === invoiceModalLeadId ? { ...l, payment_link: json.payment_link, invoice_sent_at: new Date().toISOString() } : l
+        )
+      );
+      setSelected((s) =>
+        s?.id === invoiceModalLeadId ? { ...s, payment_link: json.payment_link, invoice_sent_at: new Date().toISOString() } : s
+      );
+    } catch {
+      setInvoiceError("Could not send deposit request.");
+    } finally {
+      setDepositSaving(false);
     }
   }
 
@@ -791,7 +844,7 @@ export default function DashboardLeadsPage() {
               <div className="mt-5 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
-                  disabled={invoiceSaving}
+                  disabled={invoiceSaving || depositSaving}
                   onClick={() => setInvoiceModalLeadId(null)}
                   className="min-h-11 rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 transition-colors hover:border-white/25 hover:text-white disabled:opacity-40"
                 >
@@ -799,12 +852,36 @@ export default function DashboardLeadsPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={invoiceSaving}
+                  disabled={invoiceSaving || depositSaving}
                   onClick={() => void sendInvoiceNow()}
                   className="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
                 >
                   {invoiceSaving ? "Sending…" : "Send Invoice"}
                 </button>
+              </div>
+              <div className="mt-6 border-t border-white/10 pt-4">
+                <p className="text-sm font-medium text-white">Or request a deposit first?</p>
+                <div className="mt-3 space-y-2">
+                  <label className="block">
+                    <span className="mb-1 block text-xs uppercase tracking-wider text-white/40">Deposit amount</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={depositAmountInput}
+                      onChange={(e) => setDepositAmountInput(e.target.value.replace(/[^\d.]/g, ""))}
+                      className="min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                      placeholder="0"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={depositSaving || invoiceSaving}
+                    onClick={() => void sendDepositNow()}
+                    className="min-h-11 w-full rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-200 transition-colors hover:bg-indigo-500/20 disabled:opacity-40"
+                  >
+                    {depositSaving ? "Sending…" : "Send deposit request"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

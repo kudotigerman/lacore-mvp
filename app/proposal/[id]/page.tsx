@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { fetchPublicProposalById, siteBaseUrl } from "@/lib/proposals/fetchPublicProposal";
 import { ProposalAcceptButton } from "./ProposalAcceptButton";
 import { ProposalSignatureCard } from "./ProposalSignatureCard";
+import { ProposalPaymentSection } from "./ProposalPaymentSection";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -56,6 +57,9 @@ export default async function PublicProposalPage({ params }: Props) {
     year: "numeric"
   });
   const sender = data.senderDisplayName?.trim() || "Proposal author";
+  const signedDate = data.signed_at
+    ? new Date(data.signed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
   return (
     <div
@@ -106,7 +110,14 @@ export default async function PublicProposalPage({ params }: Props) {
             initialSignedAt={data.signed_at}
             initialSignedByName={data.signed_by_name}
           />
+          <ProposalPaymentSection proposalId={data.id} signedAt={data.signed_at} status={data.status} />
           <ProposalAcceptButton />
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 sm:px-6">
+            <p className="font-semibold text-slate-800">Client portal timeline</p>
+            <p className="mt-2">Proposal sent → {new Date(data.created_at).toLocaleDateString("en-US")}</p>
+            <p>Signed → {signedDate ?? "Pending signature"}</p>
+            <p>{data.status === "paid" ? "Payment received" : "Payment pending"}</p>
+          </div>
         </div>
       </main>
 
