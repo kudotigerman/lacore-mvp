@@ -132,7 +132,6 @@ export default function DashboardLeadsPage() {
     setInvoiceAmountInput(Number.isFinite(rawDeal) && rawDeal > 0 ? String(rawDeal) : "");
     setInvoiceDescription("Services as discussed");
     setInvoiceSendEmail(!!lead.email?.trim());
-    const rawDeal = typeof lead.deal_value === "number" ? lead.deal_value : Number.parseFloat(String(lead.deal_value ?? ""));
     const defaultDeposit = Number.isFinite(rawDeal) && rawDeal > 0 ? rawDeal * 0.5 : 0;
     setDepositAmountInput(defaultDeposit > 0 ? defaultDeposit.toFixed(2).replace(/\.00$/, "") : "");
     setInvoiceError(null);
