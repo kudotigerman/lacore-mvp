@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type SavedResultType = "pricing" | "sequence" | "outreach";
+export type SavedResultType = "pricing" | "sequence" | "outreach" | "analytics_insights";
 
 export async function upsertSavedResult(
   supabase: SupabaseClient,

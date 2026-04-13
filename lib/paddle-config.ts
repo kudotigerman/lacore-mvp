@@ -30,7 +30,8 @@ export const CREDIT_COSTS = {
   pricing_strategy: 2,
   generate_sequence: 3,
   generate_outreach: 2,
-  closing_assistant: 1
+  closing_assistant: 1,
+  analytics_insights: 1
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;

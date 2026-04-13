@@ -16,6 +16,13 @@ type LeadRow = {
   deal_value?: number | string | null;
 };
 
+type InsightCard = {
+  icon: string;
+  title: string;
+  insight: string;
+  action: string;
+};
+
 const FUNNEL_STATUSES = [
   "new",
   "contacted",
@@ -130,6 +137,10 @@ export default function DashboardAnalyticsPage() {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [landingViews, setLandingViews] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState<InsightCard[] | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
+  const [insightsCached, setInsightsCached] = useState(false);
 
   useEffect(() => {
     const projectId = activeProject?.id;
@@ -262,6 +273,45 @@ export default function DashboardAnalyticsPage() {
   }
 
   const recentLeads = leads.slice(0, 10);
+
+  async function generateInsights() {
+    if (!activeProject?.id) return;
+    setInsightsError(null);
+    setInsightsLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setInsightsError("Sign in required.");
+        return;
+      }
+      const res = await fetch(`/api/analytics/insights?project_id=${encodeURIComponent(activeProject.id)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      const json = (await res.json()) as {
+        insights?: InsightCard[];
+        cached?: boolean;
+        error?: string;
+        message?: string;
+      };
+      if (res.status === 402) {
+        setInsightsError(json.message ?? json.error ?? "Not enough credits.");
+        return;
+      }
+      if (!res.ok || !Array.isArray(json.insights)) {
+        setInsightsError(json.error ?? "Could not generate insights.");
+        return;
+      }
+      setInsights(json.insights.slice(0, 3));
+      setInsightsCached(Boolean(json.cached));
+    } catch {
+      setInsightsError("Network error while generating insights.");
+    } finally {
+      setInsightsLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
@@ -445,6 +495,48 @@ export default function DashboardAnalyticsPage() {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-white">AI Insights</h2>
+                    <p className="mt-1 text-xs text-white/40">Actionable coaching from your pipeline data.</p>
+                  </div>
+                  <span className="rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
+                    Powered by Claude
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={insightsLoading || !activeProject?.id}
+                  onClick={() => void generateInsights()}
+                  className="mb-4 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40 sm:w-auto"
+                >
+                  {insightsLoading ? "Generating…" : "Generate insights (1 credit)"}
+                </button>
+                {insightsCached ? <p className="mb-3 text-xs text-white/35">Using cached result from last 24 hours.</p> : null}
+                {insightsError ? <p className="mb-3 text-sm text-red-400">{insightsError}</p> : null}
+                {insights ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    {insights.map((item, idx) => (
+                      <article key={`${item.title}-${idx}`} className="w-full rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-lg" aria-hidden>
+                            {item.icon}
+                          </span>
+                          <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                        </div>
+                        <p className="text-sm text-white/70">{item.insight}</p>
+                        <p className="mt-2 text-sm text-indigo-300">{item.action}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-white/45">
+                    Generate 3 concrete recommendations like stuck-stage follow-up ideas, conversion improvements, and best timing patterns.
+                  </p>
+                )}
               </div>
 
               <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
