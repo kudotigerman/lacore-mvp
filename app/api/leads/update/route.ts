@@ -1,6 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
+const STATUSES = new Set([
+  "new",
+  "contacted",
+  "replied",
+  "call_booked",
+  "proposal_sent",
+  "won",
+  "lost"
+]);
+
 export async function PATCH(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -27,6 +37,8 @@ export async function PATCH(req: NextRequest) {
     email?: string;
     phone?: string;
     message?: string;
+    status?: string;
+    deal_value?: number | null;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -39,7 +51,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "lead_id is required." }, { status: 400 });
   }
 
-  const updates: Record<string, string | null> = {};
+  const updates: Record<string, string | number | null> = {};
 
   if ("name" in body) {
     if (typeof body.name !== "string") {
@@ -68,6 +80,28 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Invalid message." }, { status: 400 });
     }
     updates.message = body.message.trim() || null;
+  }
+  if ("status" in body) {
+    if (typeof body.status !== "string") {
+      return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+    }
+    const s = body.status.trim();
+    if (!STATUSES.has(s)) {
+      return NextResponse.json({ error: "Invalid status." }, { status: 400 });
+    }
+    updates.status = s;
+  }
+  if ("deal_value" in body) {
+    if (body.deal_value === null) {
+      updates.deal_value = null;
+    } else if (typeof body.deal_value === "number" && Number.isFinite(body.deal_value)) {
+      if (body.deal_value < 0) {
+        return NextResponse.json({ error: "deal_value cannot be negative." }, { status: 400 });
+      }
+      updates.deal_value = body.deal_value;
+    } else {
+      return NextResponse.json({ error: "Invalid deal_value." }, { status: 400 });
+    }
   }
 
   if (Object.keys(updates).length === 0) {

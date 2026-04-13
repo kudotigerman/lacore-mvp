@@ -48,6 +48,10 @@ export default function DashboardLeadsPage() {
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [panelEnter, setPanelEnter] = useState(false);
+  const [wonModalLeadId, setWonModalLeadId] = useState<string | null>(null);
+  const [wonDealInput, setWonDealInput] = useState("");
+  const [wonSaving, setWonSaving] = useState(false);
+  const [wonError, setWonError] = useState<string | null>(null);
 
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -103,9 +107,21 @@ export default function DashboardLeadsPage() {
   const getLeadsByStatus = (colId: ColumnId) =>
     leads.filter((l) => normalizePipelineStatus(l.status) === colId);
 
+  function mergeLeadFromServer(leadId: string, row: LeadRow | undefined) {
+    if (!row) return;
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...row } : l)));
+    setSelected((s) => (s?.id === leadId ? { ...s, ...row } : s));
+  }
+
   async function moveToNextStatus(leadId: string, currentStatus: PipelineColumnId) {
     const next = nextForwardStatus(currentStatus);
     if (!next) return;
+    if (next === "won") {
+      setWonError(null);
+      setWonDealInput("");
+      setWonModalLeadId(leadId);
+      return;
+    }
     const supabase = getSupabaseClient();
     const {
       data: { session }
@@ -120,8 +136,91 @@ export default function DashboardLeadsPage() {
       body: JSON.stringify({ leadId, status: next })
     });
     if (!res.ok) return;
-    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status: next } : l)));
-    setSelected((s) => (s?.id === leadId ? { ...s, status: next } : s));
+    const json = (await res.json()) as { lead?: LeadRow };
+    if (json.lead) mergeLeadFromServer(leadId, json.lead);
+    else {
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status: next } : l)));
+      setSelected((s) => (s?.id === leadId ? { ...s, status: next } : s));
+    }
+  }
+
+  async function skipWonDeal() {
+    if (!wonModalLeadId) return;
+    const leadId = wonModalLeadId;
+    setWonSaving(true);
+    setWonError(null);
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const res = await fetch("/api/leads/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ leadId, status: "won" })
+      });
+      if (!res.ok) return;
+      const json = (await res.json()) as { lead?: LeadRow };
+      mergeLeadFromServer(leadId, json.lead);
+      setWonModalLeadId(null);
+    } finally {
+      setWonSaving(false);
+    }
+  }
+
+  async function saveWonDeal() {
+    if (!wonModalLeadId) return;
+    const leadId = wonModalLeadId;
+    setWonSaving(true);
+    setWonError(null);
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const raw = wonDealInput.replace(/[$,\s]/g, "");
+      if (raw === "") {
+        const resEmpty = await fetch("/api/leads/status", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ leadId, status: "won" })
+        });
+        if (!resEmpty.ok) return;
+        const jEmpty = (await resEmpty.json()) as { lead?: LeadRow };
+        mergeLeadFromServer(leadId, jEmpty.lead);
+        setWonModalLeadId(null);
+        return;
+      }
+      const n = Number.parseFloat(raw);
+      if (!Number.isFinite(n) || n < 0) {
+        setWonError("Enter a valid dollar amount.");
+        return;
+      }
+
+      const res = await fetch("/api/leads/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ lead_id: leadId, status: "won", deal_value: n })
+      });
+      if (!res.ok) return;
+      const json = (await res.json()) as { lead?: LeadRow };
+      mergeLeadFromServer(leadId, json.lead);
+      setWonModalLeadId(null);
+    } finally {
+      setWonSaving(false);
+    }
   }
 
   function generateProposalForLead(lead: LeadRow) {
@@ -447,6 +546,61 @@ export default function DashboardLeadsPage() {
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-40"
                 >
                   {addSaving ? "Saving…" : "Add lead"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {wonModalLeadId ? (
+          <div
+            className="fixed inset-0 z-[10003] flex items-center justify-center bg-black/60 px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="won-deal-title"
+          >
+            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0D0F1A] p-6 shadow-xl">
+              <h3 id="won-deal-title" className="mb-1 text-lg font-semibold text-white">
+                Deal won! 🎉
+              </h3>
+              <p className="mb-4 text-sm text-white/45">What was the deal value? (optional)</p>
+              <div className="flex overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                <span className="flex items-center pl-3 text-sm text-white/45">$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  value={wonDealInput}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/[^\d.]/g, "");
+                    const dot = v.indexOf(".");
+                    if (dot !== -1) {
+                      v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, "");
+                    }
+                    setWonDealInput(v);
+                  }}
+                  className="min-w-0 flex-1 border-0 bg-transparent py-2.5 pr-3 text-sm text-white outline-none ring-0 placeholder:text-white/25 focus:ring-0"
+                  placeholder="0"
+                  aria-label="Deal value in dollars"
+                />
+              </div>
+              {wonError ? <p className="mt-2 text-sm text-red-400">{wonError}</p> : null}
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={wonSaving}
+                  onClick={() => void skipWonDeal()}
+                  className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 transition-colors hover:border-white/25 hover:text-white disabled:opacity-40"
+                >
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  disabled={wonSaving}
+                  onClick={() => void saveWonDeal()}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                >
+                  {wonSaving ? "Saving…" : "Save"}
                 </button>
               </div>
             </div>

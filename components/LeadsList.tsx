@@ -15,6 +15,7 @@ export type LeadRow = {
   phone?: string | null;
   created_at: string;
   status?: string | null;
+  deal_value?: number | string | null;
 };
 
 export type LeadStatus =

@@ -13,6 +13,7 @@ type LeadRow = {
   email: string;
   slug?: string | null;
   status: string | null;
+  deal_value?: number | string | null;
 };
 
 const FUNNEL_STATUSES = [
@@ -75,6 +76,38 @@ function formatDate(iso: string): string {
   }
 }
 
+function formatUsd(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
+function numDeal(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = typeof v === "number" ? v : Number.parseFloat(String(v));
+  return Number.isFinite(n) ? n : null;
+}
+
+function startOfWeekMonday(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  x.setDate(x.getDate() + diff);
+  return x;
+}
+
+/** Won-date approximated by lead created_at (no separate won_at column). */
+function leadTime(lead: LeadRow): number {
+  try {
+    return new Date(lead.created_at).getTime();
+  } catch {
+    return 0;
+  }
+}
+
 function StatusBadge({ status }: { status: string | null | undefined }) {
   const n = normalizeStatus(status);
   const cls = STATUS_BADGE_COLORS[n] ?? STATUS_BADGE_COLORS.new;
@@ -111,7 +144,7 @@ export default function DashboardAnalyticsPage() {
       const supabase = getSupabaseClient();
       const { data: leadData, error: leadError } = await supabase
         .from("leads")
-        .select("id, created_at, name, email, slug, status")
+        .select("id, created_at, name, email, slug, status, deal_value")
         .eq("user_id", d.userId!)
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -182,6 +215,45 @@ export default function DashboardAnalyticsPage() {
     ],
     [totalLeads, newThisWeek, wonDeals, landingViewsNum]
   );
+
+  const revenueBlock = useMemo(() => {
+    const wonList = leads.filter((l) => normalizeStatus(l.status) === "won");
+    const withValue = wonList
+      .map((l) => numDeal(l.deal_value))
+      .filter((n): n is number => n != null && n > 0);
+    const totalRevenue = withValue.reduce((a, n) => a + n, 0);
+    const hasDealData = withValue.length > 0;
+    const avgDeal = hasDealData ? totalRevenue / withValue.length : null;
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const wonThisMonth = wonList.filter((l) => leadTime(l) >= monthStart).length;
+
+    const thisWeekStart = startOfWeekMonday(new Date());
+    const weekStarts: Date[] = [];
+    for (let i = 3; i >= 0; i--) {
+      const s = new Date(thisWeekStart);
+      s.setDate(s.getDate() - i * 7);
+      weekStarts.push(s);
+    }
+    const weekly = weekStarts.map((start) => {
+      const t0 = start.getTime();
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      const t1 = end.getTime();
+      const count = wonList.filter((l) => {
+        const ts = leadTime(l);
+        return ts >= t0 && ts < t1;
+      }).length;
+      return {
+        label: start.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        count
+      };
+    });
+    const maxWeek = Math.max(...weekly.map((w) => w.count), 1);
+
+    return { hasDealData, totalRevenue, avgDeal, wonThisMonth, weekly, maxWeek };
+  }, [leads]);
 
   function countInFunnel(status: FunnelStatus): number {
     return leads.filter((l) => normalizeStatus(l.status) === status).length;
@@ -255,6 +327,62 @@ export default function DashboardAnalyticsPage() {
                     <p className="mt-1 text-xs text-white/35">{m.sub}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
+                  <p className="text-xs uppercase tracking-wider text-white/40">Total revenue</p>
+                  <p
+                    className={`mt-2 text-3xl font-bold ${revenueBlock.hasDealData ? "text-emerald-400" : "text-white/30"}`}
+                  >
+                    {revenueBlock.hasDealData ? formatUsd(revenueBlock.totalRevenue) : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/35">
+                    {revenueBlock.hasDealData ? "Closed-won deal values" : "Add deal values when closing leads"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
+                  <p className="text-xs uppercase tracking-wider text-white/40">Avg deal size</p>
+                  <p
+                    className={`mt-2 text-3xl font-bold ${revenueBlock.avgDeal != null ? "text-white" : "text-white/30"}`}
+                  >
+                    {revenueBlock.avgDeal != null ? formatUsd(revenueBlock.avgDeal) : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/35">
+                    {revenueBlock.hasDealData ? "Among deals with a value" : "Add deal values when closing leads"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
+                  <p className="text-xs uppercase tracking-wider text-white/40">Won this month</p>
+                  <p className={`mt-2 text-3xl font-bold ${revenueBlock.wonThisMonth > 0 ? "text-indigo-300" : "text-white/30"}`}>
+                    {String(revenueBlock.wonThisMonth)}
+                  </p>
+                  <p className="mt-1 text-xs text-white/35">Won leads added this calendar month</p>
+                </div>
+              </div>
+
+              <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
+                <h2 className="mb-1 text-sm font-semibold text-white">Won deals by week</h2>
+                <p className="mb-6 text-xs text-white/35">
+                  Last 4 weeks · By lead added date (approximation)
+                </p>
+                <div className="flex gap-3 sm:gap-4">
+                  {revenueBlock.weekly.map((w) => (
+                    <div key={w.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                      <div className="flex h-36 w-full max-w-[72px] items-end justify-center rounded-lg bg-white/5 px-1 sm:max-w-none">
+                        <div
+                          className="w-full max-w-[44px] rounded-t-md bg-emerald-500/65 transition-all sm:max-w-[56px]"
+                          style={{
+                            height: `${Math.max(w.count > 0 ? 8 : 3, (w.count / revenueBlock.maxWeek) * 100)}%`
+                          }}
+                          title={`${w.count} won`}
+                        />
+                      </div>
+                      <span className="text-center text-[10px] text-white/40">{w.label}</span>
+                      <span className="text-sm font-semibold text-white">{w.count}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
