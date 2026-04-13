@@ -16,6 +16,8 @@ export type LeadRow = {
   created_at: string;
   status?: string | null;
   deal_value?: number | string | null;
+  invoice_sent_at?: string | null;
+  payment_link?: string | null;
 };
 
 export type LeadStatus =

@@ -108,7 +108,8 @@ export default function LeadClosingPanel({
   onCreateProposal,
   onClose,
   onLeadUpdated,
-  onLeadDeleted
+  onLeadDeleted,
+  onOpenInvoice
 }: {
   lead: LeadRow | null;
   sessionToken: string | null;
@@ -119,6 +120,7 @@ export default function LeadClosingPanel({
   onClose?: () => void;
   onLeadUpdated?: (lead: LeadRow) => void;
   onLeadDeleted?: (leadId: string) => void;
+  onOpenInvoice?: () => void;
 }) {
   const [tab, setTab] = useState<ClosingTab>("strategy");
   const [result, setResult] = useState<ClosingPayload | null>(null);
@@ -708,6 +710,28 @@ export default function LeadClosingPanel({
           >
             Open in email app
           </a>
+          {lead.payment_link?.trim() ? (
+            <>
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+                💳 Invoice sent
+              </div>
+              <button
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(lead.payment_link || "")}
+                className="w-full rounded-xl border border-emerald-500/35 py-2.5 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/10"
+              >
+                Copy payment link
+              </button>
+            </>
+          ) : normalized === "won" ? (
+            <button
+              type="button"
+              onClick={onOpenInvoice}
+              className="w-full rounded-xl border border-white/15 py-2.5 text-sm font-medium text-white/60 transition-colors hover:border-indigo-500/35 hover:text-indigo-300"
+            >
+              Send invoice →
+            </button>
+          ) : null}
         </div>
       </div>
 

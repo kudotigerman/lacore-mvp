@@ -52,6 +52,13 @@ export default function DashboardLeadsPage() {
   const [wonDealInput, setWonDealInput] = useState("");
   const [wonSaving, setWonSaving] = useState(false);
   const [wonError, setWonError] = useState<string | null>(null);
+  const [invoiceModalLeadId, setInvoiceModalLeadId] = useState<string | null>(null);
+  const [invoiceAmountInput, setInvoiceAmountInput] = useState("");
+  const [invoiceDescription, setInvoiceDescription] = useState("Services as discussed");
+  const [invoiceSendEmail, setInvoiceSendEmail] = useState(true);
+  const [invoiceSaving, setInvoiceSaving] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
+  const [invoiceSuccess, setInvoiceSuccess] = useState<string | null>(null);
 
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -113,6 +120,16 @@ export default function DashboardLeadsPage() {
     setSelected((s) => (s?.id === leadId ? { ...s, ...row } : s));
   }
 
+  function openInvoiceModal(lead: LeadRow) {
+    setInvoiceModalLeadId(lead.id);
+    const rawDeal = typeof lead.deal_value === "number" ? lead.deal_value : Number.parseFloat(String(lead.deal_value ?? ""));
+    setInvoiceAmountInput(Number.isFinite(rawDeal) && rawDeal > 0 ? String(rawDeal) : "");
+    setInvoiceDescription("Services as discussed");
+    setInvoiceSendEmail(!!lead.email?.trim());
+    setInvoiceError(null);
+    setInvoiceSuccess(null);
+  }
+
   async function changeLeadStatus(leadId: string, status: PipelineColumnId) {
     if (status === "won") {
       setWonError(null);
@@ -171,6 +188,7 @@ export default function DashboardLeadsPage() {
       const json = (await res.json()) as { lead?: LeadRow };
       mergeLeadFromServer(leadId, json.lead);
       setWonModalLeadId(null);
+      if (json.lead) openInvoiceModal(json.lead);
     } finally {
       setWonSaving(false);
     }
@@ -202,6 +220,7 @@ export default function DashboardLeadsPage() {
         const jEmpty = (await resEmpty.json()) as { lead?: LeadRow };
         mergeLeadFromServer(leadId, jEmpty.lead);
         setWonModalLeadId(null);
+        if (jEmpty.lead) openInvoiceModal(jEmpty.lead);
         return;
       }
       const n = Number.parseFloat(raw);
@@ -222,8 +241,62 @@ export default function DashboardLeadsPage() {
       const json = (await res.json()) as { lead?: LeadRow };
       mergeLeadFromServer(leadId, json.lead);
       setWonModalLeadId(null);
+      if (json.lead) openInvoiceModal(json.lead);
     } finally {
       setWonSaving(false);
+    }
+  }
+
+  async function sendInvoiceNow() {
+    if (!invoiceModalLeadId || !d.sessionToken) return;
+    setInvoiceError(null);
+    setInvoiceSuccess(null);
+    const amount = Number.parseFloat(invoiceAmountInput.replace(/[$,\s]/g, ""));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setInvoiceError("Enter a valid amount.");
+      return;
+    }
+    if (!invoiceDescription.trim()) {
+      setInvoiceError("Description is required.");
+      return;
+    }
+    setInvoiceSaving(true);
+    try {
+      const res = await fetch("/api/invoice/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${d.sessionToken}`
+        },
+        body: JSON.stringify({
+          lead_id: invoiceModalLeadId,
+          amount,
+          description: invoiceDescription.trim(),
+          send_email: invoiceSendEmail
+        })
+      });
+      const json = (await res.json()) as { success?: boolean; payment_link?: string; error?: string; redirect?: string };
+      if (!res.ok || !json.success || !json.payment_link) {
+        if (json.redirect) {
+          router.push(json.redirect);
+        }
+        setInvoiceError(json.error || "Could not send invoice.");
+        return;
+      }
+      await navigator.clipboard.writeText(json.payment_link);
+      setInvoiceSuccess("Invoice sent! Payment link copied to clipboard");
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === invoiceModalLeadId ? { ...l, payment_link: json.payment_link, invoice_sent_at: new Date().toISOString() } : l
+        )
+      );
+      setSelected((s) =>
+        s?.id === invoiceModalLeadId ? { ...s, payment_link: json.payment_link, invoice_sent_at: new Date().toISOString() } : s
+      );
+    } catch {
+      setInvoiceError("Could not send invoice.");
+    } finally {
+      setInvoiceSaving(false);
     }
   }
 
@@ -473,6 +546,9 @@ export default function DashboardLeadsPage() {
                     setLeads((prev) => prev.filter((l) => l.id !== leadId));
                     setSelected(null);
                   }}
+                  onOpenInvoice={() => {
+                    if (selected) openInvoiceModal(selected);
+                  }}
                 />
               </aside>
             ) : null}
@@ -481,11 +557,11 @@ export default function DashboardLeadsPage() {
 
         {showAddLead ? (
           <div
-            className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/60 px-4"
+            className="fixed inset-0 z-[10002] flex items-end justify-center bg-black/60 px-0 sm:items-center sm:px-4"
             role="dialog"
             aria-modal="true"
           >
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0D0F1A] p-6">
+            <div className="w-full max-w-md rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-6 sm:rounded-2xl">
               <h3 className="mb-1 text-lg font-semibold text-white">Add lead manually</h3>
               <p className="mb-4 text-sm text-white/45">Creates a lead in the New column for this project.</p>
               <div className="space-y-3">
@@ -555,12 +631,12 @@ export default function DashboardLeadsPage() {
 
         {wonModalLeadId ? (
           <div
-            className="fixed inset-0 z-[10003] flex items-center justify-center bg-black/60 px-4"
+            className="fixed inset-0 z-[10003] flex items-end justify-center bg-black/60 px-0 sm:items-center sm:px-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="won-deal-title"
           >
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0D0F1A] p-6 shadow-xl">
+            <div className="w-full max-w-md rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-6 shadow-xl sm:rounded-2xl">
               <h3 id="won-deal-title" className="mb-1 text-lg font-semibold text-white">
                 Deal won! 🎉
               </h3>
@@ -599,9 +675,69 @@ export default function DashboardLeadsPage() {
                   type="button"
                   disabled={wonSaving}
                   onClick={() => void saveWonDeal()}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                  className="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
                 >
                   {wonSaving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {invoiceModalLeadId ? (
+          <div className="fixed inset-0 z-[10004] flex items-end justify-center bg-black/60 px-0 sm:items-center sm:px-4" role="dialog" aria-modal="true">
+            <div className="w-full max-w-md rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-6 shadow-xl sm:rounded-2xl">
+              <h3 className="mb-1 text-lg font-semibold text-white">Send invoice?</h3>
+              <p className="mb-4 text-sm text-white/45">Create a Stripe payment link for this won deal.</p>
+              <div className="space-y-3">
+                <label className="block">
+                  <span className="mb-1 block text-xs uppercase tracking-wider text-white/40">Amount (USD)</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={invoiceAmountInput}
+                    onChange={(e) => setInvoiceAmountInput(e.target.value.replace(/[^\d.]/g, ""))}
+                    className="min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                    placeholder="0"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs uppercase tracking-wider text-white/40">Description</span>
+                  <input
+                    type="text"
+                    value={invoiceDescription}
+                    onChange={(e) => setInvoiceDescription(e.target.value)}
+                    className="min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                    placeholder="Services as discussed"
+                  />
+                </label>
+                <label className="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80">
+                  <input
+                    type="checkbox"
+                    checked={invoiceSendEmail}
+                    onChange={(e) => setInvoiceSendEmail(e.target.checked)}
+                  />
+                  Send email to {(leads.find((l) => l.id === invoiceModalLeadId)?.email || "lead")}
+                </label>
+              </div>
+              {invoiceError ? <p className="mt-3 text-sm text-red-400">{invoiceError}</p> : null}
+              {invoiceSuccess ? <p className="mt-3 text-sm text-emerald-400">{invoiceSuccess}</p> : null}
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={invoiceSaving}
+                  onClick={() => setInvoiceModalLeadId(null)}
+                  className="min-h-11 rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 transition-colors hover:border-white/25 hover:text-white disabled:opacity-40"
+                >
+                  Skip for now
+                </button>
+                <button
+                  type="button"
+                  disabled={invoiceSaving}
+                  onClick={() => void sendInvoiceNow()}
+                  className="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                >
+                  {invoiceSaving ? "Sending…" : "Send Invoice"}
                 </button>
               </div>
             </div>
