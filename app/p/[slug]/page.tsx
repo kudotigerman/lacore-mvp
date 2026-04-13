@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, type ErrorInfo, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { Component, type CSSProperties, type ErrorInfo, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";

@@ -112,15 +112,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const setActiveProject = (project: Project) => {
+  const setActiveProject = useCallback((project: Project) => {
     setActiveProjectState(project);
     if (typeof window !== "undefined") {
       localStorage.setItem(ACTIVE_PROJECT_KEY, project.id);
       window.location.reload();
     }
-  };
+  }, []);
 
-  const createProject = async (name: string) => {
+  const createProject = useCallback(async (name: string) => {
     const supabase = getSupabaseClient();
     const {
       data: { session },
@@ -152,7 +152,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setProjects((prev) => [...prev, p]);
     setActiveProject(p);
     return p;
-  };
+  }, [projects, setActiveProject]);
 
   const renameProject = useCallback(async (projectId: string, name: string) => {
     const trimmed = name.trim();
@@ -182,7 +182,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({ activeProject, projects, setActiveProject, createProject, renameProject, isLoading }),
-    [activeProject, projects, isLoading, renameProject]
+    [activeProject, projects, isLoading, renameProject, createProject]
   );
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;

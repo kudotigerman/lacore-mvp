@@ -109,7 +109,7 @@ export default function DashboardLeadsPage() {
     setPanelEnter(false);
     const t = window.setTimeout(() => setPanelEnter(true), 10);
     return () => window.clearTimeout(t);
-  }, [selected?.id]);
+  }, [selected, selected?.id]);
 
   async function copyLanding() {
     if (!url) return;
