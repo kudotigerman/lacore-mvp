@@ -1,6 +1,13 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import type { LeadRow } from "@/components/LeadsList";
+import {
+  PIPELINE_COLUMNS,
+  normalizePipelineStatus,
+  pipelineColumnLabel,
+  type PipelineColumnId
+} from "@/lib/leadPipeline";
 
 function formatDate(iso: string): string {
   try {
@@ -17,20 +24,21 @@ function formatDate(iso: string): string {
 export function LeadKanbanCard({
   lead,
   selected,
-  showMove,
   onSelect,
-  onMoveToNext,
+  onChangeStatus,
   onGenerateProposal,
   onWriteSequence
 }: {
   lead: LeadRow;
   selected: boolean;
-  showMove: boolean;
   onSelect: () => void;
-  onMoveToNext: () => void;
+  onChangeStatus: (status: PipelineColumnId) => void;
   onGenerateProposal: () => void;
   onWriteSequence: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const currentStatus = useMemo(() => normalizePipelineStatus(lead.status), [lead.status]);
+
   return (
     <div
       role="button"
@@ -55,19 +63,42 @@ export function LeadKanbanCard({
       ) : null}
       <p className="mb-3 text-[10px] text-white/25">{formatDate(lead.created_at)}</p>
       <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
-        {showMove ? (
+        <div className="relative w-full">
           <button
             type="button"
-            onClick={() => onMoveToNext()}
-            className="flex-1 rounded-lg border border-indigo-500/30 py-1.5 text-[10px] text-indigo-400 transition-colors hover:bg-indigo-500/10"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="w-full rounded-lg border border-indigo-500/30 py-1.5 text-[10px] text-indigo-300 transition-colors hover:bg-indigo-500/10"
           >
-            Move →
+            Status: {pipelineColumnLabel(currentStatus)} ▾
           </button>
-        ) : null}
+          {menuOpen ? (
+            <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-20 rounded-lg border border-white/10 bg-[#111116] p-1">
+              {PIPELINE_COLUMNS.map((status) => {
+                const active = status.id === currentStatus;
+                return (
+                  <button
+                    key={status.id}
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (!active) onChangeStatus(status.id);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[10px] transition-colors ${
+                      active ? "bg-indigo-500/20 text-indigo-300" : "text-white/70 hover:bg-white/5"
+                    }`}
+                  >
+                    <span>{status.label}</span>
+                    <span className={active ? "text-emerald-400" : "text-transparent"}>✓</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={() => onGenerateProposal()}
-          className={`min-w-0 rounded-lg border border-white/10 py-1.5 text-[10px] text-white/50 transition-colors hover:border-indigo-500/30 hover:text-indigo-400 ${showMove ? "flex-1" : "w-full"}`}
+          className="min-w-0 flex-1 rounded-lg border border-white/10 py-1.5 text-[10px] text-white/50 transition-colors hover:border-indigo-500/30 hover:text-indigo-400"
         >
           Proposal
         </button>

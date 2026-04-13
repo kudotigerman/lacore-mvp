@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { LeadRow } from "@/components/LeadsList";
 import type { SalesBuilderContextPayload } from "@/components/dashboard/DashboardDataContext";
 import {
+  PIPELINE_COLUMNS,
   normalizePipelineStatus,
   nextForwardStatus,
   pipelineColumnLabel,
@@ -103,8 +104,7 @@ export default function LeadClosingPanel({
   lead,
   sessionToken,
   salesContext,
-  onMoveToNext,
-  canMoveNext,
+  onStatusChange,
   onCreateProposal,
   onClose,
   onLeadUpdated,
@@ -113,8 +113,7 @@ export default function LeadClosingPanel({
   lead: LeadRow | null;
   sessionToken: string | null;
   salesContext: SalesBuilderContextPayload;
-  onMoveToNext?: () => void;
-  canMoveNext?: boolean;
+  onStatusChange?: (status: PipelineColumnId) => void;
   onCreateProposal?: () => void;
   /** Shown as top-right X when provided (slide-in panel). */
   onClose?: () => void;
@@ -672,14 +671,27 @@ export default function LeadClosingPanel({
       <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-white/40">Quick actions</p>
         <div className="flex flex-col gap-2">
-          {canMoveNext && onMoveToNext ? (
-            <button
-              type="button"
-              onClick={onMoveToNext}
-              className="w-full rounded-xl border border-indigo-500/30 bg-indigo-500/10 py-2.5 text-sm font-medium text-indigo-200 transition-colors hover:bg-indigo-500/15"
-            >
-              Move to next stage{nextStageLabel ? ` → ${nextStageLabel}` : ""}
-            </button>
+          {normalized ? (
+            <label className="block">
+              <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/35">Status</span>
+              <select
+                value={normalized}
+                onChange={(e) => {
+                  const next = normalizePipelineStatus(e.target.value);
+                  if (next !== normalized) onStatusChange?.(next);
+                }}
+                className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2.5 text-sm font-medium text-white outline-none transition-colors focus:border-indigo-500/45"
+              >
+                {PIPELINE_COLUMNS.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {nextStageLabel && normalized !== "won" && normalized !== "lost" ? (
+            <p className="text-[11px] text-white/35">Suggested next stage: {nextStageLabel}</p>
           ) : null}
           {onCreateProposal ? (
             <button

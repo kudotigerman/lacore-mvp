@@ -113,10 +113,8 @@ export default function DashboardLeadsPage() {
     setSelected((s) => (s?.id === leadId ? { ...s, ...row } : s));
   }
 
-  async function moveToNextStatus(leadId: string, currentStatus: PipelineColumnId) {
-    const next = nextForwardStatus(currentStatus);
-    if (!next) return;
-    if (next === "won") {
+  async function changeLeadStatus(leadId: string, status: PipelineColumnId) {
+    if (status === "won") {
       setWonError(null);
       setWonDealInput("");
       setWonModalLeadId(leadId);
@@ -133,15 +131,21 @@ export default function DashboardLeadsPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ leadId, status: next })
+      body: JSON.stringify({ lead_id: leadId, status })
     });
     if (!res.ok) return;
     const json = (await res.json()) as { lead?: LeadRow };
     if (json.lead) mergeLeadFromServer(leadId, json.lead);
     else {
-      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status: next } : l)));
-      setSelected((s) => (s?.id === leadId ? { ...s, status: next } : s));
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
+      setSelected((s) => (s?.id === leadId ? { ...s, status } : s));
     }
+  }
+
+  async function moveToNextStatus(leadId: string, currentStatus: PipelineColumnId) {
+    const next = nextForwardStatus(currentStatus);
+    if (!next) return;
+    await changeLeadStatus(leadId, next);
   }
 
   async function skipWonDeal() {
@@ -155,13 +159,13 @@ export default function DashboardLeadsPage() {
         data: { session }
       } = await supabase.auth.getSession();
       if (!session?.access_token) return;
-      const res = await fetch("/api/leads/status", {
+      const res = await fetch("/api/leads/update", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ leadId, status: "won" })
+        body: JSON.stringify({ lead_id: leadId, status: "won" })
       });
       if (!res.ok) return;
       const json = (await res.json()) as { lead?: LeadRow };
@@ -186,13 +190,13 @@ export default function DashboardLeadsPage() {
 
       const raw = wonDealInput.replace(/[$,\s]/g, "");
       if (raw === "") {
-        const resEmpty = await fetch("/api/leads/status", {
+        const resEmpty = await fetch("/api/leads/update", {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`
           },
-          body: JSON.stringify({ leadId, status: "won" })
+          body: JSON.stringify({ lead_id: leadId, status: "won" })
         });
         if (!resEmpty.ok) return;
         const jEmpty = (await resEmpty.json()) as { lead?: LeadRow };
@@ -420,15 +424,13 @@ export default function DashboardLeadsPage() {
                       <div className="min-h-[100px] space-y-2">
                         {colLeads.map((lead) => {
                           const stNorm = normalizePipelineStatus(lead.status);
-                          const showMove = nextForwardStatus(stNorm) !== null;
                           return (
                             <LeadKanbanCard
                               key={lead.id}
                               lead={lead}
                               selected={selected?.id === lead.id}
-                              showMove={showMove}
                               onSelect={() => setSelected(lead)}
-                              onMoveToNext={() => void moveToNextStatus(lead.id, stNorm)}
+                              onChangeStatus={(status) => void changeLeadStatus(lead.id, status)}
                               onGenerateProposal={() => generateProposalForLead(lead)}
                               onWriteSequence={() => writeSequenceForLead(lead)}
                             />
@@ -461,8 +463,7 @@ export default function DashboardLeadsPage() {
                   sessionToken={d.sessionToken}
                   salesContext={d.salesBuilderContext}
                   onClose={() => setSelected(null)}
-                  onMoveToNext={() => void moveToNextStatus(selected.id, normalizePipelineStatus(selected.status))}
-                  canMoveNext={nextForwardStatus(normalizePipelineStatus(selected.status)) !== null}
+                  onStatusChange={(status) => void changeLeadStatus(selected.id, status)}
                   onCreateProposal={() => generateProposalForLead(selected)}
                   onLeadUpdated={(updated) => {
                     setLeads((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)));
