@@ -87,23 +87,7 @@ serve(async (req) => {
       landing_generations_count?: number;
       credits_balance?: number;
     } | null;
-    const planName = typeof prof?.plan === "string" ? prof.plan : "free";
-    const genLimit =
-      planName === "free"
-        ? 1
-        : planName === "starter" || planName === "pro" || planName === "scale"
-          ? 999
-          : 1;
     const generationCount = Number(prof?.landing_generations_count ?? 0);
-    if (generationCount >= genLimit) {
-      return new Response(
-        JSON.stringify({ error: "Generation limit reached. Upgrade your plan." }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
     const creditsBal = Number(prof?.credits_balance ?? 0);
     if (creditsBal < 10) {
       return new Response(
