@@ -119,7 +119,7 @@ type DashboardDataContextValue = {
   buildError: string | null;
   buildLogVisible: number;
   buildingLogMessages: string[];
-  handleBuildLandingPage: () => Promise<void>;
+  handleBuildLandingPage: (opts?: { style?: string }) => Promise<void>;
   regenerateConfirm: boolean;
   setRegenerateConfirm: (v: boolean) => void;
   regenerateError: string | null;
@@ -444,7 +444,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     profileTelegramChatId
   ]);
 
-  const handleBuildLandingPage = useCallback(async () => {
+  const handleBuildLandingPage = useCallback(async (opts?: { style?: string }) => {
       if (!offer || !sessionToken) return;
       setBuildError(null);
       setBuildingLanding(true);
@@ -469,7 +469,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             project_id: activeProject?.id ?? null,
             businessName: "",
             primaryGoal: "",
-            siteVibe: ""
+            siteVibe: "",
+            style: opts?.style ?? "dark_pro"
           })
         });
         const text = await response.text();

@@ -11,12 +11,14 @@ import { LandingStripeStatus } from "@/components/dashboard/LandingStripeStatus"
 import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimonialsPanel";
 
 const QUICK_ACTIONS = [
+  "Make headline stronger",
   "Change colors",
   "Add testimonials",
   "Add FAQ section",
   "Add Calendly",
-  "Make headline stronger",
-  "Add WhatsApp button"
+  "Add WhatsApp button",
+  "Add pricing section",
+  "Make it more urgent",
 ] as const;
 
 type ChatMsg = { id: string; role: "user" | "assistant"; content: string };

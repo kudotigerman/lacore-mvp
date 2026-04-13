@@ -7,11 +7,21 @@ import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
 
+const LANDING_STYLE_OPTIONS = [
+  { value: "dark_pro", label: "Dark Pro", emoji: "🌑" },
+  { value: "light_clean", label: "Light Clean", emoji: "⬜" },
+  { value: "bold_black", label: "Bold Black", emoji: "⚫" },
+  { value: "warm_cream", label: "Warm Cream", emoji: "🌿" },
+  { value: "tech_modern", label: "Tech Modern", emoji: "🔷" },
+  { value: "natural_green", label: "Natural", emoji: "🌿" },
+] as const;
+
 export default function DashboardLandingPage() {
   const d = useDashboardData();
   const { userId, setLandingSlug, activeProject } = d;
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<string>("dark_pro");
 
   const landingUrl = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
 
@@ -133,9 +143,37 @@ export default function DashboardLandingPage() {
             <p className="mb-6 text-center text-sm text-white/50">
               Your offer is ready. Now let&apos;s build your sales page.
             </p>
+            <div className="mb-5 w-full">
+              <p className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-white/40">
+                Choose your style
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {LANDING_STYLE_OPTIONS.map((opt) => {
+                  const selected = selectedStyle === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={d.buildingLanding}
+                      onClick={() => setSelectedStyle(opt.value)}
+                      className={`rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-colors disabled:opacity-50 ${
+                        selected
+                          ? "border-indigo-500/60 bg-indigo-500/15 text-white"
+                          : "border-white/[0.08] bg-white/[0.03] text-white/60 hover:border-white/15 hover:text-white/80"
+                      }`}
+                    >
+                      <span className="mr-1.5" aria-hidden>
+                        {opt.emoji}
+                      </span>
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <button
               type="button"
-              onClick={() => void d.handleBuildLandingPage()}
+              onClick={() => void d.handleBuildLandingPage({ style: selectedStyle })}
               disabled={d.buildingLanding}
               className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
