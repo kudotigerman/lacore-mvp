@@ -23,6 +23,7 @@ import {
 } from "@/components/dashboard/DashboardDataContext";
 import { dashPremiumCss } from "@/components/dashboard/dashTokens";
 import { LandingGenerationLoader } from "@/components/dashboard/LandingGenerationLoader";
+import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 
 const CHAT_STORAGE_KEY = "lacore-chat-history";
 const CHECKLIST_COLLAPSED_KEY = "lacore_checklist_collapsed";
@@ -39,6 +40,13 @@ function cleanMarkdown(text: string): string {
 }
 
 const SIDEBAR_W = 220;
+const MOBILE_NAV_ITEMS = [
+  { href: "/dashboard/offer", label: "Offer", icon: "🎯" },
+  { href: "/dashboard/landing", label: "Landing", icon: "🧱" },
+  { href: "/dashboard/leads", label: "Leads", icon: "💬" },
+  { href: "/dashboard/analytics", label: "Analytics", icon: "📈" },
+  { href: "/dashboard/settings", label: "Settings", icon: "⚙️" }
+] as const;
 
 const QUICK_ACTIONS: { label: string; message: string }[] = [
   {
@@ -114,6 +122,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   const [chatLoading, setChatLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [checklistCollapsed, setChecklistCollapsed] = useState(true);
+  const creditsBalance = useCreditsBalance();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInitDone = useRef(false);
 
@@ -397,7 +406,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       ) : null}
 
       <aside
-        className="dash-sidebar-col border-r border-white/[0.06] bg-[#060608]"
+        className="dash-sidebar-col hidden border-r border-white/[0.06] bg-[#060608] lg:flex"
         style={{
           width: SIDEBAR_W,
           flexShrink: 0,
@@ -680,7 +689,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       </aside>
 
       <div
-        className="dash-main-col px-8 py-6"
+        className="dash-main-col px-4 pb-24 pt-4 lg:px-8 lg:py-6"
         style={{
           flex: 1,
           minWidth: 0,
@@ -690,8 +699,39 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           background: "var(--content-bg)"
         }}
       >
+        <div className="mb-4 flex items-center justify-between gap-3 border-b border-white/10 pb-3 lg:hidden">
+          <div className="min-w-0 flex-1">
+            <Logo size="sm" variant="dark" href="/dashboard/offer" />
+            <div className="mt-2">
+              <ProjectSelector />
+            </div>
+          </div>
+          <div className="shrink-0 rounded-full border border-indigo-500/35 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300">
+            Credits: {creditsBalance ?? "…"}
+          </div>
+        </div>
         {children}
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#060608]/95 px-2 py-2 backdrop-blur lg:hidden">
+        <div className="grid grid-cols-5 gap-1">
+          {MOBILE_NAV_ITEMS.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex min-h-11 flex-col items-center justify-center rounded-lg px-1 text-[11px] no-underline ${
+                  active ? "text-indigo-300" : "text-white/50"
+                }`}
+              >
+                <span aria-hidden>{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
       {!data.buildingLanding ? (
         <>

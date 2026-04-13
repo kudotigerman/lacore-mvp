@@ -540,7 +540,7 @@ function ProposalsPageInner() {
           {allProposals.map((p) => (
             <div
               key={p.id}
-              className="group mb-2 flex overflow-hidden rounded-xl border border-white/6 bg-white/[0.02] transition-colors hover:border-white/15"
+              className="group mb-2 flex flex-col overflow-hidden rounded-xl border border-white/6 bg-white/[0.02] transition-colors hover:border-white/15 sm:flex-row"
             >
               <button
                 type="button"
@@ -560,11 +560,11 @@ function ProposalsPageInner() {
                   </span>
                 </div>
               </button>
-              <div className="flex w-[140px] shrink-0 flex-col justify-center gap-1 border-l border-white/10 px-2 py-2">
+              <div className="flex shrink-0 flex-row flex-wrap justify-start gap-1 border-t border-white/10 px-2 py-2 sm:w-[140px] sm:flex-col sm:justify-center sm:border-l sm:border-t-0">
                 <button
                   type="button"
                   onClick={() => void loadProposalById(p)}
-                  className="rounded-lg py-1.5 text-center text-[10px] font-semibold text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/5"
+                  className="rounded-lg px-2 py-1.5 text-center text-[10px] font-semibold text-white/80 opacity-100 transition-all hover:bg-white/5 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   Edit
                 </button>
@@ -572,7 +572,7 @@ function ProposalsPageInner() {
                   type="button"
                   disabled={proposalActionBusyId === p.id}
                   onClick={() => void duplicateProposal(p)}
-                  className="rounded-lg py-1.5 text-center text-[10px] font-medium text-white/55 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/5 hover:text-white/80 disabled:opacity-40"
+                  className="rounded-lg px-2 py-1.5 text-center text-[10px] font-medium text-white/55 opacity-100 transition-all hover:bg-white/5 hover:text-white/80 disabled:opacity-40 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   Duplicate
                 </button>
@@ -580,7 +580,7 @@ function ProposalsPageInner() {
                   type="button"
                   disabled={proposalActionBusyId === p.id}
                   onClick={() => void deleteProposal(p)}
-                  className="rounded-lg py-1.5 text-center text-[10px] font-medium text-red-400/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 disabled:opacity-40"
+                  className="rounded-lg px-2 py-1.5 text-center text-[10px] font-medium text-red-400/80 opacity-100 transition-all hover:bg-red-500/10 disabled:opacity-40 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   Delete
                 </button>
@@ -607,11 +607,11 @@ function ProposalsPageInner() {
 
       {linkOpen ? (
         <div
-          className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/60 px-4"
+          className="fixed inset-0 z-[10002] flex items-end justify-center bg-black/60 px-0 sm:items-center sm:px-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0D0F1A] p-6">
+          <div className="w-full max-w-md rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-6 sm:rounded-2xl">
             <h3 className="mb-2 text-lg font-semibold text-white">Link to lead</h3>
             <p className="mb-4 text-sm text-white/45">Sets the lead&apos;s pipeline status to Proposal sent.</p>
             {leads.length === 0 ? (
@@ -620,7 +620,7 @@ function ProposalsPageInner() {
               <select
                 value={linkLeadId}
                 onChange={(e) => setLinkLeadId(e.target.value)}
-                className="mb-4 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white"
+                className="mb-4 min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white"
               >
                 {leads.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -633,7 +633,7 @@ function ProposalsPageInner() {
               <button
                 type="button"
                 onClick={() => setLinkOpen(false)}
-                className="rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white/70"
+                className="min-h-11 rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white/70"
               >
                 Cancel
               </button>
@@ -641,7 +641,7 @@ function ProposalsPageInner() {
                 type="button"
                 disabled={!linkLeadId || linkSaving || leads.length === 0}
                 onClick={() => void handleLinkConfirm()}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-40"
+                className="min-h-11 rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-500 disabled:opacity-40"
               >
                 {linkSaving ? "Saving…" : "Confirm"}
               </button>

@@ -266,7 +266,7 @@ const shell: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 24,
+  padding: 16,
   boxSizing: "border-box",
   background: "linear-gradient(165deg, #faf7f2 0%, #f5f0e8 45%, #efe8dd 100%)",
   fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
@@ -285,7 +285,7 @@ const input: CSSProperties = {
   width: "100%",
   marginTop: 8,
   padding: "12px 14px",
-  fontSize: 15,
+  fontSize: 16,
   borderRadius: 10,
   border: "1px solid rgba(120,113,108,0.2)",
   background: "#fff",

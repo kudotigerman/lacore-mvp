@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { PaddleProvider } from "@/components/PaddleProvider";
@@ -35,6 +35,12 @@ export const metadata: Metadata = {
   verification: {
     google: "5tSyzFVAJt2ONZr3Nw2YgU4nuQ2HSR1qcVE3-wWKuqw"
   }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

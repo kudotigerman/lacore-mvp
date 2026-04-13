@@ -304,3 +304,17 @@ body::before {
 .lacore-landing-gen-progress-bar {
   animation: lacore-landing-gen-loading 8s ease-in-out forwards;
 }
+
+@media (max-width: 1023px) {
+  .dash-shell-root input,
+  .dash-shell-root select,
+  .dash-shell-root textarea {
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  .dash-shell-root button,
+  .dash-shell-root a[role="button"] {
+    min-height: 44px;
+  }
+}

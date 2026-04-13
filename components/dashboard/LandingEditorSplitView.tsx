@@ -49,6 +49,7 @@ export function LandingEditorSplitView({
   const [regenerateConfirm, setRegenerateConfirm] = useState(false);
   const [undoVisible, setUndoVisible] = useState(false);
   const [undoBusy, setUndoBusy] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -234,8 +235,8 @@ export function LandingEditorSplitView({
   const v = views ?? 0;
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] min-h-0 w-full max-w-[100vw] overflow-hidden rounded-xl border border-white/[0.08] bg-[#07080F] -mx-8 -my-6 sm:h-[calc(100vh-3rem)]">
-      <div className="flex h-full min-h-0 w-80 shrink-0 flex-col border-r border-white/[0.08] bg-[#0D0F1A]">
+    <div className="flex h-[calc(100vh-6.5rem)] min-h-0 w-full max-w-[100vw] overflow-hidden rounded-xl border border-white/[0.08] bg-[#07080F] lg:-mx-8 lg:-my-6 lg:h-[calc(100vh-3rem)]">
+      <div className="flex h-full min-h-0 w-full shrink-0 flex-col border-r-0 border-white/[0.08] bg-[#0D0F1A] lg:w-80 lg:border-r">
         <div className="shrink-0 border-b border-white/[0.08] px-4 py-3">
           <div className="mb-1 flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
@@ -268,7 +269,7 @@ export function LandingEditorSplitView({
                   key={action}
                   type="button"
                   onClick={() => setInput(action)}
-                  className="rounded-lg border border-white/10 px-2 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
+                  className="min-h-11 rounded-lg border border-white/10 px-2 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
                 >
                   {action}
                 </button>
@@ -280,7 +281,7 @@ export function LandingEditorSplitView({
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Describe what to change on your page — e.g. stronger headline, add Calendly, warmer colors…"
                 rows={3}
-                className="dash-focusable min-h-[4.25rem] flex-1 resize-y rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-sm leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                className="dash-focusable min-h-[4.25rem] flex-1 resize-y rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -292,7 +293,7 @@ export function LandingEditorSplitView({
                 type="button"
                 onClick={() => void handleEdit()}
                 disabled={isEditing || !input.trim()}
-                className="self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                className="min-h-11 self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
               >
                 {isEditing ? "…" : "Apply"}
               </button>
@@ -322,7 +323,7 @@ export function LandingEditorSplitView({
               <button
                 type="button"
                 onClick={() => void handleCopy()}
-                className="shrink-0 rounded-lg border border-indigo-500/20 px-2 py-1.5 text-xs text-indigo-400 transition-colors hover:border-indigo-500/40 hover:text-indigo-300"
+                className="min-h-11 shrink-0 rounded-lg border border-indigo-500/20 px-2 py-1.5 text-xs text-indigo-400 transition-colors hover:border-indigo-500/40 hover:text-indigo-300"
               >
                 {copied ? "✓" : "Copy"}
               </button>
@@ -333,18 +334,25 @@ export function LandingEditorSplitView({
                 href={publicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 rounded-lg border border-white/10 py-2 text-center text-xs text-white/50 transition-colors hover:text-white/80"
+                className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/10 py-2 text-center text-xs text-white/50 transition-colors hover:text-white/80"
               >
                 Preview ↗
               </a>
               <button
                 type="button"
                 onClick={handleRegenerate}
-                className="flex-1 rounded-lg border border-white/10 py-2 text-xs text-white/50 transition-colors hover:text-white/80"
+                className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/10 py-2 text-xs text-white/50 transition-colors hover:text-white/80"
               >
                 Regenerate
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setMobilePreviewOpen(true)}
+              className="flex min-h-11 w-full items-center justify-center rounded-lg border border-indigo-500/35 py-2 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/10 lg:hidden"
+            >
+              Preview full screen
+            </button>
             {undoVisible ? (
               <button
                 type="button"
@@ -359,7 +367,7 @@ export function LandingEditorSplitView({
             <button
               type="button"
               onClick={() => router.push("/dashboard/content")}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
             >
               Continue to Content
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
@@ -389,7 +397,7 @@ export function LandingEditorSplitView({
         </div>
       </div>
 
-      <div className="relative min-w-0 flex-1 overflow-hidden bg-white">
+      <div className="relative hidden min-w-0 flex-1 overflow-hidden bg-white lg:block">
         <div className="absolute left-0 right-0 top-0 z-10 flex items-center gap-3 border-b border-white/10 bg-black/80 px-4 py-2 backdrop-blur-sm">
           <div className="flex gap-1.5">
             <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
@@ -433,8 +441,8 @@ export function LandingEditorSplitView({
       </div>
 
       {regenerateConfirm ? (
-        <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0D0F1A] p-5">
+        <div className="fixed inset-0 z-[10020] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4">
+          <div className="w-full max-w-sm rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-5 sm:rounded-xl">
             <p className="text-sm text-white/80">Replace your current site? This will delete the page and generate a new one.</p>
             {d.regenerateError ? <p className="mt-2 text-xs text-red-400">{d.regenerateError}</p> : null}
             <div className="mt-4 flex gap-2">
@@ -460,6 +468,25 @@ export function LandingEditorSplitView({
               </button>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {mobilePreviewOpen ? (
+        <div className="fixed inset-0 z-[10030] bg-black lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobilePreviewOpen(false)}
+            className="absolute right-3 top-3 z-20 min-h-11 rounded-lg border border-white/20 bg-black/60 px-3 text-sm text-white"
+          >
+            Close
+          </button>
+          <iframe
+            key={`${iframeKey}-mobile`}
+            src={`/p/${slug}?embed=1`}
+            className="h-full w-full border-0"
+            title="Landing page preview mobile"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          />
         </div>
       ) : null}
     </div>

@@ -48,6 +48,9 @@ export default function DashboardLeadsPage() {
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [panelEnter, setPanelEnter] = useState(false);
+  const [activeMobileColumn, setActiveMobileColumn] = useState<ColumnId>("new");
+  const [kanbanTouchStartX, setKanbanTouchStartX] = useState<number | null>(null);
+  const [panelTouchStartY, setPanelTouchStartY] = useState<number | null>(null);
   const [wonModalLeadId, setWonModalLeadId] = useState<string | null>(null);
   const [wonDealInput, setWonDealInput] = useState("");
   const [wonSaving, setWonSaving] = useState(false);
@@ -113,6 +116,7 @@ export default function DashboardLeadsPage() {
 
   const getLeadsByStatus = (colId: ColumnId) =>
     leads.filter((l) => normalizePipelineStatus(l.status) === colId);
+  const activeMobileColumnIndex = COLUMNS.findIndex((c) => c.id === activeMobileColumn);
 
   function mergeLeadFromServer(leadId: string, row: LeadRow | undefined) {
     if (!row) return;
@@ -475,13 +479,68 @@ export default function DashboardLeadsPage() {
               <button
                 type="button"
                 onClick={() => setShowAddLead(true)}
-                className="mb-6 flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 text-xs text-white/40 transition-colors hover:border-indigo-500/40 hover:text-indigo-400"
+                className="mb-6 flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 text-xs text-white/40 transition-colors hover:border-indigo-500/40 hover:text-indigo-400"
               >
                 <span>+</span>
                 Add lead manually
               </button>
 
-              <div className="flex min-w-0 gap-3 overflow-x-auto pb-4">
+              <div className="mb-3 flex min-w-0 gap-2 overflow-x-auto pb-2 lg:hidden">
+                {COLUMNS.map((col) => {
+                  const count = getLeadsByStatus(col.id).length;
+                  const active = col.id === activeMobileColumn;
+                  return (
+                    <button
+                      key={col.id}
+                      type="button"
+                      onClick={() => setActiveMobileColumn(col.id)}
+                      className={`flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                        active
+                          ? "border-indigo-500/45 bg-indigo-500/20 text-indigo-200"
+                          : "border-white/10 bg-white/5 text-white/60"
+                      }`}
+                    >
+                      <span>{col.label}</span>
+                      <span className="rounded-full bg-black/20 px-1.5 py-0.5 text-[10px]">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div
+                className="space-y-2 pb-4 lg:hidden"
+                onTouchStart={(e) => setKanbanTouchStartX(e.touches[0]?.clientX ?? null)}
+                onTouchEnd={(e) => {
+                  if (kanbanTouchStartX === null) return;
+                  const dx = (e.changedTouches[0]?.clientX ?? 0) - kanbanTouchStartX;
+                  if (Math.abs(dx) > 40) {
+                    const next = dx < 0 ? activeMobileColumnIndex + 1 : activeMobileColumnIndex - 1;
+                    if (next >= 0 && next < COLUMNS.length) {
+                      setActiveMobileColumn(COLUMNS[next]!.id);
+                    }
+                  }
+                  setKanbanTouchStartX(null);
+                }}
+              >
+                {getLeadsByStatus(activeMobileColumn).map((lead) => (
+                  <LeadKanbanCard
+                    key={lead.id}
+                    lead={lead}
+                    selected={selected?.id === lead.id}
+                    onSelect={() => setSelected(lead)}
+                    onChangeStatus={(status) => void changeLeadStatus(lead.id, status)}
+                    onGenerateProposal={() => generateProposalForLead(lead)}
+                    onWriteSequence={() => writeSequenceForLead(lead)}
+                  />
+                ))}
+                {getLeadsByStatus(activeMobileColumn).length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 p-3 text-center">
+                    <p className="text-xs text-white/25">No leads in this stage.</p>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="hidden min-w-0 gap-3 overflow-x-auto pb-4 lg:flex">
                 {COLUMNS.map((col) => {
                   const colLeads = getLeadsByStatus(col.id);
                   return (
@@ -527,9 +586,16 @@ export default function DashboardLeadsPage() {
 
             {selected ? (
               <aside
-                className={`fixed inset-0 z-[60] flex h-full min-h-0 flex-col border-white/[0.08] bg-[var(--content-bg)] transition-transform duration-200 ease-out lg:static lg:inset-auto lg:z-auto lg:h-[min(100vh-8rem,900px)] lg:w-[400px] lg:max-w-[400px] lg:flex-shrink-0 lg:border-l lg:bg-transparent lg:shadow-none ${
-                  panelEnter ? "translate-x-0" : "translate-x-full"
+                className={`fixed inset-x-0 bottom-0 top-auto z-[60] flex h-[92vh] min-h-0 flex-col rounded-t-2xl border border-white/[0.08] bg-[var(--content-bg)] transition-transform duration-200 ease-out lg:static lg:inset-auto lg:z-auto lg:h-[min(100vh-8rem,900px)] lg:w-[400px] lg:max-w-[400px] lg:flex-shrink-0 lg:rounded-none lg:border-l lg:bg-transparent lg:shadow-none ${
+                  panelEnter ? "translate-y-0 lg:translate-x-0" : "translate-y-full lg:translate-x-full"
                 } `}
+                onTouchStart={(e) => setPanelTouchStartY(e.touches[0]?.clientY ?? null)}
+                onTouchEnd={(e) => {
+                  if (panelTouchStartY === null) return;
+                  const dy = (e.changedTouches[0]?.clientY ?? 0) - panelTouchStartY;
+                  if (dy > 80) setSelected(null);
+                  setPanelTouchStartY(null);
+                }}
               >
                 <LeadClosingPanel
                   lead={selected}

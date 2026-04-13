@@ -186,9 +186,45 @@ function PublicLandingPageContent() {
   const [publicStripe, setPublicStripe] = useState<PublicStripeSettings | null>(null);
   const [stripePayLoading, setStripePayLoading] = useState(false);
   const [ownerPlan, setOwnerPlan] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const showFreeWatermark = (ownerPlan ?? "free") === "free";
   const showPublicBrandUi = showFreeWatermark && !embedPreview;
+  const brandFabStyle: CSSProperties = {
+    position: "fixed",
+    bottom: isMobile ? 78 : 20,
+    right: isMobile ? 12 : 20,
+    zIndex: 9998,
+    border: "1px solid var(--accent)",
+    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    color: "var(--accent)",
+    borderRadius: 4,
+    padding: "8px 14px",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    fontSize: 9,
+    letterSpacing: "0.08em",
+    cursor: "pointer",
+    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+  };
+  const checkoutFabStyle: CSSProperties = {
+    position: "fixed",
+    bottom: 20,
+    left: isMobile ? 12 : 20,
+    right: isMobile ? 12 : undefined,
+    zIndex: 9999,
+    border: "none",
+    background: "var(--accent)",
+    color: "var(--on-accent, #000)",
+    borderRadius: 6,
+    padding: "14px 22px",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    boxShadow: "0 12px 40px rgba(0,0,0,0.35)"
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -209,6 +245,13 @@ function PublicLandingPageContent() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("lacore-theme") ?? "dark";
     document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const useLiveReact = Boolean(jsxContent.trim());
@@ -538,24 +581,7 @@ function PublicLandingPageContent() {
                 <button
                   type="button"
                   onClick={() => setShowPromo(true)}
-                  style={{
-                    position: "fixed",
-                    bottom: 20,
-                    right: 20,
-                    zIndex: 9998,
-                    border: "1px solid var(--accent)",
-                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
-                    color: "var(--accent)",
-                    borderRadius: 4,
-                    padding: "8px 14px",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 9,
-                    letterSpacing: "0.08em",
-                    cursor: "pointer",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
-                  }}
+                  style={brandFabStyle}
                 >
                   ⚡ Built with LACORE
                 </button>
@@ -566,21 +592,8 @@ function PublicLandingPageContent() {
                   onClick={() => void handleStripeCheckout()}
                   disabled={stripePayLoading}
                   style={{
-                    position: "fixed",
-                    bottom: 20,
-                    left: 20,
-                    zIndex: 9999,
-                    border: "none",
-                    background: "var(--accent)",
-                    color: "var(--on-accent, #000)",
-                    borderRadius: 6,
-                    padding: "14px 22px",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    letterSpacing: "0.06em",
+                    ...checkoutFabStyle,
                     cursor: stripePayLoading ? "wait" : "pointer",
-                    boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
                     opacity: stripePayLoading ? 0.85 : 1
                   }}
                 >
@@ -604,24 +617,7 @@ function PublicLandingPageContent() {
                 <button
                   type="button"
                   onClick={() => setShowPromo(true)}
-                  style={{
-                    position: "fixed",
-                    bottom: 20,
-                    right: 20,
-                    zIndex: 9998,
-                    border: "1px solid var(--accent)",
-                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
-                    color: "var(--accent)",
-                    borderRadius: 4,
-                    padding: "8px 14px",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 9,
-                    letterSpacing: "0.08em",
-                    cursor: "pointer",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
-                  }}
+                  style={brandFabStyle}
                 >
                   ⚡ Built with LACORE
                 </button>
@@ -632,21 +628,8 @@ function PublicLandingPageContent() {
                   onClick={() => void handleStripeCheckout()}
                   disabled={stripePayLoading}
                   style={{
-                    position: "fixed",
-                    bottom: 20,
-                    left: 20,
-                    zIndex: 9999,
-                    border: "none",
-                    background: "var(--accent)",
-                    color: "var(--on-accent, #000)",
-                    borderRadius: 6,
-                    padding: "14px 22px",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    letterSpacing: "0.06em",
+                    ...checkoutFabStyle,
                     cursor: stripePayLoading ? "wait" : "pointer",
-                    boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
                     opacity: stripePayLoading ? 0.85 : 1
                   }}
                 >
@@ -676,24 +659,7 @@ function PublicLandingPageContent() {
                 <button
                   type="button"
                   onClick={() => setShowPromo(true)}
-                  style={{
-                    position: "fixed",
-                    bottom: 20,
-                    right: 20,
-                    zIndex: 9998,
-                    border: "1px solid var(--accent)",
-                    background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
-                    color: "var(--accent)",
-                    borderRadius: 4,
-                    padding: "8px 14px",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 9,
-                    letterSpacing: "0.08em",
-                    cursor: "pointer",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
-                  }}
+                  style={brandFabStyle}
                 >
                   ⚡ Built with LACORE
                 </button>
@@ -704,21 +670,8 @@ function PublicLandingPageContent() {
                   onClick={() => void handleStripeCheckout()}
                   disabled={stripePayLoading}
                   style={{
-                    position: "fixed",
-                    bottom: 20,
-                    left: 20,
-                    zIndex: 9999,
-                    border: "none",
-                    background: "var(--accent)",
-                    color: "var(--on-accent, #000)",
-                    borderRadius: 6,
-                    padding: "14px 22px",
-                    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    letterSpacing: "0.06em",
+                    ...checkoutFabStyle,
                     cursor: stripePayLoading ? "wait" : "pointer",
-                    boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
                     opacity: stripePayLoading ? 0.85 : 1
                   }}
                 >
