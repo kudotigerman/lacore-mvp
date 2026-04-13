@@ -10,8 +10,12 @@ export default function DashboardSettingsPage() {
   const d = useDashboardData();
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [billingCredits, setBillingCredits] = useState<number | null>(null);
-  const [telegramTestLoading, setTelegramTestLoading] = useState(false);
-  const [telegramTestMessage, setTelegramTestMessage] = useState<string | null>(null);
+  const [telegramConnectLink, setTelegramConnectLink] = useState<string | null>(null);
+  const [telegramChecking, setTelegramChecking] = useState(false);
+  const [telegramConnected, setTelegramConnected] = useState(false);
+  const [telegramChatId, setTelegramChatId] = useState<string | null>(null);
+  const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
+  const [telegramConnectMessage, setTelegramConnectMessage] = useState<string | null>(null);
 
   function applyBillingPayload(data: { plan?: string; credits_balance?: unknown }) {
     setBillingPlan(typeof data.plan === "string" && data.plan.length > 0 ? data.plan : "free");
@@ -54,33 +58,83 @@ export default function DashboardSettingsPage() {
       ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-300"
       : "border-white/10 bg-transparent text-white/50";
 
-  const handleSendTelegramTest = useCallback(async () => {
-    if (!d.sessionToken) {
-      setTelegramTestMessage("Session expired. Refresh and try again.");
-      return;
-    }
-    setTelegramTestLoading(true);
-    setTelegramTestMessage(null);
+  const fetchTelegramStatus = useCallback(async () => {
     try {
-      const res = await fetch("/api/telegram/test", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${d.sessionToken}`
-        }
-      });
-      const json = (await res.json()) as { success?: boolean; error?: string };
-      if (!res.ok || !json.success) {
-        setTelegramTestMessage(json.error || "Failed to send test notification.");
+      const res = await fetch("/api/telegram/status", { credentials: "include", cache: "no-store" });
+      const json = (await res.json()) as { connected?: boolean; chat_id?: string; username?: string };
+      if (!res.ok) return false;
+      const connected = Boolean(json.connected);
+      setTelegramConnected(connected);
+      setTelegramChatId(json.chat_id ?? null);
+      setTelegramUsername(json.username ?? null);
+      return connected;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const loadTelegramLink = useCallback(async () => {
+    try {
+      const res = await fetch("/api/telegram/register", { credentials: "include", cache: "no-store" });
+      const json = (await res.json()) as { link?: string };
+      if (!res.ok || !json.link) {
+        setTelegramConnectLink(null);
         return;
       }
-      setTelegramTestMessage("Test notification sent.");
+      setTelegramConnectLink(json.link);
     } catch {
-      setTelegramTestMessage("Failed to send test notification.");
-    } finally {
-      setTelegramTestLoading(false);
+      setTelegramConnectLink(null);
     }
-  }, [d.sessionToken]);
+  }, []);
+
+  useEffect(() => {
+    if (!d.userId || d.loading) return;
+    void loadTelegramLink();
+    void fetchTelegramStatus();
+  }, [d.userId, d.loading, loadTelegramLink, fetchTelegramStatus]);
+
+  const handleConnectTelegram = useCallback(async () => {
+    if (!telegramConnectLink) {
+      setTelegramConnectMessage("Could not generate connect link. Refresh and try again.");
+      return;
+    }
+    setTelegramConnectMessage("Waiting for Telegram connection...");
+    setTelegramChecking(true);
+    window.open(telegramConnectLink, "_blank", "noopener,noreferrer");
+
+    const startedAt = Date.now();
+    const maxMs = 2 * 60 * 1000;
+
+    while (Date.now() - startedAt < maxMs) {
+      const connected = await fetchTelegramStatus();
+      if (connected) {
+        setTelegramConnectMessage("Telegram connected.");
+        setTelegramChecking(false);
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 3000));
+    }
+
+    setTelegramChecking(false);
+    setTelegramConnectMessage("Still waiting. Click connect again after you press Start in Telegram.");
+  }, [telegramConnectLink, fetchTelegramStatus]);
+
+  const handleDisconnectTelegram = useCallback(async () => {
+    setTelegramConnectMessage(null);
+    try {
+      const res = await fetch("/api/telegram/status", { method: "DELETE", credentials: "include" });
+      if (!res.ok) {
+        setTelegramConnectMessage("Could not disconnect Telegram.");
+        return;
+      }
+      setTelegramConnected(false);
+      setTelegramChatId(null);
+      setTelegramUsername(null);
+      setTelegramConnectMessage("Telegram disconnected.");
+    } catch {
+      setTelegramConnectMessage("Could not disconnect Telegram.");
+    }
+  }, []);
 
   return (
     <div className="min-h-full max-w-xl">
@@ -139,31 +193,39 @@ export default function DashboardSettingsPage() {
             Off
           </button>
         </div>
-        <label className="block">
-          <span className="mb-1.5 block text-xs uppercase tracking-wider text-white/40">Telegram chat ID</span>
-          <input
-            className="dash-focusable w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 transition-colors focus:border-indigo-500/50 focus:outline-none"
-            type="text"
-            value={d.profileTelegramChatId}
-            onChange={(e) => d.setProfileTelegramChatId(e.target.value)}
-            placeholder="123456789"
-          />
-        </label>
-        <p className="mt-2 text-xs leading-relaxed text-white/35">
-          Send /start to @lacorebot to get your chat ID.
-        </p>
-        <div className="mt-3">
-          <button
-            type="button"
-            disabled={telegramTestLoading}
-            onClick={() => void handleSendTelegramTest()}
-            className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/80 transition-colors hover:border-white/25 hover:text-white disabled:opacity-60"
-          >
-            {telegramTestLoading ? "Sending..." : "Send test notification"}
-          </button>
-          {telegramTestMessage ? <p className="mt-2 text-xs text-white/50">{telegramTestMessage}</p> : null}
+        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+          {telegramConnected ? (
+            <div>
+              <p className="text-sm font-medium text-emerald-300">✅ Telegram connected</p>
+              <p className="mt-1 text-xs text-white/45">
+                {telegramUsername ? `${telegramUsername} · ` : ""}
+                {telegramChatId ? `Chat ID: ${telegramChatId}` : "Connected"}
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleDisconnectTelegram()}
+                className="mt-3 rounded-xl border border-red-500/25 px-4 py-2 text-sm text-red-200 transition-colors hover:border-red-500/40"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <div>
+              <button
+                type="button"
+                disabled={telegramChecking}
+                onClick={() => void handleConnectTelegram()}
+                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-60"
+              >
+                {telegramChecking ? "Waiting for Telegram…" : "Connect Telegram notifications →"}
+              </button>
+              <p className="mt-2 text-xs text-white/35">
+                Opens Telegram bot with your secure connect token. Press Start in the chat to finish.
+              </p>
+            </div>
+          )}
+          {telegramConnectMessage ? <p className="mt-2 text-xs text-white/50">{telegramConnectMessage}</p> : null}
         </div>
-        <p className="mt-3 text-xs text-white/30">Use Save below to persist notification settings.</p>
       </div>
 
       <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-6 mb-4">
