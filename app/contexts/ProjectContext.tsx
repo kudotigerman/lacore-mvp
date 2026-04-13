@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { PLANS, type PlanName } from "@/lib/plans";
 
@@ -17,6 +17,7 @@ type ProjectContextValue = {
   projects: Project[];
   setActiveProject: (project: Project) => void;
   createProject: (name: string) => Promise<Project>;
+  renameProject: (projectId: string, name: string) => Promise<string>;
   isLoading: boolean;
 };
 
@@ -153,9 +154,35 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     return p;
   };
 
+  const renameProject = useCallback(async (projectId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) throw new Error("Name cannot be empty.");
+
+    const supabase = getSupabaseClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error("Unauthorized");
+
+    const res = await fetch("/api/projects/rename", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ project_id: projectId, name: trimmed })
+    });
+    const json = (await res.json()) as { success?: boolean; name?: string; error?: string };
+    if (!res.ok) throw new Error(json.error ?? "Could not rename project.");
+    const nextName = json.name ?? trimmed;
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, name: nextName } : p)));
+    setActiveProjectState((prev) => (prev?.id === projectId ? { ...prev, name: nextName } : prev));
+    return nextName;
+  }, []);
+
   const value = useMemo(
-    () => ({ activeProject, projects, setActiveProject, createProject, isLoading }),
-    [activeProject, projects, isLoading]
+    () => ({ activeProject, projects, setActiveProject, createProject, renameProject, isLoading }),
+    [activeProject, projects, isLoading, renameProject]
   );
 
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
