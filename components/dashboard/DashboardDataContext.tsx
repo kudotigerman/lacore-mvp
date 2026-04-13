@@ -445,12 +445,22 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   ]);
 
   const handleBuildLandingPage = useCallback(async (opts?: { style?: string }) => {
-      if (!offer || !sessionToken) return;
+      if (!offer) return;
       setBuildError(null);
       setBuildingLanding(true);
       setBuildLogVisible(1);
 
       try {
+        const supabase = getSupabaseClient();
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+        const sessionToken = session?.access_token;
+        if (!sessionToken) {
+          throw new Error("Not authenticated");
+        }
+        setSessionToken(sessionToken);
+
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         if (!supabaseUrl || !(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "")) {
           throw new Error("Missing Supabase configuration.");
@@ -511,7 +521,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       } finally {
         setBuildingLanding(false);
       }
-    }, [offer, sessionToken, email, activeProject?.id, refreshDashboardStatus]);
+    }, [offer, email, activeProject?.id, refreshDashboardStatus]);
 
   useEffect(() => {
     if (!buildingLanding) {
