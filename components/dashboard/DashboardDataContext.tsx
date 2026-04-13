@@ -474,14 +474,35 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
           })
         });
         const text = await response.text();
-        let result: { success?: boolean; error?: string; slug?: string };
+        let result: {
+          success?: boolean;
+          error?: string;
+          message?: string;
+          details?: string;
+          msg?: string;
+          slug?: string;
+        };
         try {
-          result = JSON.parse(text) as { success?: boolean; error?: string; slug?: string };
+          result = JSON.parse(text) as {
+            success?: boolean;
+            error?: string;
+            message?: string;
+            details?: string;
+            msg?: string;
+            slug?: string;
+          };
         } catch {
           throw new Error("Server error: " + text.slice(0, 100));
         }
         if (!response.ok || !result?.success) {
-          throw new Error(result?.error || "Failed to build.");
+          console.error("generate-landing response:", response.status, result);
+          const errorMsg =
+            result?.error ||
+            result?.message ||
+            result?.details ||
+            result?.msg ||
+            JSON.stringify(result);
+          throw new Error(errorMsg);
         }
         setLandingSlug(result.slug ?? null);
         await refreshDashboardStatus();
