@@ -2,76 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ChevronDown, Megaphone, Rocket, TrendingUp, Wallet } from "lucide-react";
 
 const guideIcons = {
-  rocket: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-indigo-400"
-      aria-hidden
-    >
-      <path d="M4.5 16.5c-1.5 1.5-1 4.5 2 4 .5-2 2-3.5 4-4l-6-6c-.5 2 .5 4.5-1.5 6.5z" />
-      <path d="M9 10c2-2 5-3 8-3 0 3-1 6-3 8" />
-      <path d="M14.5 9.5 9 15" />
-      <circle cx="14" cy="10" r="1" />
-    </svg>
-  ),
-  money: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-indigo-400"
-      aria-hidden
-    >
-      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </svg>
-  ),
-  handshake: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-indigo-400"
-      aria-hidden
-    >
-      <path d="M20.5 7.5L12 16l-4-4-6 6" />
-      <path d="M15 7h6v6" />
-    </svg>
-  ),
-  megaphone: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-indigo-400"
-      aria-hidden
-    >
-      <path d="M3 11l19-9-9 19-2-8-8-2z" />
-    </svg>
-  )
+  rocket: Rocket,
+  money: Wallet,
+  handshake: TrendingUp,
+  megaphone: Megaphone
 } as const;
 
 type GuideIconKey = keyof typeof guideIcons;
@@ -235,42 +172,49 @@ export default function PlaybookPage() {
         {guides.map((guide) => {
           const isOpen = open === guide.id;
           return (
-            <div key={guide.id} className="mb-4">
+            <div key={guide.id} className="mb-4 rounded-xl border border-white/8 bg-white/[0.02]">
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : guide.id)}
-                className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] p-5 transition-colors hover:border-white/15"
+                className="flex w-full items-center justify-between p-5 transition-colors hover:bg-white/[0.03]"
               >
                 <div className="flex min-w-0 items-center gap-3 text-left">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
-                    {guideIcons[guide.iconKey]}
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                    {(() => {
+                      const Icon = guideIcons[guide.iconKey];
+                      return <Icon size={16} aria-hidden />;
+                    })()}
                   </div>
-                  <span className="text-base font-semibold text-white">{guide.title}</span>
+                  <span className="text-lg font-medium text-white">{guide.title}</span>
                 </div>
-                <span className="text-xs text-white/30">{isOpen ? "▲" : "▼"}</span>
+                <ChevronDown
+                  size={16}
+                  className={`text-white/40 transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}
+                  aria-hidden
+                />
               </button>
 
               {isOpen ? (
-                <div className="-mt-1 overflow-hidden rounded-b-2xl border border-t-0 border-white/8">
+                <div className="pb-4">
                   {guide.steps.map((step, j) => (
                     <div
                       key={`${guide.id}-${j}`}
-                      className="flex gap-4 border-b border-white/5 px-5 py-4 last:border-0 hover:bg-white/[0.02]"
+                      className="mx-5 mb-3 border-l-2 border-indigo-500 pl-4 last:mb-0"
                     >
                       {step.day ? (
-                        <span className="mt-0.5 w-12 flex-shrink-0 text-xs text-indigo-400">{step.day}</span>
+                        <span className="mt-0.5 w-14 flex-shrink-0 text-xs text-indigo-400">{step.day}</span>
                       ) : (
-                        <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-[10px] text-indigo-400">
+                        <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-[10px] text-indigo-200">
                           {j + 1}
                         </span>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="mb-0.5 text-sm font-medium text-white">{step.action}</p>
-                        <p className="text-xs leading-relaxed text-white/50">{step.desc}</p>
+                        <p className="mb-1 text-sm font-medium text-white">{step.action}</p>
+                        <p className="text-sm leading-relaxed text-white/60">{step.desc}</p>
                         {step.link && step.linkLabel ? (
                           <Link
                             href={step.link}
-                            className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-400 transition-colors hover:text-indigo-300"
+                            className="mt-2 inline-flex items-center gap-1 text-sm text-indigo-300 transition-colors hover:text-indigo-200"
                           >
                             {step.linkLabel}
                           </Link>

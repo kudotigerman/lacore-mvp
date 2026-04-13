@@ -192,7 +192,10 @@ function ProposalsPageInner() {
   async function loadProposalById(p: ProposalSummary) {
     const supabase = getSupabaseClient();
     const { data, error: qErr } = await supabase.from("proposals").select("*").eq("id", p.id).single();
-    if (qErr || !data) return;
+    if (qErr || !data) {
+      dashToast("Could not load proposal.");
+      return;
+    }
     const row = data as {
       id: string;
       client_name: string;
@@ -207,7 +210,10 @@ function ProposalsPageInner() {
       setProposal(sections);
       setProposalId(row.id);
       setProposalCreatedAt(row.created_at);
+      setError(null);
+      return;
     }
+    dashToast("This proposal could not be loaded into the editor.");
   }
 
   async function refreshProposalList() {

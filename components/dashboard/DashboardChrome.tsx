@@ -24,6 +24,19 @@ import {
 import { dashPremiumCss } from "@/components/dashboard/dashTokens";
 import { LandingGenerationLoader } from "@/components/dashboard/LandingGenerationLoader";
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
+import {
+  BarChart2,
+  BookOpen,
+  DollarSign,
+  FileText,
+  Layout,
+  Mail,
+  PenLine,
+  Send,
+  Settings,
+  Sparkles,
+  Users
+} from "lucide-react";
 
 const CHAT_STORAGE_KEY = "lacore-chat-history";
 const CHECKLIST_COLLAPSED_KEY = "lacore_checklist_collapsed";
@@ -41,11 +54,11 @@ function cleanMarkdown(text: string): string {
 
 const SIDEBAR_W = 220;
 const MOBILE_NAV_ITEMS = [
-  { href: "/dashboard/offer", label: "Offer", icon: "🎯" },
-  { href: "/dashboard/landing", label: "Landing", icon: "🧱" },
-  { href: "/dashboard/leads", label: "Leads", icon: "💬" },
-  { href: "/dashboard/analytics", label: "Analytics", icon: "📈" },
-  { href: "/dashboard/settings", label: "Settings", icon: "⚙️" }
+  { href: "/dashboard/offer", label: "Offer", icon: Sparkles },
+  { href: "/dashboard/landing", label: "Landing", icon: Layout },
+  { href: "/dashboard/leads", label: "Leads", icon: Users },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings }
 ] as const;
 
 const QUICK_ACTIONS: { label: string; message: string }[] = [
@@ -77,10 +90,10 @@ const QUICK_ACTIONS: { label: string; message: string }[] = [
 ];
 
 const FUNNEL_STEPS = [
-  { num: "01", label: "Offer", href: "/dashboard/offer", key: "offer" as const },
-  { num: "02", label: "Landing page", href: "/dashboard/landing", key: "landing" as const },
-  { num: "03", label: "Content", href: "/dashboard/content", key: "content" as const },
-  { num: "04", label: "Leads & closing", href: "/dashboard/leads", key: "leads" as const }
+  { num: "01", label: "Offer", href: "/dashboard/offer", key: "offer" as const, icon: Sparkles },
+  { num: "02", label: "Landing page", href: "/dashboard/landing", key: "landing" as const, icon: Layout },
+  { num: "03", label: "Content", href: "/dashboard/content", key: "content" as const, icon: PenLine },
+  { num: "04", label: "Leads & closing", href: "/dashboard/leads", key: "leads" as const, icon: Users }
 ];
 
 function stepDone(
@@ -497,6 +510,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             return (
               <Link key={item.href} href={item.href} className={`${cls} no-underline`}>
                 <span className="w-5 flex-shrink-0 text-[10px] text-white/35">{item.num}</span>
+                <item.icon size={14} className="shrink-0 text-white/45" />
                 <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
                 {suffix}
               </Link>
@@ -512,6 +526,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             }`}
           >
             <span className="w-5 flex-shrink-0 text-[10px] text-white/20">05</span>
+            <FileText size={14} className="shrink-0 text-white/45" />
             <span className="min-w-0 flex-1 leading-tight">Proposals</span>
           </Link>
 
@@ -525,6 +540,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             }`}
           >
             <span className="w-5 flex-shrink-0 text-[10px] text-white/20">06</span>
+            <DollarSign size={14} className="shrink-0 text-white/45" />
             <span className="min-w-0 flex-1 leading-tight">Pricing</span>
           </Link>
 
@@ -537,6 +553,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             }`}
           >
             <span className="w-5 flex-shrink-0 text-[10px] text-white/20">07</span>
+            <Mail size={14} className="shrink-0 text-white/45" />
             <span className="min-w-0 flex-1 leading-tight">Sequences</span>
           </Link>
 
@@ -549,6 +566,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             }`}
           >
             <span className="w-5 flex-shrink-0 text-[10px] text-white/20">08</span>
+            <Send size={14} className="shrink-0 text-white/45" />
             <span className="min-w-0 flex-1 leading-tight">Outreach</span>
           </Link>
 
@@ -562,6 +580,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                 : "text-white/35 hover:bg-white/5 hover:text-white/50"
             }`}
           >
+            <BarChart2 size={14} className="mr-2 shrink-0 text-white/45" />
             Analytics
           </Link>
 
@@ -575,7 +594,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                   : "text-white/40 hover:text-white/70"
               }`}
             >
-              <span>📖</span>
+              <BookOpen size={14} className="shrink-0 text-white/45" />
               Playbook
             </Link>
           </div>
@@ -635,6 +654,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
               marginTop: 4
             }}
           >
+            <Settings size={14} className="mr-1 inline-block align-[-2px] text-white/45" />
             Settings
           </Link>
           <button
@@ -688,6 +708,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
         <div className="grid grid-cols-5 gap-1">
           {MOBILE_NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -696,7 +717,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                   active ? "text-indigo-300" : "text-white/50"
                 }`}
               >
-                <span aria-hidden>{item.icon}</span>
+                <Icon size={14} aria-hidden />
                 <span>{item.label}</span>
               </Link>
             );

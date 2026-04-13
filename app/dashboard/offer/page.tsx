@@ -13,6 +13,7 @@ import type { DashboardOffer } from "@/components/dashboard/DashboardDataContext
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useProjectContext } from "@/app/contexts/ProjectContext";
+import { FileText, Shield, Tag, Target } from "lucide-react";
 
 const REFINE_QUICK = [
   "More aggressive",
@@ -130,34 +131,6 @@ function IndigoIconBox({ children }: { children: ReactNode }) {
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-500/25 bg-indigo-500/[0.08] text-indigo-400 [&_svg]:shrink-0">
       {children}
     </div>
-  );
-}
-
-function IconDoc() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M14 2v6h6M8 13h8M8 17h8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconTarget() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 3v2M12 19v2M3 12h2M19 12h2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconTag() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <path d="M12 2H4v9l8 11 8-11V2h-8z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9.5 6h.01M13.5 6h.01" strokeLinecap="round" />
-    </svg>
   );
 }
 
@@ -674,13 +647,10 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
             <div className="space-y-4 pb-6">
               {fields.map((item) => {
                 const icon =
-                  item.key === "pricing" ? (
-                    <IconTag />
-                  ) : item.key === "positioning" || item.key === "audience" ? (
-                    <IconTarget />
-                  ) : (
-                    <IconDoc />
-                  );
+                  item.key === "pricing" ? <Tag size={18} aria-hidden /> :
+                  item.key === "positioning" ? <Shield size={18} aria-hidden /> :
+                  item.key === "audience" ? <Target size={18} aria-hidden /> :
+                  <FileText size={18} aria-hidden />;
                 return (
                   <div key={item.key} className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-5 shadow-sm">
                     <div className="mb-3 flex items-center gap-3">
@@ -768,7 +738,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                 <div className="md:col-span-2 rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-3 md:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <IndigoIconBox>
-                      <IconDoc />
+                      <FileText size={18} aria-hidden />
                     </IndigoIconBox>
                     <p className={`m-0 ${fieldLabelClass}`}>Core offer</p>
                   </div>
@@ -777,7 +747,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                 <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-3 md:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <IndigoIconBox>
-                      <IconTarget />
+                      <Shield size={18} aria-hidden />
                     </IndigoIconBox>
                     <p className={`m-0 ${fieldLabelClass}`}>Positioning</p>
                   </div>
@@ -786,7 +756,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                 <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/95 p-3 md:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <IndigoIconBox>
-                      <IconTag />
+                      <Tag size={18} aria-hidden />
                     </IndigoIconBox>
                     <p className={`m-0 ${fieldLabelClass}`}>Pricing</p>
                   </div>
