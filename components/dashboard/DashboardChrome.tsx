@@ -95,18 +95,6 @@ function stepDone(
   return false;
 }
 
-function stepLocked(
-  key: (typeof FUNNEL_STEPS)[number]["key"],
-  s: { offer: boolean; landing: boolean; content: boolean; leads: boolean } | null
-): boolean {
-  if (key === "offer") return false;
-  if (!s) return true;
-  if (key === "landing") return !s.offer;
-  if (key === "content") return !s.landing;
-  if (key === "leads") return !s.landing;
-  return false;
-}
-
 export default function DashboardChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const data = useDashboardData();
@@ -493,13 +481,10 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           {FUNNEL_STEPS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
             const done = stepDone(item.key, funnel);
-            const locked = stepLocked(item.key, funnel);
             const suffix = done ? (
               <span className="text-[10px] text-emerald-400">✓</span>
             ) : active ? (
               <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-indigo-400" aria-hidden />
-            ) : locked ? (
-              <span className="text-[10px] text-white/20">·</span>
             ) : null;
 
             const baseRow =
@@ -507,23 +492,9 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
             const activeCls = "bg-indigo-500/15 text-indigo-300";
             const doneCls = "text-white/60 hover:bg-white/5";
             const availCls = "text-white/55 hover:bg-white/5";
-            const lockedCls = "cursor-default text-white/25";
+            const cls = active ? `${baseRow} ${activeCls}` : done ? `${baseRow} ${doneCls}` : `${baseRow} ${availCls}`;
 
-            const cls = locked
-              ? `${baseRow} ${lockedCls}`
-              : active
-                ? `${baseRow} ${activeCls}`
-                : done
-                  ? `${baseRow} ${doneCls}`
-                  : `${baseRow} ${availCls}`;
-
-            return locked ? (
-              <div key={item.href} className={cls} title="Complete the previous step first">
-                <span className="w-5 flex-shrink-0 text-[10px] text-white/30">{item.num}</span>
-                <span className="min-w-0 flex-1 leading-tight">{item.label}</span>
-                {suffix}
-              </div>
-            ) : (
+            return (
               <Link key={item.href} href={item.href} className={`${cls} no-underline`}>
                 <span className="w-5 flex-shrink-0 text-[10px] text-white/35">{item.num}</span>
                 <span className="min-w-0 flex-1 leading-tight">{item.label}</span>

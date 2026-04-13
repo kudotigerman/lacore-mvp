@@ -45,16 +45,41 @@ export default function DashboardLandingPage() {
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from("landing_pages")
-        .select("slug")
+        .select("id, slug")
         .eq("project_id", projectId)
         .eq("user_id", uid)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error || !data) return;
-      const row = data as { slug?: string };
-      if (row.slug) setLandingSlug(row.slug);
+      if (!error && data) {
+        const row = data as { slug?: string };
+        if (row.slug) setLandingSlug(row.slug);
+        return;
+      }
+
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("landing_pages")
+        .select("id, slug")
+        .eq("user_id", uid)
+        .is("project_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fallbackError || !fallbackData) return;
+      const fallbackRow = fallbackData as { id?: string; slug?: string };
+      if (fallbackRow.slug) {
+        setLandingSlug(fallbackRow.slug);
+      }
+
+      if (fallbackRow.id) {
+        void supabase
+          .from("landing_pages")
+          .update({ project_id: projectId } as never)
+          .eq("id", fallbackRow.id)
+          .eq("user_id", uid);
+      }
     }
     void loadExistingLanding();
   }, [activeProject?.id, userId, setLandingSlug]);
