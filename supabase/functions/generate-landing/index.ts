@@ -153,6 +153,44 @@ function injectSlug(html: string, slug: string): string {
   return html.replaceAll("SLUG_VALUE", slug);
 }
 
+const AI_BUSY_USER_MESSAGE =
+  "Our AI is temporarily busy. Please try again in a moment.";
+
+function isRetryableAnthropicResponse(status: number, body: unknown): boolean {
+  if (status === 529 || status === 503 || status === 429) return true;
+  const b = body as { error?: { type?: string } };
+  if (b?.error?.type === "overloaded_error") return true;
+  return false;
+}
+
+async function callOpenAI(
+  apiKey: string,
+  systemPrompt: string,
+  userMessage: string,
+): Promise<string> {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      max_tokens: 12000,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+    }),
+  });
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content?: string | null } }>;
+  };
+  if (!response.ok) return "";
+  const t = data.choices?.[0]?.message?.content;
+  return typeof t === "string" ? t : "";
+}
+
 function injectStripeCheckoutHtml(
   html: string,
   opts: { slug: string; buttonText: string; siteOrigin: string },
@@ -391,39 +429,84 @@ STYLE CONFIG: ${JSON.stringify(styleConfig)}
 ${nicheLine}
 IMPORTANT: Use the style config colors throughout ALL inline styles. Replace all hardcoded dark colors with the provided config values. The bg value is the main background, accent is button/highlight color, text is main text color.`;
 
-    const anthropicHtmlRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 12000,
-        temperature: 0.8,
-        stream: false,
-        system: SYSTEM_PROMPT_HTML,
-        messages: [{ role: "user", content: htmlUserMessage }],
-      }),
-    });
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY")!;
+    const openaiKey = Deno.env.get("OPENAI_API_KEY")?.trim() ?? "";
 
-    if (!anthropicHtmlRes.ok) {
-      return new Response(
-        JSON.stringify({
-          error: "Our AI is temporarily busy. Please try again in a moment.",
-        }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+    let htmlRaw = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const anthropicHtmlRes = await fetch(
+          "https://api.anthropic.com/v1/messages",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": anthropicKey,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 12000,
+              temperature: 0.8,
+              stream: false,
+              system: SYSTEM_PROMPT_HTML,
+              messages: [{ role: "user", content: htmlUserMessage }],
+            }),
+          },
+        );
+        const parsedHtml = await anthropicHtmlRes.json() as {
+          content?: Array<{ text?: string }>;
+          error?: { type?: string };
+        };
+        if (anthropicHtmlRes.ok) {
+          htmlRaw = parsedHtml.content?.[0]?.text ?? "";
+          if (htmlRaw) break;
+          break;
+        }
+        if (
+          isRetryableAnthropicResponse(anthropicHtmlRes.status, parsedHtml) &&
+          attempt < 2
+        ) {
+          await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+          continue;
+        }
+        break;
+      } catch {
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+          continue;
+        }
+        break;
+      }
     }
 
-    const parsedHtml = await anthropicHtmlRes.json() as {
-      content?: Array<{ text?: string }>;
-    };
-    const htmlRaw = parsedHtml.content?.[0]?.text ?? "";
+    if (!htmlRaw) {
+      if (!openaiKey) {
+        return new Response(
+          JSON.stringify({ error: AI_BUSY_USER_MESSAGE }),
+          {
+            status: 503,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      try {
+        htmlRaw = (await callOpenAI(openaiKey, SYSTEM_PROMPT_HTML, htmlUserMessage))
+          .trim();
+      } catch {
+        htmlRaw = "";
+      }
+      if (!htmlRaw) {
+        return new Response(
+          JSON.stringify({ error: AI_BUSY_USER_MESSAGE }),
+          {
+            status: 503,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
     const html = cleanHtml(htmlRaw);
 
     if (!html.startsWith("<!DOCTYPE html>") && !html.toLowerCase().startsWith("<html")) {
