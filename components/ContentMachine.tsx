@@ -25,12 +25,12 @@ type PostItem = {
 
 type PostImageState = { url?: string; loading: boolean; error: string };
 
-const PLATFORMS: { id: Platform; label: string; short: string }[] = [
-  { id: "instagram", label: "Instagram", short: "IG" },
-  { id: "x", label: "X", short: "𝕏" },
-  { id: "linkedin", label: "LinkedIn", short: "in" },
-  { id: "threads", label: "Threads", short: "〒" },
-  { id: "telegram", label: "Telegram", short: "✈️" }
+const PLATFORMS: { id: Platform; label: string }[] = [
+  { id: "instagram", label: "Instagram" },
+  { id: "x", label: "X" },
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "threads", label: "Threads" },
+  { id: "telegram", label: "Telegram" }
 ];
 
 const POST_TYPES: { id: PostType; label: string }[] = [
@@ -70,6 +70,58 @@ function postTypeLabel(t: PostType): string {
 
 function downloadImageViaProxy(url: string) {
   window.location.href = `/api/content/proxy-image?url=${encodeURIComponent(url)}`;
+}
+
+function PlatformBrandIcon({ platform }: { platform: Platform }) {
+  if (platform === "instagram") {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <defs>
+          <linearGradient id="ig-grad" x1="3" y1="21" x2="21" y2="3" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#FEDA77" />
+            <stop offset="0.3" stopColor="#F58529" />
+            <stop offset="0.6" stopColor="#DD2A7B" />
+            <stop offset="1" stopColor="#8134AF" />
+          </linearGradient>
+        </defs>
+        <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="url(#ig-grad)" />
+        <rect x="7.2" y="7.2" width="9.6" height="9.6" rx="4.8" stroke="white" strokeWidth="1.6" />
+        <circle cx="16.8" cy="7.2" r="1.2" fill="white" />
+      </svg>
+    );
+  }
+  if (platform === "x") {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="#111111" />
+        <path d="M7.7 6.8h2.8l2.5 3.6 3.1-3.6h2.2l-4.2 4.8 4.5 6.4h-2.8l-2.9-4.1-3.5 4.1h-2.2l4.7-5.4-4.2-5.8z" fill="white" />
+      </svg>
+    );
+  }
+  if (platform === "linkedin") {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2.5" y="2.5" width="19" height="19" rx="4.5" fill="#0A66C2" />
+        <rect x="6.6" y="10.1" width="2.1" height="7.3" fill="white" />
+        <rect x="6.6" y="7.1" width="2.1" height="2.1" rx="1.05" fill="white" />
+        <path d="M10.4 10.1h2v1c.4-.7 1.2-1.2 2.4-1.2 2.1 0 3.2 1.4 3.2 3.7v3.8h-2.1v-3.5c0-1-.4-1.9-1.5-1.9-1.1 0-1.8.8-1.8 2v3.4h-2.1v-7.3z" fill="white" />
+      </svg>
+    );
+  }
+  if (platform === "threads") {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="#111111" />
+        <path d="M12.3 7.1c2.8 0 4.6 1.6 4.9 4.4.9.3 1.5 1 1.5 2 0 2.1-1.7 3.5-4.5 3.5-2.7 0-4.5-1.4-4.8-3.7h2.1c.2 1.1 1.1 1.8 2.7 1.8 1.4 0 2.3-.6 2.3-1.5 0-.6-.4-1-.9-1.1-.7 1.2-1.9 1.9-3.7 1.9-2 0-3.4-1.1-3.4-2.9 0-1.8 1.5-3 3.8-3 .9 0 1.8.2 2.5.6-.4-1.1-1.3-1.7-2.6-1.7-1.3 0-2.2.5-2.7 1.6H7.8c.5-2.2 2.2-3.4 4.5-3.4zm-.2 5.6c0 .8.6 1.3 1.6 1.3.9 0 1.6-.4 2-1.1-.5-.3-1.1-.5-1.9-.5-1 0-1.7.4-1.7 1.3z" fill="white" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9.5" fill="#229ED9" />
+      <path d="M7.2 11.8 16.6 8.1c.4-.2.8.2.7.6l-1.6 7.6c-.1.5-.7.7-1.1.4l-2.2-1.7-1.2 1.1c-.3.3-.8.1-.8-.3v-1.8l4.2-3.8c.2-.2 0-.5-.2-.3l-5.5 3.5-1.8-.6c-.5-.2-.5-.8-.1-1z" fill="white" />
+    </svg>
+  );
 }
 
 const LONG_POST_CHARS = 320;
@@ -443,9 +495,11 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
     }`;
 
   const platformTabCls = (on: boolean) =>
-    on
-      ? "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors"
-      : "rounded-lg px-4 py-2 text-sm text-white/40 transition-colors hover:text-white/60";
+    `flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
+      on
+        ? "border-indigo-500/45 bg-indigo-500/18 text-indigo-200"
+        : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/20 hover:text-white/75"
+    }`;
 
   return (
     <div className="max-w-4xl pb-28 font-inherit">
@@ -461,7 +515,7 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
 
       <section className="mb-8 rounded-xl border border-white/[0.08] bg-white/[0.04] p-5">
         <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/35">Generate post</p>
-        <div className="mb-4 flex flex-wrap gap-1">
+        <div className="mb-4 flex flex-wrap gap-2">
           {PLATFORMS.map((p) => (
             <button
               key={p.id}
@@ -470,9 +524,7 @@ export default function ContentMachine({ offer, audience, userId, projectId }: C
               className={platformTabCls(platform === p.id)}
               title={p.label}
             >
-              <span className="mr-1.5 opacity-80" aria-hidden>
-                {p.short}
-              </span>
+              <PlatformBrandIcon platform={p.id} />
               {p.label}
             </button>
           ))}
