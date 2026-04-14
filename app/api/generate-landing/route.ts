@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "fs";
-import { join } from "path";
 import type { LandingContent } from "@/types/landing";
-import { AI_BUSY_USER_MESSAGE } from "@/lib/claudeWithRetry";
+import { aiComplete, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
 import { PLANS, type PlanName } from "@/lib/plans";
 import { checkCredits, deductCredits } from "@/lib/credits";
-import { injectStripeCheckoutHtml } from "@/lib/injectStripeCheckoutHtml";
 
 export const maxDuration = 120;
-
-const systemPrompt = readFileSync(
-  join(process.cwd(), "app/api/generate-landing/system-prompt.txt"),
-  "utf8"
-);
 
 type LandingInput = {
   offer: string;
@@ -29,43 +21,53 @@ type LandingInput = {
   style?: string;
 };
 
+const systemPrompt = `You are an expert conversion copywriter. Generate landing page content as a valid JSON object.
+
+Output ONLY a JSON object with this exact structure, no markdown:
+{
+  niche: one of [fitness|designer|developer|coach|consultant|agency|course|local|default],
+  brand: display name or first word from offer,
+  badge: 3-4 word category label in UPPERCASE,
+  headline: first part of headline (4-5 words MAX, ALL CAPS),
+  headlineAccent: accented second part (2-4 words MAX, ALL CAPS) - the emotional hook,
+  subheadline: 1-2 sentences specific to their offer and audience,
+  ctaPrimary: action-oriented button text (3-5 words),
+  ctaSecondary: secondary action (2-3 words),
+  socialProof: 'Trusted by X+ [niche] professionals',
+  stats: [{number, label}, {number, label}, {number, label}] - specific numbers,
+  problemHeadline: 8-10 words hitting main pain,
+  problems: [{emoji, title (3-4 words), desc (1-2 sentences)}, x3],
+  solutionHeadline: 6-8 words,
+  features: [{icon: one of [Zap|Target|Shield|TrendingUp|Clock|Users|Star|Check], title (3-4 words), desc (1-2 sentences)}, x3],
+  processHeadline: 6-8 words,
+  steps: [{title (3-4 words), desc (1-2 sentences)}, x3],
+  testimonialsHeadline: 5-7 words,
+  testimonials: [{text (2-3 sentences with specific results), name (realistic), role (job + company)}, x3],
+  ctaHeadline: bold promise 5-6 words,
+  ctaSubtext: 1 sentence,
+  ctaButton: 3-5 word action,
+  formHeadline: 4-6 words,
+  formButton: 3-5 word action
+}
+
+Rules:
+- Same language as the offer
+- NO lorem ipsum, NO generic phrases
+- Testimonials must include specific numbers (%, $, kg, days)
+- Stats must be plausible and specific
+- Never use 'Take your business to the next level'`;
+
+function parseClaudeJson(raw: string): LandingContent | null {
+  const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  try {
+    return JSON.parse(cleaned) as LandingContent;
+  } catch {
+    return null;
+  }
+}
+
 function randomFourDigits() {
   return Math.floor(1000 + Math.random() * 9000).toString();
-}
-
-function injectSlug(html: string, slug: string): string {
-  return html.replaceAll("SLUG_VALUE", slug);
-}
-
-function cleanHtml(raw: string): string {
-  return raw
-    .replace(/^```(?:html)?\s*/im, "")
-    .replace(/\s*```\s*$/im, "")
-    .trim();
-}
-
-async function fetchAnthropicStreamingLanding(apiKey: string, body: Record<string, unknown>): Promise<Response> {
-  let last: Response | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(body),
-    });
-    last = res;
-    if (res.ok) return res;
-    const retryable = res.status === 529 || res.status === 503 || res.status === 429;
-    if (retryable && attempt < 2) {
-      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
-      continue;
-    }
-    return res;
-  }
-  return last!;
 }
 
 export async function POST(request: Request) {
@@ -75,11 +77,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!apiKey || !supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({ error: "Missing environment variables." }, { status: 500 });
+    }
+
+    if (!hasAiProviderConfigured()) {
+      return NextResponse.json({ error: "Server AI is not configured." }, { status: 500 });
     }
 
     const authHeader = request.headers.get("authorization");
@@ -124,6 +129,7 @@ export async function POST(request: Request) {
         { status: 402 }
       );
     }
+
     const brandNameLine =
       profileDisplayName.length > 0 ? profileDisplayName : "(not set in profile)";
     const displayName =
@@ -133,40 +139,7 @@ export async function POST(request: Request) {
         ? body.headline.trim()
         : displayName;
 
-    const jsonEndpoint = new URL("/api/generate-landing-json", request.url);
-    const jsonResponse = await fetch(jsonEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        offer: body.offer,
-        audience: body.audience,
-        pricing: body.pricing,
-        positioning: body.positioning,
-        headline: body.headline,
-        project_id: body.project_id ?? null,
-        displayName: brandNameLine === "(not set in profile)" ? displayName : brandNameLine,
-      }),
-    });
-
-    if (!jsonResponse.ok) {
-      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
-    }
-
-    const generated = (await jsonResponse.json()) as {
-      success?: boolean;
-      data?: LandingContent;
-      error?: string;
-    };
-    if (!generated.success || !generated.data) {
-      return NextResponse.json(
-        { error: generated.error || "Invalid JSON generation response." },
-        { status: 502 }
-      );
-    }
-
-    const userMessage = `Generate a premium landing page for this business:
+    const userMessage = `Generate JSON landing content for this business:
 
 Brand name: ${brandNameLine}
 Business name: ${displayName}
@@ -180,87 +153,26 @@ Primary CTA goal: ${body.primaryGoal || "Book a call"}
 Site vibe: ${body.siteVibe || "Professional"}
 Style: ${requestedStyle}
 
-Use EXACTLY this content to generate the HTML landing page:
-${JSON.stringify(generated.data)}
-
 Detect the language from the offer text. Write ALL copy in that language.
-Contact form slug value: SLUG_VALUE
+Output ONLY valid JSON matching the schema in your instructions. No markdown.`;
 
-Return the complete HTML document only. No explanation.`;
-
-    const anthropicResponse = await fetchAnthropicStreamingLanding(apiKey, {
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 12000,
-      temperature: 0.8,
-      stream: true,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    });
-
-    if (!anthropicResponse.ok) {
+    let rawText: string;
+    try {
+      rawText = await aiComplete({
+        system: systemPrompt,
+        user: userMessage,
+        maxTokens: 4000,
+      });
+    } catch {
       return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
     }
 
-    const streamBody = anthropicResponse.body;
-    if (!streamBody) {
-      return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 502 });
-    }
-
-    const reader = streamBody.getReader();
-    const decoder = new TextDecoder();
-    let fullText = "";
-    let lineBuffer = "";
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        lineBuffer += chunk;
-        const lines = lineBuffer.split("\n");
-        lineBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6).trim();
-          if (data === "[DONE]" || !data) continue;
-          try {
-            const parsed = JSON.parse(data) as {
-              delta?: { text?: string };
-              content?: Array<{ text?: string }>;
-            };
-            const text =
-              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
-            fullText += text;
-          } catch {
-            /* ignore malformed SSE JSON */
-          }
-        }
-      }
-      if (lineBuffer.startsWith("data: ")) {
-        const data = lineBuffer.slice(6).trim();
-        if (data && data !== "[DONE]") {
-          try {
-            const parsed = JSON.parse(data) as {
-              delta?: { text?: string };
-              content?: Array<{ text?: string }>;
-            };
-            const text =
-              parsed?.delta?.text || parsed?.content?.[0]?.text || "";
-            fullText += text;
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
-
-    const rawText = fullText.trim();
-    const html = cleanHtml(rawText);
-
-    if (!html.startsWith("<!DOCTYPE html>") && !html.startsWith("<html")) {
-      return NextResponse.json({ error: "Generation failed. Please try again." }, { status: 502 });
+    const parsed = parseClaudeJson(rawText);
+    if (!parsed) {
+      return NextResponse.json(
+        { error: "Could not parse landing content from AI. Please try again." },
+        { status: 502 }
+      );
     }
 
     const existingPage = await supabase
@@ -275,35 +187,6 @@ Return the complete HTML document only. No explanation.`;
       .replace(/[^a-zA-Z0-9-]/g, "-")
       .toLowerCase();
     const slug = existingPage.data?.slug ?? `${emailBase}-${randomFourDigits()}`;
-    let htmlWithSlug = injectSlug(html, slug);
-
-    const { data: stripeRow } = await supabase
-      .from("stripe_settings")
-      .select("publishable_key, secret_key, price_id, button_text")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    const sr = stripeRow as {
-      publishable_key?: string;
-      secret_key?: string | null;
-      price_id?: string | null;
-      button_text?: string | null;
-    } | null;
-    const stripeReady =
-      sr &&
-      sr.publishable_key?.startsWith("pk_") &&
-      sr.secret_key?.startsWith("sk_") &&
-      Boolean(sr.price_id?.trim());
-    if (stripeReady) {
-      const siteOrigin =
-        process.env.NEXT_PUBLIC_SITE_URL ??
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
-        "https://www.lacore.ai";
-      htmlWithSlug = injectStripeCheckoutHtml(htmlWithSlug, {
-        slug,
-        buttonText: sr.button_text?.trim() || "Book Now",
-        siteOrigin
-      });
-    }
 
     const deducted = await deductCredits(supabase, user.id, "generate_landing");
     if (!deducted) {
@@ -323,8 +206,8 @@ Return the complete HTML document only. No explanation.`;
           user_id: user.id,
           project_id: body.project_id ?? null,
           slug,
-          html_content: htmlWithSlug,
-          json_content: generated.data,
+          html_content: null,
+          json_content: parsed,
           jsx_content: null,
         } as never,
         { onConflict: "slug" }
