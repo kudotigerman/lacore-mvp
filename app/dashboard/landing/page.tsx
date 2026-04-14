@@ -161,7 +161,11 @@ export default function DashboardLandingPage() {
                       width: 36, height: 36,
                       borderRadius: "50%",
                       background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
-                      border: selectedStyle === s.id ? `2px solid #fff` : `2px solid transparent`,
+                      border: selectedStyle === s.id 
+                        ? "2px solid #fff" 
+                        : s.bg === "#FFFFFF" || s.bg === "#FDFAF5" 
+                          ? "2px solid rgba(255,255,255,0.3)" 
+                          : "2px solid transparent",
                       outline: selectedStyle === s.id ? `2px solid ${s.accent}` : "none",
                       outlineOffset: 2,
                       cursor: "pointer",
