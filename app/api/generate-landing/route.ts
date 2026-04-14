@@ -26,6 +26,7 @@ type LandingInput = {
   project_id?: string;
   primaryGoal?: string;
   siteVibe?: string;
+  style?: string;
 };
 
 function randomFourDigits() {
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
         ? (profileRow as { display_name: string }).display_name.trim()
         : "";
     const profilePlan = ((profileRow as { plan?: string } | null)?.plan || "free") as PlanName;
+    const requestedStyle = typeof body.style === "string" ? body.style : "dark-indigo";
     const generationCount = Number((profileRow as { landing_generations_count?: number } | null)?.landing_generations_count || 0);
     const plan = PLANS[profilePlan] ?? PLANS.free;
     if (generationCount >= plan.maxLandingGenerations) {
@@ -176,6 +178,7 @@ Suggested headline: ${body.headline}
 Page title (exact inner text for the HTML <title> element — use verbatim, single line): ${headlineRaw}
 Primary CTA goal: ${body.primaryGoal || "Book a call"}
 Site vibe: ${body.siteVibe || "Professional"}
+Style: ${requestedStyle}
 
 Use EXACTLY this content to generate the HTML landing page:
 ${JSON.stringify(generated.data)}

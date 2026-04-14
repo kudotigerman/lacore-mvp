@@ -6,12 +6,14 @@ import { LandingEditorSplitView } from "@/components/dashboard/LandingEditorSpli
 import { useCreditsBalance } from "@/components/dashboard/useCreditsBalance";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
+import { type LandingStyle } from "@/types/landing";
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
   const { userId, setLandingSlug, activeProject } = d;
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<LandingStyle>("dark-indigo");
 
   const landingUrl = d.landingSlug ? `https://www.lacore.ai/p/${d.landingSlug}` : "";
 
@@ -88,6 +90,19 @@ export default function DashboardLandingPage() {
   const completedCount = st?.completedSteps ?? 0;
   const stepDone = !!d.landingSlug;
 
+  const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
+    { id: "dark-indigo", label: "Indigo", accent: "#6366F1", bg: "#0A0A0D" },
+    { id: "dark-purple", label: "Purple", accent: "#A855F7", bg: "#07040F" },
+    { id: "dark-gold", label: "Gold", accent: "#D4AF37", bg: "#080808" },
+    { id: "dark-amber", label: "Amber", accent: "#F59E0B", bg: "#0A0800" },
+    { id: "dark-red", label: "Red", accent: "#EF4444", bg: "#080808" },
+    { id: "dark-green", label: "Green", accent: "#10B981", bg: "#030A05" },
+    { id: "dark-pink", label: "Pink", accent: "#EC4899", bg: "#09040F" },
+    { id: "dark-cyan", label: "Cyan", accent: "#06B6D4", bg: "#030A0F" },
+    { id: "dark-orange", label: "Orange", accent: "#F97316", bg: "#080500" },
+    { id: "pure-black", label: "Minimal", accent: "#FFFFFF", bg: "#000000" },
+  ];
+
   if (d.loading) {
     return (
       <div className="flex min-h-full items-center justify-center" style={{ background: "var(--content-bg)" }}>
@@ -130,12 +145,39 @@ export default function DashboardLandingPage() {
               <p className="mt-2 text-sm font-medium text-white/80">{d.offer.headline}</p>
               <p className="mt-2 text-xs leading-relaxed text-white/45 line-clamp-4">{d.offer.offer}</p>
             </div>
+            <div style={{ width: "100%", marginBottom: 20 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginBottom: 12 }}>Choose style</p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {styleOptions.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSelectedStyle(s.id)}
+                    title={s.label}
+                    style={{
+                      width: 36, height: 36,
+                      borderRadius: "50%",
+                      background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
+                      border: selectedStyle === s.id ? `2px solid #fff` : `2px solid transparent`,
+                      outline: selectedStyle === s.id ? `2px solid ${s.accent}` : "none",
+                      outlineOffset: 2,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      flexShrink: 0,
+                    }}
+                  />
+                ))}
+              </div>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
+                {styleOptions.find(s => s.id === selectedStyle)?.label}
+              </p>
+            </div>
             <p className="mb-6 text-center text-sm text-white/50">
               Your offer is ready. Now let&apos;s build your sales page.
             </p>
             <button
               type="button"
-              onClick={() => void d.handleBuildLandingPage()}
+              onClick={() => void d.handleBuildLandingPage({ style: selectedStyle })}
               disabled={d.buildingLanding}
               className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >

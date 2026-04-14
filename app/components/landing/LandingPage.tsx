@@ -1,8 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import type { LandingContent } from "@/types/landing";
-import { NICHE_THEMES } from "@/types/landing";
+import { NICHE_THEMES, STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
 import {
   ArrowRight,
   Check,
@@ -18,6 +17,7 @@ import {
 type Props = {
   content: LandingContent;
   slug: string;
+  style?: LandingStyle;
   /** When false, hide the “Built with LACORE” footer link (paid plans). */
   showBrandWatermark?: boolean;
 };
@@ -34,13 +34,14 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export default function LandingPage({ content, slug, showBrandWatermark = true }: Props) {
+export default function LandingPage({ content, slug, style, showBrandWatermark = true }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const theme = NICHE_THEMES[content.niche] ?? NICHE_THEMES.default;
+  const theme =
+    (style ? STYLE_THEMES[style] : null) ?? NICHE_THEMES[content.niche] ?? NICHE_THEMES.default;
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -163,7 +164,7 @@ export default function LandingPage({ content, slug, showBrandWatermark = true }
         </div>
       </section>
 
-      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: "1px solid #1C1C22", borderBottom: "1px solid #1C1C22", padding: "64px 0" }}>
+      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, padding: "64px 0" }}>
         <div className="container grid3">
           {content.stats.slice(0, 3).map((s, i) => (
             <div data-aos="fade-up" data-aos-delay={i * 100} key={s.label} style={{ textAlign: "center" }}>
@@ -182,7 +183,7 @@ export default function LandingPage({ content, slug, showBrandWatermark = true }
           </div>
           <div className="grid3">
             {content.problems.slice(0, 3).map((p, i) => (
-              <div data-aos="fade-up" data-aos-delay={i * 100} key={p.title} style={{ background: theme.bgSecondary, border: "1px solid #1C1C22", borderRadius: 16, padding: 28 }}>
+              <div data-aos="fade-up" data-aos-delay={i * 100} key={p.title} style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 16, padding: 28 }}>
                 <div style={{ fontSize: 28, marginBottom: 14 }}>{p.emoji}</div>
                 <h3 style={{ margin: "0 0 10px" }}>{p.title}</h3>
                 <p style={{ margin: 0, color: "#A1A1AA", lineHeight: 1.65 }}>{p.desc}</p>
@@ -202,7 +203,7 @@ export default function LandingPage({ content, slug, showBrandWatermark = true }
             {content.features.slice(0, 3).map((f, i) => {
               const Icon = iconMap[f.icon as keyof typeof iconMap] ?? Zap;
               return (
-                <div data-aos="fade-up" data-aos-delay={i * 100} key={f.title} style={{ background: theme.bgPrimary, border: "1px solid #1C1C22", borderRadius: 16, padding: 28 }}>
+                <div data-aos="fade-up" data-aos-delay={i * 100} key={f.title} style={{ background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, borderRadius: 16, padding: 28 }}>
                   <div style={{ width: 56, height: 56, borderRadius: 14, border: `1px solid ${theme.accent}`, display: "grid", placeItems: "center", marginBottom: 20 }}>
                     <Icon color={theme.accent} />
                   </div>
@@ -244,7 +245,7 @@ export default function LandingPage({ content, slug, showBrandWatermark = true }
           </div>
           <div className="grid3">
             {content.testimonials.slice(0, 3).map((t, i) => (
-              <div data-aos="fade-up" data-aos-delay={i * 100} key={t.name} style={{ background: theme.bgPrimary, border: "1px solid #1C1C22", borderRadius: 16, padding: 28 }}>
+              <div data-aos="fade-up" data-aos-delay={i * 100} key={t.name} style={{ background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, borderRadius: 16, padding: 28 }}>
                 <div style={{ marginBottom: 12 }}>⭐⭐⭐⭐⭐</div>
                 <p style={{ color: "#FAFAFA", lineHeight: 1.7, fontStyle: "italic", margin: "0 0 20px" }}>&quot;{t.text}&quot;</p>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -273,7 +274,7 @@ export default function LandingPage({ content, slug, showBrandWatermark = true }
           <div style={{ textAlign: "center", marginBottom: 34 }}>
             <h2 style={{ fontFamily: "Plus Jakarta Sans", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
           </div>
-          <form onSubmit={handleSubmit} style={{ background: theme.bgSecondary, border: "1px solid #1C1C22", borderRadius: 18, padding: 30 }}>
+          <form onSubmit={handleSubmit} style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 18, padding: 30 }}>
             <div style={{ display: "grid", gap: 16 }}>
               <input value={name} onChange={(e) => setName(e.target.value)} required name="name" placeholder="Your name" style={{ width: "100%", background: theme.bgPrimary, border: "1px solid #1C1C22", color: "#FAFAFA", borderRadius: 10, padding: "13px 14px" }} />
               <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" placeholder="Email address" style={{ width: "100%", background: theme.bgPrimary, border: "1px solid #1C1C22", color: "#FAFAFA", borderRadius: 10, padding: "13px 14px" }} />
@@ -287,7 +288,7 @@ export default function LandingPage({ content, slug, showBrandWatermark = true }
         </div>
       </section>
 
-      <footer data-aos="fade-up" style={{ padding: "36px 0", background: "#060608", borderTop: "1px solid #1C1C22" }}>
+      <footer data-aos="fade-up" style={{ padding: "36px 0", background: "#060608", borderTop: `1px solid ${theme.cardBorder}` }}>
         <div className="container" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
           <div style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 800 }}>{content.brand}</div>
           <div style={{ color: "#52525B", fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
