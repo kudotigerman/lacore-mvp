@@ -6,7 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 import LandingPage from "@/app/components/landing/LandingPage";
 import { PublicTestimonialsSection } from "@/components/landing/PublicTestimonialsSection";
-import type { LandingContent } from "@/types/landing";
+import type { LandingContent, LandingStyle } from "@/types/landing";
 
 const FRIENDLY_COMPILE_MESSAGE =
   "I had trouble with that change. The page wasn't updated. Try rephrasing your request or be more specific about what you want to change.";
@@ -181,6 +181,7 @@ function PublicLandingPageContent() {
   const [html, setHtml] = useState("");
   const [jsxContent, setJsxContent] = useState("");
   const [jsonContent, setJsonContent] = useState<LandingContent | null>(null);
+  const [landingStyle, setLandingStyle] = useState<string>("dark-indigo");
   const [loading, setLoading] = useState(true);
   const [showPromo, setShowPromo] = useState(false);
   const [publicStripe, setPublicStripe] = useState<PublicStripeSettings | null>(null);
@@ -263,17 +264,19 @@ function PublicLandingPageContent() {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("landing_pages")
-      .select("html_content, jsx_content, json_content")
+      .select("html_content, jsx_content, json_content, style")
       .eq("slug", slug)
       .single();
     const row = data as {
       html_content: string | null;
       jsx_content: string | null;
       json_content: LandingContent | null;
+      style?: string | null;
     } | null;
     setHtml(row?.html_content ?? "");
     setJsxContent(row?.jsx_content ?? "");
     setJsonContent(row?.json_content ?? null);
+    setLandingStyle(row?.style ?? "dark-indigo");
     setLoading(false);
     if (!editMode && !embedPreview && !error && row) {
       void Promise.resolve(
@@ -574,7 +577,12 @@ function PublicLandingPageContent() {
           ) : jsonContent ? (
             <>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <LandingPage content={jsonContent} slug={slug} showBrandWatermark={showPublicBrandUi} />
+                <LandingPage
+                  content={jsonContent}
+                  slug={slug}
+                  showBrandWatermark={showPublicBrandUi}
+                  style={landingStyle as LandingStyle}
+                />
                 <PublicTestimonialsSection slug={slug} />
               </div>
               {showPublicBrandUi ? (

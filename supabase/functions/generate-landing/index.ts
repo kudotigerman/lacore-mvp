@@ -194,6 +194,7 @@ Style preference: ${requestedStyle}`;
         json_content: jsonContent,
         html_content: null,
         jsx_content: null,
+        style: requestedStyle,
       },
       { onConflict: "slug" },
     );
