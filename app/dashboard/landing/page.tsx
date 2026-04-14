@@ -101,6 +101,9 @@ export default function DashboardLandingPage() {
     { id: "dark-cyan", label: "Cyan", accent: "#06B6D4", bg: "#030A0F" },
     { id: "dark-orange", label: "Orange", accent: "#F97316", bg: "#080500" },
     { id: "pure-black", label: "Minimal", accent: "#FFFFFF", bg: "#000000" },
+    { id: "light-clean", label: "Light", accent: "#6366F1", bg: "#FFFFFF" },
+    { id: "warm-cream", label: "Warm", accent: "#D97706", bg: "#FDFAF5" },
+    { id: "bold-black", label: "Bold", accent: "#FFFFFF", bg: "#000000" },
   ];
 
   if (d.loading) {

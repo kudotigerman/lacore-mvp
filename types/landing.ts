@@ -19,7 +19,10 @@ export type LandingStyle =
   | "dark-pink"
   | "dark-cyan"
   | "dark-orange"
-  | "pure-black";
+  | "pure-black"
+  | "light-clean"
+  | "warm-cream"
+  | "bold-black";
 
 export interface LandingContent {
   niche: LandingNiche;
@@ -54,6 +57,12 @@ export interface LandingTheme {
   bgSecondary: string;
   heroStyle: "gradient-blob" | "gradient-mesh" | "solid-glow";
   cardBorder: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  cardBg: string;
+  navBg: string;
+  isDark: boolean;
 }
 
 export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
@@ -64,6 +73,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#0F0F14",
     heroStyle: "solid-glow",
     cardBorder: "#2a1515",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0F0F14",
+    navBg: "rgba(10,10,13,0.80)",
+    isDark: true,
   },
   designer: {
     accent: "#8B5CF6",
@@ -72,6 +87,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#0F0010",
     heroStyle: "gradient-mesh",
     cardBorder: "#2a1545",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0F0010",
+    navBg: "rgba(10,0,8,0.80)",
+    isDark: true,
   },
   developer: {
     accent: "#6366F1",
@@ -80,6 +101,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#0F0F14",
     heroStyle: "gradient-blob",
     cardBorder: "#1a1a2e",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0F0F14",
+    navBg: "rgba(10,10,13,0.80)",
+    isDark: true,
   },
   coach: {
     accent: "#F59E0B",
@@ -88,6 +115,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#100E00",
     heroStyle: "solid-glow",
     cardBorder: "#2a1f00",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#100E00",
+    navBg: "rgba(10,8,0,0.80)",
+    isDark: true,
   },
   consultant: {
     accent: "#10B981",
@@ -96,6 +129,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#001208",
     heroStyle: "gradient-blob",
     cardBorder: "#0a2a15",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#001208",
+    navBg: "rgba(0,16,10,0.80)",
+    isDark: true,
   },
   agency: {
     accent: "#F97316",
@@ -104,6 +143,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#100800",
     heroStyle: "gradient-mesh",
     cardBorder: "#2a1500",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#100800",
+    navBg: "rgba(10,5,0,0.80)",
+    isDark: true,
   },
   course: {
     accent: "#EC4899",
@@ -112,6 +157,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#100010",
     heroStyle: "solid-glow",
     cardBorder: "#2a0a25",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#100010",
+    navBg: "rgba(10,0,8,0.80)",
+    isDark: true,
   },
   local: {
     accent: "#84CC16",
@@ -120,6 +171,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#050F00",
     heroStyle: "gradient-blob",
     cardBorder: "#0a2a15",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#050F00",
+    navBg: "rgba(3,10,0,0.80)",
+    isDark: true,
   },
   default: {
     accent: "#6366F1",
@@ -128,6 +185,12 @@ export const NICHE_THEMES: Record<LandingNiche, LandingTheme> = {
     bgSecondary: "#0F0F14",
     heroStyle: "solid-glow",
     cardBorder: "#1a1a2e",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0F0F14",
+    navBg: "rgba(10,10,13,0.80)",
+    isDark: true,
   },
 };
 
@@ -139,6 +202,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#0F0F16",
     heroStyle: "gradient-blob",
     cardBorder: "#1a1a2e",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0F0F16",
+    navBg: "rgba(10,10,13,0.80)",
+    isDark: true,
   },
   "dark-purple": {
     accent: "#A855F7",
@@ -147,6 +216,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#0E0818",
     heroStyle: "gradient-mesh",
     cardBorder: "#2a1545",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0E0818",
+    navBg: "rgba(7,4,15,0.80)",
+    isDark: true,
   },
   "dark-gold": {
     accent: "#D4AF37",
@@ -155,6 +230,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#0F0F0A",
     heroStyle: "solid-glow",
     cardBorder: "#2a2510",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#0F0F0A",
+    navBg: "rgba(8,8,8,0.80)",
+    isDark: true,
   },
   "dark-amber": {
     accent: "#F59E0B",
@@ -163,6 +244,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#130F00",
     heroStyle: "solid-glow",
     cardBorder: "#2a1f00",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#130F00",
+    navBg: "rgba(10,8,0,0.80)",
+    isDark: true,
   },
   "dark-red": {
     accent: "#EF4444",
@@ -171,6 +258,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#111111",
     heroStyle: "solid-glow",
     cardBorder: "#2a1515",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#111111",
+    navBg: "rgba(8,8,8,0.80)",
+    isDark: true,
   },
   "dark-green": {
     accent: "#10B981",
@@ -179,6 +272,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#050F08",
     heroStyle: "gradient-blob",
     cardBorder: "#0a2a15",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#050F08",
+    navBg: "rgba(3,10,5,0.80)",
+    isDark: true,
   },
   "dark-pink": {
     accent: "#EC4899",
@@ -187,6 +286,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#110818",
     heroStyle: "solid-glow",
     cardBorder: "#2a0a25",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#110818",
+    navBg: "rgba(9,4,15,0.80)",
+    isDark: true,
   },
   "dark-cyan": {
     accent: "#06B6D4",
@@ -195,6 +300,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#050F18",
     heroStyle: "gradient-blob",
     cardBorder: "#0a2030",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#050F18",
+    navBg: "rgba(3,10,15,0.80)",
+    isDark: true,
   },
   "dark-orange": {
     accent: "#F97316",
@@ -203,6 +314,12 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#100C00",
     heroStyle: "gradient-mesh",
     cardBorder: "#2a1500",
+    textPrimary: "#FAFAFA",
+    textSecondary: "#A1A1AA",
+    textMuted: "#52525B",
+    cardBg: "#100C00",
+    navBg: "rgba(8,5,0,0.80)",
+    isDark: true,
   },
   "pure-black": {
     accent: "#FFFFFF",
@@ -211,5 +328,53 @@ export const STYLE_THEMES: Record<LandingStyle, LandingTheme> = {
     bgSecondary: "#0A0A0A",
     heroStyle: "solid-glow",
     cardBorder: "#222222",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#888888",
+    textMuted: "#444444",
+    cardBg: "#0A0A0A",
+    navBg: "rgba(0,0,0,0.90)",
+    isDark: true,
+  },
+  "light-clean": {
+    accent: "#6366F1",
+    accentLight: "#818CF8",
+    bgPrimary: "#FFFFFF",
+    bgSecondary: "#F4F4F8",
+    heroStyle: "gradient-mesh",
+    cardBorder: "#E4E4E7",
+    textPrimary: "#09090B",
+    textSecondary: "#52525B",
+    textMuted: "#A1A1AA",
+    cardBg: "#FFFFFF",
+    navBg: "rgba(255,255,255,0.90)",
+    isDark: false,
+  },
+  "warm-cream": {
+    accent: "#D97706",
+    accentLight: "#F59E0B",
+    bgPrimary: "#FDFAF5",
+    bgSecondary: "#F5F0E8",
+    heroStyle: "gradient-mesh",
+    cardBorder: "#E8DDD0",
+    textPrimary: "#1C1917",
+    textSecondary: "#78716C",
+    textMuted: "#A8A29E",
+    cardBg: "#FFFFFF",
+    navBg: "rgba(253,250,245,0.92)",
+    isDark: false,
+  },
+  "bold-black": {
+    accent: "#FFFFFF",
+    accentLight: "#E5E5E5",
+    bgPrimary: "#000000",
+    bgSecondary: "#0A0A0A",
+    heroStyle: "solid-glow",
+    cardBorder: "#1A1A1A",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#999999",
+    textMuted: "#555555",
+    cardBg: "#0D0D0D",
+    navBg: "rgba(0,0,0,0.95)",
+    isDark: true,
   },
 };

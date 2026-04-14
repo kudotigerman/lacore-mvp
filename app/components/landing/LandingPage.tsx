@@ -94,9 +94,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const secondaryButtonStyle = {
     ...buttonBaseStyle,
     background: "transparent",
-    color: "#fff",
+    color: theme.textPrimary,
     padding: "14px 28px",
-    border: "1px solid rgba(255,255,255,0.15)",
+    border: theme.isDark ? "1px solid rgba(255,255,255,0.15)" : `1px solid ${theme.accent}40`,
   };
 
   const buttonHoverOn = (e: HoverEvent) => {
@@ -145,7 +145,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   };
 
   return (
-    <div style={{ background: theme.bgPrimary, color: "#FAFAFA", fontFamily: "Inter, sans-serif", fontWeight: 400 }}>
+    <div style={{ background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Inter, sans-serif", fontWeight: 400 }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
@@ -190,16 +190,16 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           zIndex: 1000,
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          background: "rgba(10,10,13,0.75)",
+          background: theme.navBg,
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
         <div className="container" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>{content.brand}</div>
           <div className="hide-mobile" style={{ display: "flex", gap: 28, alignItems: "center" }}>
-            <a href="#benefits" style={{ color: "#A1A1AA" }}>Benefits</a>
-            <a href="#process" style={{ color: "#A1A1AA" }}>Process</a>
-            <a href="#testimonials" style={{ color: "#A1A1AA" }}>Results</a>
+            <a href="#benefits" style={{ color: theme.textSecondary }}>Benefits</a>
+            <a href="#process" style={{ color: theme.textSecondary }}>Process</a>
+            <a href="#testimonials" style={{ color: theme.textSecondary }}>Results</a>
             <a
               href="#contact-form"
               style={{ ...primaryButtonStyle, padding: "10px 20px" }}
@@ -213,20 +213,20 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </nav>
 
       <section data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", ...heroBg }}>
-        <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}33, transparent)` }} />
-        <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}1A, transparent)` }} />
-        <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}0F, transparent)` }} />
+        <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
+        <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
+        <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
         <div className="container" style={{ position: "relative", zIndex: 1, paddingTop: 60 }}>
-          <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: "1px solid rgba(255,255,255,0.12)", borderRadius: 999, padding: "8px 14px", marginBottom: 24 }}>
+          <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: theme.isDark ? "1px solid rgba(255,255,255,0.12)" : `1px solid ${theme.accent}25`, borderRadius: 999, padding: "8px 14px", marginBottom: 24 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, marginTop: 6 }} />
-            <span style={{ color: "#A1A1AA", fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
+            <span style={{ color: theme.textSecondary, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
           </div>
           <h1 data-aos="fade-up" style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, fontSize: "clamp(44px,7vw,82px)", lineHeight: 1.02, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
             {content.headline}
             <br />
             <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{content.headlineAccent}</span>
           </h1>
-          <p data-aos="fade-up" style={{ color: "#A1A1AA", fontSize: 20, maxWidth: 700, lineHeight: 1.7, fontWeight: 400 }}>{content.subheadline}</p>
+          <p data-aos="fade-up" style={{ color: theme.textSecondary, fontSize: 20, maxWidth: 700, lineHeight: 1.7, fontWeight: 400 }}>{content.subheadline}</p>
           <div data-aos="fade-up" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 30 }}>
             <a
               href="#contact-form"
@@ -254,7 +254,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             </div>
             <div>
               <div style={{ marginBottom: 4 }}>⭐⭐⭐⭐⭐</div>
-              <div style={{ color: "#A1A1AA", fontSize: 13 }}>{content.socialProof}</div>
+              <div style={{ color: theme.textSecondary, fontSize: 13 }}>{content.socialProof}</div>
             </div>
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               <div style={{ color: theme.accent, fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.04em", fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 1 }}>
                 {s.number}
               </div>
-              <div style={{ color: "#A1A1AA", fontSize: 14 }}>{s.label}</div>
+              <div style={{ color: theme.textSecondary, fontSize: 14 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -309,7 +309,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   fontSize: 18, color: "#EF4444", fontWeight: 700
                 }}>✕</div>
                 <h3 style={{ margin: "0 0 10px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{p.title}</h3>
-                <p style={{ margin: 0, color: "#A1A1AA", lineHeight: 1.65, fontWeight: 400 }}>{p.desc}</p>
+                <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, fontWeight: 400 }}>{p.desc}</p>
               </div>
             ))}
           </div>
@@ -331,7 +331,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   key={f.title}
                   onMouseOver={cardHoverOn}
                   onMouseOut={cardHoverOff}
-                  style={{ background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
+                  style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
                 >
                   <div style={{
                     width: 44, height: 44,
@@ -346,7 +346,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                     {({"Zap":"⚡︎","Target":"◎","Shield":"⊕","TrendingUp":"↗","Clock":"◷","Users":"⊛","Star":"✦","Check":"✓"} as Record<string,string>)[f.icon] ?? f.title.charAt(0).toUpperCase()}
                   </div>
                   <h3 style={{ margin: "0 0 10px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{f.title}</h3>
-                  <p style={{ margin: 0, color: "#A1A1AA", lineHeight: 1.65, fontWeight: 400 }}>{f.desc}</p>
+                  <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, fontWeight: 400 }}>{f.desc}</p>
                 </div>
               );
             })}
@@ -368,7 +368,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               </div>
               <div style={{ paddingTop: 6 }}>
                 <h3 style={{ margin: "0 0 8px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{s.title}</h3>
-                <p style={{ margin: 0, color: "#A1A1AA", fontWeight: 400 }}>{s.desc}</p>
+                <p style={{ margin: 0, color: theme.textSecondary, fontWeight: 400 }}>{s.desc}</p>
               </div>
             </div>
           ))}
@@ -389,7 +389,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 key={t.name}
                 onMouseOver={cardHoverOn}
                 onMouseOut={cardHoverOff}
-                style={{ background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, borderLeft: `3px solid ${theme.accent}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
+                style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderLeft: `3px solid ${theme.accent}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
               >
                 <div style={{ marginBottom: 12, display: "flex", gap: 2 }}>
                   {Array.from({ length: 5 }).map((_, starIdx) => (
@@ -397,12 +397,12 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   ))}
                 </div>
                 <span style={{ display: "block", fontSize: 48, color: theme.accent, opacity: 0.4, lineHeight: 0.8, marginBottom: -16 }}>&quot;</span>
-                <p style={{ color: "#FAFAFA", lineHeight: 1.7, fontStyle: "italic", margin: "0 0 20px", fontWeight: 400 }}>{t.text}</p>
+                <p style={{ color: theme.textPrimary, lineHeight: 1.7, fontStyle: "italic", margin: "0 0 20px", fontWeight: 400 }}>{t.text}</p>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, display: "grid", placeItems: "center", fontWeight: 800 }}>{initials(t.name)}</div>
                   <div>
                     <div style={{ fontWeight: 700 }}>{t.name}</div>
-                    <div style={{ color: "#A1A1AA", fontSize: 13 }}>{t.role}</div>
+                    <div style={{ color: theme.textSecondary, fontSize: 13 }}>{t.role}</div>
                   </div>
                 </div>
               </div>
@@ -414,7 +414,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <section data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)` }}>
         <div className="container" style={{ textAlign: "center", maxWidth: 860 }}>
           <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(36px,6vw,64px)", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
-          <p style={{ color: "#A1A1AA", fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
+          <p style={{ color: theme.textSecondary, fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
           <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color="#fff" /></a>
         </div>
       </section>
@@ -426,9 +426,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
           <form onSubmit={handleSubmit} style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 30 }}>
             <div style={{ display: "grid", gap: 16 }}>
-              <input value={name} onChange={(e) => setName(e.target.value)} required name="name" placeholder="Your name" style={{ width: "100%", background: theme.bgPrimary, border: "1px solid #1C1C22", color: "#FAFAFA", borderRadius: 10, padding: "13px 14px" }} />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" placeholder="Email address" style={{ width: "100%", background: theme.bgPrimary, border: "1px solid #1C1C22", color: "#FAFAFA", borderRadius: 10, padding: "13px 14px" }} />
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} name="message" rows={5} placeholder="Tell me about your goals..." style={{ width: "100%", background: theme.bgPrimary, border: "1px solid #1C1C22", color: "#FAFAFA", borderRadius: 10, padding: "13px 14px", resize: "vertical" }} />
+              <input value={name} onChange={(e) => setName(e.target.value)} required name="name" placeholder="Your name" style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px" }} />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" placeholder="Email address" style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px" }} />
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} name="message" rows={5} placeholder="Tell me about your goals..." style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px", resize: "vertical" }} />
               <button
                 disabled={loading}
                 type="submit"
@@ -444,20 +444,20 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </div>
       </section>
 
-      <footer data-aos="fade-up" style={{ padding: "36px 0", background: "#060608", borderTop: `1px solid ${theme.cardBorder}` }}>
+      <footer data-aos="fade-up" style={{ padding: "36px 0", background: theme.isDark ? "#060608" : theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}` }}>
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`, opacity: 0.3, marginBottom: 0 }} />
         <div className="container" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
           <div style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 800, letterSpacing: "-0.02em" }}>{content.brand}</div>
-          <div style={{ color: "#52525B", fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
+          <div style={{ color: theme.textMuted, fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
           {showBrandWatermark ? (
             <a
               href="https://lacore.ai"
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                color: "#A1A1AA",
-                border: "1px solid #1C1C22",
-                background: "#111116",
+                color: theme.textSecondary,
+                border: `1px solid ${theme.isDark ? "#1C1C22" : theme.cardBorder}`,
+                background: theme.isDark ? "#111116" : theme.bgSecondary,
                 borderRadius: 999,
                 padding: "8px 14px",
                 display: "inline-flex",
