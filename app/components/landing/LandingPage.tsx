@@ -460,7 +460,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 fontSize: 80, color: theme.accent, opacity: 0.08,
                 fontFamily: "Georgia, serif", lineHeight: 1,
                 pointerEvents: "none",
-              }}>"</div>
+              }}>&ldquo;</div>
               <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} style={{ color: "#F59E0B", fontSize: 16 }}>★</span>
