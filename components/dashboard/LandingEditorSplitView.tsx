@@ -9,6 +9,7 @@ import { LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickAction
 import { dashToast } from "@/lib/dash-toast";
 import { LandingStripeStatus } from "@/components/dashboard/LandingStripeStatus";
 import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimonialsPanel";
+import { type LandingStyle } from "@/types/landing";
 
 const QUICK_ACTIONS = [
   "Make headline stronger",
@@ -52,6 +53,24 @@ export function LandingEditorSplitView({
   const [undoVisible, setUndoVisible] = useState(false);
   const [undoBusy, setUndoBusy] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState<LandingStyle>("dark-indigo");
+  const [showStylePicker, setShowStylePicker] = useState(false);
+
+  const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
+    { id: "dark-indigo", label: "Indigo", accent: "#6366F1", bg: "#0A0A0D" },
+    { id: "dark-purple", label: "Purple", accent: "#A855F7", bg: "#07040F" },
+    { id: "dark-gold", label: "Gold", accent: "#D4AF37", bg: "#080808" },
+    { id: "dark-amber", label: "Amber", accent: "#F59E0B", bg: "#0A0800" },
+    { id: "dark-red", label: "Red", accent: "#EF4444", bg: "#080808" },
+    { id: "dark-green", label: "Green", accent: "#10B981", bg: "#030A05" },
+    { id: "dark-pink", label: "Pink", accent: "#EC4899", bg: "#09040F" },
+    { id: "dark-cyan", label: "Cyan", accent: "#06B6D4", bg: "#030A0F" },
+    { id: "dark-orange", label: "Orange", accent: "#F97316", bg: "#080500" },
+    { id: "pure-black", label: "Minimal", accent: "#FFFFFF", bg: "#000000" },
+    { id: "light-clean", label: "Light", accent: "#6366F1", bg: "#FFFFFF" },
+    { id: "warm-cream", label: "Warm", accent: "#D97706", bg: "#FDFAF5" },
+    { id: "bold-black", label: "Bold", accent: "#FFFFFF", bg: "#000000" },
+  ];
 
   useEffect(() => {
     try {
@@ -180,7 +199,7 @@ export function LandingEditorSplitView({
       /* ignore local backup failures */
     }
 
-    await d.handleRegenerateSiteConfirmed();
+    await d.handleRegenerateSiteConfirmed({ style: selectedStyle });
     setRegenerateConfirm(false);
 
     try {
@@ -447,6 +466,32 @@ export function LandingEditorSplitView({
           <div className="w-full max-w-sm rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-5 sm:rounded-xl">
             <p className="text-sm text-white/80">Replace your current site? This will delete the page and generate a new one.</p>
             {d.regenerateError ? <p className="mt-2 text-xs text-red-400">{d.regenerateError}</p> : null}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "rgba(255,255,255,0.35)", textTransform: "uppercase" as const, marginBottom: 10 }}>Choose style</p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                {styleOptions.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSelectedStyle(s.id)}
+                    title={s.label}
+                    style={{
+                      width: 28, height: 28,
+                      borderRadius: "50%",
+                      background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
+                      border: selectedStyle === s.id ? "2px solid #fff" : "2px solid transparent",
+                      outline: selectedStyle === s.id ? `2px solid ${s.accent}` : "none",
+                      outlineOffset: 2,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  />
+                ))}
+              </div>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
+                {styleOptions.find(s => s.id === selectedStyle)?.label}
+              </p>
+            </div>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"

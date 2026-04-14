@@ -124,7 +124,7 @@ type DashboardDataContextValue = {
   setRegenerateConfirm: (v: boolean) => void;
   regenerateError: string | null;
   setRegenerateError: (v: string | null) => void;
-  handleRegenerateSiteConfirmed: () => Promise<void>;
+  handleRegenerateSiteConfirmed: (opts?: { style?: string }) => Promise<void>;
   handleSignOut: () => Promise<void>;
   profileDisplayName: string;
   setProfileDisplayName: (v: string) => void;
@@ -545,7 +545,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     };
   }, [buildingLanding, buildingLogMessages.length]);
 
-  const handleRegenerateSiteConfirmed = useCallback(async () => {
+  const handleRegenerateSiteConfirmed = useCallback(async (opts?: { style?: string }) => {
     if (!userId || !activeProject?.id) return;
     setRegenerateError(null);
     const supabase = getSupabaseClient();
@@ -562,7 +562,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     setLandingSlug(null);
     setRegenerateConfirm(false);
     void refreshDashboardStatus();
-    void handleBuildLandingPage();
+    void handleBuildLandingPage({ style: opts?.style });
   }, [userId, handleBuildLandingPage, activeProject?.id, refreshDashboardStatus]);
 
   const value = useMemo(
