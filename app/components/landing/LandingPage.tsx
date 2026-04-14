@@ -4,14 +4,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { NICHE_THEMES, STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
 import {
   ArrowRight,
-  Check,
-  Clock,
-  Shield,
-  Star,
-  Target,
-  TrendingUp,
-  Users,
-  Zap,
 } from "@/app/components/landing/Icons";
 
 type Props = {
@@ -21,8 +13,6 @@ type Props = {
   /** When false, hide the “Built with LACORE” footer link (paid plans). */
   showBrandWatermark?: boolean;
 };
-
-const iconMap = { Zap, Target, Shield, TrendingUp, Clock, Users, Star, Check } as const;
 
 function initials(name: string) {
   return name
@@ -107,22 +97,6 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     color: "#fff",
     padding: "14px 28px",
     border: "1px solid rgba(255,255,255,0.15)",
-  };
-
-  const isEmojiLike = (value: string) => /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(value);
-  const emojiMap: Record<keyof typeof iconMap, string> = {
-    Zap: "⚡",
-    Target: "🎯",
-    Shield: "🛡️",
-    TrendingUp: "📈",
-    Clock: "⏱️",
-    Users: "👥",
-    Star: "⭐",
-    Check: "✅",
-  };
-  const iconEmoji = (icon: string) => {
-    if (isEmojiLike(icon)) return icon;
-    return emojiMap[icon as keyof typeof iconMap] ?? "⚡";
   };
 
   const buttonHoverOn = (e: HoverEvent) => {
@@ -325,7 +299,15 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 onMouseOut={cardHoverOff}
                 style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
               >
-                <div style={{ fontSize: 28, marginBottom: 14 }}>{p.emoji}</div>
+                <div style={{
+                  width: 40, height: 40,
+                  borderRadius: 8,
+                  background: "rgba(239,68,68,0.1)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 16,
+                  fontSize: 18, color: "#EF4444", fontWeight: 700
+                }}>✕</div>
                 <h3 style={{ margin: "0 0 10px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{p.title}</h3>
                 <p style={{ margin: 0, color: "#A1A1AA", lineHeight: 1.65, fontWeight: 400 }}>{p.desc}</p>
               </div>
@@ -351,8 +333,17 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   onMouseOut={cardHoverOff}
                   style={{ background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 10, background: `${theme.accent}1F`, border: `1px solid ${theme.accent}40`, display: "grid", placeItems: "center", marginBottom: 20, fontSize: 24 }}>
-                    {iconEmoji(f.icon)}
+                  <div style={{
+                    width: 44, height: 44,
+                    borderRadius: 8,
+                    background: `${theme.accent}18`,
+                    border: `1px solid ${theme.accent}35`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    marginBottom: 20,
+                    fontSize: 20, fontWeight: 800, color: theme.accent,
+                    fontFamily: "monospace"
+                  }}>
+                    {({"Zap":"⚡︎","Target":"◎","Shield":"⊕","TrendingUp":"↗","Clock":"◷","Users":"⊛","Star":"✦","Check":"✓"} as Record<string,string>)[f.icon] ?? f.title.charAt(0).toUpperCase()}
                   </div>
                   <h3 style={{ margin: "0 0 10px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{f.title}</h3>
                   <p style={{ margin: 0, color: "#A1A1AA", lineHeight: 1.65, fontWeight: 400 }}>{f.desc}</p>
