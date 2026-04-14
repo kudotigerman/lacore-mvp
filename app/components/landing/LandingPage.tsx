@@ -34,6 +34,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const [message, setMessage] = useState("");
   const theme =
     (style ? STYLE_THEMES[style] : null) ?? NICHE_THEMES[content.niche] ?? NICHE_THEMES.default;
+  const fontHeading = theme.isDark
+    ? (style === "dark-purple" || style === "dark-pink" ? "'Space Grotesk', 'Plus Jakarta Sans', sans-serif" : "'Plus Jakarta Sans', sans-serif")
+    : (style === "warm-cream" ? "'Playfair Display', Georgia, serif" : "'DM Sans', 'Plus Jakarta Sans', sans-serif");
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -126,6 +129,17 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     e.currentTarget.style.boxShadow = "none";
   };
 
+  const SectionDivider = ({ flip = false }: { flip?: boolean }) => (
+    <div style={{
+      height: 1,
+      background: flip
+        ? `linear-gradient(90deg, ${theme.accent}60, transparent, ${theme.accent}60)`
+        : `linear-gradient(90deg, transparent, ${theme.accent}60, transparent)`,
+      opacity: 0.5,
+      margin: 0,
+    }} />
+  );
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -147,7 +161,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   return (
     <div style={{ background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Inter, sans-serif", fontWeight: 400 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         .container { width: min(1100px, 100% - 48px); margin: 0 auto; }
@@ -195,7 +209,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         }}
       >
         <div className="container" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>{content.brand}</div>
+          <div style={{ fontFamily: fontHeading, fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>{content.brand}</div>
           <div className="hide-mobile" style={{ display: "flex", gap: 28, alignItems: "center" }}>
             <a href="#benefits" style={{ color: theme.textSecondary }}>Benefits</a>
             <a href="#process" style={{ color: theme.textSecondary }}>Process</a>
@@ -212,16 +226,17 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </div>
       </nav>
 
-      <section data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", ...heroBg }}>
+      <section data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", ...heroBg }}>
         <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
         <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
         <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
+        <>
         <div className="container" style={{ position: "relative", zIndex: 1, paddingTop: 60 }}>
           <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: theme.isDark ? "1px solid rgba(255,255,255,0.12)" : `1px solid ${theme.accent}25`, borderRadius: 999, padding: "8px 14px", marginBottom: 24 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, marginTop: 6 }} />
             <span style={{ color: theme.textSecondary, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
           </div>
-          <h1 data-aos="fade-up" style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, fontSize: "clamp(44px,7vw,82px)", lineHeight: 1.02, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
+          <h1 data-aos="fade-up" style={{ fontFamily: fontHeading, fontWeight: 900, fontSize: "clamp(44px,7vw,82px)", lineHeight: 1.02, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
             {content.headline}
             <br />
             <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{content.headlineAccent}</span>
@@ -258,9 +273,46 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             </div>
           </div>
         </div>
+        <div data-aos="fade-left" className="hide-mobile" style={{
+          position: "absolute",
+          right: "-5%",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "420px",
+          height: "420px",
+          pointerEvents: "none",
+          zIndex: 0,
+          opacity: theme.isDark ? 0.15 : 0.08,
+        }}>
+          <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
+            <circle cx="200" cy="200" r="160" stroke={theme.accent} strokeWidth="1" strokeDasharray="8 4" opacity="0.6"/>
+            <circle cx="200" cy="200" r="120" stroke={theme.accent} strokeWidth="1" opacity="0.4"/>
+            <circle cx="200" cy="200" r="80" stroke={theme.accent} strokeWidth="2" opacity="0.5"/>
+            <circle cx="200" cy="200" r="40" fill={theme.accent} opacity="0.15"/>
+            <circle cx="200" cy="200" r="20" fill={theme.accent} opacity="0.3"/>
+            <line x1="40" y1="200" x2="360" y2="200" stroke={theme.accent} strokeWidth="0.5" opacity="0.3"/>
+            <line x1="200" y1="40" x2="200" y2="360" stroke={theme.accent} strokeWidth="0.5" opacity="0.3"/>
+            <line x1="87" y1="87" x2="313" y2="313" stroke={theme.accent} strokeWidth="0.5" opacity="0.2"/>
+            <line x1="313" y1="87" x2="87" y2="313" stroke={theme.accent} strokeWidth="0.5" opacity="0.2"/>
+            <circle cx="200" cy="40" r="4" fill={theme.accent} opacity="0.6"/>
+            <circle cx="360" cy="200" r="4" fill={theme.accent} opacity="0.6"/>
+            <circle cx="200" cy="360" r="4" fill={theme.accent} opacity="0.6"/>
+            <circle cx="40" cy="200" r="4" fill={theme.accent} opacity="0.6"/>
+            <circle cx="87" cy="87" r="3" fill={theme.accentLight} opacity="0.5"/>
+            <circle cx="313" cy="87" r="3" fill={theme.accentLight} opacity="0.5"/>
+            <circle cx="313" cy="313" r="3" fill={theme.accentLight} opacity="0.5"/>
+            <circle cx="87" cy="313" r="3" fill={theme.accentLight} opacity="0.5"/>
+          </svg>
+        </div>
+        </>
       </section>
+      <SectionDivider />
 
-      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, padding: "64px 0" }}>
+      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, padding: "64px 0", position: "relative", overflow: "hidden" }}>
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: `radial-gradient(ellipse 600px 200px at 50% 50%, ${theme.accent}0A, transparent)`,
+        }} />
         <div className="container grid3">
           {content.stats.slice(0, 3).map((s, i) => (
             <div
@@ -274,7 +326,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 padding: "0 20px",
               }}
             >
-              <div style={{ color: theme.accent, fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.04em", fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 1 }}>
+              <div style={{ color: theme.accent, fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.04em", fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 1 }}>
                 {s.number}
               </div>
               <div style={{ color: theme.textSecondary, fontSize: 14 }}>{s.label}</div>
@@ -282,12 +334,13 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           ))}
         </div>
       </section>
+      <SectionDivider flip />
 
       <section id="benefits" data-aos="fade-up">
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE PROBLEM</div>
-            <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.problemHeadline}</h2>
+            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.problemHeadline}</h2>
           </div>
           <div className="grid3">
             {content.problems.slice(0, 3).map((p, i) => (
@@ -308,19 +361,20 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   marginBottom: 16,
                   fontSize: 18, color: "#EF4444", fontWeight: 700
                 }}>✕</div>
-                <h3 style={{ margin: "0 0 10px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{p.title}</h3>
+                <h3 style={{ margin: "0 0 10px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{p.title}</h3>
                 <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, fontWeight: 400 }}>{p.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+      <SectionDivider />
 
       <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE SOLUTION</div>
-            <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.solutionHeadline}</h2>
+            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.solutionHeadline}</h2>
           </div>
           <div className="grid3">
             {content.features.slice(0, 3).map((f, i) => {
@@ -345,7 +399,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   }}>
                     {({"Zap":"⚡︎","Target":"◎","Shield":"⊕","TrendingUp":"↗","Clock":"◷","Users":"⊛","Star":"✦","Check":"✓"} as Record<string,string>)[f.icon] ?? f.title.charAt(0).toUpperCase()}
                   </div>
-                  <h3 style={{ margin: "0 0 10px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{f.title}</h3>
+                  <h3 style={{ margin: "0 0 10px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{f.title}</h3>
                   <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, fontWeight: 400 }}>{f.desc}</p>
                 </div>
               );
@@ -353,12 +407,13 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </div>
       </section>
+      <SectionDivider flip />
 
       <section id="process" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 860 }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>HOW IT WORKS</div>
-            <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.processHeadline}</h2>
+            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.processHeadline}</h2>
           </div>
           {content.steps.slice(0, 3).map((s, i) => (
             <div data-aos="fade-up" data-aos-delay={i * 100} key={s.title} style={{ display: "flex", gap: 18, paddingBottom: i < 2 ? 28 : 0 }}>
@@ -367,22 +422,76 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 {i < 2 ? <div style={{ width: 2, flex: 1, marginTop: 6, background: `repeating-linear-gradient(to bottom, ${theme.accent}, ${theme.accent} 6px, transparent 6px, transparent 12px)` }} /> : null}
               </div>
               <div style={{ paddingTop: 6 }}>
-                <h3 style={{ margin: "0 0 8px", fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em" }}>{s.title}</h3>
+                <h3 style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{s.title}</h3>
                 <p style={{ margin: 0, color: theme.textSecondary, fontWeight: 400 }}>{s.desc}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
+      <SectionDivider />
 
       <section id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>RESULTS</div>
-            <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.testimonialsHeadline}</h2>
+            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.testimonialsHeadline}</h2>
           </div>
-          <div className="grid3">
-            {content.testimonials.slice(0, 3).map((t, i) => (
+          {content.testimonials[0] ? (
+            <div
+              data-aos="fade-up"
+              key={content.testimonials[0].name}
+              onMouseOver={cardHoverOn}
+              onMouseOut={cardHoverOff}
+              style={{
+                background: theme.cardBg,
+                border: `1px solid ${theme.cardBorder}`,
+                borderLeft: `4px solid ${theme.accent}`,
+                borderRadius: 12,
+                padding: "40px 48px",
+                marginBottom: 24,
+                transition: "all 0.25s ease",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 20, right: 32,
+                fontSize: 80, color: theme.accent, opacity: 0.08,
+                fontFamily: "Georgia, serif", lineHeight: 1,
+                pointerEvents: "none",
+              }}>"</div>
+              <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} style={{ color: "#F59E0B", fontSize: 16 }}>★</span>
+                ))}
+              </div>
+              <p style={{
+                color: theme.textPrimary,
+                lineHeight: 1.8,
+                fontStyle: "italic",
+                fontSize: "clamp(16px, 2vw, 20px)",
+                margin: "0 0 28px",
+                fontWeight: 400,
+                maxWidth: 700,
+              }}>{content.testimonials[0].text}</p>
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`,
+                  display: "grid", placeItems: "center",
+                  fontWeight: 800, fontSize: 18,
+                  color: "#fff",
+                }}>{initials(content.testimonials[0].name)}</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{content.testimonials[0].name}</div>
+                  <div style={{ color: theme.textSecondary, fontSize: 14 }}>{content.testimonials[0].role}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+            {content.testimonials.slice(1, 3).map((t, i) => (
               <div
                 data-aos="fade-up"
                 data-aos-delay={i * 100}
@@ -410,10 +519,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </div>
       </section>
+      <SectionDivider flip />
 
       <section data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)` }}>
         <div className="container" style={{ textAlign: "center", maxWidth: 860 }}>
-          <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(36px,6vw,64px)", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
+          <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(36px,6vw,64px)", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
           <p style={{ color: theme.textSecondary, fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
           <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color="#fff" /></a>
         </div>
@@ -422,7 +532,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <section id="contact-form" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 720 }}>
           <div style={{ textAlign: "center", marginBottom: 34 }}>
-            <h2 style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
+            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
           </div>
           <form onSubmit={handleSubmit} style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 30 }}>
             <div style={{ display: "grid", gap: 16 }}>
@@ -447,7 +557,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <footer data-aos="fade-up" style={{ padding: "36px 0", background: theme.isDark ? "#060608" : theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}` }}>
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`, opacity: 0.3, marginBottom: 0 }} />
         <div className="container" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
-          <div style={{ fontFamily: "Plus Jakarta Sans", fontWeight: 800, letterSpacing: "-0.02em" }}>{content.brand}</div>
+          <div style={{ fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em" }}>{content.brand}</div>
           <div style={{ color: theme.textMuted, fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
           {showBrandWatermark ? (
             <a
