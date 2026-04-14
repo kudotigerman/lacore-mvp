@@ -471,11 +471,12 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
           throw new Error("Missing Supabase configuration.");
         }
         console.log("anon key present:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-        const response = await fetch("/api/generate-landing", {
+        const response = await fetch(`${supabaseUrl}/functions/v1/generate-landing`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${sessionToken}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
           },
           body: JSON.stringify({
             ...offer,

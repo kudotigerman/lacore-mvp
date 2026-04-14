@@ -25,19 +25,6 @@ function cleanJson(raw: string) {
   return raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function renderHtml(content: Record<string, unknown>, title: string): string {
-  const brand = String(content.brand ?? "Brand");
-  const headline = String(content.headline ?? "");
-  const headlineAccent = String(content.headlineAccent ?? "");
-  const subheadline = String(content.subheadline ?? "");
-  const cta = String(content.ctaPrimary ?? "Get Started");
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(subheadline)}"></head><body style="margin:0;background:#0A0A0D;color:#FAFAFA;font-family:Inter,system-ui,sans-serif"><main style="max-width:900px;margin:0 auto;padding:120px 24px"><p style="color:#6366F1">${escapeHtml(String(content.badge ?? ""))}</p><h1 style="font-size:56px;line-height:1.05">${escapeHtml(headline)}<br><span style="color:#818CF8">${escapeHtml(headlineAccent)}</span></h1><p style="color:#A1A1AA">${escapeHtml(subheadline)}</p><a href="#contact-form" style="display:inline-block;background:#6366F1;color:#fff;padding:14px 20px;border-radius:10px;text-decoration:none">${escapeHtml(cta)}</a><section id="contact-form" style="margin-top:64px"><h2>${escapeHtml(String(content.formHeadline ?? "Contact us"))}</h2></section><footer style="margin-top:64px;border-top:1px solid #1C1C22;padding-top:24px">${escapeHtml(brand)} · <a href="https://lacore.ai" target="_blank" rel="noopener noreferrer" style="color:#A1A1AA">Built with LACORE</a></footer></main></body></html>`;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -75,6 +62,7 @@ serve(async (req) => {
 
     const projectId =
       typeof body.project_id === "string" && body.project_id.length > 0 ? body.project_id : null;
+    const requestedStyle = typeof body.style === "string" ? body.style : "dark-indigo";
 
     const { data: profileRow } = await supabase
       .from("profiles")
@@ -119,7 +107,8 @@ Pricing: ${body.pricing}
 Positioning: ${body.positioning}
 Suggested headline: ${body.headline}
 Primary CTA goal: ${body.primaryGoal || "Book a call"}
-Site vibe: ${body.siteVibe || "Professional"}`;
+Site vibe: ${body.siteVibe || "Professional"}
+Style preference: ${requestedStyle}`;
 
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -179,8 +168,6 @@ Site vibe: ${body.siteVibe || "Professional"}`;
       existingPage.data?.slug ??
       `${emailBase}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const html = renderHtml(jsonContent, headlineRaw);
-
     const { data: deducted, error: deductErr } = await supabase.rpc("deduct_credits", {
       p_user_id: userId,
       p_amount: 10,
@@ -204,8 +191,8 @@ Site vibe: ${body.siteVibe || "Professional"}`;
         user_id: userId,
         project_id: projectId,
         slug,
-        html_content: html,
         json_content: jsonContent,
+        html_content: null,
         jsx_content: null,
       },
       { onConflict: "slug" },
