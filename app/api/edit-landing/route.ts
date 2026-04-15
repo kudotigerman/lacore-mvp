@@ -13,6 +13,7 @@ type EditPayload = {
   instruction: string;
   currentHtml?: string;
   currentJsx?: string;
+  currentJson?: string;
   imageBase64?: string;
   imageMediaType?: string;
 };
@@ -206,7 +207,8 @@ export async function POST(request: Request) {
 
     const useJsx = Boolean(body.currentJsx?.trim());
     const useHtml = Boolean(body.currentHtml?.trim());
-    if (!useJsx && !useHtml) {
+    const useJson = Boolean(body.currentJson?.trim());
+    if (!useJsx && !useHtml && !useJson) {
       return NextResponse.json({ error: "Missing current page content." }, { status: 400 });
     }
 
@@ -345,6 +347,48 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
       }
 
       return NextResponse.json({ success: true, jsx });
+    }
+
+    if (useJson && body.currentJson) {
+      const jsonUser = `Here is the current landing page content as JSON:
+${body.currentJson}
+
+The user wants to make this change: ${instructionWithImageUrl}
+
+Return ONLY a valid JSON object with the same structure as the input but with the requested changes applied.
+Keep all fields that were not mentioned in the change request exactly as they are.
+No markdown, no explanation, just the JSON object.`;
+
+      let updatedJsonText: string;
+      try {
+        updatedJsonText = await callClaude(apiKey, `You are editing landing page content JSON. Apply the requested change and return only the updated JSON object. Keep the exact same structure.`, jsonUser as ClaudeUserContent);
+      } catch {
+        return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
+      }
+
+      const cleanedJson = updatedJsonText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+      let updatedJson: Record<string, unknown>;
+      try {
+        updatedJson = JSON.parse(cleanedJson) as Record<string, unknown>;
+      } catch {
+        return NextResponse.json({ error: "Failed to parse updated content." }, { status: 502 });
+      }
+
+      const { error: saveError } = await supabase
+        .from("landing_pages")
+        .update({ json_content: updatedJson } as never)
+        .eq("slug", body.slug)
+        .eq("user_id", user.id);
+
+      if (saveError) {
+        return NextResponse.json({ error: "Failed to save.", details: saveError.message }, { status: 500 });
+      }
+
+      if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+        return NextResponse.json({ error: "insufficient_credits", message: "Not enough credits." }, { status: 402 });
+      }
+
+      return NextResponse.json({ success: true, json: updatedJson });
     }
 
     const htmlUser = `Here is the current page:

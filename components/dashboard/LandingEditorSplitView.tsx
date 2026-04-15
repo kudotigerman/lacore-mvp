@@ -112,16 +112,17 @@ export function LandingEditorSplitView({
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from("landing_pages")
-        .select("html_content, jsx_content")
+        .select("html_content, jsx_content, json_content")
         .eq("slug", slug)
         .single();
 
       if (error) throw new Error(error.message);
-      const row = data as { html_content: string | null; jsx_content: string | null };
+      const row = data as { html_content: string | null; jsx_content: string | null; json_content: Record<string, unknown> | null };
       const jsx = row.jsx_content?.trim() ?? "";
       const html = row.html_content?.trim() ?? "";
+      const jsonContent = row.json_content;
       const useJsx = Boolean(jsx);
-      if (!useJsx && !html) throw new Error("No page content found.");
+      if (!useJsx && !html && !jsonContent) throw new Error("No page content found.");
 
       const res = await fetch("/api/edit-landing", {
         method: "POST",
@@ -132,7 +133,7 @@ export function LandingEditorSplitView({
         body: JSON.stringify({
           slug,
           instruction,
-          ...(useJsx ? { currentJsx: jsx } : { currentHtml: html })
+          ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
         })
       });
 
