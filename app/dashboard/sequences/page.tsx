@@ -9,11 +9,64 @@ import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
 import type { SequenceMessage } from "@/types/dashboard-ai";
 
 const CHANNELS = [
-  { id: "email" as const, label: "📧 Email", desc: "5-email nurture sequence" },
-  { id: "instagram" as const, label: "📱 Instagram DM", desc: "3-message DM sequence" },
-  { id: "linkedin" as const, label: "💼 LinkedIn", desc: "Connection + follow-up" },
-  { id: "whatsapp" as const, label: "💬 WhatsApp", desc: "3-message warm sequence" },
-  { id: "telegram" as const, label: "✈️ Telegram", desc: "Outreach sequence" }
+  {
+    id: "email" as const,
+    label: "Email",
+    desc: "5-email nurture sequence",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="3" width="12" height="9" rx="1.5"/>
+        <path d="M1 3l6 5 6-5"/>
+      </svg>
+    )
+  },
+  {
+    id: "instagram" as const,
+    label: "Instagram",
+    desc: "3-message DM sequence",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1.5" y="1.5" width="11" height="11" rx="3"/>
+        <circle cx="7" cy="7" r="2.5"/>
+        <circle cx="10.5" cy="3.5" r="0.5" fill="currentColor" stroke="none"/>
+      </svg>
+    )
+  },
+  {
+    id: "linkedin" as const,
+    label: "LinkedIn",
+    desc: "Connection + follow-up",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1.5" y="1.5" width="11" height="11" rx="2"/>
+        <path d="M4 6v4M4 4.5v.01"/>
+        <path d="M7 10V7.5c0-1 .5-1.5 1.5-1.5S10 6.5 10 7.5V10"/>
+        <path d="M7 6v4"/>
+      </svg>
+    )
+  },
+  {
+    id: "whatsapp" as const,
+    label: "WhatsApp",
+    desc: "3-message warm sequence",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 1.5a5.5 5.5 0 015.2 7.3L13 12.5l-3.7-.8A5.5 5.5 0 117 1.5z"/>
+        <path d="M5 5.5c.5 1 1 2 2.5 2.5"/>
+      </svg>
+    )
+  },
+  {
+    id: "telegram" as const,
+    label: "Telegram",
+    desc: "Outreach sequence",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12.5 2L1.5 6l4 1.5L7.5 11l1.5-3 3.5-6z"/>
+        <path d="M5.5 7.5l2 2"/>
+      </svg>
+    )
+  }
 ];
 
 const GOALS = [
@@ -175,7 +228,10 @@ function SequencesPageInner() {
                 : "border border-white/10 bg-white/5 text-white/50 hover:text-white/80"
             }`}
           >
-            {ch.label}
+            <span className="flex items-center gap-1.5">
+              {ch.icon}
+              {ch.label}
+            </span>
           </button>
         ))}
       </div>

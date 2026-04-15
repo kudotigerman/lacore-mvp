@@ -126,8 +126,8 @@ export default function PricingStrategyPage() {
       </div>
 
       <ContextualTip
-        icon="📊"
-        text="Most service providers undercharge by 40-60%. Be honest about your current price — AI will tell you if you're leaving money on the table."
+        icon="$"
+        text="Enter your details and AI will give you exact price points, package names, and how to present them to clients."
       />
 
       <div className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
@@ -186,6 +186,27 @@ export default function PricingStrategyPage() {
           {loading ? "Analyzing…" : "Get pricing strategy → (2 credits)"}
         </button>
         {error ? <p className="mt-3 text-center text-sm text-red-400">{error}</p> : null}
+        {!result && !loading ? (
+          <div className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/25">Example output</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/40">Recommended price</span>
+                <span className="text-sm font-semibold text-indigo-400">$3,500 – $5,000/project</span>
+              </div>
+              <div className="h-px bg-white/[0.06]" />
+              <div className="grid grid-cols-3 gap-3">
+                {["Starter", "Growth", "Premium"].map((tier, i) => (
+                  <div key={tier} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">{tier}</p>
+                    <p className="mt-1 text-sm font-bold text-white/50">{["$1,500", "$3,500", "$6,000"][i]}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-white/20 italic">AI will generate real tiers based on your niche and experience</p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {result ? (
