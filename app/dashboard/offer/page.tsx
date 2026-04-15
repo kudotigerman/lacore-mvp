@@ -478,21 +478,9 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
       >
       {!offer ? (
         <>
-          <div className="mx-auto max-w-xl px-1 pb-6 pt-2">
-            <div className="flex flex-col items-center text-center">
-              <div
-                className="mb-8 flex h-28 w-28 items-center justify-center rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.18] via-indigo-500/[0.06] to-transparent text-indigo-400 shadow-[0_0_80px_-20px_rgba(99,102,241,0.55)]"
-                aria-hidden
-              >
-                <svg viewBox="0 0 64 64" fill="none" className="h-14 w-14" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" strokeWidth="2" />
-                  <path d="M20 20h24M20 28h18M20 36h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M38 44l6 6 10-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </div>
-            </div>
+          <div className="mx-auto max-w-xl px-1 pb-6 pt-2" style={{ maxHeight: "calc(100vh - 140px)", overflowY: "auto" }}>
 
-            <div className="mb-10 w-full">
+            <div className="mb-6 w-full">
               <p className={`mb-3 ${fieldLabelClass}`}>Examples that work</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {OFFER_INSPIRATION.map((ex, i) => (
@@ -514,7 +502,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-5 shadow-sm">
+              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-4 shadow-sm">
                 <label className={`mb-2 block ${fieldLabelClass}`}>What do you do?</label>
                 <textarea
                   ref={whatYouDoRef}
@@ -522,22 +510,22 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
                   value={whatYouDo}
                   onChange={(e) => setWhatYouDo(e.target.value)}
                   placeholder="I'm a UX designer who helps SaaS startups..."
-                  rows={4}
+                  rows={3}
                   style={{ ...textareaStyle, border: undefined, background: undefined }}
                 />
               </div>
-              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-5 shadow-sm">
+              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-4 shadow-sm">
                 <label className={`mb-2 block ${fieldLabelClass}`}>Who is your ideal client?</label>
                 <textarea
                   className="dash-focusable dash-offer-gen-field w-full rounded-lg border border-white/10 bg-[var(--input-bg)] px-4 py-3 text-[15px] text-white placeholder:text-white/25 focus:border-indigo-500/50"
                   value={idealClient}
                   onChange={(e) => setIdealClient(e.target.value)}
                   placeholder="Founders and PMs at B2B SaaS companies..."
-                  rows={4}
+                  rows={3}
                   style={{ ...textareaStyle, border: undefined, background: undefined }}
                 />
               </div>
-              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-5 shadow-sm">
+              <div className="rounded-xl border border-white/[0.08] bg-[var(--card-bg)]/90 p-4 shadow-sm">
                 <label className={`mb-2 block ${fieldLabelClass}`}>What&apos;s your price range?</label>
                 <input
                   className="dash-focusable dash-offer-gen-field w-full rounded-lg border border-white/10 bg-[var(--input-bg)] px-4 py-3 text-[15px] text-white placeholder:text-white/25 focus:border-indigo-500/50"
@@ -561,7 +549,7 @@ Return ONLY valid JSON (no markdown fences, no explanation) with exactly these s
               type="button"
               disabled={genLoading}
               onClick={() => void generateOffer()}
-              className="mt-8 w-full rounded-xl bg-indigo-600 py-4 text-[15px] font-semibold text-white shadow-[0_12px_40px_-8px_rgba(99,102,241,0.55)] transition-all hover:bg-indigo-500 hover:shadow-[0_16px_48px_-8px_rgba(99,102,241,0.6)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+              className="mt-5 w-full rounded-xl bg-indigo-600 py-4 text-[15px] font-semibold text-white shadow-[0_12px_40px_-8px_rgba(99,102,241,0.55)] transition-all hover:bg-indigo-500 hover:shadow-[0_16px_48px_-8px_rgba(99,102,241,0.6)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
               {genLoading ? "Generating…" : "Generate offer →"}
             </button>
