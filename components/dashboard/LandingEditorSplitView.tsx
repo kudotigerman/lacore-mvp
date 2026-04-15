@@ -269,70 +269,82 @@ export function LandingEditorSplitView({
                 key={msg.id}
                 className={
                   msg.role === "assistant"
-                    ? "rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[11px] leading-relaxed text-white/80"
-                    : "ml-4 rounded-xl bg-white/5 px-3 py-2 text-[11px] leading-relaxed text-white/60"
+                    ? "rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-xs leading-relaxed text-white/80"
+                    : "ml-4 rounded-xl bg-white/5 px-3 py-2 text-xs leading-relaxed text-white/60"
                 }
+                style={{ fontSize: "12px", lineHeight: "1.5" }}
               >
                 {msg.content}
               </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-1 border-b border-t border-white/[0.06] px-4 py-2">
-            <button
-              type="button"
-              title="Add section"
-              onClick={() => setInput("Add a new section: ")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-base text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              title="Make headline stronger"
-              onClick={() => setInput("Make the headline stronger and more compelling")}
-              className="flex h-7 items-center justify-center whitespace-nowrap rounded-md px-2 text-[10px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
-            >
-              H↑
-            </button>
-            <button
-              type="button"
-              title="Change colors"
-              onClick={() => setInput("Change the color scheme to ")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="4" cy="7" r="2.5" fill="#6366F1" opacity="0.8" />
-                <circle cx="10" cy="7" r="2.5" fill="#EC4899" opacity="0.8" />
-                <circle cx="7" cy="4" r="2.5" fill="#F59E0B" opacity="0.8" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              title="Add FAQ"
-              onClick={() => setInput("Add a FAQ section with 5 relevant questions")}
-              className="flex h-7 items-center justify-center whitespace-nowrap rounded-md px-2 text-[10px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
-            >
-              FAQ
-            </button>
-            <button
-              type="button"
-              title="More urgent"
-              onClick={() => setInput("Make the copy more urgent and persuasive")}
-              className="flex h-7 items-center justify-center whitespace-nowrap rounded-md px-2 text-[10px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
-            >
-              🔥
-            </button>
-            <div className="flex-1" />
+          <div className="flex gap-1.5 overflow-x-auto border-b border-t border-white/[0.06] px-3 py-2 scrollbar-hide">
+            {[
+              { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
+              { label: "➕ Add FAQ", action: "Add a FAQ section with 5 relevant questions and answers" },
+              { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
+              { label: "🎨 Colors", action: "Make the color scheme more vibrant and eye-catching" },
+              { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
+              { label: "💰 Pricing", action: "Add a pricing section with 3 tiers" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                disabled={isEditing}
+                onClick={async () => {
+                  const userMsg: ChatMsg = {
+                    id: `u-${Date.now()}`,
+                    role: "user",
+                    content: item.action
+                  };
+                  setMessages((prev) => [...prev, userMsg]);
+                  setIsEditing(true);
+                  try {
+                    const supabase = getSupabaseClient();
+                    const { data, error } = await supabase
+                      .from("landing_pages")
+                      .select("html_content, jsx_content, json_content")
+                      .eq("slug", slug)
+                      .single();
+                    if (error) throw new Error(error.message);
+                    const row = data as { html_content: string | null; jsx_content: string | null; json_content: Record<string, unknown> | null };
+                    const jsx = row.jsx_content?.trim() ?? "";
+                    const html = row.html_content?.trim() ?? "";
+                    const jsonContent = row.json_content;
+                    const useJsx = Boolean(jsx);
+                    if (!useJsx && !html && !jsonContent) throw new Error("No page content found.");
+                    const res = await fetch("/api/edit-landing", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${d.sessionToken}` },
+                      body: JSON.stringify({
+                        slug,
+                        instruction: item.action,
+                        ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
+                      })
+                    });
+                    const text = await res.text();
+                    const result = JSON.parse(text) as { success?: boolean; error?: string };
+                    if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
+                    setIframeKey((k) => k + 1);
+                    setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
+                  } catch (e) {
+                    const msg = e instanceof Error ? e.message : "Something went wrong.";
+                    setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: msg }]);
+                  } finally {
+                    setIsEditing(false);
+                  }
+                }}
+                className="shrink-0 whitespace-nowrap rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80 disabled:opacity-40"
+              >
+                {item.label}
+              </button>
+            ))}
             <label
               title="Attach image"
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+              className="ml-auto flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-indigo-500/40 hover:text-white/70"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M13 8.5V11a2 2 0 01-2 2H3a2 2 0 01-2-2V3a2 2 0 012-2h2.5" />
-                <path d="M8 1h5v5" />
-                <path d="M5.5 8.5l5-5" />
-              </svg>
+              📎
               <input
                 type="file"
                 accept="image/*"
@@ -345,7 +357,7 @@ export function LandingEditorSplitView({
                     const base64 = (reader.result as string).split(",")[1];
                     setImageBase64(base64);
                     setImageMediaType(file.type);
-                    setInput((prev) => prev || "Add this image to the page");
+                    setInput("Add this image to the page");
                   };
                   reader.readAsDataURL(file);
                 }}
