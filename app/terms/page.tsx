@@ -115,6 +115,7 @@ export default async function TermsOfServicePage() {
           </p>
           <p className="mt-2 text-white/60 leading-relaxed">Company: LACORE</p>
         </section>
+        <p className="text-white/60 leading-relaxed">LACORE is a product operated by Relova AI.</p>
       </main>
     </LacoreLegalLayout>
   );

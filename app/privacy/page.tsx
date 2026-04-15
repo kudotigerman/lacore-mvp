@@ -102,6 +102,7 @@ export default async function PrivacyPolicyPage() {
             </a>
           </p>
         </section>
+        <p className="text-white/60 leading-relaxed">LACORE is a product operated by Relova AI.</p>
       </main>
     </LacoreLegalLayout>
   );
