@@ -12,6 +12,9 @@ Output ONLY JSON with this schema:
 { niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats:[{number,label}x3], problemHeadline, problems:[{emoji,title,desc}x3], solutionHeadline, features:[{icon,title,desc}x3], processHeadline, steps:[{title,desc}x3], testimonialsHeadline, testimonials:[{text,name,role}x3], ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton }
 Rules:
 - niche one of [fitness|designer|developer|coach|consultant|agency|course|local|default]
+- brand: use the provided business/brand name exactly as given; only infer from offer if brand name is "(not set)" — NEVER use email addresses or usernames as brand name
+- headline: 4-6 words describing what you do (plain #FAFAFA color)
+- headlineAccent: MUST be 2-4 words MAX, a different punchy outcome or timeframe — NEVER repeat or paraphrase headline words. BAD: headline="Transform Your Business With AI" accent="With AI Implementation" — GOOD: headline="Transform Your Business With AI" accent="In 90 Days"
 - same language as offer
 - no lorem ipsum
 - testimonials and stats must include specific numbers
@@ -69,6 +72,17 @@ serve(async (req) => {
       .select("display_name, plan, landing_generations_count, credits_balance")
       .eq("user_id", userId)
       .maybeSingle();
+    const { data: projectRow } = await supabase
+      .from("projects")
+      .select("name")
+      .eq("id", projectId ?? "")
+      .maybeSingle();
+
+    const projectName = typeof (projectRow as { name?: string } | null)?.name === "string"
+      ? (projectRow as { name: string }).name.trim()
+      : "";
+
+    const isDefaultProjectName = !projectName || projectName === "My Project" || projectName === "";
     const prof = profileRow as {
       display_name?: string;
       plan?: string;
@@ -91,8 +105,9 @@ serve(async (req) => {
     }
     const profileDisplayName =
       typeof prof?.display_name === "string" ? prof.display_name.trim() : "";
-    const brandNameLine =
-      profileDisplayName.length > 0 ? profileDisplayName : "(not set in profile)";
+    const brandNameLine = isDefaultProjectName
+      ? (profileDisplayName.length > 0 ? profileDisplayName : "(not set)")
+      : projectName;
     const displayName =
       profileDisplayName || body.businessName || body.userEmail.split("@")[0];
     const headlineRaw =
@@ -100,7 +115,7 @@ serve(async (req) => {
         ? body.headline.trim()
         : displayName;
     const userMessage = `Generate JSON landing content.
-Display name: ${brandNameLine}
+Business/brand name: ${brandNameLine}${isDefaultProjectName ? " (not set — infer a short brand name from the offer, 2-3 words MAX, NO email addresses)" : ""}
 Offer: ${body.offer}
 Audience: ${body.audience}
 Pricing: ${body.pricing}

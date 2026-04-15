@@ -22,6 +22,9 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
   const [roleSaved, setRoleSaved] = useState(false);
   const [roleSaving, setRoleSaving] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState("");
+  const [businessNameSaved, setBusinessNameSaved] = useState(false);
+  const [businessNameSaving, setBusinessNameSaving] = useState(false);
 
   function finishAndDismiss() {
     try {
@@ -63,6 +66,29 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
       setRoleError("Could not save. Try again.");
     } finally {
       setRoleSaving(false);
+    }
+  }
+
+  async function handleSaveBusinessName() {
+    if (!businessName.trim()) return;
+    setBusinessNameSaving(true);
+    try {
+      const supabase = getSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+      const { error } = await supabase
+        .from("projects")
+        .update({ name: businessName.trim() })
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (!error) {
+        setBusinessNameSaved(true);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setBusinessNameSaving(false);
     }
   }
 
@@ -153,6 +179,49 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
       ) : null}
     </div>,
 
+    <div key="4b" className="w-full px-0">
+      <h2 className="mb-2 text-center text-lg font-semibold text-white">
+        What&apos;s your business name?
+      </h2>
+      <p className="mb-6 text-center text-sm text-white/40">
+        This will appear on your landing page
+      </p>
+      <input
+        type="text"
+        value={businessName}
+        onChange={(e) => setBusinessName(e.target.value)}
+        placeholder="e.g. John Smith Coaching, Elite Agency..."
+        disabled={businessNameSaved || businessNameSaving}
+        className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && businessName.trim() && !businessNameSaved) {
+            void handleSaveBusinessName();
+          }
+        }}
+      />
+      {businessNameSaved ? (
+        <div className="mt-6 text-center">
+          <p className="mb-4 text-sm text-indigo-400">✓ Saved — your page will use this name</p>
+          <button
+            type="button"
+            onClick={handleStartBuilding}
+            className="rounded-xl bg-indigo-600 px-10 py-4 text-base font-medium text-white transition-colors hover:bg-indigo-500"
+          >
+            Start building →
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void handleSaveBusinessName()}
+          disabled={!businessName.trim() || businessNameSaving}
+          className="mt-4 w-full rounded-xl bg-indigo-600 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+        >
+          {businessNameSaving ? "Saving…" : "Save & continue →"}
+        </button>
+      )}
+    </div>,
+
     <div key="5" className="text-center">
       <h2 className="mb-3 text-2xl font-bold text-white">Ready to get your first client?</h2>
       <p className="mb-8 text-white/50">Start by defining what you sell. Takes 2 minutes.</p>
@@ -211,6 +280,15 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
               className="text-sm text-white/40 transition-colors hover:text-white/65"
             >
               One more tip →
+            </button>
+          ) : null}
+          {currentSlide === 4 && !businessNameSaved ? (
+            <button
+              type="button"
+              onClick={() => setCurrentSlide(5)}
+              className="text-sm text-white/30 transition-colors hover:text-white/60"
+            >
+              Skip →
             </button>
           ) : null}
         </div>
