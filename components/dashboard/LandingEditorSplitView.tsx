@@ -11,17 +11,6 @@ import { LandingStripeStatus } from "@/components/dashboard/LandingStripeStatus"
 import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimonialsPanel";
 import { type LandingStyle } from "@/types/landing";
 
-const QUICK_ACTIONS = [
-  "Make headline stronger",
-  "Change colors",
-  "Add testimonials",
-  "Add FAQ section",
-  "Add Calendly",
-  "Add WhatsApp button",
-  "Add pricing section",
-  "Make it more urgent",
-] as const;
-
 type ChatMsg = { id: string; role: "user" | "assistant"; content: string };
 
 export function LandingEditorSplitView({
@@ -56,6 +45,8 @@ export function LandingEditorSplitView({
   const [selectedStyle, setSelectedStyle] = useState<LandingStyle>("dark-indigo");
   const [showStylePicker, setShowStylePicker] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [imageBase64, setImageBase64] = useState("");
+  const [imageMediaType, setImageMediaType] = useState("image/jpeg");
 
   const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
     { id: "dark-indigo", label: "Indigo", accent: "#6366F1", bg: "#0A0A0D" },
@@ -134,6 +125,7 @@ export function LandingEditorSplitView({
         body: JSON.stringify({
           slug,
           instruction,
+          ...(imageBase64 ? { imageBase64, imageMediaType } : {}),
           ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
         })
       });
@@ -167,8 +159,10 @@ export function LandingEditorSplitView({
       ]);
     } finally {
       setIsEditing(false);
+      setImageBase64("");
+      setImageMediaType("image/jpeg");
     }
-  }, [d.sessionToken, input, isEditing, onViewsRefresh, slug]);
+  }, [d.sessionToken, imageBase64, imageMediaType, input, isEditing, onViewsRefresh, slug]);
 
   const handleRegenerate = useCallback(() => {
     d.setRegenerateError(null);
@@ -275,8 +269,8 @@ export function LandingEditorSplitView({
                 key={msg.id}
                 className={
                   msg.role === "assistant"
-                    ? "rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-xs leading-relaxed text-white/80"
-                    : "ml-4 rounded-xl bg-white/5 px-3 py-2 text-xs leading-relaxed text-white/60"
+                    ? "rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[11px] leading-relaxed text-white/80"
+                    : "ml-4 rounded-xl bg-white/5 px-3 py-2 text-[11px] leading-relaxed text-white/60"
                 }
               >
                 {msg.content}
@@ -284,27 +278,90 @@ export function LandingEditorSplitView({
             ))}
           </div>
 
-          <div className="border-t border-white/[0.06] px-4 py-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/45">Ask the AI</p>
-            <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-              {QUICK_ACTIONS.map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  onClick={() => setInput(action)}
-                  className="shrink-0 whitespace-nowrap rounded-lg border border-white/10 px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1 border-b border-t border-white/[0.06] px-4 py-2">
+            <button
+              type="button"
+              title="Add section"
+              onClick={() => setInput("Add a new section: ")}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-base text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              title="Make headline stronger"
+              onClick={() => setInput("Make the headline stronger and more compelling")}
+              className="flex h-7 items-center justify-center whitespace-nowrap rounded-md px-2 text-[10px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+            >
+              H↑
+            </button>
+            <button
+              type="button"
+              title="Change colors"
+              onClick={() => setInput("Change the color scheme to ")}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="4" cy="7" r="2.5" fill="#6366F1" opacity="0.8" />
+                <circle cx="10" cy="7" r="2.5" fill="#EC4899" opacity="0.8" />
+                <circle cx="7" cy="4" r="2.5" fill="#F59E0B" opacity="0.8" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              title="Add FAQ"
+              onClick={() => setInput("Add a FAQ section with 5 relevant questions")}
+              className="flex h-7 items-center justify-center whitespace-nowrap rounded-md px-2 text-[10px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+            >
+              FAQ
+            </button>
+            <button
+              type="button"
+              title="More urgent"
+              onClick={() => setInput("Make the copy more urgent and persuasive")}
+              className="flex h-7 items-center justify-center whitespace-nowrap rounded-md px-2 text-[10px] text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+            >
+              🔥
+            </button>
+            <div className="flex-1" />
+            <label
+              title="Attach image"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white/70"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M13 8.5V11a2 2 0 01-2 2H3a2 2 0 01-2-2V3a2 2 0 012-2h2.5" />
+                <path d="M8 1h5v5" />
+                <path d="M5.5 8.5l5-5" />
+              </svg>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const base64 = (reader.result as string).split(",")[1];
+                    setImageBase64(base64);
+                    setImageMediaType(file.type);
+                    setInput((prev) => prev || "Add this image to the page");
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="px-4 py-3">
             <div className="flex gap-2">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Describe what to change on your page — e.g. stronger headline, add Calendly, warmer colors…"
-                rows={2}
-                className="dash-focusable min-h-[3rem] flex-1 resize-y rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                placeholder="Ask AI to change anything..."
+                rows={1}
+                style={{ resize: "none" }}
+                className="dash-focusable min-h-[2.5rem] flex-1 rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -316,9 +373,9 @@ export function LandingEditorSplitView({
                 type="button"
                 onClick={() => void handleEdit()}
                 disabled={isEditing || !input.trim()}
-                className="min-h-11 self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+                className="shrink-0 self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
               >
-                {isEditing ? "…" : "Apply"}
+                →
               </button>
             </div>
           </div>
