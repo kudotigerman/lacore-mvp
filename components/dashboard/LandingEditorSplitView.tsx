@@ -55,6 +55,7 @@ export function LandingEditorSplitView({
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<LandingStyle>("dark-indigo");
   const [showStylePicker, setShowStylePicker] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
     { id: "dark-indigo", label: "Indigo", accent: "#6366F1", bg: "#0A0A0D" },
@@ -285,13 +286,13 @@ export function LandingEditorSplitView({
 
           <div className="border-t border-white/[0.06] px-4 py-3">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/45">Ask the AI</p>
-            <div className="mb-3 flex flex-wrap gap-1.5">
+            <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
               {QUICK_ACTIONS.map((action) => (
                 <button
                   key={action}
                   type="button"
                   onClick={() => setInput(action)}
-                  className="min-h-11 rounded-lg border border-white/10 px-2 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
+                  className="shrink-0 whitespace-nowrap rounded-lg border border-white/10 px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80"
                 >
                   {action}
                 </button>
@@ -302,8 +303,8 @@ export function LandingEditorSplitView({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Describe what to change on your page — e.g. stronger headline, add Calendly, warmer colors…"
-                rows={3}
-                className="dash-focusable min-h-[4.25rem] flex-1 resize-y rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                rows={2}
+                className="dash-focusable min-h-[3rem] flex-1 resize-y rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -322,30 +323,17 @@ export function LandingEditorSplitView({
             </div>
           </div>
 
-          <div className="space-y-2 border-t border-white/[0.08] px-4 py-3 pb-4">
-            <div className="mb-2">
-              <div className="mb-1 flex justify-between text-[10px] text-white/30">
-                <span>Setup progress</span>
-                <span>{percent}%</span>
-              </div>
-              <div className="h-1 rounded-full bg-white/[0.08]">
-                <div
-                  className="h-1 rounded-full bg-indigo-500 transition-all"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-            </div>
-
+          <div className="space-y-3 border-t border-white/[0.08] px-4 py-3">
             <div className="flex gap-2">
               <input
                 readOnly
                 value={publicUrl}
-                className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.08] bg-white/5 px-3 py-1.5 font-mono text-xs text-white/50"
+                className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 font-mono text-xs text-white/50"
               />
               <button
                 type="button"
                 onClick={() => void handleCopy()}
-                className="min-h-11 shrink-0 rounded-lg border border-indigo-500/20 px-2 py-1.5 text-xs text-indigo-400 transition-colors hover:border-indigo-500/40 hover:text-indigo-300"
+                className="shrink-0 rounded-lg border border-indigo-500/20 px-3 py-2 text-xs text-indigo-400 hover:border-indigo-500/40"
               >
                 {copied ? "✓" : "Copy"}
               </button>
@@ -356,50 +344,27 @@ export function LandingEditorSplitView({
                 href={publicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/10 py-2 text-center text-xs text-white/50 transition-colors hover:text-white/80"
+                className="flex flex-1 items-center justify-center rounded-lg border border-white/10 py-2 text-xs text-white/50 hover:text-white/80"
               >
                 Preview ↗
               </a>
               <button
                 type="button"
                 onClick={handleRegenerate}
-                className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-white/10 py-2 text-xs text-white/50 transition-colors hover:text-white/80"
+                className="flex flex-1 items-center justify-center rounded-lg border border-white/10 py-2 text-xs text-white/50 hover:text-white/80"
               >
                 Regenerate
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setMobilePreviewOpen(true)}
-              className="flex min-h-11 w-full items-center justify-center rounded-lg border border-indigo-500/35 py-2 text-xs text-indigo-300 transition-colors hover:bg-indigo-500/10 lg:hidden"
-            >
-              Preview full screen
-            </button>
-            {undoVisible ? (
-              <button
-                type="button"
-                disabled={undoBusy}
-                onClick={() => void handleUndoLanding()}
-                className="text-left text-[11px] text-indigo-300/90 underline transition-colors hover:text-indigo-200 disabled:opacity-50"
-              >
-                {undoBusy ? "Restoring…" : "Undo — restore previous version"}
-              </button>
-            ) : null}
 
             <button
               type="button"
               onClick={() => router.push("/dashboard/content")}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-medium text-white hover:bg-indigo-500"
             >
               Continue to Content
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-                <path
-                  d="M2 6h8M6 2l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
 
@@ -407,9 +372,31 @@ export function LandingEditorSplitView({
               {v} views · {copied ? "Link copied!" : "Share to get leads"}
             </p>
 
-            {d.userId ? (
-              <div className="space-y-2 border-t border-white/[0.06] pt-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Domain &amp; payments</p>
+            {undoVisible ? (
+              <button
+                type="button"
+                disabled={undoBusy}
+                onClick={() => void handleUndoLanding()}
+                className="text-left text-[11px] text-indigo-300/90 underline hover:text-indigo-200 disabled:opacity-50"
+              >
+                {undoBusy ? "Restoring…" : "Undo — restore previous version"}
+              </button>
+            ) : null}
+          </div>
+
+          <div className="border-t border-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35">
+                Domain &amp; Payments
+              </span>
+              <span className="text-white/30">{settingsOpen ? "▴" : "▾"}</span>
+            </button>
+            {settingsOpen && d.userId ? (
+              <div className="space-y-2 px-4 pb-4">
                 <DomainConnect slug={slug} userId={d.userId} />
                 <LandingStripeStatus />
                 <LandingTestimonialsPanel slug={slug} />
