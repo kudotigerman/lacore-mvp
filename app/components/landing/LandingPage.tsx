@@ -85,11 +85,27 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     gap: 10,
   };
 
+  const hexToRgb = (hex: string) => {
+    const value = hex.replace("#", "");
+    const normalized = value.length === 3 ? value.split("").map((c) => c + c).join("") : value;
+    const n = Number.parseInt(normalized, 16);
+    if (Number.isNaN(n)) return { r: 255, g: 255, b: 255 };
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+
+  const getContrastColor = (hex: string) => {
+    const { r, g, b } = hexToRgb(hex);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? "#0A0A0D" : "#FFFFFF";
+  };
+
+  const primaryButtonTextColor = getContrastColor(theme.accent);
+
   const primaryButtonStyle = {
     ...buttonBaseStyle,
     letterSpacing: "0.05em",
     background: theme.accent,
-    color: "#fff",
+    color: primaryButtonTextColor,
     padding: "14px 28px",
     border: "none",
   };
@@ -250,7 +266,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               onMouseOut={buttonHoverOff}
             >
               {content.ctaPrimary}
-              <ArrowRight color="#fff" />
+              <ArrowRight color={primaryButtonTextColor} />
             </a>
             <a
               href="#process"
@@ -264,7 +280,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           <div data-aos="fade-up" style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 42 }}>
             <div style={{ display: "flex" }}>
               {["A", "M", "K"].map((x, i) => (
-                <div key={x} style={{ width: 36, height: 36, marginLeft: i ? -8 : 0, borderRadius: "50%", display: "grid", placeItems: "center", border: `2px solid ${theme.bgPrimary}`, background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, fontSize: 12, fontWeight: 700 }}>{x}</div>
+                <div key={x} style={{ width: 36, height: 36, marginLeft: i ? -8 : 0, borderRadius: "50%", display: "grid", placeItems: "center", border: `2px solid ${theme.bgPrimary}`, background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, fontSize: 12, fontWeight: 700, color: getContrastColor(theme.accent) }}>{x}</div>
               ))}
             </div>
             <div>
@@ -418,7 +434,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           {content.steps.slice(0, 3).map((s, i) => (
             <div data-aos="fade-up" data-aos-delay={i * 100} key={s.title} style={{ display: "flex", gap: 18, paddingBottom: i < 2 ? 28 : 0 }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ width: 46, height: 46, borderRadius: "50%", background: theme.accent, color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, boxShadow: `0 0 20px ${theme.accent}66` }}>{i + 1}</div>
+                <div style={{ width: 46, height: 46, borderRadius: "50%", background: theme.accent, color: primaryButtonTextColor, display: "grid", placeItems: "center", fontWeight: 800, boxShadow: `0 0 20px ${theme.accent}66` }}>{i + 1}</div>
                 {i < 2 ? <div style={{ width: 2, flex: 1, marginTop: 6, background: `repeating-linear-gradient(to bottom, ${theme.accent}, ${theme.accent} 6px, transparent 6px, transparent 12px)` }} /> : null}
               </div>
               <div style={{ paddingTop: 6 }}>
@@ -481,7 +497,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`,
                   display: "grid", placeItems: "center",
                   fontWeight: 800, fontSize: 18,
-                  color: "#fff",
+                  color: getContrastColor(theme.accent),
                 }}>{initials(content.testimonials[0].name)}</div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16 }}>{content.testimonials[0].name}</div>
@@ -508,7 +524,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 <span style={{ display: "block", fontSize: 48, color: theme.accent, opacity: 0.4, lineHeight: 0.8, marginBottom: -16 }}>&quot;</span>
                 <p style={{ color: theme.textPrimary, lineHeight: 1.7, fontStyle: "italic", margin: "0 0 20px", fontWeight: 400 }}>{t.text}</p>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, display: "grid", placeItems: "center", fontWeight: 800 }}>{initials(t.name)}</div>
+                  <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, display: "grid", placeItems: "center", fontWeight: 800, color: getContrastColor(theme.accent) }}>{initials(t.name)}</div>
                   <div>
                     <div style={{ fontWeight: 700 }}>{t.name}</div>
                     <div style={{ color: theme.textSecondary, fontSize: 13 }}>{t.role}</div>
@@ -525,7 +541,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <div className="container" style={{ textAlign: "center", maxWidth: 860 }}>
           <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(36px,6vw,64px)", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
           <p style={{ color: theme.textSecondary, fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
-          <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color="#fff" /></a>
+          <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color={primaryButtonTextColor} /></a>
         </div>
       </section>
 
