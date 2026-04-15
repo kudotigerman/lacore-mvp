@@ -62,6 +62,7 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
         return;
       }
       setRoleSaved(true);
+      setTimeout(() => setCurrentSlide(4), 800);
     } catch {
       setRoleError("Could not save. Try again.");
     } finally {
@@ -167,15 +168,7 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
       {roleError ? <p className="mt-3 text-center text-xs text-red-400">{roleError}</p> : null}
       {roleSaving ? <p className="mt-3 text-center text-xs text-white/40">Saving…</p> : null}
       {roleSaved ? (
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={handleStartBuilding}
-            className="rounded-xl bg-indigo-600 px-10 py-4 text-base font-medium text-white transition-colors hover:bg-indigo-500"
-          >
-            Start building →
-          </button>
-        </div>
+        <div className="mt-4 text-center text-sm text-indigo-400">✓ Got it — one more thing</div>
       ) : null}
     </div>,
 
@@ -254,16 +247,17 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
         <div className="flex min-h-[240px] items-center justify-center">{slides[currentSlide]}</div>
 
         <div className="mt-8 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleSkip}
-            className="text-sm text-white/30 transition-colors hover:text-white/60"
-          >
-            Skip
-          </button>
-          {currentSlide === 3 && !roleSaved ? (
-            <span className="text-xs text-white/30">Choose a role to continue</span>
-          ) : null}
+          {currentSlide <= 2 ? (
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="text-sm text-white/30 transition-colors hover:text-white/60"
+            >
+              Skip
+            </button>
+          ) : (
+            <span />
+          )}
           {currentSlide <= 2 ? (
             <button
               type="button"
@@ -271,15 +265,6 @@ export default function OnboardingSlides({ onClose }: { onClose: () => void }) {
               className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
             >
               Continue →
-            </button>
-          ) : null}
-          {currentSlide === 3 && roleSaved ? (
-            <button
-              type="button"
-              onClick={() => setCurrentSlide(4)}
-              className="text-sm text-white/40 transition-colors hover:text-white/65"
-            >
-              One more tip →
             </button>
           ) : null}
           {currentSlide === 4 && !businessNameSaved ? (
