@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { dashToast } from "@/lib/dash-toast";
 import { useProjectContext, type Project } from "@/app/contexts/ProjectContext";
+import { type LandingStyle } from "@/types/landing";
 
 export type DashboardOffer = {
   offer: string;
@@ -110,6 +111,10 @@ type DashboardDataContextValue = {
   refreshOffer: () => Promise<void>;
   landingSlug: string | null;
   setLandingSlug: (s: string | null) => void;
+  landingId: string | null;
+  setLandingId: (id: string | null) => void;
+  landingStyle: LandingStyle;
+  setLandingStyle: (style: LandingStyle) => void;
   savedProfileDisplayName: string | null;
   offerContext: string;
   salesBuilderContext: SalesBuilderContextPayload;
@@ -125,6 +130,7 @@ type DashboardDataContextValue = {
   regenerateError: string | null;
   setRegenerateError: (v: string | null) => void;
   handleRegenerateSiteConfirmed: (opts?: { style?: string }) => Promise<void>;
+  handleChangeStyle: (landingId: string, newStyle: LandingStyle) => Promise<void>;
   handleSignOut: () => Promise<void>;
   profileDisplayName: string;
   setProfileDisplayName: (v: string) => void;
@@ -158,6 +164,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState("");
   const [offer, setOffer] = useState<DashboardOffer | null>(null);
   const [landingSlug, setLandingSlug] = useState<string | null>(null);
+  const [landingId, setLandingId] = useState<string | null>(null);
+  const [landingStyle, setLandingStyle] = useState<LandingStyle>("dark-indigo");
   const [buildingLanding, setBuildingLanding] = useState(false);
   const [buildError, setBuildError] = useState<string | null>(null);
   const [buildLogVisible, setBuildLogVisible] = useState(0);
@@ -277,6 +285,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         setOffer(null);
         setLandingSlug(null);
+        setLandingId(null);
         setDashboardStatus(null);
         return;
       }
@@ -336,14 +345,24 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
 
       const landingResult = (await supabase
         .from("landing_pages")
-        .select("slug")
+        .select("id, slug, style")
         .eq("user_id", session.user.id)
         .eq("project_id", activeProject.id)
         .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle()) as { data: { slug: string } | null };
-      if (landingResult.data?.slug) setLandingSlug(landingResult.data.slug);
-      else setLandingSlug(null);
+        .maybeSingle()) as { data: { id?: string | null; slug?: string | null; style?: string | null } | null };
+      if (landingResult.data?.slug) {
+        setLandingSlug(landingResult.data.slug);
+        setLandingId(typeof landingResult.data.id === "string" ? landingResult.data.id : null);
+        setLandingStyle(
+          typeof landingResult.data.style === "string" && landingResult.data.style.length > 0
+            ? (landingResult.data.style as LandingStyle)
+            : "dark-indigo"
+        );
+      } else {
+        setLandingSlug(null);
+        setLandingId(null);
+      }
 
       setLoading(false);
 
@@ -520,6 +539,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             JSON.stringify(result);
           throw new Error(errorMsg);
         }
+        setLandingStyle((opts?.style as LandingStyle) ?? "dark-indigo");
         setLandingSlug(result.slug ?? null);
         await refreshDashboardStatus();
       } catch (err) {
@@ -559,11 +579,49 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       setRegenerateConfirm(false);
       return;
     }
+    setLandingId(null);
     setLandingSlug(null);
+    setLandingStyle((opts?.style as LandingStyle) ?? "dark-indigo");
     setRegenerateConfirm(false);
     void refreshDashboardStatus();
     void handleBuildLandingPage({ style: opts?.style });
   }, [userId, handleBuildLandingPage, activeProject?.id, refreshDashboardStatus]);
+
+  const handleChangeStyle = useCallback(
+    async (targetLandingId: string, newStyle: LandingStyle) => {
+      if (!targetLandingId) return;
+      const previousStyle = landingStyle;
+      setLandingStyle(newStyle);
+      try {
+        let token = sessionToken;
+        if (!token) {
+          const supabase = getSupabaseClient();
+          const {
+            data: { session }
+          } = await supabase.auth.getSession();
+          token = session?.access_token ?? null;
+          if (!token) throw new Error("Not authenticated");
+          setSessionToken(token);
+        }
+        const res = await fetch(`/api/landing/${encodeURIComponent(targetLandingId)}/style`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ style: newStyle })
+        });
+        const json = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          throw new Error(json.error ?? "Failed to update style.");
+        }
+      } catch (err) {
+        setLandingStyle(previousStyle);
+        dashToast(err instanceof Error ? err.message : "Failed to update style.");
+      }
+    },
+    [landingStyle, sessionToken]
+  );
 
   const value = useMemo(
     () => ({
@@ -577,6 +635,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       refreshOffer,
       landingSlug,
       setLandingSlug,
+      landingId,
+      setLandingId,
+      landingStyle,
+      setLandingStyle,
       savedProfileDisplayName,
       offerContext,
       salesBuilderContext,
@@ -592,6 +654,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       regenerateError,
       setRegenerateError,
       handleRegenerateSiteConfirmed,
+      handleChangeStyle,
       handleSignOut,
       profileDisplayName,
       setProfileDisplayName,
@@ -618,6 +681,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       offer,
       refreshOffer,
       landingSlug,
+      landingId,
+      landingStyle,
       savedProfileDisplayName,
       offerContext,
       salesBuilderContext,
@@ -630,6 +695,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       regenerateConfirm,
       regenerateError,
       handleRegenerateSiteConfirmed,
+      handleChangeStyle,
       handleSignOut,
       profileDisplayName,
       profileTelegram,

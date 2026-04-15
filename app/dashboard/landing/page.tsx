@@ -10,7 +10,7 @@ import { type LandingStyle } from "@/types/landing";
 
 export default function DashboardLandingPage() {
   const d = useDashboardData();
-  const { userId, setLandingSlug, activeProject } = d;
+  const { userId, setLandingSlug, setLandingId, setLandingStyle, activeProject } = d;
   const credits = useCreditsBalance();
   const [views, setViews] = useState<number | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<LandingStyle>("dark-indigo");
@@ -47,7 +47,7 @@ export default function DashboardLandingPage() {
       const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from("landing_pages")
-        .select("id, slug")
+        .select("id, slug, style")
         .eq("project_id", projectId)
         .eq("user_id", uid)
         .order("created_at", { ascending: false })
@@ -55,14 +55,16 @@ export default function DashboardLandingPage() {
         .maybeSingle();
 
       if (!error && data) {
-        const row = data as { slug?: string };
+        const row = data as { id?: string; slug?: string; style?: string };
+        if (row.id) setLandingId(row.id);
         if (row.slug) setLandingSlug(row.slug);
+        if (row.style) setLandingStyle(row.style as LandingStyle);
         return;
       }
 
       const { data: fallbackData, error: fallbackError } = await supabase
         .from("landing_pages")
-        .select("id, slug")
+        .select("id, slug, style")
         .eq("user_id", uid)
         .is("project_id", null)
         .order("created_at", { ascending: false })
@@ -70,10 +72,12 @@ export default function DashboardLandingPage() {
         .maybeSingle();
 
       if (fallbackError || !fallbackData) return;
-      const fallbackRow = fallbackData as { id?: string; slug?: string };
+      const fallbackRow = fallbackData as { id?: string; slug?: string; style?: string };
       if (fallbackRow.slug) {
         setLandingSlug(fallbackRow.slug);
       }
+      if (fallbackRow.id) setLandingId(fallbackRow.id);
+      if (fallbackRow.style) setLandingStyle(fallbackRow.style as LandingStyle);
 
       if (fallbackRow.id) {
         void supabase
@@ -84,7 +88,7 @@ export default function DashboardLandingPage() {
       }
     }
     void loadExistingLanding();
-  }, [activeProject?.id, userId, setLandingSlug]);
+  }, [activeProject?.id, userId, setLandingId, setLandingSlug, setLandingStyle]);
 
   const st = d.dashboardStatus;
   const completedCount = st?.completedSteps ?? 0;
@@ -118,6 +122,7 @@ export default function DashboardLandingPage() {
     return (
       <div className="min-h-full" style={{ background: "var(--content-bg)" }}>
         <LandingEditorSplitView
+          landingId={d.landingId}
           slug={d.landingSlug}
           publicUrl={landingUrl}
           views={views}

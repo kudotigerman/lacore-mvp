@@ -9,16 +9,18 @@ import { LANDING_EDITOR_QUICK_STORAGE_KEY } from "@/lib/landingEditorQuickAction
 import { dashToast } from "@/lib/dash-toast";
 import { LandingStripeStatus } from "@/components/dashboard/LandingStripeStatus";
 import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimonialsPanel";
-import { type LandingStyle } from "@/types/landing";
+import { STYLE_THEMES, type LandingStyle } from "@/types/landing";
 
 type ChatMsg = { id: string; role: "user" | "assistant"; content: string };
 
 export function LandingEditorSplitView({
+  landingId,
   slug,
   publicUrl,
   views,
   onViewsRefresh
 }: {
+  landingId?: string | null;
   slug: string;
   publicUrl: string;
   views: number | null;
@@ -45,23 +47,24 @@ export function LandingEditorSplitView({
   const [selectedStyle, setSelectedStyle] = useState<LandingStyle>("dark-indigo");
   const [showStylePicker, setShowStylePicker] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [styleOpen, setStyleOpen] = useState(true);
   const [imageBase64, setImageBase64] = useState("");
   const [imageMediaType, setImageMediaType] = useState("image/jpeg");
 
   const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
-    { id: "dark-indigo", label: "Indigo", accent: "#6366F1", bg: "#0A0A0D" },
-    { id: "dark-purple", label: "Purple", accent: "#A855F7", bg: "#07040F" },
-    { id: "dark-gold", label: "Gold", accent: "#D4AF37", bg: "#080808" },
-    { id: "dark-amber", label: "Amber", accent: "#F59E0B", bg: "#0A0800" },
-    { id: "dark-red", label: "Red", accent: "#EF4444", bg: "#080808" },
-    { id: "dark-green", label: "Green", accent: "#10B981", bg: "#030A05" },
-    { id: "dark-pink", label: "Pink", accent: "#EC4899", bg: "#09040F" },
-    { id: "dark-cyan", label: "Cyan", accent: "#06B6D4", bg: "#030A0F" },
-    { id: "dark-orange", label: "Orange", accent: "#F97316", bg: "#080500" },
-    { id: "pure-black", label: "Minimal", accent: "#FFFFFF", bg: "#000000" },
-    { id: "light-clean", label: "Light", accent: "#6366F1", bg: "#FFFFFF" },
-    { id: "warm-cream", label: "Warm", accent: "#D97706", bg: "#FDFAF5" },
-    { id: "bold-black", label: "Bold", accent: "#FFFFFF", bg: "#000000" },
+    { id: "dark-indigo", label: "Indigo", accent: STYLE_THEMES["dark-indigo"].accent, bg: STYLE_THEMES["dark-indigo"].bgPrimary },
+    { id: "dark-purple", label: "Purple", accent: STYLE_THEMES["dark-purple"].accent, bg: STYLE_THEMES["dark-purple"].bgPrimary },
+    { id: "dark-gold", label: "Gold", accent: STYLE_THEMES["dark-gold"].accent, bg: STYLE_THEMES["dark-gold"].bgPrimary },
+    { id: "dark-amber", label: "Amber", accent: STYLE_THEMES["dark-amber"].accent, bg: STYLE_THEMES["dark-amber"].bgPrimary },
+    { id: "dark-red", label: "Red", accent: STYLE_THEMES["dark-red"].accent, bg: STYLE_THEMES["dark-red"].bgPrimary },
+    { id: "dark-green", label: "Green", accent: STYLE_THEMES["dark-green"].accent, bg: STYLE_THEMES["dark-green"].bgPrimary },
+    { id: "dark-pink", label: "Pink", accent: STYLE_THEMES["dark-pink"].accent, bg: STYLE_THEMES["dark-pink"].bgPrimary },
+    { id: "dark-cyan", label: "Cyan", accent: STYLE_THEMES["dark-cyan"].accent, bg: STYLE_THEMES["dark-cyan"].bgPrimary },
+    { id: "dark-orange", label: "Orange", accent: STYLE_THEMES["dark-orange"].accent, bg: STYLE_THEMES["dark-orange"].bgPrimary },
+    { id: "pure-black", label: "Minimal", accent: STYLE_THEMES["pure-black"].accent, bg: STYLE_THEMES["pure-black"].bgPrimary },
+    { id: "light-clean", label: "Light", accent: STYLE_THEMES["light-clean"].accent, bg: STYLE_THEMES["light-clean"].bgPrimary },
+    { id: "warm-cream", label: "Warm", accent: STYLE_THEMES["warm-cream"].accent, bg: STYLE_THEMES["warm-cream"].bgPrimary },
+    { id: "bold-black", label: "Bold", accent: STYLE_THEMES["bold-black"].accent, bg: STYLE_THEMES["bold-black"].bgPrimary },
   ];
 
   useEffect(() => {
@@ -79,6 +82,10 @@ export function LandingEditorSplitView({
     setIframeKey((k) => k + 1);
     setUndoVisible(false);
   }, [slug]);
+
+  useEffect(() => {
+    if (d.landingStyle) setSelectedStyle(d.landingStyle);
+  }, [d.landingStyle]);
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(publicUrl);
@@ -456,6 +463,61 @@ export function LandingEditorSplitView({
           <div className="border-t border-white/[0.06]">
             <button
               type="button"
+              onClick={() => setStyleOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35">
+                Style
+              </span>
+              <span className="text-white/30">{styleOpen ? "▴" : "▾"}</span>
+            </button>
+            {styleOpen ? (
+              <div className="space-y-2 px-4 pb-4">
+                <div style={{ width: "100%" }}>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {styleOptions.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStyle(s.id);
+                          if (!landingId) {
+                            dashToast("Could not update style right now.");
+                            return;
+                          }
+                          void d.handleChangeStyle(landingId, s.id);
+                          setIframeKey((k) => k + 1);
+                        }}
+                        title={s.label}
+                        style={{
+                          width: 36, height: 36,
+                          borderRadius: "50%",
+                          background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
+                          border: d.landingStyle === s.id
+                            ? "2px solid #fff"
+                            : s.bg === "#FFFFFF" || s.bg === "#FDFAF5"
+                              ? "2px solid rgba(255,255,255,0.3)"
+                              : "2px solid transparent",
+                          outline: d.landingStyle === s.id ? `2px solid ${s.accent}` : "none",
+                          outlineOffset: 2,
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
+                    {styleOptions.find(s => s.id === d.landingStyle)?.label}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="border-t border-white/[0.06]">
+            <button
+              type="button"
               onClick={() => setSettingsOpen((o) => !o)}
               className="flex w-full items-center justify-between px-4 py-3 text-left"
             >
@@ -497,7 +559,7 @@ export function LandingEditorSplitView({
 
         <iframe
           key={iframeKey}
-          src={`/p/${slug}?embed=1`}
+          src={`/p/${slug}?embed=1&style=${encodeURIComponent(d.landingStyle ?? "dark-indigo")}`}
           className="h-full w-full border-0"
           style={{ paddingTop: "37px" }}
           title="Landing page preview"
@@ -590,7 +652,7 @@ export function LandingEditorSplitView({
           </button>
           <iframe
             key={`${iframeKey}-mobile`}
-            src={`/p/${slug}?embed=1`}
+            src={`/p/${slug}?embed=1&style=${encodeURIComponent(d.landingStyle ?? "dark-indigo")}`}
             className="h-full w-full border-0"
             title="Landing page preview mobile"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"

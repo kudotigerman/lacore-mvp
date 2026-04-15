@@ -6,7 +6,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { jsxSourceToCompiledScript } from "@/lib/compileLandingJsx";
 import LandingPage from "@/app/components/landing/LandingPage";
 import { PublicTestimonialsSection } from "@/components/landing/PublicTestimonialsSection";
-import type { LandingContent, LandingStyle } from "@/types/landing";
+import { STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
 
 const FRIENDLY_COMPILE_MESSAGE =
   "I had trouble with that change. The page wasn't updated. Try rephrasing your request or be more specific about what you want to change.";
@@ -176,6 +176,7 @@ function PublicLandingPageContent() {
   const router = useRouter();
   const editMode = searchParams.get("edit") === "true";
   const embedPreview = searchParams.get("embed") === "1";
+  const requestedStyle = searchParams.get("style");
   const slug = params.slug;
 
   const [html, setHtml] = useState("");
@@ -276,7 +277,9 @@ function PublicLandingPageContent() {
     setHtml(row?.html_content ?? "");
     setJsxContent(row?.jsx_content ?? "");
     setJsonContent(row?.json_content ?? null);
-    setLandingStyle(row?.style ?? "dark-indigo");
+    const dbStyle = row?.style ?? "dark-indigo";
+    const hasRequestedStyle = typeof requestedStyle === "string" && requestedStyle in STYLE_THEMES;
+    setLandingStyle(hasRequestedStyle ? requestedStyle : dbStyle);
     setLoading(false);
     if (!editMode && !embedPreview && !error && row) {
       void Promise.resolve(
@@ -285,7 +288,7 @@ function PublicLandingPageContent() {
         /* ignore RPC errors (e.g. migration not applied yet) */
       });
     }
-  }, [slug, editMode, embedPreview]);
+  }, [slug, editMode, embedPreview, requestedStyle]);
 
   useEffect(() => {
     void fetchHtml();
