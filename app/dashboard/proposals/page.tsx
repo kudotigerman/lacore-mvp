@@ -463,7 +463,7 @@ function ProposalsPageInner() {
 
       <ContextualTip
         icon="💡"
-        text="Pro tip: The more specific the client's problem, the better the proposal. Instead of 'needs more clients', try 'losing leads because follow-up takes too long'."
+        text="Pro tip: Even a vague answer works — just describe why they reached out. The AI will write a compelling proposal from your offer context."
       />
 
       {loadingProposals ? (
@@ -483,14 +483,17 @@ function ProposalsPageInner() {
           </div>
           <div>
             <label className="mb-2 block text-xs uppercase tracking-wider text-white/40">
-              Client&apos;s main problem
+              What do they need help with?
             </label>
             <input
               value={clientProblem}
               onChange={(e) => setClientProblem(e.target.value)}
-              placeholder="e.g. losing clients to competitors"
+              placeholder="e.g. not enough clients, wants to scale, needs better proposals..."
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
             />
+            <p className="mt-1.5 text-[11px] text-white/25">
+              Not sure? Write what brought them to you — or just write &quot;general inquiry&quot;
+            </p>
           </div>
         </div>
 
