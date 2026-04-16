@@ -25,8 +25,24 @@ function initials(name: string) {
 }
 
 type HoverEvent = { currentTarget: HTMLElement };
+type LandingContentExtended = LandingContent & {
+  faqHeadline?: string;
+  faq?: Array<{ question: string; answer: string }>;
+  pricingHeadline?: string;
+  pricing?: Array<{
+    name: string;
+    price: string;
+    period?: string;
+    description?: string;
+    features?: string[];
+    highlighted?: boolean;
+    ctaLabel?: string;
+  }>;
+  video?: { url?: string; headline?: string; subheadline?: string };
+};
 
 export default function LandingPage({ content, slug, style, showBrandWatermark = true }: Props) {
+  const extendedContent = content as LandingContentExtended;
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -155,6 +171,39 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       margin: 0,
     }} />
   );
+
+  const extractVideoEmbedUrl = (rawUrl?: string) => {
+    const url = (rawUrl ?? "").trim();
+    if (!url) return "";
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      if (host.includes("youtube.com")) {
+        const id = u.searchParams.get("v");
+        if (id) return `https://www.youtube.com/embed/${id}`;
+        const parts = u.pathname.split("/").filter(Boolean);
+        const maybeEmbed = parts[parts.length - 1];
+        if (maybeEmbed) return `https://www.youtube.com/embed/${maybeEmbed}`;
+      }
+      if (host.includes("youtu.be")) {
+        const id = u.pathname.split("/").filter(Boolean)[0];
+        if (id) return `https://www.youtube.com/embed/${id}`;
+      }
+      if (host.includes("loom.com")) {
+        const parts = u.pathname.split("/").filter(Boolean);
+        const idx = parts.findIndex((p) => p === "share" || p === "embed");
+        const id = idx >= 0 ? parts[idx + 1] : parts[parts.length - 1];
+        if (id) return `https://www.loom.com/embed/${id}`;
+      }
+      if (host.includes("vimeo.com")) {
+        const id = u.pathname.split("/").filter(Boolean)[0];
+        if (id) return `https://player.vimeo.com/video/${id}`;
+      }
+      return url;
+    } catch {
+      return "";
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -544,6 +593,139 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color={primaryButtonTextColor} /></a>
         </div>
       </section>
+      {extendedContent.faq ? <SectionDivider /> : null}
+
+      {extendedContent.faq ? (
+        <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+          <div className="container" style={{ maxWidth: 860 }}>
+            <div style={{ textAlign: "center", marginBottom: 42 }}>
+              <div style={sectionLabelStyle}>FAQ</div>
+              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+                {extendedContent.faqHeadline || "Frequently asked questions"}
+              </h2>
+            </div>
+            <div style={{ display: "grid", gap: 14 }}>
+              {extendedContent.faq.map((item, idx) => (
+                <div
+                  key={`${item.question}-${idx}`}
+                  onMouseOver={cardHoverOn}
+                  onMouseOut={cardHoverOff}
+                  style={{
+                    background: theme.cardBg,
+                    border: `1px solid ${theme.cardBorder}`,
+                    borderRadius: 12,
+                    padding: "20px 22px",
+                    transition: "all 0.25s ease",
+                  }}
+                >
+                  <h3 style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em", fontSize: 18 }}>
+                    {item.question}
+                  </h3>
+                  <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65 }}>
+                    {item.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+      {extendedContent.pricing ? <SectionDivider flip /> : null}
+
+      {extendedContent.pricing ? (
+        <section data-aos="fade-up">
+          <div className="container">
+            <div style={{ textAlign: "center", marginBottom: 48 }}>
+              <div style={sectionLabelStyle}>PRICING</div>
+              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>
+                {extendedContent.pricingHeadline || "Choose your plan"}
+              </h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+              {extendedContent.pricing.map((tier, idx) => {
+                const highlighted = !!tier.highlighted;
+                return (
+                  <div
+                    key={`${tier.name}-${idx}`}
+                    onMouseOver={cardHoverOn}
+                    onMouseOut={cardHoverOff}
+                    style={{
+                      background: highlighted ? `${theme.accent}1A` : theme.cardBg,
+                      border: highlighted ? `1px solid ${theme.accent}` : `1px solid ${theme.cardBorder}`,
+                      borderRadius: 12,
+                      padding: 24,
+                      transition: "all 0.25s ease",
+                      position: "relative",
+                    }}
+                  >
+                    {highlighted ? (
+                      <div style={{ position: "absolute", top: 12, right: 12, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: theme.accent, fontWeight: 700 }}>
+                        Popular
+                      </div>
+                    ) : null}
+                    <h3 style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em", fontSize: 20 }}>{tier.name}</h3>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                      <span style={{ fontFamily: fontHeading, fontWeight: 900, fontSize: 34, letterSpacing: "-0.03em", color: theme.textPrimary }}>{tier.price}</span>
+                      {tier.period ? <span style={{ color: theme.textSecondary, fontSize: 13 }}>{tier.period}</span> : null}
+                    </div>
+                    {tier.description ? <p style={{ margin: "0 0 16px", color: theme.textSecondary, lineHeight: 1.6 }}>{tier.description}</p> : null}
+                    <ul style={{ margin: "0 0 18px", paddingLeft: 18, color: theme.textSecondary, lineHeight: 1.7 }}>
+                      {(tier.features ?? []).map((feature, fIdx) => <li key={`${feature}-${fIdx}`}>{feature}</li>)}
+                    </ul>
+                    <a
+                      href="#contact-form"
+                      style={{
+                        ...buttonBaseStyle,
+                        width: "100%",
+                        padding: "12px 14px",
+                        background: highlighted ? theme.accent : "transparent",
+                        color: highlighted ? primaryButtonTextColor : theme.textPrimary,
+                        border: highlighted ? "none" : `1px solid ${theme.cardBorder}`,
+                      }}
+                    >
+                      {tier.ctaLabel || "Get started"}
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+      {extendedContent.video ? <SectionDivider /> : null}
+
+      {extendedContent.video ? (
+        <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+          <div className="container" style={{ maxWidth: 900 }}>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={sectionLabelStyle}>VIDEO</div>
+              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+                {extendedContent.video.headline || "Watch the walkthrough"}
+              </h2>
+              {extendedContent.video.subheadline ? (
+                <p style={{ margin: "10px auto 0", color: theme.textSecondary, maxWidth: 680, lineHeight: 1.65 }}>
+                  {extendedContent.video.subheadline}
+                </p>
+              ) : null}
+            </div>
+            {extractVideoEmbedUrl(extendedContent.video.url) ? (
+              <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${theme.cardBorder}`, background: theme.cardBg }}>
+                <iframe
+                  src={extractVideoEmbedUrl(extendedContent.video.url)}
+                  title="Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ width: "100%", height: "min(56vw, 460px)", border: "none", display: "block" }}
+                />
+              </div>
+            ) : (
+              <div style={{ borderRadius: 12, border: `1px dashed ${theme.cardBorder}`, background: theme.cardBg, padding: "48px 24px", textAlign: "center", color: theme.textSecondary }}>
+                Add your video URL in the editor
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       <section id="contact-form" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 720 }}>

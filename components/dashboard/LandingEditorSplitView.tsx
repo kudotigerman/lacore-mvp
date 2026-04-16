@@ -12,6 +12,8 @@ import { LandingTestimonialsPanel } from "@/components/dashboard/LandingTestimon
 import { STYLE_THEMES, type LandingStyle } from "@/types/landing";
 
 type ChatMsg = { id: string; role: "user" | "assistant"; content: string };
+type LandingJsonContent = Record<string, unknown>;
+type AddBlockType = "faq" | "pricing" | "video";
 
 export function LandingEditorSplitView({
   landingId,
@@ -50,6 +52,9 @@ export function LandingEditorSplitView({
   const [styleOpen, setStyleOpen] = useState(true);
   const [imageBase64, setImageBase64] = useState("");
   const [imageMediaType, setImageMediaType] = useState("image/jpeg");
+  const [currentJsonContent, setCurrentJsonContent] = useState<LandingJsonContent | null>(null);
+  const [addBlockOpen, setAddBlockOpen] = useState(false);
+  const [addingBlockType, setAddingBlockType] = useState<AddBlockType | null>(null);
 
   const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
     { id: "dark-indigo", label: "Indigo", accent: STYLE_THEMES["dark-indigo"].accent, bg: STYLE_THEMES["dark-indigo"].bgPrimary },
@@ -86,6 +91,25 @@ export function LandingEditorSplitView({
   useEffect(() => {
     if (d.landingStyle) setSelectedStyle(d.landingStyle);
   }, [d.landingStyle]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadJsonContent() {
+      const supabase = getSupabaseClient();
+      const { data } = await supabase
+        .from("landing_pages")
+        .select("json_content")
+        .eq("slug", slug)
+        .single();
+      if (cancelled) return;
+      const row = data as { json_content?: Record<string, unknown> | null } | null;
+      setCurrentJsonContent(row?.json_content ?? null);
+    }
+    void loadJsonContent();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, iframeKey]);
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(publicUrl);
@@ -147,6 +171,8 @@ export function LandingEditorSplitView({
       if (!res.ok || !result.success) {
         throw new Error(typeof result.error === "string" ? result.error : "Update failed.");
       }
+      const extended = result as { json?: Record<string, unknown> };
+      if (extended.json) setCurrentJsonContent(extended.json);
 
       setIframeKey((k) => k + 1);
       onViewsRefresh();
@@ -331,8 +357,9 @@ export function LandingEditorSplitView({
                       })
                     });
                     const text = await res.text();
-                    const result = JSON.parse(text) as { success?: boolean; error?: string };
+                    const result = JSON.parse(text) as { success?: boolean; error?: string; json?: Record<string, unknown> };
                     if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
+                    if (result.json) setCurrentJsonContent(result.json);
                     setIframeKey((k) => k + 1);
                     setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
                   } catch (e) {
@@ -395,6 +422,15 @@ export function LandingEditorSplitView({
                 className="shrink-0 self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
               >
                 →
+              </button>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                onClick={() => setAddBlockOpen(true)}
+                className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] text-white/55 transition-colors hover:border-indigo-500/30 hover:text-white/80"
+              >
+                + Add block
               </button>
             </div>
           </div>
@@ -657,6 +693,79 @@ export function LandingEditorSplitView({
             title="Landing page preview mobile"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           />
+        </div>
+      ) : null}
+      {addBlockOpen ? (
+        <div className="fixed inset-0 z-[10035] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4">
+          <div className="w-full max-w-sm rounded-t-2xl border border-white/10 bg-[#0D0F1A] p-4 sm:rounded-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-medium text-white">Add block</p>
+              <button
+                type="button"
+                onClick={() => setAddBlockOpen(false)}
+                className="rounded-md px-2 py-1 text-xs text-white/50 hover:text-white/80"
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-2">
+              {[
+                { type: "faq" as const, label: "📋 FAQ", exists: Array.isArray(currentJsonContent?.faq) },
+                { type: "pricing" as const, label: "💰 Pricing", exists: Array.isArray(currentJsonContent?.pricing) },
+                { type: "video" as const, label: "🎥 Video", exists: typeof currentJsonContent?.video === "object" && currentJsonContent?.video !== null },
+              ].map((item) => (
+                <button
+                  key={item.type}
+                  type="button"
+                  disabled={!!addingBlockType || item.exists || !d.sessionToken || !currentJsonContent}
+                  onClick={async () => {
+                    if (!currentJsonContent || !d.sessionToken) return;
+                    setAddingBlockType(item.type);
+                    try {
+                      const res = await fetch("/api/edit-landing", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${d.sessionToken}`
+                        },
+                        body: JSON.stringify({
+                          slug,
+                          instruction: "",
+                          addBlockType: item.type,
+                          currentJson: JSON.stringify(currentJsonContent, null, 2)
+                        })
+                      });
+                      const result = (await res.json()) as {
+                        success?: boolean;
+                        error?: string;
+                        json?: Record<string, unknown>;
+                      };
+                      if (!res.ok || !result.success || !result.json) {
+                        throw new Error(result.error ?? "Failed to add block.");
+                      }
+                      setCurrentJsonContent(result.json);
+                      setIframeKey((k) => k + 1);
+                      setAddBlockOpen(false);
+                      setMessages((prev) => [
+                        ...prev,
+                        { id: `a-${Date.now()}`, role: "assistant", content: `Added ${item.type} block.` }
+                      ]);
+                    } catch (e) {
+                      dashToast(e instanceof Error ? e.message : "Failed to add block.");
+                    } finally {
+                      setAddingBlockType(null);
+                    }
+                  }}
+                  className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-sm text-white/80 transition-colors hover:border-indigo-500/40 disabled:opacity-50"
+                >
+                  <span>{item.label}</span>
+                  <span className="text-xs text-white/45">
+                    {item.exists ? "✓ added" : addingBlockType === item.type ? "Generating…" : "Add"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

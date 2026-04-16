@@ -14,6 +14,7 @@ type EditPayload = {
   currentHtml?: string;
   currentJsx?: string;
   currentJson?: string;
+  addBlockType?: "faq" | "pricing" | "video";
   imageBase64?: string;
   imageMediaType?: string;
 };
@@ -180,12 +181,16 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as EditPayload;
     const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
+    const addBlockType =
+      body.addBlockType === "faq" || body.addBlockType === "pricing" || body.addBlockType === "video"
+        ? body.addBlockType
+        : null;
     const imageBase64 =
       typeof body.imageBase64 === "string" ? body.imageBase64.replace(/\s/g, "").trim() : "";
     const imageMediaTypeRaw =
       typeof body.imageMediaType === "string" ? body.imageMediaType.trim() : "";
 
-    if (!body.slug || (!instruction && !imageBase64)) {
+    if (!body.slug || (!instruction && !imageBase64 && !addBlockType)) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
@@ -211,7 +216,6 @@ export async function POST(request: Request) {
     if (!useJsx && !useHtml && !useJson) {
       return NextResponse.json({ error: "Missing current page content." }, { status: 400 });
     }
-
     const apiKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -248,6 +252,58 @@ export async function POST(request: Request) {
         },
         { status: 402 }
       );
+    }
+
+    if (addBlockType && useJson && body.currentJson) {
+      let currentJsonObj: Record<string, unknown>;
+      try {
+        currentJsonObj = JSON.parse(body.currentJson) as Record<string, unknown>;
+      } catch {
+        return NextResponse.json({ error: "Invalid current JSON content." }, { status: 400 });
+      }
+
+      const summary = JSON.stringify(currentJsonObj);
+      const blockPromptMap: Record<"faq" | "pricing" | "video", string> = {
+        faq: `Based on this landing page content: ${summary}. Generate a FAQ section. Return only valid JSON: {"faqHeadline": "...", "faq": [{"question": "...", "answer": "..."}]} — 5-6 questions. No markdown, no explanation, only JSON.`,
+        pricing: `Based on this landing page content: ${summary}. Generate a pricing section with 3 tiers. Return only valid JSON: {"pricingHeadline": "...", "pricing": [{"name": "...", "price": "...", "period": "...", "description": "...", "features": [...], "highlighted": false, "ctaLabel": "..."}]} — No markdown, no explanation, only JSON.`,
+        video: `Based on this landing page: ${summary}. Generate a video section placeholder. Return only valid JSON: {"video": {"url": "", "headline": "...", "subheadline": "..."}} — leave url empty string. No markdown, no explanation, only JSON.`
+      };
+
+      let newFieldsText: string;
+      try {
+        newFieldsText = await callClaude(
+          apiKey,
+          "You generate only valid JSON objects with no markdown and no explanation.",
+          blockPromptMap[addBlockType]
+        );
+      } catch {
+        return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
+      }
+
+      const cleaned = newFieldsText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+      let newFields: Record<string, unknown>;
+      try {
+        newFields = JSON.parse(cleaned) as Record<string, unknown>;
+      } catch {
+        return NextResponse.json({ error: "Failed to parse generated block JSON." }, { status: 502 });
+      }
+
+      const merged = { ...currentJsonObj, ...newFields };
+      const { error: saveError } = await supabase
+        .from("landing_pages")
+        .update({ json_content: merged } as never)
+        .eq("slug", body.slug)
+        .eq("user_id", user.id);
+
+      if (saveError) {
+        return NextResponse.json({ error: "Failed to save.", details: saveError.message }, { status: 500 });
+      }
+
+      if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+        return NextResponse.json({ error: "insufficient_credits", message: "Not enough credits." }, { status: 402 });
+      }
+
+      return NextResponse.json({ success: true, json: merged });
     }
 
     let imagePublicUrl: string | undefined;
