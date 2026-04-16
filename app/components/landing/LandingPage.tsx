@@ -300,6 +300,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-20px); }
         }
+        [data-aos] { opacity: 1 !important; transform: none !important; }
         @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
           .container { width: min(1100px, 100% - 40px); }
