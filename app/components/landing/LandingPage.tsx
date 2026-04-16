@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { NICHE_THEMES, STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
 import { ChevronDown } from "lucide-react";
 import {
@@ -155,11 +155,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     ? [...requestedMiddle.filter((k) => isRenderableMiddleSection(k)), ...remainingDefault]
     : defaultMiddleSectionOrder.filter((k) => isRenderableMiddleSection(k));
   const computedSectionOrder = ["hero", ...middleSectionOrder, "cta"];
-  const getSectionOrder = (key: string) => {
-    const idx = computedSectionOrder.indexOf(key);
-    return idx >= 0 ? idx : computedSectionOrder.length + 1;
-  };
-  const contactFormOrder = getSectionOrder("cta") + 0.5; // always after cta
+  const sectionsToRender = [...computedSectionOrder, "contact-form"];
 
   const primaryButtonStyle = {
     ...buttonBaseStyle,
@@ -284,75 +280,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     }
   };
 
-  return (
-    <div style={{ background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Inter, sans-serif", fontWeight: 400, display: "flex", flexDirection: "column" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; }
-        .container { width: min(1100px, 100% - 48px); margin: 0 auto; }
-        section { position: relative; overflow: hidden; }
-        .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-        .hero-orb { position: absolute; inset: 0; pointer-events: none; z-index: 0; animation: lacore-float 8s ease-in-out infinite; }
-        .hero-orb-2 { animation-delay: 1.2s; }
-        .hero-orb-3 { animation-delay: 2.3s; }
-        @keyframes lacore-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        [data-aos] { opacity: 1 !important; transform: none !important; }
-        @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) {
-          .container { width: min(1100px, 100% - 40px); }
-          .hide-mobile { display: none !important; }
-        }
-      `}</style>
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 9999,
-          opacity: 0.03,
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")",
-          backgroundSize: "180px 180px",
-        }}
-      />
-
-      <nav
-        data-aos="fade-up"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          background: theme.navBg,
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="container" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontFamily: fontHeading, fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>{content.brand}</div>
-          <div className="hide-mobile" style={{ display: "flex", gap: 28, alignItems: "center" }}>
-            <a href="#benefits" style={{ color: theme.textSecondary }}>Benefits</a>
-            <a href="#process" style={{ color: theme.textSecondary }}>Process</a>
-            <a href="#testimonials" style={{ color: theme.textSecondary }}>Results</a>
-            <a
-              href="#contact-form"
-              style={{ ...primaryButtonStyle, padding: "10px 20px" }}
-              onMouseOver={buttonHoverOn}
-              onMouseOut={buttonHoverOff}
-            >
-              {content.ctaPrimary}
-            </a>
-          </div>
-        </div>
-      </nav>
-
-      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", order: getSectionOrder("hero"), ...heroBg }}>
+  const renderSection = (key: string): ReactNode => {
+    switch (key) {
+      case "hero":
+        return (
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", ...heroBg }}>
         <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
         <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
         <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
@@ -432,9 +364,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </div>
         </>
       </section>
-      <SectionDivider />
-
-      <section className="py-12 md:py-16" data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, position: "relative", overflow: "hidden", order: getSectionOrder("stats") }}>
+        );
+      case "stats":
+        return (
+      <section className="py-12 md:py-16" data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, position: "relative", overflow: "hidden" }}>
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: `radial-gradient(ellipse 600px 200px at 50% 50%, ${theme.accent}0A, transparent)`,
@@ -460,9 +393,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           ))}
         </div>
       </section>
-      <SectionDivider flip />
-
-      <section className="py-12 md:py-[120px]" id="benefits" data-aos="fade-up" style={{ order: getSectionOrder("problems") }}>
+        );
+      case "problems":
+        return (
+      <section className="py-12 md:py-[120px]" id="benefits" data-aos="fade-up">
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE PROBLEM</div>
@@ -494,9 +428,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </div>
       </section>
-      <SectionDivider />
-
-      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("features") }}>
+        );
+      case "features":
+        return (
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE SOLUTION</div>
@@ -533,9 +468,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </div>
       </section>
-      <SectionDivider flip />
-
-      <section className="py-12 md:py-[120px]" id="process" data-aos="fade-up" style={{ order: getSectionOrder("steps") }}>
+        );
+      case "steps":
+        return (
+      <section className="py-12 md:py-[120px]" id="process" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 860 }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>HOW IT WORKS</div>
@@ -555,9 +491,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           ))}
         </div>
       </section>
-      <SectionDivider />
-
-      <section className="py-12 md:py-[120px]" id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("testimonials") }}>
+        );
+      case "testimonials":
+        return (
+      <section className="py-12 md:py-[120px]" id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>RESULTS</div>
@@ -645,19 +582,21 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </div>
       </section>
-      <SectionDivider flip />
-
-      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)`, order: getSectionOrder("cta") }}>
+        );
+      case "cta":
+        return (
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)` }}>
         <div className="container" style={{ textAlign: "center", maxWidth: 860 }}>
           <h2 className="text-[28px] md:text-6xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
           <p style={{ color: theme.textSecondary, fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
           <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color={primaryButtonTextColor} /></a>
         </div>
       </section>
-      {extendedContent.faq ? <SectionDivider /> : null}
-
-      {extendedContent.faq ? (
-        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("faq") }}>
+        );
+      case "faq":
+        if (!extendedContent.faq) return null;
+        return (
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 860 }}>
             <div style={{ textAlign: "center", marginBottom: 42 }}>
               <div style={sectionLabelStyle}>FAQ</div>
@@ -709,11 +648,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             </div>
           </div>
         </section>
-      ) : null}
-      {extendedContent.pricing ? <SectionDivider flip /> : null}
-
-      {extendedContent.pricing ? (
-        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ order: getSectionOrder("pricing") }}>
+        );
+      case "pricing":
+        if (!extendedContent.pricing) return null;
+        return (
+        <section className="py-12 md:py-[120px]" data-aos="fade-up">
           <div className="container">
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <div style={sectionLabelStyle}>PRICING</div>
@@ -771,11 +710,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             </div>
           </div>
         </section>
-      ) : null}
-      {extendedContent.video ? <SectionDivider /> : null}
-
-      {extendedContent.video ? (
-        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("video") }}>
+        );
+      case "video":
+        if (!extendedContent.video) return null;
+        return (
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 28 }}>
               <div style={sectionLabelStyle}>VIDEO</div>
@@ -805,11 +744,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             )}
           </div>
         </section>
-      ) : null}
-      {extendedContent.about ? <SectionDivider flip /> : null}
-
-      {extendedContent.about ? (
-        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ order: getSectionOrder("about") }}>
+        );
+      case "about":
+        if (!extendedContent.about) return null;
+        return (
+        <section className="py-12 md:py-[120px]" data-aos="fade-up">
           <div className="container" style={{ maxWidth: 980 }}>
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={sectionLabelStyle}>ABOUT</div>
@@ -890,11 +829,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             </div>
           </div>
         </section>
-      ) : null}
-      {extendedContent.calendly ? <SectionDivider /> : null}
-
-      {extendedContent.calendly ? (
-        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("calendly") }}>
+        );
+      case "calendly":
+        if (!extendedContent.calendly) return null;
+        return (
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 26 }}>
               <div style={sectionLabelStyle}>BOOKING</div>
@@ -923,9 +862,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             )}
           </div>
         </section>
-      ) : null}
-
-      <section className="py-12 md:py-[120px]" id="contact-form" data-aos="fade-up" style={{ order: contactFormOrder }}>
+        );
+      case "contact-form":
+        return (
+      <section className="py-12 md:py-[120px]" id="contact-form" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 720 }}>
           <div style={{ textAlign: "center", marginBottom: 34 }}>
             <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
@@ -949,6 +889,89 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </form>
         </div>
       </section>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div style={{ background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Inter, sans-serif", fontWeight: 400 }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        .container { width: min(1100px, 100% - 48px); margin: 0 auto; }
+        section { position: relative; overflow: hidden; }
+        .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+        .hero-orb { position: absolute; inset: 0; pointer-events: none; z-index: 0; animation: lacore-float 8s ease-in-out infinite; }
+        .hero-orb-2 { animation-delay: 1.2s; }
+        .hero-orb-3 { animation-delay: 2.3s; }
+        @keyframes lacore-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+        [data-aos] { opacity: 1 !important; transform: none !important; }
+        @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+          .container { width: min(1100px, 100% - 40px); }
+          .hide-mobile { display: none !important; }
+        }
+      `}</style>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 9999,
+          opacity: 0.03,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")",
+          backgroundSize: "180px 180px",
+        }}
+      />
+
+      <nav
+        data-aos="fade-up"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          background: theme.navBg,
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="container" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontFamily: fontHeading, fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>{content.brand}</div>
+          <div className="hide-mobile" style={{ display: "flex", gap: 28, alignItems: "center" }}>
+            <a href="#benefits" style={{ color: theme.textSecondary }}>Benefits</a>
+            <a href="#process" style={{ color: theme.textSecondary }}>Process</a>
+            <a href="#testimonials" style={{ color: theme.textSecondary }}>Results</a>
+            <a
+              href="#contact-form"
+              style={{ ...primaryButtonStyle, padding: "10px 20px" }}
+              onMouseOver={buttonHoverOn}
+              onMouseOut={buttonHoverOff}
+            >
+              {content.ctaPrimary}
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      {sectionsToRender
+        .map((key) => ({ key, node: renderSection(key) }))
+        .filter((item): item is { key: string; node: NonNullable<ReactNode> } => item.node != null)
+        .map(({ key, node }, i) => (
+          <Fragment key={key}>
+            {i > 0 ? <SectionDivider flip={i >= 2 && i % 2 === 0} /> : null}
+            {node}
+          </Fragment>
+        ))}
 
       <footer data-aos="fade-up" style={{ padding: "36px 0", background: theme.isDark ? "#060608" : theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}` }}>
         <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)`, opacity: 0.3, marginBottom: 0 }} />
