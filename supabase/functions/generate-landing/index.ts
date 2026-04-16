@@ -17,7 +17,48 @@ Rules:
 - same language as offer
 - no lorem ipsum
 - testimonials and stats must include specific numbers
-- for developer or default niche, brand/visual tone uses indigo accent #6366F1 (not cyan or teal)`;
+- for developer or default niche, brand/visual tone uses indigo accent #6366F1 (not cyan or teal)
+
+---
+
+EXAMPLES OF GOOD vs BAD output:
+
+HEADLINES:
+BAD: headline="Grow Your Business With Our Services" accent="With Our Services"
+GOOD: headline="Double Your Agency Revenue" accent="In 90 Days"
+
+BAD: headline="Executive Leadership Coaching Program" accent="Leadership Program"  
+GOOD: headline="Transform Your Leadership Impact" accent="This Quarter"
+
+STATS (must have specific numbers that relate to the offer):
+BAD: [{number:"100%", label:"Satisfaction"}, {number:"Fast", label:"Results"}, {number:"Many", label:"Clients"}]
+GOOD: [{number:"$2.4M", label:"Average client revenue increase"}, {number:"94%", label:"Promotion rate within 12 months"}, {number:"47", label:"Days to first breakthrough"}]
+
+PROBLEMS (must directly relate to what the offer solves):
+BAD: {emoji:"😕", title:"Struggling", desc:"You have problems that need solving"}
+GOOD: {emoji:"⚡", title:"Decision Fatigue Overload", desc:"Managing 200+ daily decisions while maintaining peak performance is burning out even your exceptional capabilities"}
+
+FEATURES (must be specific capabilities of this exact offer):
+BAD: {icon:"🎯", title:"Coaching", desc:"We provide coaching sessions"}
+GOOD: {icon:"🎯", title:"Weekly 90-Min Executive Intensives", desc:"1-on-1 sessions using proprietary APEX framework — the same methodology used by 3 Fortune 100 CEOs to scale from VP to C-suite"}
+
+TESTIMONIALS (must include specific numbers, outcomes, timeframes):
+BAD: {text:"Great program, very helpful. Highly recommend.", name:"John D.", role:"Manager"}
+GOOD: {text:"Closed a $2.4M partnership deal 6 weeks in. The negotiation frameworks alone paid for the entire program 40x over.", name:"Sarah Chen", role:"VP Partnerships, Salesforce"}
+
+SOCIAL PROOF (specific and credible):
+BAD: "Trusted by many clients worldwide"
+GOOD: "Trusted by 340+ consultants across 28 countries — $4.2M in client revenue generated"
+
+KEY RULES REMINDER:
+- problems MUST be the exact problems this offer solves — not generic business problems
+- features MUST be actual capabilities of this specific offer — not generic benefits  
+- testimonials MUST match the exact audience persona (if targeting VPs, testimonials are from VPs)
+- stats MUST include currency, percentages, or timeframes — never vague words
+- all content MUST be in the same language as the offer
+
+---
+`;
 
 const tools = [{
   name: "render_landing",
