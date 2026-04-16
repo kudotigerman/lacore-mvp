@@ -24,6 +24,14 @@ export type LandingStyle =
   | "warm-cream"
   | "bold-black";
 
+/** Optional hero photo from Unsplash (set at generation time). */
+export interface LandingHeroImage {
+  url: string;
+  photographer: string;
+  photographerUrl: string;
+  unsplashUrl: string;
+}
+
 export interface LandingContent {
   niche: LandingNiche;
   brand: string;
@@ -48,6 +56,7 @@ export interface LandingContent {
   ctaButton: string;
   formHeadline: string;
   formButton: string;
+  heroImage?: LandingHeroImage;
 }
 
 export interface LandingTheme {

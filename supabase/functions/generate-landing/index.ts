@@ -179,6 +179,41 @@ const renderLandingInputSchema = z.object({
   formButton: z.string(),
 });
 
+function unsplashQueryForNiche(niche: string): string {
+  switch (niche) {
+    case "fitness":
+      return "fitness gym workout professional";
+    case "designer":
+      return "creative design studio workspace";
+    case "developer":
+      return "software developer coding dark";
+    case "coach":
+      return "executive coaching professional meeting";
+    case "consultant":
+      return "business consulting professional";
+    case "agency":
+      return "creative agency team office";
+    case "course":
+      return "online learning education professional";
+    case "local":
+      return "local business professional service";
+    default:
+      return "professional business modern";
+  }
+}
+
+function withUnsplashReferral(baseUrl: string): string {
+  try {
+    const u = new URL(baseUrl);
+    u.searchParams.set("utm_source", "lacore");
+    u.searchParams.set("utm_medium", "referral");
+    return u.toString();
+  } catch {
+    const sep = baseUrl.includes("?") ? "&" : "?";
+    return `${baseUrl}${sep}utm_source=lacore&utm_medium=referral`;
+  }
+}
+
 function getModelForPlan(plan: string): string {
   const p = plan.toLowerCase().trim();
   if (p === "free") return "claude-haiku-4-5-20251001";
@@ -416,6 +451,45 @@ Style preference: ${requestedStyle}`;
     }
 
     const jsonContent = zodResult.data as unknown as Record<string, unknown>;
+
+    try {
+      const accessKey = Deno.env.get("UNSPLASH_ACCESS_KEY")?.trim();
+      const nicheVal = typeof jsonContent.niche === "string" ? jsonContent.niche : "default";
+      if (accessKey) {
+        const query = unsplashQueryForNiche(nicheVal);
+        const randomUrl =
+          `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape&content_filter=high`;
+        const randomRes = await fetch(randomUrl, {
+          headers: { Authorization: `Client-ID ${accessKey}` },
+        });
+        if (randomRes.ok) {
+          const photo = await randomRes.json() as {
+            id?: string;
+            urls?: { regular?: string };
+            user?: { name?: string; links?: { html?: string } };
+            links?: { html?: string };
+          };
+          const imageUrl = typeof photo.urls?.regular === "string" ? photo.urls.regular : "";
+          const photoId = typeof photo.id === "string" ? photo.id : "";
+          const photographerName = typeof photo.user?.name === "string" ? photo.user.name : "";
+          const userHtml = typeof photo.user?.links?.html === "string" ? photo.user.links.html : "";
+          const photoPageHtml = typeof photo.links?.html === "string" ? photo.links.html : "";
+          if (imageUrl && photoId && photographerName && userHtml && photoPageHtml) {
+            jsonContent.heroImage = {
+              url: imageUrl,
+              photographer: photographerName,
+              photographerUrl: withUnsplashReferral(userHtml),
+              unsplashUrl: withUnsplashReferral(photoPageHtml),
+            };
+            await fetch(`https://api.unsplash.com/photos/${photoId}/download`, {
+              headers: { Authorization: `Client-ID ${accessKey}` },
+            });
+          }
+        }
+      }
+    } catch {
+      /* optional hero image — never fail generation */
+    }
 
     const emailBase = userEmail
       .split("@")[0]

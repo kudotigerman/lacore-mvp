@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { NICHE_THEMES, STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
 import { ChevronDown } from "lucide-react";
 import {
@@ -282,14 +282,42 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
 
   const renderSection = (key: string): ReactNode => {
     switch (key) {
-      case "hero":
+      case "hero": {
+        const hi = extendedContent.heroImage;
+        const heroSectionStyle: CSSProperties = {
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          position: "relative",
+          overflow: "hidden",
+          ...(hi?.url
+            ? {
+                backgroundImage: `url(${hi.url})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }
+            : heroBg),
+        };
         return (
-      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", ...heroBg }}>
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={heroSectionStyle}>
         <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
         <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
         <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
+        {hi?.url ? (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.55)",
+              zIndex: 1,
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
         <>
-        <div className="container" style={{ position: "relative", zIndex: 1, paddingTop: 60 }}>
+        <div className="container" style={{ position: "relative", zIndex: hi?.url ? 2 : 1, paddingTop: 60 }}>
           <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: theme.isDark ? "1px solid rgba(255,255,255,0.12)" : `1px solid ${theme.accent}25`, borderRadius: 999, padding: "8px 14px", marginBottom: 24 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, marginTop: 6 }} />
             <span style={{ color: theme.textSecondary, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
@@ -339,7 +367,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           width: "420px",
           height: "420px",
           pointerEvents: "none",
-          zIndex: 0,
+          zIndex: hi?.url ? 2 : 0,
           opacity: theme.isDark ? 0.15 : 0.08,
         }}>
           <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
@@ -365,6 +393,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </>
       </section>
         );
+      }
       case "stats":
         return (
       <section className="py-12 md:py-16" data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, position: "relative", overflow: "hidden" }}>
@@ -979,26 +1008,62 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           <div style={{ fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em" }}>{content.brand}</div>
           <div style={{ color: theme.textMuted, fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
         </div>
-        {showBrandWatermark ? (
-          <div className="container" style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
-            <a
-              href="https://lacore.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: theme.textSecondary,
-                border: `1px solid ${theme.isDark ? "#1C1C22" : theme.cardBorder}`,
-                background: theme.isDark ? "#111116" : theme.bgSecondary,
-                borderRadius: 999,
-                padding: "8px 14px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                opacity: 0.85
-              }}
-            >
-              ⚡ Built with LACORE
-            </a>
+        {showBrandWatermark || extendedContent.heroImage ? (
+          <div
+            className="container"
+            style={{
+              marginTop: 12,
+              display: "flex",
+              justifyContent: "flex-end",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            {extendedContent.heroImage?.photographer &&
+            extendedContent.heroImage?.photographerUrl &&
+            extendedContent.heroImage?.unsplashUrl ? (
+              <span style={{ fontSize: 10, opacity: 0.4, color: theme.textMuted, lineHeight: 1.4 }}>
+                Photo by{" "}
+                <a
+                  href={extendedContent.heroImage.photographerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  {extendedContent.heroImage.photographer}
+                </a>{" "}
+                on{" "}
+                <a
+                  href={extendedContent.heroImage.unsplashUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  Unsplash
+                </a>
+              </span>
+            ) : null}
+            {showBrandWatermark ? (
+              <a
+                href="https://lacore.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: theme.textSecondary,
+                  border: `1px solid ${theme.isDark ? "#1C1C22" : theme.cardBorder}`,
+                  background: theme.isDark ? "#111116" : theme.bgSecondary,
+                  borderRadius: 999,
+                  padding: "8px 14px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  opacity: 0.85,
+                }}
+              >
+                ⚡ Built with LACORE
+              </a>
+            ) : null}
           </div>
         ) : null}
       </footer>
