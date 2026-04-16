@@ -140,6 +140,7 @@ function applyReorderIntent(
   intent: ReturnType<typeof detectReorderIntent>
 ): ReorderSectionKey[] {
   if (!intent) return currentOrder;
+  // hero always first, cta always last, cannot be moved by user commands
   const movable = currentOrder.filter((k) => k !== "hero" && k !== "cta");
   const sourceIdx = movable.indexOf(intent.source);
   if (sourceIdx < 0) return currentOrder;
@@ -151,6 +152,7 @@ function applyReorderIntent(
     [next[sourceIdx], next[targetIdx]] = [next[targetIdx], next[sourceIdx]];
   } else {
     const [source] = next.splice(sourceIdx, 1);
+    // "top" means first position AFTER hero.
     if (intent.type === "moveTop") next.unshift(source);
     else if (intent.type === "moveBottom") next.push(source);
     else if (intent.type === "before" && intent.target) {
@@ -164,6 +166,7 @@ function applyReorderIntent(
     }
   }
 
+  // Keep protected endpoints in place after every reorder.
   return ["hero", ...next, "cta"];
 }
 

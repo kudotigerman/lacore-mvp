@@ -155,6 +155,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     const idx = computedSectionOrder.indexOf(key);
     return idx >= 0 ? idx : computedSectionOrder.length + 1;
   };
+  const contactFormOrder = getSectionOrder("cta") + 0.5;
 
   const primaryButtonStyle = {
     ...buttonBaseStyle,
@@ -919,7 +920,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </section>
       ) : null}
 
-      <section className="py-12 md:py-[120px]" id="contact-form" data-aos="fade-up">
+      <section className="py-12 md:py-[120px]" id="contact-form" data-aos="fade-up" style={{ order: contactFormOrder }}>
         <div className="container" style={{ maxWidth: 720 }}>
           <div style={{ textAlign: "center", marginBottom: 34 }}>
             <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
