@@ -26,22 +26,19 @@ function isValidEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 }
 
-function isSequenceMessages(value: unknown): value is SequenceMessage[] {
-  if (!Array.isArray(value) || value.length < 1) return false;
-  return value.every(
-    (m) =>
-      m &&
-      typeof m === "object" &&
-      typeof (m as SequenceMessage).timing === "string" &&
-      typeof (m as SequenceMessage).content === "string" &&
-      ((m as SequenceMessage).subject === null || typeof (m as SequenceMessage).subject === "string")
+function isSequenceMessage(value: unknown): value is SequenceMessage {
+  if (!value || typeof value !== "object") return false;
+  return (
+    typeof (value as SequenceMessage).timing === "string" &&
+    typeof (value as SequenceMessage).content === "string" &&
+    ((value as SequenceMessage).subject === null || typeof (value as SequenceMessage).subject === "string")
   );
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as {
-      messages?: SequenceMessage[];
+      message?: SequenceMessage;
       recipientEmail?: string;
       recipientName?: string;
       projectId?: string;
@@ -83,9 +80,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Only email sequences can be sent from here." }, { status: 400 });
     }
 
-    const messages = body.messages;
-    if (!isSequenceMessages(messages)) {
-      return NextResponse.json({ error: "Valid messages array is required." }, { status: 400 });
+    const message = body.message;
+    if (!isSequenceMessage(message)) {
+      return NextResponse.json({ error: "Valid message is required." }, { status: 400 });
     }
 
     const projectId = typeof body.projectId === "string" ? body.projectId.trim() : "";
@@ -123,9 +120,8 @@ export async function POST(request: Request) {
         (profile as { display_name: string }).display_name.trim()) ||
       "LACORE user";
 
-    const first = messages[0]!;
-    const subjectRaw = first.subject?.trim() || "Message from LACORE";
-    const bodyText = applyPlaceholders(first.content, recipientName, displayName);
+    const subjectRaw = message.subject?.trim() || "Message from LACORE";
+    const bodyText = applyPlaceholders(message.content, recipientName, displayName);
     const subject = applyPlaceholders(subjectRaw, recipientName, displayName);
 
     const resendKey = process.env.RESEND_API_KEY;
@@ -163,7 +159,7 @@ export async function POST(request: Request) {
       recipientEmail,
       recipientName: recipientName ?? null,
       messagesSent: 1,
-      totalMessages: messages.length
+      totalMessages: 1
     };
 
     const sequenceInput: Record<string, unknown> = {
@@ -179,7 +175,7 @@ export async function POST(request: Request) {
         project_id: projectId,
         type: "sequence",
         input: sequenceInput,
-        result: { messages, lastSequenceSend },
+        result: { messages: [message], lastSequenceSend },
         updated_at: new Date().toISOString()
       } as never,
       { onConflict: "user_id,project_id,type" }
@@ -192,7 +188,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       messagesSent: 1,
-      totalMessages: messages.length
+      totalMessages: 1
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error.";

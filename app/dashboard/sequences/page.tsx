@@ -104,6 +104,7 @@ function SequencesPageInner() {
   const [manualEmail, setManualEmail] = useState("");
   const [manualName, setManualName] = useState("");
   const [sendSubmitting, setSendSubmitting] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<{ index: number; message: SequenceMessage } | null>(null);
 
   useEffect(() => {
     const userId = d.userId;
@@ -233,25 +234,26 @@ function SequencesPageInner() {
     }
   }
 
-  function openSendModal() {
+  function openSendModal(message: SequenceMessage, index: number) {
     setSendMode("lead");
     setManualEmail("");
     setManualName("");
     setError(null);
+    setSelectedMessage({ index, message });
     setSendModalOpen(true);
   }
 
   async function handleConfirmSend() {
-    if (!messages?.length || !activeProject?.id) return;
+    if (!selectedMessage || !activeProject?.id) return;
     let recipientEmail = "";
-    let recipientName: string | undefined;
+    let recipientName = "";
     if (sendMode === "lead") {
       const lead = leads.find((l) => l.id === selectedLeadId);
       recipientEmail = lead?.email?.trim() ?? "";
-      recipientName = lead?.name?.trim() || undefined;
+      recipientName = lead?.name?.trim() || "";
     } else {
       recipientEmail = manualEmail.trim();
-      recipientName = manualName.trim() || undefined;
+      recipientName = manualName.trim();
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
       setError("Enter a valid email address.");
@@ -276,9 +278,9 @@ function SequencesPageInner() {
           Authorization: `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          messages,
+          message: selectedMessage.message,
           recipientEmail,
-          recipientName,
+          ...(recipientName ? { recipientName } : {}),
           projectId: activeProject.id,
           channel: "email",
           goal,
@@ -297,12 +299,8 @@ function SequencesPageInner() {
         return;
       }
       setSendModalOpen(false);
-      const label = recipientName ? `${recipientName} (${recipientEmail})` : recipientEmail;
-      const followUp =
-        messages.length > 1
-          ? `Schedule messages 2–${messages.length} manually.`
-          : "Follow up manually when ready.";
-      dashToast(`Message 1 sent to ${label}. ${followUp}`);
+      setSelectedMessage(null);
+      dashToast(`Message ${selectedMessage.index + 1} sent to ${recipientEmail}`);
     } catch {
       setError("Network error.");
     } finally {
@@ -388,16 +386,6 @@ function SequencesPageInner() {
       </button>
       {error ? <p className="mb-6 text-sm text-red-400">{error}</p> : null}
 
-      {channel === "email" && messages && messages.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => openSendModal()}
-          className="mb-6 rounded-xl border border-white/15 bg-transparent px-8 py-3 font-medium text-white/85 transition-colors hover:border-indigo-500/40 hover:text-white"
-        >
-          Send this sequence
-        </button>
-      ) : null}
-
       {channel !== "email" && messages && messages.length > 0 ? (
         <p className="mb-6 text-sm text-white/45">
           Copy each message and send manually via {CHANNELS.find((c) => c.id === channel)?.label}.
@@ -408,7 +396,11 @@ function SequencesPageInner() {
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
           role="presentation"
-          onClick={() => !sendSubmitting && setSendModalOpen(false)}
+          onClick={() => {
+            if (sendSubmitting) return;
+            setSendModalOpen(false);
+            setSelectedMessage(null);
+          }}
         >
           <div
             role="dialog"
@@ -418,9 +410,9 @@ function SequencesPageInner() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="send-sequence-title" className="mb-1 text-lg font-semibold text-white">
-              Send sequence
+              {selectedMessage ? `Send message ${selectedMessage.index + 1}` : "Send message"}
             </h2>
-            <p className="mb-5 text-xs text-white/45">Only message 1 is sent now; send the rest from your inbox when ready.</p>
+            <p className="mb-5 text-xs text-white/45">Choose a recipient for this message.</p>
 
             <div className="mb-4 space-y-3">
               <label className="flex cursor-pointer items-start gap-2 text-sm text-white/80">
@@ -489,7 +481,10 @@ function SequencesPageInner() {
               <button
                 type="button"
                 disabled={sendSubmitting}
-                onClick={() => setSendModalOpen(false)}
+                onClick={() => {
+                  setSendModalOpen(false);
+                  setSelectedMessage(null);
+                }}
                 className="rounded-lg border border-white/10 px-4 py-2 text-sm text-white/70 hover:text-white"
               >
                 Cancel
@@ -504,7 +499,7 @@ function SequencesPageInner() {
                 onClick={() => void handleConfirmSend()}
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
               >
-                {sendSubmitting ? "Sending…" : "Send sequence"}
+                {sendSubmitting ? "Sending…" : selectedMessage ? `Send message ${selectedMessage.index + 1}` : "Send message"}
               </button>
             </div>
           </div>
@@ -521,13 +516,24 @@ function SequencesPageInner() {
                   </span>
                   <span className="text-xs text-white/40">{msg.timing}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void copyMessage(msg.content)}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/40 transition-colors hover:text-white/70"
-                >
-                  Copy
-                </button>
+                <div className="flex items-center gap-2">
+                  {channel === "email" ? (
+                    <button
+                      type="button"
+                      onClick={() => openSendModal(msg, i)}
+                      className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/40 transition-colors hover:text-white/70"
+                    >
+                      Send
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void copyMessage(msg.content)}
+                    className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/40 transition-colors hover:text-white/70"
+                  >
+                    Copy
+                  </button>
+                </div>
               </div>
               {msg.subject ? (
                 <p className="mb-2 text-xs text-indigo-400">Subject: {msg.subject}</p>
