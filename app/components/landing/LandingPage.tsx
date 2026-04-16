@@ -1020,25 +1020,14 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               gap: 10,
             }}
           >
-            {extendedContent.heroImage?.photographer &&
-            extendedContent.heroImage?.photographerUrl &&
-            extendedContent.heroImage?.unsplashUrl ? (
-              <span style={{ fontSize: 10, opacity: 0.4, color: theme.textMuted, lineHeight: 1.4 }}>
-                Photo by{" "}
-                <a
-                  href={extendedContent.heroImage.photographerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "inherit", textDecoration: "underline" }}
-                >
-                  {extendedContent.heroImage.photographer}
-                </a>{" "}
-                on{" "}
+            {extendedContent.heroImage?.unsplashUrl ? (
+              <span style={{ fontSize: 10, opacity: 0.3, color: theme.textMuted, lineHeight: 1.4 }}>
+                📷 Photo on{" "}
                 <a
                   href={extendedContent.heroImage.unsplashUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: "inherit", textDecoration: "underline" }}
+                  style={{ color: "inherit", textDecoration: "none" }}
                 >
                   Unsplash
                 </a>
