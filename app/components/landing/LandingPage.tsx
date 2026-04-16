@@ -138,18 +138,22 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     if (key === "pricing") return Array.isArray(extendedContent.pricing) && extendedContent.pricing.length > 0;
     if (key === "video") return Boolean(extendedContent.video);
     if (key === "calendly") return Boolean(extendedContent.calendly);
-    return true;
+    return false;
   };
   const sectionKeyWhitelist = ["hero", "features", "problems", "steps", "stats", "testimonials", "about", "faq", "pricing", "video", "calendly", "cta"] as const;
-  const defaultMiddleSectionOrder = ["stats", "problems", "features", "steps", "testimonials", "about", "faq", "pricing", "video", "calendly"] as const;
+  const coreMiddleSections = ["stats", "problems", "features", "steps", "testimonials"] as const;
+  const optionalMiddleSections = ["about", "faq", "pricing", "video", "calendly"] as const;
+  const defaultMiddleSectionOrder = [...coreMiddleSections, ...optionalMiddleSections] as const;
   const requestedOrder = Array.isArray(extendedContent.sectionOrder)
     ? extendedContent.sectionOrder.filter((k): k is (typeof sectionKeyWhitelist)[number] => (sectionKeyWhitelist as readonly string[]).includes(k))
     : [];
   const requestedMiddle = requestedOrder.filter((k) => k !== "hero" && k !== "cta");
-  const remainingDefault = defaultMiddleSectionOrder.filter((k) => !requestedMiddle.includes(k) && hasOptionalSection(k));
+  const isRenderableMiddleSection = (key: (typeof defaultMiddleSectionOrder)[number]) =>
+    (coreMiddleSections as readonly string[]).includes(key) || hasOptionalSection(key);
+  const remainingDefault = defaultMiddleSectionOrder.filter((k) => !requestedMiddle.includes(k) && isRenderableMiddleSection(k));
   const middleSectionOrder = requestedMiddle.length > 0
-    ? [...requestedMiddle.filter((k) => hasOptionalSection(k)), ...remainingDefault]
-    : defaultMiddleSectionOrder.filter((k) => hasOptionalSection(k));
+    ? [...requestedMiddle.filter((k) => isRenderableMiddleSection(k)), ...remainingDefault]
+    : defaultMiddleSectionOrder.filter((k) => isRenderableMiddleSection(k));
   const computedSectionOrder = ["hero", ...middleSectionOrder, "cta"];
   const getSectionOrder = (key: string) => {
     const idx = computedSectionOrder.indexOf(key);
