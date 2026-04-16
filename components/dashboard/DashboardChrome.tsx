@@ -31,6 +31,7 @@ import {
   FileText,
   Layout,
   Mail,
+  MoreHorizontal,
   PenLine,
   Send,
   Settings,
@@ -58,7 +59,20 @@ const MOBILE_NAV_ITEMS = [
   { href: "/dashboard/landing", label: "Landing", icon: Layout },
   { href: "/dashboard/leads", label: "Leads", icon: Users },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings }
+  { href: "#more", label: "More", icon: MoreHorizontal }
+] as const;
+
+const MOBILE_MORE_ITEMS = [
+  { href: "/dashboard/content", label: "Content", icon: PenLine },
+  { href: "/dashboard/proposals", label: "Proposals", icon: FileText },
+  { href: "/dashboard/pricing-strategy", label: "Pricing", icon: DollarSign },
+  { href: "/dashboard/sequences", label: "Sequences", icon: Mail },
+  { href: "/dashboard/outreach", label: "Outreach", icon: Send },
+] as const;
+
+const MOBILE_MORE_SECONDARY_ITEMS = [
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ] as const;
 
 const QUICK_ACTIONS: { label: string; message: string }[] = [
@@ -121,11 +135,16 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
   const [chatMessages, setChatMessages] = useState<DashChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [checklistCollapsed, setChecklistCollapsed] = useState(true);
   const creditsBalance = useCreditsBalance();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInitDone = useRef(false);
+  const isMoreRoute = useMemo(() => {
+    const all = [...MOBILE_MORE_ITEMS, ...MOBILE_MORE_SECONDARY_ITEMS];
+    return all.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
+  }, [pathname]);
 
   useEffect(() => {
     try {
@@ -695,8 +714,26 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#060608]/95 px-2 py-2 backdrop-blur lg:hidden">
         <div className="grid grid-cols-5 gap-1">
           {MOBILE_NAV_ITEMS.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            const active =
+              item.href === "#more"
+                ? isMoreRoute
+                : pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
+            if (item.href === "#more") {
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => setMoreOpen(true)}
+                  className={`flex min-h-11 flex-col items-center justify-center rounded-lg px-1 text-[11px] ${
+                    active ? "text-indigo-300" : "text-white/50"
+                  }`}
+                >
+                  <Icon size={14} aria-hidden />
+                  <span>{item.label}</span>
+                </button>
+              );
+            }
             return (
               <Link
                 key={item.href}
@@ -712,6 +749,67 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           })}
         </div>
       </nav>
+
+      {moreOpen ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close More menu"
+            onClick={() => setMoreOpen(false)}
+            className="fixed inset-0 z-[90] border-0 bg-black/50 p-0 lg:hidden"
+          />
+          <div className="fixed inset-x-0 bottom-0 z-[91] max-h-[70vh] overflow-y-auto rounded-t-2xl border-t border-white/[0.1] bg-[#0D0F1A] pb-4 pt-2 lg:hidden">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+            <div className="space-y-1 px-3">
+              {MOBILE_MORE_ITEMS.map((item) => {
+                const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm no-underline ${
+                      active ? "bg-indigo-500/15 text-indigo-300" : "text-white/70 hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+              <div className="my-2 h-px bg-white/[0.08]" />
+              {MOBILE_MORE_SECONDARY_ITEMS.map((item) => {
+                const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm no-underline ${
+                      active ? "bg-indigo-500/15 text-indigo-300" : "text-white/70 hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  void data.handleSignOut();
+                }}
+                className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm text-white/70 hover:bg-white/[0.05]"
+              >
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {!data.buildingLanding ? (
         <>
