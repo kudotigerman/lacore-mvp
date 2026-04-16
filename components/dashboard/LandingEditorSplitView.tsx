@@ -372,29 +372,6 @@ export function LandingEditorSplitView({
                 {item.label}
               </button>
             ))}
-            <label
-              title="Attach image"
-              className="ml-auto flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:border-indigo-500/40 hover:text-white/70"
-            >
-              📎
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const base64 = (reader.result as string).split(",")[1];
-                    setImageBase64(base64);
-                    setImageMediaType(file.type);
-                    setInput("Add this image to the page");
-                  };
-                  reader.readAsDataURL(file);
-                }}
-              />
-            </label>
           </div>
 
           <div className="px-4 py-3">
@@ -769,6 +746,32 @@ export function LandingEditorSplitView({
                   </span>
                 </button>
               ))}
+              <div className="my-2 h-px bg-white/[0.08]" />
+              <label className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-sm text-white/80 transition-colors hover:border-indigo-500/40">
+                <span>
+                  🖼 Image
+                  <span className="ml-2 text-xs text-white/40">Upload photo or screenshot</span>
+                </span>
+                <span className="text-xs text-white/45">Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const base64 = (reader.result as string).split(",")[1];
+                      setImageBase64(base64);
+                      setImageMediaType(file.type);
+                      setInput("Add this image to the page");
+                    };
+                    reader.readAsDataURL(file);
+                    setAddBlockOpen(false);
+                  }}
+                />
+              </label>
             </div>
           </div>
         </div>
