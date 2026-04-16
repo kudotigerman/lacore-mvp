@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { NICHE_THEMES, STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
+import { ChevronDown } from "lucide-react";
 import {
   ArrowRight,
 } from "@/app/components/landing/Icons";
@@ -59,6 +60,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const extendedContent = content as LandingContentExtended;
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -284,7 +286,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         .container { width: min(1100px, 100% - 48px); margin: 0 auto; }
-        section { position: relative; padding: 120px 0; overflow: hidden; }
+        section { position: relative; overflow: hidden; }
         .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
         .hero-orb { position: absolute; inset: 0; pointer-events: none; z-index: 0; animation: lacore-float 8s ease-in-out infinite; }
         .hero-orb-2 { animation-delay: 1.2s; }
@@ -295,7 +297,6 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         }
         @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
-          section { padding: 80px 0; }
           .container { width: min(1100px, 100% - 40px); }
           .hide-mobile { display: none !important; }
         }
@@ -345,7 +346,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </div>
       </nav>
 
-      <section data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", order: getSectionOrder("hero"), ...heroBg }}>
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", order: getSectionOrder("hero"), ...heroBg }}>
         <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
         <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
         <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
@@ -355,7 +356,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, marginTop: 6 }} />
             <span style={{ color: theme.textSecondary, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
           </div>
-          <h1 data-aos="fade-up" style={{ fontFamily: fontHeading, fontWeight: 900, fontSize: "clamp(44px,7vw,82px)", lineHeight: 1.02, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl" data-aos="fade-up" style={{ fontFamily: fontHeading, fontWeight: 900, lineHeight: 1.02, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
             {content.headline}
             <br />
             <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{content.headlineAccent}</span>
@@ -427,7 +428,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider />
 
-      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, padding: "64px 0", position: "relative", overflow: "hidden", order: getSectionOrder("stats") }}>
+      <section className="py-12 md:py-16" data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, position: "relative", overflow: "hidden", order: getSectionOrder("stats") }}>
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: `radial-gradient(ellipse 600px 200px at 50% 50%, ${theme.accent}0A, transparent)`,
@@ -455,11 +456,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider flip />
 
-      <section id="benefits" data-aos="fade-up" style={{ order: getSectionOrder("problems") }}>
+      <section className="py-12 md:py-[120px]" id="benefits" data-aos="fade-up" style={{ order: getSectionOrder("problems") }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE PROBLEM</div>
-            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.problemHeadline}</h2>
+            <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.problemHeadline}</h2>
           </div>
           <div className="grid3">
             {content.problems.slice(0, 3).map((p, i) => (
@@ -480,7 +481,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   marginBottom: 16,
                   fontSize: 18, color: "#EF4444", fontWeight: 700
                 }}>✕</div>
-                <h3 style={{ margin: "0 0 10px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{p.title}</h3>
+                <h3 className="text-lg md:text-[22px]" style={{ margin: "0 0 10px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{p.title}</h3>
                 <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, fontWeight: 400 }}>{p.desc}</p>
               </div>
             ))}
@@ -489,11 +490,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider />
 
-      <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("features") }}>
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("features") }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE SOLUTION</div>
-            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.solutionHeadline}</h2>
+            <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.solutionHeadline}</h2>
           </div>
           <div className="grid3">
             {content.features.slice(0, 3).map((f, i) => {
@@ -518,7 +519,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   }}>
                     {({"Zap":"⚡︎","Target":"◎","Shield":"⊕","TrendingUp":"↗","Clock":"◷","Users":"⊛","Star":"✦","Check":"✓"} as Record<string,string>)[f.icon] ?? f.title.charAt(0).toUpperCase()}
                   </div>
-                  <h3 style={{ margin: "0 0 10px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{f.title}</h3>
+                  <h3 className="text-lg md:text-[22px]" style={{ margin: "0 0 10px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{f.title}</h3>
                   <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, fontWeight: 400 }}>{f.desc}</p>
                 </div>
               );
@@ -528,11 +529,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider flip />
 
-      <section id="process" data-aos="fade-up" style={{ order: getSectionOrder("steps") }}>
+      <section className="py-12 md:py-[120px]" id="process" data-aos="fade-up" style={{ order: getSectionOrder("steps") }}>
         <div className="container" style={{ maxWidth: 860 }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>HOW IT WORKS</div>
-            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.processHeadline}</h2>
+            <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.processHeadline}</h2>
           </div>
           {content.steps.slice(0, 3).map((s, i) => (
             <div data-aos="fade-up" data-aos-delay={i * 100} key={s.title} style={{ display: "flex", gap: 18, paddingBottom: i < 2 ? 28 : 0 }}>
@@ -541,7 +542,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 {i < 2 ? <div style={{ width: 2, flex: 1, marginTop: 6, background: `repeating-linear-gradient(to bottom, ${theme.accent}, ${theme.accent} 6px, transparent 6px, transparent 12px)` }} /> : null}
               </div>
               <div style={{ paddingTop: 6 }}>
-                <h3 style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{s.title}</h3>
+                <h3 className="text-lg md:text-[22px]" style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>{s.title}</h3>
                 <p style={{ margin: 0, color: theme.textSecondary, fontWeight: 400 }}>{s.desc}</p>
               </div>
             </div>
@@ -550,11 +551,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider />
 
-      <section id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("testimonials") }}>
+      <section className="py-12 md:py-[120px]" id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("testimonials") }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>RESULTS</div>
-            <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>{content.testimonialsHeadline}</h2>
+            <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.testimonialsHeadline}</h2>
           </div>
           {content.testimonials[0] ? (
             <div
@@ -640,9 +641,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider flip />
 
-      <section data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)`, order: getSectionOrder("cta") }}>
+      <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)`, order: getSectionOrder("cta") }}>
         <div className="container" style={{ textAlign: "center", maxWidth: 860 }}>
-          <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(36px,6vw,64px)", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
+          <h2 className="text-[28px] md:text-6xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
           <p style={{ color: theme.textSecondary, fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
           <a href="#contact-form" style={{ ...primaryButtonStyle, padding: "16px 32px" }} onMouseOver={buttonHoverOn} onMouseOut={buttonHoverOff}>{content.ctaButton}<ArrowRight color={primaryButtonTextColor} /></a>
         </div>
@@ -650,11 +651,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.faq ? <SectionDivider /> : null}
 
       {extendedContent.faq ? (
-        <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("faq") }}>
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("faq") }}>
           <div className="container" style={{ maxWidth: 860 }}>
             <div style={{ textAlign: "center", marginBottom: 42 }}>
               <div style={sectionLabelStyle}>FAQ</div>
-              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+              <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.faqHeadline || "Frequently asked questions"}
               </h2>
             </div>
@@ -662,22 +663,41 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               {extendedContent.faq.map((item, idx) => (
                 <div
                   key={`${item.question}-${idx}`}
-                  onMouseOver={cardHoverOn}
-                  onMouseOut={cardHoverOff}
                   style={{
                     background: theme.cardBg,
                     border: `1px solid ${theme.cardBorder}`,
                     borderRadius: 12,
-                    padding: "20px 22px",
                     transition: "all 0.25s ease",
                   }}
                 >
-                  <h3 style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em", fontSize: 18 }}>
-                    {item.question}
-                  </h3>
-                  <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65 }}>
-                    {item.answer}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex((prev) => (prev === idx ? null : idx))}
+                    style={{ width: "100%", background: "transparent", border: "none", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", textAlign: "left", color: theme.textPrimary }}
+                  >
+                    <span className="text-lg md:text-[22px]" style={{ fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                      {item.question}
+                    </span>
+                    <ChevronDown
+                      size={18}
+                      style={{
+                        transition: "transform 220ms ease",
+                        transform: openFaqIndex === idx ? "rotate(180deg)" : "rotate(0deg)",
+                        opacity: 0.8
+                      }}
+                    />
+                  </button>
+                  <div
+                    style={{
+                      maxHeight: openFaqIndex === idx ? 240 : 0,
+                      overflow: "hidden",
+                      transition: "max-height 280ms ease"
+                    }}
+                  >
+                    <p style={{ margin: 0, color: theme.textSecondary, lineHeight: 1.65, padding: "0 22px 18px 34px" }}>
+                      {item.answer}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -687,11 +707,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.pricing ? <SectionDivider flip /> : null}
 
       {extendedContent.pricing ? (
-        <section data-aos="fade-up" style={{ order: getSectionOrder("pricing") }}>
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ order: getSectionOrder("pricing") }}>
           <div className="container">
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <div style={sectionLabelStyle}>PRICING</div>
-              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(32px,5vw,52px)", marginTop: 14 }}>
+              <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.pricingHeadline || "Choose your plan"}
               </h2>
             </div>
@@ -717,7 +737,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                         Popular
                       </div>
                     ) : null}
-                    <h3 style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em", fontSize: 20 }}>{tier.name}</h3>
+                    <h3 className="text-lg md:text-xl" style={{ margin: "0 0 8px", fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em" }}>{tier.name}</h3>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
                       <span style={{ fontFamily: fontHeading, fontWeight: 900, fontSize: 34, letterSpacing: "-0.03em", color: theme.textPrimary }}>{tier.price}</span>
                       {tier.period ? <span style={{ color: theme.textSecondary, fontSize: 13 }}>{tier.period}</span> : null}
@@ -749,11 +769,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.video ? <SectionDivider /> : null}
 
       {extendedContent.video ? (
-        <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("video") }}>
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("video") }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 28 }}>
               <div style={sectionLabelStyle}>VIDEO</div>
-              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+              <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.video.headline || "Watch the walkthrough"}
               </h2>
               {extendedContent.video.subheadline ? (
@@ -783,11 +803,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.about ? <SectionDivider flip /> : null}
 
       {extendedContent.about ? (
-        <section data-aos="fade-up" style={{ order: getSectionOrder("about") }}>
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ order: getSectionOrder("about") }}>
           <div className="container" style={{ maxWidth: 980 }}>
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={sectionLabelStyle}>ABOUT</div>
-              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+              <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.aboutHeadline || "Meet the expert"}
               </h2>
             </div>
@@ -834,7 +854,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   padding: 24
                 }}
               >
-                <h3 style={{ margin: "0 0 6px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: 30 }}>
+                <h3 className="text-lg md:text-[30px]" style={{ margin: "0 0 6px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em" }}>
                   {extendedContent.about.name || extendedContent.brand}
                 </h3>
                 <p style={{ margin: "0 0 14px", color: theme.textSecondary, fontWeight: 600 }}>
@@ -868,11 +888,11 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.calendly ? <SectionDivider /> : null}
 
       {extendedContent.calendly ? (
-        <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("calendly") }}>
+        <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("calendly") }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 26 }}>
               <div style={sectionLabelStyle}>BOOKING</div>
-              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+              <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.calendly.headline || "Book a call"}
               </h2>
               {extendedContent.calendly.subheadline ? (
@@ -890,15 +910,16 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 />
               </div>
             ) : (
-              <div style={{ borderRadius: 12, border: `1px dashed ${theme.cardBorder}`, background: theme.cardBg, padding: "48px 24px", textAlign: "center", color: theme.textSecondary }}>
-                Add your Calendly link in the editor
+              <div style={{ borderRadius: 12, border: `1px dashed ${theme.cardBorder}`, background: theme.cardBg, padding: "16px 18px", textAlign: "center", color: theme.textSecondary, maxHeight: 80, display: "grid", placeItems: "center", gap: 4 }}>
+                <div style={{ opacity: 0.7, fontSize: 14 }}>📅</div>
+                <div>Add your Calendly link in the editor</div>
               </div>
             )}
           </div>
         </section>
       ) : null}
 
-      <section id="contact-form" data-aos="fade-up">
+      <section className="py-12 md:py-[120px]" id="contact-form" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 720 }}>
           <div style={{ textAlign: "center", marginBottom: 34 }}>
             <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
@@ -928,7 +949,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <div className="container" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
           <div style={{ fontFamily: fontHeading, fontWeight: 800, letterSpacing: "-0.02em" }}>{content.brand}</div>
           <div style={{ color: theme.textMuted, fontSize: 13 }}>© 2026 {content.brand}. All rights reserved.</div>
-          {showBrandWatermark ? (
+        </div>
+        {showBrandWatermark ? (
+          <div className="container" style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
             <a
               href="https://lacore.ai"
               target="_blank"
@@ -941,13 +964,14 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 padding: "8px 14px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 6
+                gap: 6,
+                opacity: 0.85
               }}
             >
               ⚡ Built with LACORE
             </a>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </footer>
     </div>
   );
