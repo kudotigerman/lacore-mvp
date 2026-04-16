@@ -405,7 +405,7 @@ export function LandingEditorSplitView({
                 onClick={() => setAddBlockOpen(true)}
                 className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] text-white/55 transition-colors hover:border-indigo-500/30 hover:text-white/80"
               >
-                + Add block
+                + Add
               </button>
             </div>
           </div>
