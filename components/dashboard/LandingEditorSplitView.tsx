@@ -55,6 +55,16 @@ export function LandingEditorSplitView({
   const [currentJsonContent, setCurrentJsonContent] = useState<LandingJsonContent | null>(null);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [addingBlockType, setAddingBlockType] = useState<AddBlockType | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [placeholderVisible, setPlaceholderVisible] = useState(true);
+  const rotatingPlaceholders = [
+    "Ask AI to change anything...",
+    "Try: 'move About section to the top'",
+    "Try: 'make the headline more urgent'",
+    "Try: 'add more testimonials'",
+    "Try: 'put FAQ before Pricing'",
+  ];
 
   const styleOptions: Array<{ id: LandingStyle; label: string; accent: string; bg: string }> = [
     { id: "dark-indigo", label: "Indigo", accent: STYLE_THEMES["dark-indigo"].accent, bg: STYLE_THEMES["dark-indigo"].bgPrimary },
@@ -91,6 +101,18 @@ export function LandingEditorSplitView({
   useEffect(() => {
     if (d.landingStyle) setSelectedStyle(d.landingStyle);
   }, [d.landingStyle]);
+
+  useEffect(() => {
+    if (input.trim() || inputFocused) return;
+    const timer = window.setInterval(() => {
+      setPlaceholderVisible(false);
+      window.setTimeout(() => {
+        setPlaceholderIndex((i) => (i + 1) % rotatingPlaceholders.length);
+        setPlaceholderVisible(true);
+      }, 180);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [input, inputFocused, rotatingPlaceholders.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -317,7 +339,6 @@ export function LandingEditorSplitView({
               { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
               { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
               { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
-              { label: "💰 Pricing", action: "Add a pricing section with 3 tiers" },
             ].map((item) => (
               <button
                 key={item.label}
@@ -376,20 +397,32 @@ export function LandingEditorSplitView({
 
           <div className="px-4 py-3">
             <div className="flex gap-2">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask AI to change anything..."
-                rows={1}
-                style={{ resize: "none" }}
-                className="dash-focusable min-h-[2.5rem] flex-1 rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 placeholder:text-zinc-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void handleEdit();
-                  }
-                }}
-              />
+              <div className="relative flex-1">
+                {!input.trim() && !inputFocused ? (
+                  <div
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                    style={{ opacity: placeholderVisible ? 1 : 0, transition: "opacity 180ms ease" }}
+                  >
+                    {rotatingPlaceholders[placeholderIndex]}
+                  </div>
+                ) : null}
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder=""
+                  rows={1}
+                  style={{ resize: "none" }}
+                  className="dash-focusable min-h-[2.5rem] w-full rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleEdit();
+                    }
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => void handleEdit()}
@@ -399,6 +432,7 @@ export function LandingEditorSplitView({
                 →
               </button>
             </div>
+            <p className="mt-1.5 text-[11px] text-white/30">💡 You can reorder sections — just ask</p>
             <div style={{ marginTop: 10 }}>
               <button
                 type="button"

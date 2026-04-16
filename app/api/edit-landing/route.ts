@@ -26,6 +26,147 @@ type ClaudeUserContent =
       | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
     >;
 
+const REORDER_SECTION_KEYS = [
+  "hero",
+  "features",
+  "problems",
+  "steps",
+  "stats",
+  "testimonials",
+  "about",
+  "faq",
+  "pricing",
+  "video",
+  "calendly",
+  "cta",
+] as const;
+type ReorderSectionKey = (typeof REORDER_SECTION_KEYS)[number];
+
+const SECTION_ALIASES: Array<{ key: Exclude<ReorderSectionKey, "hero" | "cta">; aliases: string[] }> = [
+  { key: "features", aliases: ["features", "feature", "solution", "benefits", "benefit"] },
+  { key: "problems", aliases: ["problems", "problem", "pain", "pain points", "painpoint"] },
+  { key: "steps", aliases: ["steps", "step", "process", "how it works"] },
+  { key: "stats", aliases: ["stats", "stat", "numbers", "metrics"] },
+  { key: "testimonials", aliases: ["testimonials", "testimonial", "reviews", "review", "results"] },
+  { key: "about", aliases: ["about", "bio", "founder", "story"] },
+  { key: "faq", aliases: ["faq", "faqs", "questions"] },
+  { key: "pricing", aliases: ["pricing", "price", "prices", "plans", "plan"] },
+  { key: "video", aliases: ["video", "walkthrough"] },
+  { key: "calendly", aliases: ["calendly", "booking", "book", "scheduler", "schedule"] },
+];
+
+function hasSection(data: Record<string, unknown>, key: ReorderSectionKey): boolean {
+  if (key === "hero" || key === "cta") return true;
+  if (key === "features") return Array.isArray(data.features) && data.features.length > 0;
+  if (key === "problems") return Array.isArray(data.problems) && data.problems.length > 0;
+  if (key === "steps") return Array.isArray(data.steps) && data.steps.length > 0;
+  if (key === "stats") return Array.isArray(data.stats) && data.stats.length > 0;
+  if (key === "testimonials") return Array.isArray(data.testimonials) && data.testimonials.length > 0;
+  if (key === "about") return typeof data.about === "object" && data.about !== null;
+  if (key === "faq") return Array.isArray(data.faq) && data.faq.length > 0;
+  if (key === "pricing") return Array.isArray(data.pricing) && data.pricing.length > 0;
+  if (key === "video") return typeof data.video === "object" && data.video !== null;
+  if (key === "calendly") return typeof data.calendly === "object" && data.calendly !== null;
+  return false;
+}
+
+function buildDefaultSectionOrder(data: Record<string, unknown>): ReorderSectionKey[] {
+  const preferred: ReorderSectionKey[] = [
+    "hero",
+    "stats",
+    "problems",
+    "features",
+    "steps",
+    "testimonials",
+    "about",
+    "faq",
+    "pricing",
+    "video",
+    "calendly",
+    "cta",
+  ];
+  return preferred.filter((k) => hasSection(data, k));
+}
+
+function resolveSectionKeyFromText(input: string): Exclude<ReorderSectionKey, "hero" | "cta"> | null {
+  const normalized = input.toLowerCase();
+  for (const entry of SECTION_ALIASES) {
+    if (entry.aliases.some((alias) => normalized.includes(alias))) return entry.key;
+  }
+  return null;
+}
+
+function detectReorderIntent(instruction: string): null | {
+  type: "moveTop" | "moveBottom" | "before" | "after" | "swap";
+  source: Exclude<ReorderSectionKey, "hero" | "cta">;
+  target?: Exclude<ReorderSectionKey, "hero" | "cta">;
+} {
+  const raw = instruction.toLowerCase().trim();
+  if (!raw) return null;
+  const hasReorderWord = /(move|place|put|reorder|swap|before|after|above|below)/.test(raw);
+  if (!hasReorderWord) return null;
+
+  if (raw.includes("swap")) {
+    const matches = SECTION_ALIASES.filter((x) => x.aliases.some((a) => raw.includes(a))).map((x) => x.key);
+    if (matches.length >= 2 && matches[0] !== matches[1]) return { type: "swap", source: matches[0], target: matches[1] };
+    return null;
+  }
+
+  const source = resolveSectionKeyFromText(raw);
+  if (!source) return null;
+
+  if (/(top|first|beginning)/.test(raw)) return { type: "moveTop", source };
+  if (/(bottom|last|end)/.test(raw)) return { type: "moveBottom", source };
+
+  if (/(before|above)/.test(raw)) {
+    const target = SECTION_ALIASES
+      .filter((x) => x.key !== source)
+      .find((x) => x.aliases.some((a) => raw.includes(a)))?.key;
+    if (target) return { type: "before", source, target };
+  }
+
+  if (/(after|below)/.test(raw)) {
+    const target = SECTION_ALIASES
+      .filter((x) => x.key !== source)
+      .find((x) => x.aliases.some((a) => raw.includes(a)))?.key;
+    if (target) return { type: "after", source, target };
+  }
+
+  return null;
+}
+
+function applyReorderIntent(
+  currentOrder: ReorderSectionKey[],
+  intent: ReturnType<typeof detectReorderIntent>
+): ReorderSectionKey[] {
+  if (!intent) return currentOrder;
+  const movable = currentOrder.filter((k) => k !== "hero" && k !== "cta");
+  const sourceIdx = movable.indexOf(intent.source);
+  if (sourceIdx < 0) return currentOrder;
+  const next = [...movable];
+
+  if (intent.type === "swap" && intent.target) {
+    const targetIdx = next.indexOf(intent.target);
+    if (targetIdx < 0) return currentOrder;
+    [next[sourceIdx], next[targetIdx]] = [next[targetIdx], next[sourceIdx]];
+  } else {
+    const [source] = next.splice(sourceIdx, 1);
+    if (intent.type === "moveTop") next.unshift(source);
+    else if (intent.type === "moveBottom") next.push(source);
+    else if (intent.type === "before" && intent.target) {
+      const targetIdx = next.indexOf(intent.target);
+      next.splice(Math.max(0, targetIdx), 0, source);
+    } else if (intent.type === "after" && intent.target) {
+      const targetIdx = next.indexOf(intent.target);
+      next.splice(Math.max(0, targetIdx + 1), 0, source);
+    } else {
+      return currentOrder;
+    }
+  }
+
+  return ["hero", ...next, "cta"];
+}
+
 function normalizeClaudeImageMediaType(raw?: string): string | null {
   const r = (raw ?? "image/jpeg").split(";")[0].trim().toLowerCase();
   if (r === "image/jpg") return "image/jpeg";
@@ -417,6 +558,39 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
     }
 
     if (useJson && body.currentJson) {
+      let currentJsonObjForReorder: Record<string, unknown>;
+      try {
+        currentJsonObjForReorder = JSON.parse(body.currentJson) as Record<string, unknown>;
+      } catch {
+        return NextResponse.json({ error: "Invalid current JSON content." }, { status: 400 });
+      }
+      const reorderIntent = detectReorderIntent(instructionWithImageUrl);
+      if (reorderIntent) {
+        const existingOrder = Array.isArray(currentJsonObjForReorder.sectionOrder)
+          ? (currentJsonObjForReorder.sectionOrder.filter((k): k is ReorderSectionKey => typeof k === "string" && (REORDER_SECTION_KEYS as readonly string[]).includes(k)) as ReorderSectionKey[])
+          : buildDefaultSectionOrder(currentJsonObjForReorder);
+        const sanitized = existingOrder.filter((k, idx, arr) => arr.indexOf(k) === idx && hasSection(currentJsonObjForReorder, k));
+        const baseOrder: ReorderSectionKey[] = [
+          "hero",
+          ...sanitized.filter((k) => k !== "hero" && k !== "cta"),
+          "cta",
+        ];
+        const nextOrder = applyReorderIntent(baseOrder, reorderIntent);
+        const updatedJson = { ...currentJsonObjForReorder, sectionOrder: nextOrder };
+        const { error: saveError } = await supabase
+          .from("landing_pages")
+          .update({ json_content: updatedJson } as never)
+          .eq("slug", body.slug)
+          .eq("user_id", user.id);
+        if (saveError) {
+          return NextResponse.json({ error: "Failed to save.", details: saveError.message }, { status: 500 });
+        }
+        if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+          return NextResponse.json({ error: "insufficient_credits", message: "Not enough credits." }, { status: 402 });
+        }
+        return NextResponse.json({ success: true, json: updatedJson });
+      }
+
       const jsonUser = `Here is the current landing page content as JSON:
 ${body.currentJson}
 

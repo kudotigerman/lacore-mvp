@@ -26,6 +26,7 @@ function initials(name: string) {
 
 type HoverEvent = { currentTarget: HTMLElement };
 type LandingContentExtended = LandingContent & {
+  sectionOrder?: string[];
   faqHeadline?: string;
   faq?: Array<{ question: string; answer: string }>;
   pricingHeadline?: string;
@@ -129,6 +130,29 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   };
 
   const primaryButtonTextColor = getContrastColor(theme.accent);
+  const hasOptionalSection = (key: string) => {
+    if (key === "about") return Boolean(extendedContent.about);
+    if (key === "faq") return Array.isArray(extendedContent.faq) && extendedContent.faq.length > 0;
+    if (key === "pricing") return Array.isArray(extendedContent.pricing) && extendedContent.pricing.length > 0;
+    if (key === "video") return Boolean(extendedContent.video);
+    if (key === "calendly") return Boolean(extendedContent.calendly);
+    return true;
+  };
+  const sectionKeyWhitelist = ["hero", "features", "problems", "steps", "stats", "testimonials", "about", "faq", "pricing", "video", "calendly", "cta"] as const;
+  const defaultMiddleSectionOrder = ["stats", "problems", "features", "steps", "testimonials", "about", "faq", "pricing", "video", "calendly"] as const;
+  const requestedOrder = Array.isArray(extendedContent.sectionOrder)
+    ? extendedContent.sectionOrder.filter((k): k is (typeof sectionKeyWhitelist)[number] => (sectionKeyWhitelist as readonly string[]).includes(k))
+    : [];
+  const requestedMiddle = requestedOrder.filter((k) => k !== "hero" && k !== "cta");
+  const remainingDefault = defaultMiddleSectionOrder.filter((k) => !requestedMiddle.includes(k) && hasOptionalSection(k));
+  const middleSectionOrder = requestedMiddle.length > 0
+    ? [...requestedMiddle.filter((k) => hasOptionalSection(k)), ...remainingDefault]
+    : defaultMiddleSectionOrder.filter((k) => hasOptionalSection(k));
+  const computedSectionOrder = ["hero", ...middleSectionOrder, "cta"];
+  const getSectionOrder = (key: string) => {
+    const idx = computedSectionOrder.indexOf(key);
+    return idx >= 0 ? idx : computedSectionOrder.length + 1;
+  };
 
   const primaryButtonStyle = {
     ...buttonBaseStyle,
@@ -254,7 +278,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   };
 
   return (
-    <div style={{ background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Inter, sans-serif", fontWeight: 400 }}>
+    <div style={{ background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Inter, sans-serif", fontWeight: 400, display: "flex", flexDirection: "column" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
@@ -321,7 +345,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         </div>
       </nav>
 
-      <section data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", ...heroBg }}>
+      <section data-aos="fade-up" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", order: getSectionOrder("hero"), ...heroBg }}>
         <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
         <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
         <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
@@ -403,7 +427,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider />
 
-      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, padding: "64px 0", position: "relative", overflow: "hidden" }}>
+      <section data-aos="fade-up" style={{ background: theme.bgSecondary, borderTop: `1px solid ${theme.cardBorder}`, borderBottom: `1px solid ${theme.cardBorder}`, padding: "64px 0", position: "relative", overflow: "hidden", order: getSectionOrder("stats") }}>
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none",
           background: `radial-gradient(ellipse 600px 200px at 50% 50%, ${theme.accent}0A, transparent)`,
@@ -431,7 +455,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider flip />
 
-      <section id="benefits" data-aos="fade-up">
+      <section id="benefits" data-aos="fade-up" style={{ order: getSectionOrder("problems") }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE PROBLEM</div>
@@ -465,7 +489,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider />
 
-      <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+      <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("features") }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>THE SOLUTION</div>
@@ -504,7 +528,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider flip />
 
-      <section id="process" data-aos="fade-up">
+      <section id="process" data-aos="fade-up" style={{ order: getSectionOrder("steps") }}>
         <div className="container" style={{ maxWidth: 860 }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>HOW IT WORKS</div>
@@ -526,7 +550,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider />
 
-      <section id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+      <section id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("testimonials") }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <div style={sectionLabelStyle}>RESULTS</div>
@@ -616,7 +640,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       </section>
       <SectionDivider flip />
 
-      <section data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)` }}>
+      <section data-aos="fade-up" style={{ background: `linear-gradient(135deg, ${theme.accent}1f 0%, ${theme.bgPrimary} 60%)`, order: getSectionOrder("cta") }}>
         <div className="container" style={{ textAlign: "center", maxWidth: 860 }}>
           <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(36px,6vw,64px)", margin: "0 0 18px" }}>{content.ctaHeadline}</h2>
           <p style={{ color: theme.textSecondary, fontSize: 18, margin: "0 0 28px", fontWeight: 400 }}>{content.ctaSubtext}</p>
@@ -626,7 +650,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.faq ? <SectionDivider /> : null}
 
       {extendedContent.faq ? (
-        <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+        <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("faq") }}>
           <div className="container" style={{ maxWidth: 860 }}>
             <div style={{ textAlign: "center", marginBottom: 42 }}>
               <div style={sectionLabelStyle}>FAQ</div>
@@ -663,7 +687,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.pricing ? <SectionDivider flip /> : null}
 
       {extendedContent.pricing ? (
-        <section data-aos="fade-up">
+        <section data-aos="fade-up" style={{ order: getSectionOrder("pricing") }}>
           <div className="container">
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <div style={sectionLabelStyle}>PRICING</div>
@@ -725,7 +749,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.video ? <SectionDivider /> : null}
 
       {extendedContent.video ? (
-        <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+        <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("video") }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 28 }}>
               <div style={sectionLabelStyle}>VIDEO</div>
@@ -759,7 +783,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.about ? <SectionDivider flip /> : null}
 
       {extendedContent.about ? (
-        <section data-aos="fade-up">
+        <section data-aos="fade-up" style={{ order: getSectionOrder("about") }}>
           <div className="container" style={{ maxWidth: 980 }}>
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={sectionLabelStyle}>ABOUT</div>
@@ -844,7 +868,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       {extendedContent.calendly ? <SectionDivider /> : null}
 
       {extendedContent.calendly ? (
-        <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+        <section data-aos="fade-up" style={{ background: theme.bgSecondary, order: getSectionOrder("calendly") }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 26 }}>
               <div style={sectionLabelStyle}>BOOKING</div>
