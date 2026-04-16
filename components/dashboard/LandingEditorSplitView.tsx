@@ -401,7 +401,7 @@ export function LandingEditorSplitView({
                 {!input.trim() && !inputFocused ? (
                   <div
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-                    style={{ opacity: placeholderVisible ? 1 : 0, transition: "opacity 180ms ease" }}
+                    style={{ opacity: placeholderVisible ? 1 : 0, transition: "opacity 180ms ease", fontSize: "12px" }}
                   >
                     {rotatingPlaceholders[placeholderIndex]}
                   </div>
@@ -411,8 +411,8 @@ export function LandingEditorSplitView({
                   onChange={(e) => setInput(e.target.value)}
                   placeholder=""
                   rows={1}
-                  style={{ resize: "none" }}
-                  className="dash-focusable min-h-[2.5rem] w-full rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2.5 text-base leading-relaxed text-white shadow-inner shadow-black/20 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                  style={{ resize: "none", fontSize: "12px", lineHeight: "1.45" }}
+                  className="dash-focusable min-h-[2.25rem] w-full rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2 text-white shadow-inner shadow-black/20 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setInputFocused(false)}
                   onKeyDown={(e) => {
