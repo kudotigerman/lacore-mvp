@@ -13,7 +13,7 @@ import { STYLE_THEMES, type LandingStyle } from "@/types/landing";
 
 type ChatMsg = { id: string; role: "user" | "assistant"; content: string };
 type LandingJsonContent = Record<string, unknown>;
-type AddBlockType = "faq" | "pricing" | "video";
+type AddBlockType = "faq" | "pricing" | "video" | "about" | "calendly";
 
 export function LandingEditorSplitView({
   landingId,
@@ -713,6 +713,8 @@ export function LandingEditorSplitView({
                 { type: "faq" as const, label: "📋 FAQ", exists: Array.isArray(currentJsonContent?.faq) },
                 { type: "pricing" as const, label: "💰 Pricing", exists: Array.isArray(currentJsonContent?.pricing) },
                 { type: "video" as const, label: "🎥 Video", exists: typeof currentJsonContent?.video === "object" && currentJsonContent?.video !== null },
+                { type: "about" as const, label: "👤 About", subtitle: "Personal story & credentials", exists: typeof currentJsonContent?.about === "object" && currentJsonContent?.about !== null },
+                { type: "calendly" as const, label: "📅 Calendly", subtitle: "Inline booking embed", exists: typeof currentJsonContent?.calendly === "object" && currentJsonContent?.calendly !== null },
               ].map((item) => (
                 <button
                   key={item.type}
@@ -758,7 +760,12 @@ export function LandingEditorSplitView({
                   }}
                   className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-sm text-white/80 transition-colors hover:border-indigo-500/40 disabled:opacity-50"
                 >
-                  <span>{item.label}</span>
+                  <span>
+                    {item.label}
+                    {"subtitle" in item && item.subtitle ? (
+                      <span className="ml-2 text-xs text-white/40">{item.subtitle}</span>
+                    ) : null}
+                  </span>
                   <span className="text-xs text-white/45">
                     {item.exists ? "✓ added" : addingBlockType === item.type ? "Generating…" : "Add"}
                   </span>

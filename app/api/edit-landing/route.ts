@@ -14,7 +14,7 @@ type EditPayload = {
   currentHtml?: string;
   currentJsx?: string;
   currentJson?: string;
-  addBlockType?: "faq" | "pricing" | "video";
+  addBlockType?: "faq" | "pricing" | "video" | "about" | "calendly";
   imageBase64?: string;
   imageMediaType?: string;
 };
@@ -182,7 +182,11 @@ export async function POST(request: Request) {
     const body = (await request.json()) as EditPayload;
     const instruction = typeof body.instruction === "string" ? body.instruction.trim() : "";
     const addBlockType =
-      body.addBlockType === "faq" || body.addBlockType === "pricing" || body.addBlockType === "video"
+      body.addBlockType === "faq" ||
+      body.addBlockType === "pricing" ||
+      body.addBlockType === "video" ||
+      body.addBlockType === "about" ||
+      body.addBlockType === "calendly"
         ? body.addBlockType
         : null;
     const imageBase64 =
@@ -262,11 +266,18 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Invalid current JSON content." }, { status: 400 });
       }
 
+      const brand = typeof currentJsonObj.brand === "string" ? currentJsonObj.brand : "";
+      const headline = typeof currentJsonObj.headline === "string" ? currentJsonObj.headline : "";
+      const niche = typeof currentJsonObj.niche === "string" ? currentJsonObj.niche : "";
+      const subheadline = typeof currentJsonObj.subheadline === "string" ? currentJsonObj.subheadline : "";
+      const ctaButton = typeof currentJsonObj.ctaButton === "string" ? currentJsonObj.ctaButton : "";
       const summary = JSON.stringify(currentJsonObj);
-      const blockPromptMap: Record<"faq" | "pricing" | "video", string> = {
+      const blockPromptMap: Record<"faq" | "pricing" | "video" | "about" | "calendly", string> = {
         faq: `Based on this landing page content: ${summary}. Generate a FAQ section. Return only valid JSON: {"faqHeadline": "...", "faq": [{"question": "...", "answer": "..."}]} — 5-6 questions. No markdown, no explanation, only JSON.`,
         pricing: `Based on this landing page content: ${summary}. Generate a pricing section with 3 tiers. Return only valid JSON: {"pricingHeadline": "...", "pricing": [{"name": "...", "price": "...", "period": "...", "description": "...", "features": [...], "highlighted": false, "ctaLabel": "..."}]} — No markdown, no explanation, only JSON.`,
-        video: `Based on this landing page: ${summary}. Generate a video section placeholder. Return only valid JSON: {"video": {"url": "", "headline": "...", "subheadline": "..."}} — leave url empty string. No markdown, no explanation, only JSON.`
+        video: `Based on this landing page: ${summary}. Generate a video section placeholder. Return only valid JSON: {"video": {"url": "", "headline": "...", "subheadline": "..."}} — leave url empty string. No markdown, no explanation, only JSON.`,
+        about: `Based on this landing page: brand=${brand}, headline=${headline}, niche=${niche}, subheadline=${subheadline}. Generate an About section for the person behind this business. Return ONLY valid JSON, no markdown, no explanation: {"aboutHeadline": "Meet Your [role]", "about": {"name": "[derive from brand name]", "title": "[professional title based on niche]", "bio": "[2-3 sentence compelling personal story]", "photo": "", "highlights": ["[achievement 1]", "[achievement 2]", "[achievement 3]", "[achievement 4]"]}}`,
+        calendly: `Based on this landing page: brand=${brand}, headline=${headline}, ctaButton=${ctaButton}. Generate a booking section. Return ONLY valid JSON, no markdown, no explanation: {"calendly": {"url": "", "headline": "[compelling booking headline]", "subheadline": "[reassuring 1 line — time commitment + no pressure]"}}`
       };
 
       let newFieldsText: string;

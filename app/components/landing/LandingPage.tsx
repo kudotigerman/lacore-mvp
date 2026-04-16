@@ -39,6 +39,19 @@ type LandingContentExtended = LandingContent & {
     ctaLabel?: string;
   }>;
   video?: { url?: string; headline?: string; subheadline?: string };
+  aboutHeadline?: string;
+  about?: {
+    name?: string;
+    title?: string;
+    bio?: string;
+    photo?: string;
+    highlights?: string[];
+  };
+  calendly?: {
+    url?: string;
+    headline?: string;
+    subheadline?: string;
+  };
 };
 
 export default function LandingPage({ content, slug, style, showBrandWatermark = true }: Props) {
@@ -200,6 +213,23 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         if (id) return `https://player.vimeo.com/video/${id}`;
       }
       return url;
+    } catch {
+      return "";
+    }
+  };
+
+  const extractCalendlyEmbedUrl = (rawUrl?: string) => {
+    const url = (rawUrl ?? "").trim();
+    if (!url) return "";
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      if (!host.includes("calendly.com") && !host.includes("cal.com")) return "";
+      u.searchParams.set("embed_type", "Inline");
+      u.searchParams.set("hide_landing_page_details", "1");
+      u.searchParams.set("hide_event_type_details", "1");
+      u.searchParams.set("hide_gdpr_banner", "1");
+      return u.toString();
     } catch {
       return "";
     }
@@ -721,6 +751,123 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             ) : (
               <div style={{ borderRadius: 12, border: `1px dashed ${theme.cardBorder}`, background: theme.cardBg, padding: "48px 24px", textAlign: "center", color: theme.textSecondary }}>
                 Add your video URL in the editor
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
+      {extendedContent.about ? <SectionDivider flip /> : null}
+
+      {extendedContent.about ? (
+        <section data-aos="fade-up">
+          <div className="container" style={{ maxWidth: 980 }}>
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
+              <div style={sectionLabelStyle}>ABOUT</div>
+              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+                {extendedContent.aboutHeadline || "Meet the expert"}
+              </h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) minmax(0, 1fr)", gap: 28, alignItems: "start" }}>
+              <div
+                style={{
+                  borderRadius: 12,
+                  border: `1px solid ${theme.cardBorder}`,
+                  background: theme.cardBg,
+                  minHeight: 280,
+                  display: "grid",
+                  placeItems: "center",
+                  overflow: "hidden"
+                }}
+              >
+                {extendedContent.about.photo ? (
+                  <img
+                    src={extendedContent.about.photo}
+                    alt={extendedContent.about.name || "About photo"}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 120,
+                    height: 120,
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    fontFamily: fontHeading,
+                    fontWeight: 900,
+                    fontSize: 34,
+                    color: getContrastColor(theme.accent),
+                    background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`
+                  }}>
+                    {initials(extendedContent.about.name || extendedContent.brand || "Lacore")}
+                  </div>
+                )}
+              </div>
+              <div
+                style={{
+                  borderRadius: 12,
+                  border: `1px solid ${theme.cardBorder}`,
+                  background: theme.cardBg,
+                  padding: 24
+                }}
+              >
+                <h3 style={{ margin: "0 0 6px", fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: 30 }}>
+                  {extendedContent.about.name || extendedContent.brand}
+                </h3>
+                <p style={{ margin: "0 0 14px", color: theme.textSecondary, fontWeight: 600 }}>
+                  {extendedContent.about.title || "Founder"}
+                </p>
+                <p style={{ margin: "0 0 18px", color: theme.textSecondary, lineHeight: 1.75 }}>
+                  {extendedContent.about.bio}
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {(extendedContent.about.highlights ?? []).map((item, i) => (
+                    <span
+                      key={`${item}-${i}`}
+                      style={{
+                        borderRadius: 999,
+                        border: `1px solid ${theme.accent}55`,
+                        background: `${theme.accent}16`,
+                        color: theme.textPrimary,
+                        fontSize: 12,
+                        padding: "8px 12px"
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+      {extendedContent.calendly ? <SectionDivider /> : null}
+
+      {extendedContent.calendly ? (
+        <section data-aos="fade-up" style={{ background: theme.bgSecondary }}>
+          <div className="container" style={{ maxWidth: 900 }}>
+            <div style={{ textAlign: "center", marginBottom: 26 }}>
+              <div style={sectionLabelStyle}>BOOKING</div>
+              <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", marginTop: 14 }}>
+                {extendedContent.calendly.headline || "Book a call"}
+              </h2>
+              {extendedContent.calendly.subheadline ? (
+                <p style={{ margin: "10px auto 0", color: theme.textSecondary, maxWidth: 680, lineHeight: 1.65 }}>
+                  {extendedContent.calendly.subheadline}
+                </p>
+              ) : null}
+            </div>
+            {extractCalendlyEmbedUrl(extendedContent.calendly.url) ? (
+              <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${theme.cardBorder}`, background: theme.cardBg }}>
+                <iframe
+                  src={extractCalendlyEmbedUrl(extendedContent.calendly.url)}
+                  title="Calendly booking"
+                  style={{ width: "100%", height: 650, border: "none", display: "block" }}
+                />
+              </div>
+            ) : (
+              <div style={{ borderRadius: 12, border: `1px dashed ${theme.cardBorder}`, background: theme.cardBg, padding: "48px 24px", textAlign: "center", color: theme.textSecondary }}>
+                Add your Calendly link in the editor
               </div>
             )}
           </div>
