@@ -6,7 +6,10 @@ import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { getSupabaseClient } from "@/lib/supabase";
 import { fetchLatestSavedResult, upsertSavedResult } from "@/lib/saved-results";
+import { dashToast } from "@/lib/dash-toast";
 import type { SequenceMessage } from "@/types/dashboard-ai";
+
+type LeadRow = { id: string; name: string | null; email: string | null };
 
 const CHANNELS = [
   {
@@ -93,6 +96,14 @@ function SequencesPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<SequenceMessage[] | null>(null);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [sendMode, setSendMode] = useState<"lead" | "manual">("lead");
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [selectedLeadId, setSelectedLeadId] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualName, setManualName] = useState("");
+  const [sendSubmitting, setSendSubmitting] = useState(false);
 
   useEffect(() => {
     const userId = d.userId;
@@ -118,6 +129,39 @@ function SequencesPageInner() {
     }
     void load(userId, projectId);
   }, [d.userId, activeProject?.id]);
+
+  useEffect(() => {
+    if (!sendModalOpen || !activeProject?.id) return;
+    let cancelled = false;
+    void (async () => {
+      setLeadsLoading(true);
+      try {
+        const supabase = getSupabaseClient();
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch(
+          `/api/leads/list?project_id=${encodeURIComponent(activeProject.id)}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } }
+        );
+        const json = (await res.json()) as { leads?: LeadRow[] };
+        if (cancelled || !Array.isArray(json.leads)) return;
+        const withEmail = json.leads.filter(
+          (l) => typeof l.email === "string" && l.email.trim().length > 0
+        );
+        setLeads(withEmail);
+        setSelectedLeadId((prev) =>
+          prev && withEmail.some((l) => l.id === prev) ? prev : (withEmail[0]?.id ?? "")
+        );
+      } finally {
+        if (!cancelled) setLeadsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sendModalOpen, activeProject?.id]);
 
   async function copyMessage(text: string) {
     await navigator.clipboard.writeText(text);
@@ -186,6 +230,83 @@ function SequencesPageInner() {
       setError("Network error.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function openSendModal() {
+    setSendMode("lead");
+    setManualEmail("");
+    setManualName("");
+    setError(null);
+    setSendModalOpen(true);
+  }
+
+  async function handleConfirmSend() {
+    if (!messages?.length || !activeProject?.id) return;
+    let recipientEmail = "";
+    let recipientName: string | undefined;
+    if (sendMode === "lead") {
+      const lead = leads.find((l) => l.id === selectedLeadId);
+      recipientEmail = lead?.email?.trim() ?? "";
+      recipientName = lead?.name?.trim() || undefined;
+    } else {
+      recipientEmail = manualEmail.trim();
+      recipientName = manualName.trim() || undefined;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setSendSubmitting(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setError("Sign in required.");
+        setSendSubmitting(false);
+        return;
+      }
+      const res = await fetch("/api/sequences/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          messages,
+          recipientEmail,
+          recipientName,
+          projectId: activeProject.id,
+          channel: "email",
+          goal,
+          ...(leadName ? { leadName } : {}),
+          ...(leadContext ? { leadContext } : {})
+        })
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        error?: string;
+        messagesSent?: number;
+        totalMessages?: number;
+      };
+      if (!res.ok) {
+        setError(json.error ?? "Send failed.");
+        return;
+      }
+      setSendModalOpen(false);
+      const label = recipientName ? `${recipientName} (${recipientEmail})` : recipientEmail;
+      const followUp =
+        messages.length > 1
+          ? `Schedule messages 2–${messages.length} manually.`
+          : "Follow up manually when ready.";
+      dashToast(`Message 1 sent to ${label}. ${followUp}`);
+    } catch {
+      setError("Network error.");
+    } finally {
+      setSendSubmitting(false);
     }
   }
 
@@ -266,6 +387,129 @@ function SequencesPageInner() {
         {loading ? "Writing sequence…" : "Generate sequence → (3 credits)"}
       </button>
       {error ? <p className="mb-6 text-sm text-red-400">{error}</p> : null}
+
+      {channel === "email" && messages && messages.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => openSendModal()}
+          className="mb-6 rounded-xl border border-white/15 bg-transparent px-8 py-3 font-medium text-white/85 transition-colors hover:border-indigo-500/40 hover:text-white"
+        >
+          Send this sequence
+        </button>
+      ) : null}
+
+      {channel !== "email" && messages && messages.length > 0 ? (
+        <p className="mb-6 text-sm text-white/45">
+          Copy each message and send manually via {CHANNELS.find((c) => c.id === channel)?.label}.
+        </p>
+      ) : null}
+
+      {sendModalOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+          role="presentation"
+          onClick={() => !sendSubmitting && setSendModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="send-sequence-title"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0c0c14] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="send-sequence-title" className="mb-1 text-lg font-semibold text-white">
+              Send sequence
+            </h2>
+            <p className="mb-5 text-xs text-white/45">Only message 1 is sent now; send the rest from your inbox when ready.</p>
+
+            <div className="mb-4 space-y-3">
+              <label className="flex cursor-pointer items-start gap-2 text-sm text-white/80">
+                <input
+                  type="radio"
+                  name="sendMode"
+                  checked={sendMode === "lead"}
+                  onChange={() => setSendMode("lead")}
+                  className="mt-1"
+                />
+                <span>Select from leads</span>
+              </label>
+              {sendMode === "lead" ? (
+                <div className="pl-6">
+                  {leadsLoading ? (
+                    <p className="text-xs text-white/40">Loading leads…</p>
+                  ) : leads.length === 0 ? (
+                    <p className="text-xs text-white/40">No leads with an email in this project.</p>
+                  ) : (
+                    <select
+                      value={selectedLeadId}
+                      onChange={(e) => setSelectedLeadId(e.target.value)}
+                      className="w-full rounded-lg border border-white/10 bg-[#0a0a12] px-3 py-2 text-sm text-white focus:border-indigo-500/50 focus:outline-none"
+                    >
+                      {leads.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {(l.name?.trim() || "Lead") + " — " + (l.email ?? "")}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              ) : null}
+
+              <label className="flex cursor-pointer items-start gap-2 text-sm text-white/80">
+                <input
+                  type="radio"
+                  name="sendMode"
+                  checked={sendMode === "manual"}
+                  onChange={() => setSendMode("manual")}
+                  className="mt-1"
+                />
+                <span>Enter email manually</span>
+              </label>
+              {sendMode === "manual" ? (
+                <div className="space-y-2 pl-6">
+                  <input
+                    type="email"
+                    value={manualEmail}
+                    onChange={(e) => setManualEmail(e.target.value)}
+                    placeholder="Recipient email"
+                    className="w-full rounded-lg border border-white/10 bg-[#0a0a12] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    placeholder="Recipient name (optional, for [Name])"
+                    className="w-full rounded-lg border border-white/10 bg-[#0a0a12] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:outline-none"
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-white/10 pt-4">
+              <button
+                type="button"
+                disabled={sendSubmitting}
+                onClick={() => setSendModalOpen(false)}
+                className="rounded-lg border border-white/10 px-4 py-2 text-sm text-white/70 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  sendSubmitting ||
+                  (sendMode === "lead" && (!selectedLeadId || leads.length === 0)) ||
+                  (sendMode === "manual" && !manualEmail.trim())
+                }
+                onClick={() => void handleConfirmSend()}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
+              >
+                {sendSubmitting ? "Sending…" : "Send sequence"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {messages
         ? messages.map((msg, i) => (
