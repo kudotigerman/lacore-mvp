@@ -159,7 +159,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     const idx = computedSectionOrder.indexOf(key);
     return idx >= 0 ? idx : computedSectionOrder.length + 1;
   };
-  const contactFormOrder = getSectionOrder("cta") + 0.5;
+  const contactFormOrder = getSectionOrder("cta") + 0.5; // always after cta
 
   const primaryButtonStyle = {
     ...buttonBaseStyle,
