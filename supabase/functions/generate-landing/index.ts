@@ -28,6 +28,14 @@ function cleanJson(raw: string) {
   return raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 }
 
+function getModelForPlan(plan: string): string {
+  const p = plan.toLowerCase().trim();
+  if (p === "free") return "claude-haiku-4-5-20251001";
+  if (p === "starter") return "claude-sonnet-4-6";
+  if (p === "pro" || p === "scale") return "claude-opus-4-6";
+  return "claude-sonnet-4-6";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -133,7 +141,7 @@ Style preference: ${requestedStyle}`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: getModelForPlan(prof?.plan ?? ""),
         max_tokens: 6000,
         temperature: 0.8,
         stream: false,

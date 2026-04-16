@@ -50,7 +50,7 @@ export async function aiComplete(params: {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: maxTokens,
         system: params.system,
         messages: [{ role: "user", content: params.user }],
@@ -96,7 +96,7 @@ export async function aiCompleteMessages(params: {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: maxTokens,
         system: params.system,
         messages: params.messages,
