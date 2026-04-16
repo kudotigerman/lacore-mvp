@@ -36,10 +36,29 @@ function getModelForPlan(plan: string): string {
   return "claude-sonnet-4-6";
 }
 
+type SupabaseAdmin = ReturnType<typeof createClient>;
+
+async function refundCredits(
+  supabase: SupabaseAdmin,
+  userId: string,
+  amount: number,
+  action: string,
+): Promise<void> {
+  await supabase.rpc("deduct_credits", {
+    p_user_id: userId,
+    p_amount: -amount,
+    p_action: `${action}_refund`,
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  let charged = false;
+  let refundSupabase: SupabaseAdmin | null = null;
+  let refundUserId: string | undefined;
 
   try {
     const body = await req.json();
@@ -70,6 +89,8 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+    refundSupabase = supabase;
+    refundUserId = userId;
 
     const projectId =
       typeof body.project_id === "string" && body.project_id.length > 0 ? body.project_id : null;
@@ -98,19 +119,6 @@ serve(async (req) => {
       credits_balance?: number;
     } | null;
     const generationCount = Number(prof?.landing_generations_count ?? 0);
-    const creditsBal = Number(prof?.credits_balance ?? 0);
-    if (creditsBal < 10) {
-      return new Response(
-        JSON.stringify({
-          error: "insufficient_credits",
-          message: "Not enough credits. Please upgrade your plan or buy more credits.",
-        }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
     const profileDisplayName =
       typeof prof?.display_name === "string" ? prof.display_name.trim() : "";
     const brandNameLine = isDefaultProjectName
@@ -133,6 +141,25 @@ Primary CTA goal: ${body.primaryGoal || "Book a call"}
 Site vibe: ${body.siteVibe || "Professional"}
 Style preference: ${requestedStyle}`;
 
+    const { data: deducted, error: deductErr } = await supabase.rpc("deduct_credits", {
+      p_user_id: userId,
+      p_amount: 10,
+      p_action: "generate_landing",
+    });
+    if (deductErr || deducted !== true) {
+      return new Response(
+        JSON.stringify({
+          error: "insufficient_credits",
+          message: "Not enough credits. Please upgrade your plan or buy more credits.",
+        }),
+        {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+    charged = true;
+
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -151,6 +178,12 @@ Style preference: ${requestedStyle}`;
     });
 
     if (!anthropicRes.ok) {
+      try {
+        await refundCredits(supabase, userId, 10, "generate_landing");
+      } catch {
+        /* best-effort refund */
+      }
+      charged = false;
       return new Response(
         JSON.stringify({
           error: "Our AI is temporarily busy. Please try again in a moment.",
@@ -169,6 +202,12 @@ Style preference: ${requestedStyle}`;
     try {
       jsonContent = JSON.parse(jsonRaw) as Record<string, unknown>;
     } catch {
+      try {
+        await refundCredits(supabase, userId, 10, "generate_landing");
+      } catch {
+        /* best-effort refund */
+      }
+      charged = false;
       return new Response(
         JSON.stringify({ error: "Generation failed. Invalid JSON output." }),
         {
@@ -191,24 +230,6 @@ Style preference: ${requestedStyle}`;
       existingPage.data?.slug ??
       `${emailBase}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const { data: deducted, error: deductErr } = await supabase.rpc("deduct_credits", {
-      p_user_id: userId,
-      p_amount: 10,
-      p_action: "generate_landing",
-    });
-    if (deductErr || deducted !== true) {
-      return new Response(
-        JSON.stringify({
-          error: "insufficient_credits",
-          message: "Not enough credits. Please upgrade your plan or buy more credits.",
-        }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
     const { error: upsertError } = await supabase.from("landing_pages").upsert(
       {
         user_id: userId,
@@ -223,6 +244,12 @@ Style preference: ${requestedStyle}`;
     );
 
     if (upsertError) {
+      try {
+        await refundCredits(supabase, userId, 10, "generate_landing");
+      } catch {
+        /* best-effort refund */
+      }
+      charged = false;
       return new Response(
         JSON.stringify({
           error: "Failed to save.",
@@ -240,10 +267,19 @@ Style preference: ${requestedStyle}`;
       .update({ landing_generations_count: generationCount + 1 })
       .eq("user_id", userId);
 
+    charged = false;
     return new Response(JSON.stringify({ slug, success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    if (charged && refundSupabase && refundUserId) {
+      try {
+        await refundCredits(refundSupabase, refundUserId, 10, "generate_landing");
+      } catch {
+        /* best-effort refund */
+      }
+      charged = false;
+    }
     return new Response(
       JSON.stringify({ error: "Failed to generate.", details: String(error) }),
       {
