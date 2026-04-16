@@ -315,9 +315,7 @@ export function LandingEditorSplitView({
           <div className="flex gap-1.5 overflow-x-auto border-b border-t border-white/[0.06] px-3 py-2 scrollbar-hide">
             {[
               { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
-              { label: "➕ Add FAQ", action: "Add a FAQ section with 5 relevant questions and answers" },
               { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
-              { label: "🎨 Colors", action: "Make the color scheme more vibrant and eye-catching" },
               { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
               { label: "💰 Pricing", action: "Add a pricing section with 3 tiers" },
             ].map((item) => (
