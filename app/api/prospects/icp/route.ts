@@ -152,7 +152,7 @@ export async function POST(request: Request) {
       await upsertSavedResult(supabaseForDb, {
         userId: user.id,
         projectId,
-        type: "outreach",
+        type: "prospects_icp" as "outreach",
         input: { offer, audience, pricing, positioning, headline, niche },
         result: { icp: parsed }
       }).catch(() => {});
