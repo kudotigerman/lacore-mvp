@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseJsClient, type SupabaseClient } from "@supabase/supabase-js";
 import { aiComplete, AI_BUSY_USER_MESSAGE, hasAiProviderConfigured } from "@/lib/claudeWithRetry";
+import { upsertSavedResult } from "@/lib/saved-results";
 import { createClient } from "@/utils/supabase/server";
 
 export const runtime = "nodejs";
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
       positioning?: string;
       headline?: string;
       niche?: string;
+      project_id?: string;
     };
 
     const offer = typeof body.offer === "string" ? body.offer.trim() : "";
@@ -81,6 +83,7 @@ export async function POST(request: Request) {
     const positioning = typeof body.positioning === "string" ? body.positioning.trim() : "";
     const headline = typeof body.headline === "string" ? body.headline.trim() : "";
     const niche = typeof body.niche === "string" ? body.niche.trim() : "";
+    // project_id is used for saving — already extracted below
 
     if (!offer) {
       return NextResponse.json({ error: "Offer is required." }, { status: 400 });
@@ -140,8 +143,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not parse ICP JSON." }, { status: 502 });
     }
 
-    // Keep supabaseForDb referenced so auth fallback remains typed/consistent with other routes.
-    void supabaseForDb;
+    const projectId =
+      typeof (body as Record<string, unknown>).project_id === "string"
+        ? ((body as Record<string, unknown>).project_id as string)
+        : null;
+
+    if (projectId) {
+      await upsertSavedResult(supabaseForDb, {
+        userId: user.id,
+        projectId,
+        type: "outreach",
+        input: { offer, audience, pricing, positioning, headline, niche },
+        result: { icp: parsed }
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ icp: parsed });
   } catch (e) {

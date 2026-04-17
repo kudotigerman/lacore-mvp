@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDashboardData } from "@/components/dashboard/DashboardDataContext";
 import { ContextualTip } from "@/components/dashboard/ContextualTip";
 import { getSupabaseClient } from "@/lib/supabase";
+import { fetchLatestSavedResult } from "@/lib/saved-results";
 import { dashToast } from "@/lib/dash-toast";
 
 type IcpData = {
@@ -29,6 +30,17 @@ const EMPTY_ICP: IcpData = {
   redditCommunities: [],
   nicheKeyword: ""
 };
+
+function isIcpData(v: unknown): v is IcpData {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.role === "string" &&
+    typeof o.companyType === "string" &&
+    typeof o.keyPain === "string" &&
+    typeof o.budgetSignal === "string"
+  );
+}
 
 function inferNiche(input: { offer: string; audience: string; positioning: string; headline: string }): string {
   const haystack = `${input.offer} ${input.audience} ${input.positioning} ${input.headline}`.toLowerCase();
@@ -91,7 +103,8 @@ export default function ProspectsPage() {
         },
         body: JSON.stringify({
           ...offerContext,
-          niche: inferNiche(offerContext)
+          niche: inferNiche(offerContext),
+          project_id: d.activeProject?.id ?? undefined
         })
       });
       const json = (await res.json()) as { icp?: IcpData; error?: string };
@@ -112,11 +125,35 @@ export default function ProspectsPage() {
   }
 
   useEffect(() => {
-    if (!hasOffer) return;
-    if (icp.role || icp.companyType || icp.keyPain || icp.budgetSignal) return;
-    void loadIcp();
+    const userId = d.userId;
+    const projectId = d.activeProject?.id;
+    if (!hasOffer || !userId || !projectId) return;
+
+    async function loadSavedOrGenerate() {
+      const supabase = getSupabaseClient();
+      const { result } = await fetchLatestSavedResult(supabase, {
+        userId: userId!,
+        projectId: projectId!,
+        type: "outreach"
+      });
+
+      if (
+        result &&
+        typeof result === "object" &&
+        result !== null &&
+        "icp" in result &&
+        isIcpData((result as Record<string, unknown>).icp)
+      ) {
+        setIcp((result as { icp: IcpData }).icp);
+        return;
+      }
+
+      void loadIcp();
+    }
+
+    void loadSavedOrGenerate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasOffer, d.activeProject?.id]);
+  }, [hasOffer, d.userId, d.activeProject?.id]);
 
   async function handleAddProspect() {
     if (!d.activeProject?.id) {
@@ -276,7 +313,10 @@ export default function ProspectsPage() {
               <h2 className="text-lg font-semibold text-white">Your ideal client</h2>
               <button
                 type="button"
-                onClick={() => void loadIcp()}
+                onClick={() => {
+                  setIcp(EMPTY_ICP);
+                  void loadIcp();
+                }}
                 disabled={icpLoading}
                 className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:text-white/80 disabled:opacity-40"
               >
