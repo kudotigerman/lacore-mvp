@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Sparkles, Layout, PenLine, Users, FileText, DollarSign, Mail, Search, Send, ChevronDown } from "lucide-react";
 import { HomePricingSection } from "@/components/home/HomePricingSection";
 import { Logo } from "@/components/Logo";
 
@@ -12,62 +13,49 @@ const PLACEHOLDER_EXAMPLES = [
   "I'm a copywriter specializing in B2B SaaS..."
 ];
 
-function IconOffer() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path
-        d="M4 4h12v2H4V4zm0 4h12v2H4V8zm0 4h8v2H4v-2z"
-        fill="currentColor"
-        className="text-indigo-400"
-      />
-    </svg>
-  );
-}
+type DemoResult = {
+  headline: string;
+  personas: Array<{ title: string; pain: string }>;
+  linkedinQuery: string;
+};
 
-function IconLanding() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" className="text-sky-400" />
-      <path d="M6 8h8M6 11h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-sky-400" />
-    </svg>
-  );
-}
-
-function IconLeads() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400" />
-      <circle cx="13" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" className="text-emerald-400" />
-      <path
-        d="M4 16c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5M12 16c0-1.2 1-2.2 2.3-2.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        className="text-emerald-400"
-      />
-    </svg>
-  );
-}
-
-function IconClose() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path
-        d="M6 10l2.5 2.5L14 7"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-amber-400"
-      />
-    </svg>
-  );
-}
+const FAQ_ITEMS = [
+  {
+    q: "Is LACORE really free to start?",
+    a: "Yes. You get 20 credits on signup — enough to generate your offer, one landing page, and your first proposal. No credit card required."
+  },
+  {
+    q: "What are credits?",
+    a: "Credits are how LACORE meters AI generations. Landing page: 10 credits. Proposal: 3. Sequence: 3. Content post: 3. Credits roll forward and never expire."
+  },
+  {
+    q: "Do I need to be technical?",
+    a: "No. LACORE is built for non-technical service businesses. If you can describe what you sell, you can run LACORE."
+  },
+  {
+    q: "How does e-signature work on proposals?",
+    a: "Every proposal has a public link. Your client opens it, clicks 'Accept and sign', types their name — done. You get a Telegram alert the moment they sign."
+  },
+  {
+    q: "Which AI powers LACORE?",
+    a: "LACORE AI is powered by state-of-the-art language models with prompt caching for speed. We never share your data or train on your inputs."
+  },
+  {
+    q: "When will paid plans launch?",
+    a: "Paid plans are launching in the coming weeks. Sign up free now — founders who join early lock in founder pricing permanently."
+  }
+] as const;
 
 export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [heroInput, setHeroInput] = useState("");
   const [phIndex, setPhIndex] = useState(0);
   const [phVisible, setPhVisible] = useState(true);
+  const [demoState, setDemoState] = useState<"idle" | "loading" | "result" | "error">("idle");
+  const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
+  const [demoError, setDemoError] = useState("");
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -96,19 +84,59 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
     return () => clearInterval(id);
   }, [heroInput]);
 
-  function scrollToId(id: string) {
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    },
+    []
+  );
+
+  const scrollToId = useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  async function runDemo(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const offer = heroInput.trim();
+    if (!offer) return;
+    setDemoState("loading");
+    setDemoError("");
+    setDemoResult(null);
+    try {
+      const res = await fetch("/api/home-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer })
+      });
+      const json = (await res.json()) as { headline?: string; personas?: DemoResult["personas"]; linkedinQuery?: string; error?: string };
+      if (!res.ok) {
+        setDemoError(json.error ?? "Something went wrong. Please try again.");
+        setDemoState("error");
+        return;
+      }
+      if (!json.headline || !Array.isArray(json.personas) || !json.linkedinQuery) {
+        setDemoError("Could not build the preview this time.");
+        setDemoState("error");
+        return;
+      }
+      setDemoResult({
+        headline: json.headline,
+        personas: json.personas.slice(0, 3),
+        linkedinQuery: json.linkedinQuery
+      });
+      setDemoState("result");
+    } catch {
+      setDemoError("Network issue. Please try again.");
+      setDemoState("error");
+    }
   }
 
-  function handleHeroSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!heroInput.trim()) return;
-    try {
-      localStorage.setItem("lacore_prefill_offer", heroInput.trim());
-    } catch {
-      /* ignore */
-    }
-    window.location.assign("/auth");
+  async function copyQuery() {
+    if (!demoResult?.linkedinQuery) return;
+    await navigator.clipboard.writeText(demoResult.linkedinQuery);
+    setCopyStatus("copied");
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = window.setTimeout(() => setCopyStatus("idle"), 1600);
   }
 
   const showPlaceholderOverlay = !heroInput.trim();
@@ -119,18 +147,10 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Logo size="md" variant="dark" href="/" />
           <div className="hidden items-center gap-6 md:flex">
-            <button
-              type="button"
-              onClick={() => scrollToId("how-it-works")}
-              className="text-sm text-white/55 transition hover:text-white/90"
-            >
-              How it works
+            <button type="button" onClick={() => scrollToId("product")} className="text-sm text-white/55 transition hover:text-white/90">
+              Product
             </button>
-            <button
-              type="button"
-              onClick={() => scrollToId("pricing")}
-              className="text-sm text-white/55 transition hover:text-white/90"
-            >
+            <button type="button" onClick={() => scrollToId("pricing")} className="text-sm text-white/55 transition hover:text-white/90">
               Pricing
             </button>
             <Link href="/blog" className="text-sm text-white/55 no-underline transition hover:text-white/90">
@@ -138,24 +158,15 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
             </Link>
           </div>
           {isLoggedIn ? (
-            <Link
-              href="/dashboard/offer"
-              className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition hover:bg-indigo-500"
-            >
+            <Link href="/dashboard/offer" className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition hover:bg-indigo-500">
               Go to dashboard →
             </Link>
           ) : (
             <div className="flex shrink-0 items-center gap-2">
-              <Link
-                href="/auth"
-                className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/70 no-underline transition-colors hover:text-white"
-              >
+              <Link href="/auth" className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white/70 no-underline transition-colors hover:text-white">
                 Sign in
               </Link>
-              <Link
-                href="/auth"
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-indigo-500"
-              >
+              <Link href="/auth" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-indigo-500">
                 Start free →
               </Link>
             </div>
@@ -163,7 +174,6 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-16 pt-12 sm:px-6 sm:pt-16 md:pt-20">
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
           <div
@@ -188,37 +198,36 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
             }}
           />
         </div>
-        <div className="relative z-[1] mx-auto max-w-4xl text-center">
+
+        <div className="relative z-[1] mx-auto max-w-5xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs text-indigo-300">
-            <span aria-hidden>✦</span>
-            <span>AI sales system for freelancers &amp; consultants</span>
+            LACORE AI · v1.0
           </div>
-          <h1 className="font-plus-jakarta mt-8 text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl lg:text-7xl">
-            <span className="block text-white">You say what you sell.</span>
-            <span className="mt-1 block bg-gradient-to-r from-indigo-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
-              LACORE does the rest.
-            </span>
+          <h1
+            className="font-plus-jakarta mt-8 leading-[1.03] tracking-[-0.03em] text-white"
+            style={{ fontWeight: 800, fontSize: "clamp(48px, 6vw, 80px)" }}
+          >
+            <span className="block">Your entire sales team.</span>
+            <span className="block text-indigo-400">In one tab.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-white/50">
-            From offer to first client — in 60 minutes.
-            <br className="hidden sm:block" />
-            <span className="sm:ml-0"> No marketing degree. No design skills. No guesswork.</span>
+          <p className="mx-auto mt-6 max-w-[580px] text-base leading-relaxed text-white/65 sm:text-lg">
+            LACORE is the AI sales OS for consultants, coaches, freelancers and agencies. Find prospects, launch landing pages, close with proposals, and get paid — without switching tools.
           </p>
 
-          <form onSubmit={handleHeroSubmit} className="mx-auto mt-10 max-w-xl">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-              <div className="relative min-w-0 flex-1">
-                <input
-                  type="text"
+          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-white/[0.08] bg-[#0D0F1A] p-4 sm:p-6">
+            <form onSubmit={runDemo}>
+              <div className="relative">
+                <textarea
+                  rows={3}
                   value={heroInput}
                   onChange={(e) => setHeroInput(e.target.value)}
                   placeholder=" "
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-5 py-3.5 text-sm text-white placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
-                  aria-label="Describe what you sell"
+                  className="w-full resize-none rounded-2xl border border-white/10 bg-[#07080F] px-4 py-3 text-sm text-white/85 placeholder:text-white/25 focus:border-indigo-500/50 focus:outline-none"
+                  aria-label="Describe your offer for a free preview"
                 />
                 {showPlaceholderOverlay ? (
                   <span
-                    className={`pointer-events-none absolute left-5 top-1/2 max-w-[calc(100%-2.5rem)] -translate-y-1/2 truncate text-sm text-white/25 hero-placeholder-layer ${phVisible ? "" : "hero-placeholder-layer--out"}`}
+                    className={`pointer-events-none absolute left-4 top-6 max-w-[calc(100%-2.5rem)] -translate-y-1/2 truncate text-sm text-white/25 hero-placeholder-layer ${phVisible ? "" : "hero-placeholder-layer--out"}`}
                   >
                     {PLACEHOLDER_EXAMPLES[phIndex]}
                   </span>
@@ -226,257 +235,311 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
               </div>
               <button
                 type="submit"
-                disabled={!heroInput.trim()}
-                className="whitespace-nowrap rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={!heroInput.trim() || demoState === "loading"}
+                className="mt-3 min-h-11 w-full rounded-xl bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Build my sales machine →
+                See what LACORE can do for your business →
               </button>
-            </div>
-            <p className="mt-3 text-center text-xs text-white/30">
-              <span className="text-amber-400/90">★★★★★</span>
-              {" "}Joined by 2,400+ freelancers · designers · consultants · coaches
-            </p>
-          </form>
-        </div>
-      </section>
+              <p className="mt-2 text-xs text-white/35">Free preview. No signup needed.</p>
+            </form>
 
-      {/* Product preview */}
-      <section id="product-preview" className="relative z-[1] px-4 sm:px-6">
-        <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/5 to-transparent px-3 pb-3 sm:mt-10 sm:px-0 sm:pb-0">
-          <div className="overflow-hidden rounded-xl border border-white/[0.08] sm:rounded-2xl">
-            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-black/40 px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
-              <span className="ml-2 truncate rounded-md bg-white/5 px-3 py-1 text-[11px] text-white/35">lacore.ai/dashboard/landing</span>
-            </div>
-            <div className="flex min-h-[280px] flex-col md:flex-row">
-              <aside className="w-full shrink-0 border-white/[0.06] bg-black/30 p-5 md:w-[220px] md:border-r">
-                <Logo size="sm" variant="dark" href={false} className="opacity-90" />
-                <div className="mt-4 rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 text-xs text-white/70">
-                  Project 1 <span className="text-white/35">▾</span>
-                </div>
-                <ul className="mt-4 space-y-1 text-[11px] font-medium tracking-wide text-white/80">
-                  <li className="flex items-center justify-between rounded-lg px-2 py-2">
-                    <span>01 OFFER</span>
-                    <span className="text-xs text-emerald-400">✓ done</span>
-                  </li>
-                  <li className="rounded-lg bg-indigo-500/15 px-2 py-2 text-indigo-300">02 LANDING PAGE</li>
-                  <li className="px-2 py-2 text-white/25">03 CONTENT</li>
-                  <li className="px-2 py-2 text-white/25">04 LEADS &amp; CLOSING</li>
-                </ul>
-                <div className="my-4 h-px bg-white/[0.06]" />
-                <p className="text-[10px] font-medium tracking-wider text-white/25">ANALYTICS</p>
-              </aside>
-              <div className="flex-1 p-5 sm:p-8">
-                <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-indigo-400">STEP 2 OF 4</p>
-                <h3 className="text-[19px] font-semibold text-white sm:text-[21px]">Build your landing page</h3>
-                <p className="mb-4 text-[15px] text-white/40">Your offer is ready. Now create the page that converts.</p>
-                <div className="mb-4 h-1.5 w-full rounded-full bg-white/[0.08]">
-                  <div className="h-full w-[35%] rounded-full bg-indigo-500" />
-                </div>
-                <div className="mb-4 rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-white/30">OFFER</p>
-                  <p className="mt-2 text-[15px] leading-relaxed text-white/80">
-                    I help SaaS startups redesign their product UX to reduce churn — in 3 weeks, fixed price.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white">Generate landing page →</span>
-                  <span className="inline-flex rounded-xl border border-white/15 px-4 py-2 text-[13px] font-medium text-white/55">Edit offer</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Logos */}
-      <div className="mx-auto max-w-5xl border-y border-white/5 py-6 text-center">
-        <p className="text-xs text-white/20">Trusted by freelancers and consultants from</p>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 px-4 text-sm font-medium tracking-wide text-white/35">
-          {["Upwork", "Toptal", "Fiverr", "LinkedIn", "99designs", "Clutch"].map((name, i) => (
-            <span key={name} className="inline-flex items-center gap-x-2">
-              {i > 0 ? (
-                <span className="select-none text-white/25" aria-hidden>
-                  ·
-                </span>
-              ) : null}
-              <span>{name}</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* How it works */}
-      <section id="how-it-works" className="scroll-mt-20 px-4 py-10 sm:px-6 sm:py-10">
-        <div className="animate-on-scroll mx-auto max-w-5xl text-center">
-          <div className="mx-auto inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] text-white/45">
-            How it works
-          </div>
-          <h2 className="font-plus-jakarta mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">4 steps from idea to paying clients</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/45 sm:text-base">
-            LACORE turns what you do into a complete sales system — automatically.
-          </p>
-
-          <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                n: "01",
-                title: "Define your offer",
-                body: "Tell us what you do. AI writes your positioning, headline, audience and pricing in 30 seconds.",
-                Icon: IconOffer,
-                box: "bg-indigo-500/15 text-indigo-400"
-              },
-              {
-                n: "02",
-                title: "Get a landing page",
-                body: "Your public sales page is built and live in 60 seconds. No designer needed.",
-                Icon: IconLanding,
-                box: "bg-sky-500/15 text-sky-400"
-              },
-              {
-                n: "03",
-                title: "Attract leads",
-                body: "AI generates posts for Instagram, LinkedIn, X. Share content, drive traffic, capture emails.",
-                Icon: IconLeads,
-                box: "bg-emerald-500/15 text-emerald-400"
-              },
-              {
-                n: "04",
-                title: "Close deals",
-                body: "Get AI scripts for every lead — DMs, objections, follow-ups. Close faster, earn more.",
-                Icon: IconClose,
-                box: "bg-amber-500/15 text-amber-400"
-              }
-            ].map((card, i, arr) => {
-              const Icon = card.Icon;
-              return (
-                <div
-                  key={card.n}
-                  className="relative bg-[#0D0F1A] p-7 text-left"
-                >
-                  <p className="text-xs font-semibold text-white/25">{card.n}</p>
-                  <div className={`mt-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${card.box}`}>
-                    <Icon />
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold text-white">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/45">{card.body}</p>
-                  {i < arr.length - 1 ? (
-                    <span className="pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 text-lg text-white/20 lg:block" aria-hidden>
-                      →
-                    </span>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison */}
-      <section className="px-4 py-8 sm:px-6 sm:py-10">
-        <h2 className="mb-6 text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
-          The tools exist. The clients don&apos;t.
-        </h2>
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3">
-          <div className="bg-[#0D0F1A] p-8 text-center sm:text-left">
-            <p className="text-sm text-white/35">ChatGPT gives you</p>
-            <p className="mt-3 text-2xl font-bold text-white/50 sm:text-3xl">Text.</p>
-            <p className="mt-2 text-sm text-white/35">But not a system.</p>
-          </div>
-          <div className="bg-[#0D0F1A] p-8 text-center sm:text-left">
-            <p className="text-sm text-white/35">Webflow gives you</p>
-            <p className="mt-3 text-2xl font-bold text-white/50 sm:text-3xl">A website.</p>
-            <p className="mt-2 text-sm text-white/35">But not clients.</p>
-          </div>
-          <div className="border border-indigo-500/20 bg-indigo-500/10 p-8 text-center sm:text-left">
-            <p className="text-sm text-white/45">LACORE gives you</p>
-            <p className="mt-3 text-4xl font-bold text-indigo-400 sm:text-5xl">Clients.</p>
-            <p className="mt-2 text-sm text-white/45">The whole system. Automated.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Bento */}
-      <section className="animate-on-scroll px-4 py-8 sm:px-6 sm:py-10">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="font-plus-jakarta text-center text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
-            Everything you need to go from freelancer to booked.
-          </h2>
-          <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="md:col-span-2 rounded-2xl border border-white/[0.07] bg-[#13151F] p-6 sm:p-8">
-              <h3 className="text-lg font-semibold text-white sm:text-xl">Your landing page — live in 60 seconds</h3>
-              <p className="mt-2 text-sm text-white/45">
-                AI generates a full sales page from your offer. Share the link, start getting leads.
-              </p>
-              <div className="mt-6 rounded-xl border border-white/[0.08] bg-black/40 p-5">
-                <p className="text-base font-bold text-white sm:text-lg">Stop Losing Clients to Cheaper Designers</p>
-                <p className="mt-2 text-sm text-white/50">
-                  I help SaaS startups fix UX that kills retention — 3 weeks, guaranteed.
-                </p>
-                <span className="mt-4 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white">Book a free call →</span>
-              </div>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            {demoState === "loading" ? (
+              <div role="status" aria-live="polite" className="mt-5 space-y-2 rounded-xl border border-white/[0.08] bg-[#07080F] p-4 text-left">
                 {[
-                  { k: "347", l: "Page views" },
-                  { k: "12", l: "Leads" },
-                  { k: "$8,400", l: "Revenue won" }
-                ].map((s) => (
-                  <div key={s.l} className="flex-1 rounded-xl border border-white/[0.06] bg-black/20 px-5 py-3 text-center sm:text-left">
-                    <p className="text-xl font-bold text-white">{s.k}</p>
-                    <p className="text-xs text-white/35">{s.l}</p>
+                  "Analysing your offer...",
+                  "Building your ICP...",
+                  "Writing LinkedIn search query..."
+                ].map((line, idx) => (
+                  <p key={line} className="text-sm text-white/65 home-demo-line" style={{ animationDelay: `${idx * 600}ms` }}>
+                    {line}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+
+            {demoState === "result" && demoResult ? (
+              <div className="mt-5 space-y-3 text-left">
+                <div className="rounded-2xl border border-white/[0.08] border-t-indigo-500 bg-[#07080F] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Your landing page headline</p>
+                  <h3 className="mt-2 text-2xl font-bold text-white">{demoResult.headline}</h3>
+                  <p className="mt-2 text-xs text-white/45">This headline would go on your landing page — generated in 3 seconds.</p>
+                </div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#07080F] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Your 3 buyer personas</p>
+                  <div className="mt-2 space-y-2">
+                    {demoResult.personas.slice(0, 3).map((p, idx) => (
+                      <div key={`${p.title}-${idx}`} className="rounded-xl border border-white/[0.08] bg-[#0D0F1A] p-3">
+                        <p className="text-sm font-semibold text-white">{p.title}</p>
+                        <p className="mt-1 text-sm text-white/65">{p.pain}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#07080F] p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">Ready-to-use LinkedIn search</p>
+                  <pre className="mt-2 overflow-x-auto rounded-xl border border-white/[0.08] bg-[#0D0F1A] p-3 text-xs text-white/65">
+                    {demoResult.linkedinQuery}
+                  </pre>
+                  <button
+                    type="button"
+                    onClick={() => void copyQuery()}
+                    className="mt-2 rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/65 transition-colors hover:text-white"
+                  >
+                    {copyStatus === "copied" ? "Copied!" : "Copy query"}
+                  </button>
+                </div>
+                <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4">
+                  <p className="text-sm text-white/85">
+                    This is 5% of what LACORE does. Sign up free to unlock proposals, sequences, landing pages, and more.
+                  </p>
+                  <Link
+                    href="/auth"
+                    className="mt-3 inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white no-underline transition hover:bg-indigo-500"
+                  >
+                    Start building my sales team free →
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+
+            {demoState === "error" ? (
+              <div className="mt-5 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-left">
+                <p className="text-sm text-red-300">{demoError || "Could not generate the preview right now."}</p>
+                <button
+                  type="button"
+                  onClick={() => setDemoState("idle")}
+                  className="mt-3 rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/75"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <p className="mt-4 text-xs text-white/35">
+            <span className="text-amber-400/90">★★★★★</span> Used by consultants · coaches · freelancers · agencies · real estate agents
+          </p>
+        </div>
+      </section>
+
+      <section className="px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D0F1A]">
+          <div className="flex items-center gap-2 border-b border-white/[0.08] bg-black/30 px-4 py-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+            <span className="ml-2 truncate rounded-md bg-white/5 px-3 py-1 text-[11px] text-white/35">lacore.ai/dashboard/leads</span>
+          </div>
+          <div className="flex flex-col md:flex-row">
+            <aside className="w-full border-b border-white/[0.08] bg-[#07080F] p-4 md:w-[245px] md:border-b-0 md:border-r">
+              <Logo size="sm" variant="dark" href={false} />
+              <div className="mt-4 space-y-1 text-[11px]">
+                {[
+                  "01 Offer",
+                  "02 Landing page",
+                  "03 Content",
+                  "04 Leads & closing",
+                  "05 Proposals",
+                  "06 Pricing",
+                  "07 Sequences",
+                  "08 Prospects",
+                  "09 Outreach"
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className={`rounded-lg px-2 py-2 ${item.startsWith("04") ? "bg-indigo-500/20 text-indigo-300" : "text-white/45"}`}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </aside>
+            <div className="flex-1 p-4 sm:p-6">
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  { title: "New Lead", card: "Maria S. · UX project · $4,200" },
+                  { title: "Proposal Sent", card: "James T. · Coaching package · $1,800 · ✍️ awaiting sign" },
+                  { title: "Won 🎉", card: "Sarah K. · Agency retainer · $6,000/mo · ✓ paid" }
+                ].map((col) => (
+                  <div key={col.title} className="rounded-xl border border-white/[0.08] bg-[#07080F] p-3">
+                    <p className="mb-2 text-xs font-semibold text-white/65">{col.title}</p>
+                    <div className="rounded-xl border border-white/[0.08] bg-[#0D0F1A] p-3 text-xs text-white/85">{col.card}</div>
                   </div>
                 ))}
               </div>
             </div>
-
-            <div className="rounded-2xl border border-white/[0.07] bg-[#13151F] p-6">
-              <h3 className="text-lg font-semibold text-white">Content that drives traffic</h3>
-              <p className="mt-2 text-sm text-white/45">Generate posts for any platform in seconds.</p>
-              <div className="mt-4 space-y-3">
-                <div className="rounded-lg border border-white/[0.06] bg-black/30 p-3 text-xs">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-400/90">LinkedIn · Hook post</p>
-                  <p className="mt-2 text-white/60">
-                    &quot;I redesigned 47 SaaS dashboards. Here&apos;s the mistake that kills retention every time...&quot;
-                  </p>
-                  <span className="mt-2 inline-block text-indigo-400">Generate →</span>
-                </div>
-                <div className="rounded-lg border border-white/[0.06] bg-black/30 p-3 text-xs">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-white/35">X / Twitter · Value post</p>
-                  <p className="mt-2 text-white/60">&quot;Your landing page isn&apos;t converting because...&quot;</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.07] bg-[#13151F] p-6">
-              <h3 className="text-lg font-semibold text-white">Close every lead with AI scripts</h3>
-              <p className="mt-2 text-sm text-white/45">
-                Personalized DM scripts, objection handlers, and follow-ups for each lead.
-              </p>
-              <div className="mt-4 rounded-lg border border-white/[0.06] bg-black/30 p-4 text-xs">
-                <p className="text-white/70">
-                  <span className="font-medium text-white">Maria S.</span>
-                  <span className="text-white/35"> · New lead · </span>
-                  <span className="text-amber-400/90">&quot;Too expensive&quot;</span>
-                </p>
-                <div className="my-3 h-px bg-white/[0.08]" />
-                <p className="leading-relaxed text-white/50">
-                  <span className="text-white/35">AI script: </span>
-                  &quot;Maria, I totally understand the concern. Let me show you exactly what you&apos;re getting for that investment — most clients see ROI in month one...&quot;
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="rounded-md border border-white/15 px-3 py-1.5 text-[11px] text-white/55">Copy script</span>
-                  <span className="rounded-md bg-indigo-600 px-3 py-1.5 text-[11px] font-medium text-white">Reply →</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="animate-on-scroll px-4 py-8 sm:px-6 sm:py-10">
+      <section className="border-y border-white/5 px-4 py-5 sm:px-6">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="text-sm text-white/45">Built for service businesses</p>
+          <div className="mt-3 flex gap-3 overflow-x-auto whitespace-nowrap text-xs text-white/25">
+            {["Consultants", "Coaches", "Freelancers", "Agencies", "Real Estate", "Advisors", "Designers", "Developers"].map((n, i) => (
+              <span key={n}>
+                {i > 0 ? <span className="mr-3">·</span> : null}
+                {n}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="product" className="animate-on-scroll scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-[1120px]">
+          <div className="text-center">
+            <h2 className="font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Follow a lead from stranger to paying client
+            </h2>
+            <p className="mt-3 text-white/45">One product, four moments. Every step automated.</p>
+          </div>
+
+          <div className="mt-8 space-y-4">
+            {[
+              {
+                badge: "01 · PROSPECTS",
+                title: "LACORE finds Sarah for you",
+                body: "Paste your offer. AI builds your Ideal Client Profile: role, company type, budget signal, and key pain. Click LinkedIn — the Boolean search is pre-filled.",
+                mockup: (
+                  <div className="rounded-2xl border border-white/[0.08] bg-[#07080F] p-3 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      {["Role: Marketing Director", "Company: B2B SaaS (10-200)", "Pain: churn + low conversion", "Budget: growth-stage funded"].map((x) => (
+                        <span key={x} className="rounded-lg border border-white/[0.08] bg-[#0D0F1A] px-2 py-1 text-white/65">{x}</span>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-[10px]">
+                      <span className="rounded-md bg-blue-500/20 px-2 py-1 text-blue-300">in</span>
+                      <span className="rounded-md bg-purple-500/20 px-2 py-1 text-purple-300">Apollo</span>
+                      <span className="rounded-md bg-orange-500/20 px-2 py-1 text-orange-300">Reddit</span>
+                      <span className="rounded-md bg-emerald-500/20 px-2 py-1 text-emerald-300">PH</span>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                badge: "02 · LEADS & CLOSING",
+                title: "Sarah fills your form. You get a Telegram ping.",
+                body: "Every lead captured on your landing page lands in your Kanban. Live status, lead value, notes, and one-click actions: write a proposal or fire off a sequence.",
+                mockup: (
+                  <div className="space-y-2">
+                    <div className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] text-emerald-300">
+                      🔥 New lead: Sarah K. — $4,200
+                    </div>
+                    <div className="rounded-2xl border border-white/[0.08] bg-[#07080F] p-3 text-xs">
+                      <p className="text-white/85">Sarah K. · New Lead</p>
+                      <p className="mt-1 text-white/45">$4,200 · UX project</p>
+                      <div className="mt-2 flex gap-2">
+                        <span className="rounded-lg border border-white/15 px-2 py-1 text-white/65">Proposal</span>
+                        <span className="rounded-lg border border-white/15 px-2 py-1 text-white/65">Sequence</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                badge: "03 · PROPOSALS",
+                title: "One click. AI writes a proposal Sarah signs.",
+                body: "LACORE AI pulls your offer context, Sarah's message, and writes a full proposal with sections. Share a public link. She e-signs in 30 seconds. Status auto-updates.",
+                mockup: (
+                  <div className="rounded-2xl border border-white/[0.08] bg-[#07080F] p-3 text-xs">
+                    <div className="space-y-2 text-white/65">
+                      <div className="rounded-lg border border-white/[0.08] bg-[#0D0F1A] px-2 py-1">The Problem</div>
+                      <div className="rounded-lg border border-white/[0.08] bg-[#0D0F1A] px-2 py-1">Our Approach</div>
+                      <div className="rounded-lg border border-white/[0.08] bg-[#0D0F1A] px-2 py-1">Your Investment</div>
+                    </div>
+                    <div className="mt-2 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300">
+                      ✍️ Signed by Sarah K.
+                    </div>
+                  </div>
+                )
+              },
+              {
+                badge: "04 · RETAIN",
+                title: "Paid. Follow-up sequences start automatically.",
+                body: "Stripe invoice sent from your dashboard. Client pays. LACORE triggers your onboarding sequence: welcome email, testimonial request, referral nudge — all written by AI, sent via Resend.",
+                mockup: (
+                  <div className="rounded-2xl border border-white/[0.08] bg-[#07080F] p-3 text-xs">
+                    {[
+                      { d: "Day 0", t: "Welcome email", s: "✓ Sent" },
+                      { d: "Day 3", t: "Testimonial request", s: "✓ Sent" },
+                      { d: "Day 14", t: "Referral nudge", s: "Pending" }
+                    ].map((m) => (
+                      <div key={m.t} className="mb-2 flex items-center justify-between rounded-lg border border-white/[0.08] bg-[#0D0F1A] px-2 py-1">
+                        <span className="text-white/65">{m.d}</span>
+                        <span className="text-white/85">{m.t}</span>
+                        <span className={m.s === "Pending" ? "text-white/45" : "text-emerald-300"}>{m.s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              }
+            ].map((item) => (
+              <div key={item.badge} className="grid gap-4 rounded-2xl border border-white/[0.08] bg-[#0D0F1A] p-5 md:grid-cols-3">
+                <div>
+                  <p className="text-xs font-semibold tracking-wider text-indigo-400">{item.badge}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-white">{item.title}</h3>
+                </div>
+                <p className="text-sm leading-relaxed text-white/65">{item.body}</p>
+                <div>{item.mockup}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="animate-on-scroll px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center">
+            <h2 className="font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">9 modules. One sales OS.</h2>
+            <p className="mt-3 text-white/45">Every tool you need. Built to work together.</p>
+          </div>
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { Icon: Sparkles, n: "Offer", d: "AI-generated positioning, headline, audience and pricing." },
+              { Icon: Layout, n: "Landing page", d: "13 styles. Live page in 60 seconds. Custom domain." },
+              { Icon: PenLine, n: "Content", d: "Posts for LinkedIn, IG, X, Threads — tailored to you." },
+              { Icon: Users, n: "Leads & closing", d: "Kanban + AI closing scripts for every objection." },
+              { Icon: FileText, n: "Proposals", d: "AI-written. E-signature. Shared public link." },
+              { Icon: DollarSign, n: "Pricing strategy", d: "Optimal price points for your niche." },
+              { Icon: Mail, n: "Sequences", d: "5 channels · Email, IG, LinkedIn, WhatsApp, Telegram." },
+              { Icon: Search, n: "Prospects", d: "AI ICP + LinkedIn, Apollo, Reddit shortcuts." },
+              { Icon: Send, n: "Outreach", d: "Cold DM and email scripts for every channel." }
+            ].map((m) => (
+              <div key={m.n} className="rounded-2xl border border-white/[0.08] bg-[#0D0F1A] p-6 transition-colors hover:border-indigo-500/30">
+                <m.Icon size={18} className="text-indigo-400" />
+                <p className="mt-3 text-lg font-semibold text-white">{m.n}</p>
+                <p className="mt-1 text-sm text-white/65">{m.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="animate-on-scroll px-4 py-16 sm:px-6 sm:py-20">
+        <h2 className="mb-6 text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          The tools exist. The system doesn&apos;t.
+        </h2>
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3">
+          <div className="bg-[#0D0F1A] p-8 text-center sm:text-left">
+            <p className="text-sm text-white/35">ChatGPT gives you</p>
+            <p className="mt-3 text-3xl font-bold text-white/50">Text.</p>
+            <p className="mt-2 text-sm text-white/35">But no pipeline.</p>
+          </div>
+          <div className="bg-[#0D0F1A] p-8 text-center sm:text-left">
+            <p className="text-sm text-white/35">Notion + Calendly + Mailchimp</p>
+            <p className="mt-3 text-3xl font-bold text-white/50">Busywork.</p>
+            <p className="mt-2 text-sm text-white/35">But no system.</p>
+          </div>
+          <div className="border border-indigo-500/20 bg-indigo-500/10 p-8 text-center sm:text-left">
+            <p className="text-sm text-white/45">LACORE gives you</p>
+            <p className="mt-3 text-4xl font-bold text-indigo-400">Clients.</p>
+            <p className="mt-2 text-sm text-white/45">The whole machine. One tab.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="animate-on-scroll px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             {
@@ -518,32 +581,54 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
 
       <HomePricingSection isLoggedIn={isLoggedIn} />
 
-      {/* Final CTA */}
+      <section className="animate-on-scroll px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-center font-plus-jakarta text-3xl font-bold tracking-tight text-white sm:text-4xl">Common questions</h2>
+          <div className="mt-6 space-y-2">
+            {FAQ_ITEMS.map((item, idx) => {
+              const open = openFaqIndex === idx;
+              return (
+                <div key={item.q} className="rounded-2xl border border-white/[0.08] bg-[#0D0F1A]">
+                  <button
+                    type="button"
+                    role="button"
+                    aria-expanded={open}
+                    onClick={() => setOpenFaqIndex((prev) => (prev === idx ? null : idx))}
+                    className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left"
+                  >
+                    <span className="text-sm font-medium text-white/85">{item.q}</span>
+                    <ChevronDown size={16} className={`text-white/45 transition-transform ${open ? "rotate-180" : ""}`} />
+                  </button>
+                  {open ? <p className="px-4 pb-4 text-sm leading-relaxed text-white/65">{item.a}</p> : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section id="cta-band" className="scroll-mt-20 px-4 pb-10 pt-8 sm:px-6 sm:pb-10 sm:pt-8">
         <div className="relative z-[1] mx-auto max-w-4xl overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/[0.08] p-10 text-center sm:p-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,102,241,0.2),transparent_65%)]" />
           <div className="relative z-[2]">
-            <h2 className="text-4xl font-bold tracking-tight text-white">Ready to build your sales machine?</h2>
-            <p className="mx-auto mt-3 max-w-xl text-white/45">Join 2,400+ freelancers already getting leads on autopilot.</p>
+            <h2 className="text-4xl font-bold tracking-tight text-white">Your AI sales team is ready.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-white/45">Start free. Close your first client this week.</p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-              <Link
-                href="/auth"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-8 py-4 text-base font-medium text-white no-underline transition hover:bg-indigo-500 sm:w-auto"
-              >
-                Start free — takes 10 min →
+              <Link href="/auth" className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-8 py-4 text-base font-medium text-white no-underline transition hover:bg-indigo-500 sm:w-auto">
+                Start building free →
               </Link>
-              <Link
-                href="#product-preview"
+              <button
+                type="button"
+                onClick={() => scrollToId("product")}
                 className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-7 py-4 text-base text-white/55 no-underline transition hover:border-white/25 hover:text-white/80 sm:w-auto"
               >
-                See examples
-              </Link>
+                See the product
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="relative z-[1] border-t border-white/5 px-6 py-8 text-xs text-white/25 sm:px-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -555,23 +640,35 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
               <Link href="/privacy" className="text-white/25 no-underline transition hover:text-white/50">
                 Privacy
               </Link>
-              <span aria-hidden className="text-white/15">
-                ·
-              </span>
+              <span aria-hidden className="text-white/15">·</span>
               <Link href="/terms" className="text-white/25 no-underline transition hover:text-white/50">
                 Terms
               </Link>
-              <span aria-hidden className="text-white/15">
-                ·
-              </span>
+              <span aria-hidden className="text-white/15">·</span>
               <Link href="/cookies" className="text-white/25 no-underline transition hover:text-white/50">
                 Cookies
               </Link>
             </div>
-            <p>© 2026 LACORE. All rights reserved.</p>
+            <p>© 2026 Relova AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
+      <style jsx>{`
+        .home-demo-line {
+          opacity: 0;
+          animation: lineFadeIn 0.6s ease forwards;
+        }
+        @keyframes lineFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </main>
   );
 }

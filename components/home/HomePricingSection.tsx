@@ -27,7 +27,13 @@ const PLANS: {
     annual: 0,
     credits: 20,
     free: true,
-    features: ["20 credits (one-time)", "1 project", "1 landing generation (plan limit)", "AI offer + landing", "5 posts / month cap"]
+    features: [
+      "20 credits to start",
+      "1 landing page",
+      "Lead kanban + Telegram alerts",
+      "Basic proposals",
+      "No credit card required"
+    ]
   },
   {
     key: "starter",
@@ -36,7 +42,13 @@ const PLANS: {
     monthly: 29,
     annual: 22,
     credits: 100,
-    features: ["100 credits / month", "1 project", "Unlimited landing iterations (fair use)", "Content machine", "Closing scripts"]
+    features: [
+      "100 credits / month",
+      "5 landing pages + custom domain",
+      "Email sequences (send via Resend)",
+      "Content machine (5 channels)",
+      "E-sign proposals"
+    ]
   },
   {
     key: "pro",
@@ -46,7 +58,13 @@ const PLANS: {
     annual: 37,
     credits: 300,
     featured: true,
-    features: ["300 credits / month", "Up to 5 projects", "Custom domain", "Everything in Starter", "Priority workflows"]
+    features: [
+      "300 credits / month",
+      "Unlimited landing pages",
+      "Prospects ICP + 6 channels",
+      "All sequences: Email, IG, LinkedIn, WhatsApp, Telegram",
+      "Priority AI generation"
+    ]
   },
   {
     key: "scale",
@@ -55,7 +73,13 @@ const PLANS: {
     monthly: 99,
     annual: 74,
     credits: 1000,
-    features: ["1,000 credits / month", "Unlimited projects", "White-glove limits", "Full stack", "Best for teams"]
+    features: [
+      "1,000 credits / month",
+      "Unlimited projects",
+      "Weekly lead digest (coming soon)",
+      "White-label landing pages",
+      "Best for agencies and teams"
+    ]
   }
 ];
 
@@ -128,6 +152,12 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <section id="pricing" className="scroll-mt-20 px-5 py-10 sm:px-10 sm:py-14">
+      <div className="mx-auto mb-8 max-w-2xl rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-center">
+        <p className="text-sm text-amber-300">
+          <span className="font-semibold">Paid plans launching soon.</span>{" "}
+          <span className="text-amber-200/80">Sign up free today to lock in founders pricing.</span>
+        </p>
+      </div>
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 text-center sm:mb-12">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-4 py-1.5 text-xs text-indigo-300">
@@ -206,17 +236,20 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
                   ) : (
                     <button
                       type="button"
-                      disabled={!paddleReady || !priceId}
                       onClick={() => {
-                        if (priceId) void openCheckout(priceId);
+                        if (!paddleReady || !priceId) {
+                          window.location.assign(`/auth?plan=${p.key}`);
+                          return;
+                        }
+                        void openCheckout(priceId);
                       }}
-                      className={`w-full rounded-xl py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`w-full rounded-xl py-3 text-sm font-medium transition ${
                         p.featured
                           ? "bg-indigo-600 text-white hover:bg-indigo-500"
                           : "border border-white/15 text-white/90 hover:bg-white/[0.06]"
                       }`}
                     >
-                      {!paddleReady ? "Loading…" : `Get ${p.name} →`}
+                      {paddleReady ? `Get ${p.name} →` : `Start free · ${p.name} waitlist`}
                     </button>
                   )}
                 </div>

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.lacore.ai"),
   title: "LACORE — Your AI Sales Machine",
   description:
-    "From offer to first client in 60 minutes. AI-powered sales system for freelancers and consultants.",
+    "Your entire sales team in one tab. The AI sales OS for service businesses — prospects, landing pages, proposals, sequences, and payments, all in one place.",
   icons: {
     icon: "/icon",
     apple: "/apple-icon"
