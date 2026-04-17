@@ -134,7 +134,7 @@ export default function ProspectsPage() {
       const { result } = await fetchLatestSavedResult(supabase, {
         userId: userId!,
         projectId: projectId!,
-        type: "prospects_icp" as "outreach"
+        type: "prospects_icp"
       });
 
       if (
