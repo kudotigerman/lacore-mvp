@@ -33,6 +33,7 @@ import {
   Mail,
   MoreHorizontal,
   PenLine,
+  Search,
   Send,
   Settings,
   Sparkles,
@@ -67,6 +68,7 @@ const MOBILE_MORE_ITEMS = [
   { href: "/dashboard/proposals", label: "Proposals", icon: FileText },
   { href: "/dashboard/pricing-strategy", label: "Pricing", icon: DollarSign },
   { href: "/dashboard/sequences", label: "Sequences", icon: Mail },
+  { href: "/dashboard/prospects", label: "Prospects", icon: Search },
   { href: "/dashboard/outreach", label: "Outreach", icon: Send },
 ] as const;
 
@@ -575,6 +577,19 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
           </Link>
 
           <Link
+            href="/dashboard/prospects"
+            className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] no-underline transition-colors duration-150 ${
+              pathname === "/dashboard/prospects" || pathname.startsWith("/dashboard/prospects/")
+                ? "bg-indigo-500/15 text-indigo-300"
+                : "text-white/40 hover:bg-white/5 hover:text-white/70"
+            }`}
+          >
+            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">08</span>
+            <Search size={14} className="shrink-0 text-white/45" />
+            <span className="min-w-0 flex-1 leading-tight">Prospects</span>
+          </Link>
+
+          <Link
             href="/dashboard/outreach"
             className={`flex h-9 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-[12px] no-underline transition-colors duration-150 ${
               pathname === "/dashboard/outreach" || pathname.startsWith("/dashboard/outreach/")
@@ -582,7 +597,7 @@ export default function DashboardChrome({ children }: { children: ReactNode }) {
                 : "text-white/40 hover:bg-white/5 hover:text-white/70"
             }`}
           >
-            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">08</span>
+            <span className="w-5 flex-shrink-0 text-[10px] text-white/20">09</span>
             <Send size={14} className="shrink-0 text-white/45" />
             <span className="min-w-0 flex-1 leading-tight">Outreach</span>
           </Link>
