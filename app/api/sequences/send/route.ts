@@ -16,10 +16,31 @@ function escapeHtml(s: string) {
 
 function applyPlaceholders(content: string, recipientName: string | undefined, yourName: string) {
   const rn = recipientName?.trim() ? recipientName.trim() : "there";
+  const firstName = rn.split(" ")[0];
   const yn = yourName.trim() ? yourName.trim() : "LACORE user";
   return content
+    .replace(/\[First Name\]/gi, firstName)
+    .replace(/\[FirstName\]/gi, firstName)
+    .replace(/\[first name\]/gi, firstName)
     .replace(/\[Name\]/gi, rn)
-    .replace(/\[Your name\]/gi, yn);
+    .replace(/\[Full Name\]/gi, rn)
+    .replace(/\[Your name\]/gi, yn)
+    .replace(/\[Your Name\]/gi, yn)
+    .replace(/\[Sender\]/gi, yn)
+    .replace(/\[Company Name\]/gi, "")
+    .replace(/\[Company\]/gi, "")
+    .replace(/\[company name\]/gi, "")
+    .replace(/\[Their Company\]/gi, "")
+    .replace(
+      /\[specific recent company news, initiative, or leadership challenge at their organization\]/gi,
+      "their organization"
+    )
+    .replace(/\[similar company in their industry\]/gi, "a similar company")
+    .replace(/\[industry example\]/gi, "a recent client")
+    .replace(/\[specific.*?\]/gi, "")
+    .replace(/\[.*?company.*?\]/gi, "")
+    .replace(/\[[^\]]*\]/g, "")
+    .trim();
 }
 
 function isValidEmail(s: string) {
