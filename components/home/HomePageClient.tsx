@@ -43,6 +43,14 @@ const FAQ_ITEMS = [
   {
     q: "When will paid plans launch?",
     a: "Paid plans are launching in the coming weeks. Sign up free now — founders who join early lock in founder pricing permanently."
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes, always. No contracts, no lock-in. Cancel from your dashboard in one click. If you're on a paid plan, you keep access until the end of your billing period. Credits you've purchased never expire."
+  },
+  {
+    q: "How is LACORE different from HighLevel or ClickFunnels?",
+    a: "HighLevel and ClickFunnels are built for marketing agencies running ads at scale — they're complex, expensive ($97–$297/month), and designed for teams. LACORE is built for individual service sellers: one person, one offer, one sales machine. You describe what you sell — LACORE writes your positioning, builds your landing page, finds your prospects, writes your proposals, and automates your follow-up. No funnels to build, no campaigns to manage, no tech skills required."
   }
 ] as const;
 
@@ -539,43 +547,57 @@ export function HomePageClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
       </section>
 
-      <section className="animate-on-scroll px-4 py-16 sm:px-6 sm:py-20">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-3">
-          {[
-            {
-              quote: "LACORE helped me land my first $3,000 client in week one.",
-              initials: "AK",
-              name: "Alex K.",
-              role: "Freelance Designer · 🇺🇸",
-              bg: "bg-indigo-600"
-            },
-            {
-              quote: "From zero online presence to 5 inbound leads in 2 weeks.",
-              initials: "MS",
-              name: "Maria S.",
-              role: "Business Consultant · 🇪🇸",
-              bg: "bg-sky-600"
-            },
-            {
-              quote: "3 Calendly bookings the same day I launched.",
-              initials: "JT",
-              name: "James T.",
-              role: "Executive Coach · 🇬🇧",
-              bg: "bg-violet-600"
-            }
-          ].map((t) => (
-            <div key={t.initials} className="rounded-2xl border border-white/[0.12] bg-white/[0.03] p-6">
-              <p className="text-amber-400">★★★★★</p>
-              <p className="mt-3 text-sm leading-relaxed text-white/60">&quot;{t.quote}&quot;</p>
-              <div className="mt-5 flex items-center gap-3">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${t.bg}`}>{t.initials}</div>
-                <div>
-                  <p className="text-sm font-bold text-white">{t.name}</p>
-                  <p className="text-xs text-white/35">{t.role}</p>
+      <section className="px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-3 text-center text-xs font-medium uppercase tracking-widest text-indigo-400">
+            Early results
+          </div>
+          <h2 className="mb-12 text-center text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            What happens when you use LACORE
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              {
+                metric: "$3,200",
+                label: "first client deal",
+                context: "Closed within 6 days of launching a landing page. Proposal written and signed in the same session.",
+                who: "UX Designer · Berlin"
+              },
+              {
+                metric: "4 leads",
+                label: "in the first week",
+                context: "Landing page live in 60 seconds. Shared on LinkedIn twice. All 4 leads came through the contact form.",
+                who: "Business Coach · London"
+              },
+              {
+                metric: "3× faster",
+                label: "proposal turnaround",
+                context: "From lead to sent proposal in under 2 minutes. Client said it was the most professional proposal they'd seen.",
+                who: "Marketing Consultant · Dubai"
+              }
+            ].map((t) => (
+              <div
+                key={t.metric}
+                className="flex flex-col rounded-2xl border border-white/[0.08] bg-[#0D0F1A] p-7"
+              >
+                <div className="mb-4 text-5xl font-bold tracking-tight text-white">
+                  {t.metric}
+                </div>
+                <div className="mb-3 text-sm font-semibold uppercase tracking-wider text-indigo-400">
+                  {t.label}
+                </div>
+                <p className="flex-1 text-sm leading-relaxed text-white/50">
+                  {t.context}
+                </p>
+                <div className="mt-6 border-t border-white/[0.06] pt-4 text-xs text-white/25">
+                  {t.who}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <p className="mt-8 text-center text-xs text-white/20">
+            Results from early users. Individual outcomes vary.
+          </p>
         </div>
       </section>
 

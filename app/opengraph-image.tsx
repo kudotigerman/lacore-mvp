@@ -15,7 +15,8 @@ export default function OgImage() {
           alignItems: "center",
           justifyContent: "center",
           background: "#07080F",
-          fontFamily: "system-ui, sans-serif"
+          fontFamily: "system-ui, sans-serif",
+          position: "relative"
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
@@ -26,24 +27,25 @@ export default function OgImage() {
           </svg>
           <span style={{ fontSize: 40, fontWeight: 700, color: "#fff", letterSpacing: "0.08em" }}>LACORE</span>
         </div>
+        <div style={{ fontSize: 56, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.05, maxWidth: 860 }}>
+          Your entire sales team.
+        </div>
+        <div style={{ fontSize: 56, fontWeight: 800, color: "#6366F1", textAlign: "center", lineHeight: 1.05, marginBottom: 28 }}>
+          In one tab.
+        </div>
+        <div style={{ fontSize: 20, color: "rgba(255,255,255,0.45)", textAlign: "center", maxWidth: 640 }}>
+          Prospects · Landing pages · Proposals · Sequences · Payments
+        </div>
         <div
           style={{
-            fontSize: 52,
-            fontWeight: 700,
-            color: "#fff",
-            textAlign: "center",
-            lineHeight: 1.1,
-            maxWidth: 800
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 4,
+            background: "linear-gradient(90deg, #6366F1, #818CF8, #6366F1)"
           }}
-        >
-          You say what you sell.
-        </div>
-        <div style={{ fontSize: 52, fontWeight: 700, color: "#6366F1", textAlign: "center", lineHeight: 1.1 }}>
-          LACORE does the rest.
-        </div>
-        <div style={{ fontSize: 22, color: "rgba(255,255,255,0.5)", marginTop: 24 }}>
-          From offer to first client — in 60 minutes.
-        </div>
+        />
       </div>
     ),
     { ...size }

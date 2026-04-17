@@ -20,7 +20,7 @@ const themeInitScript = `
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.lacore.ai"),
-  title: "LACORE — Your AI Sales Machine",
+  title: "LACORE — Your Entire Sales Team. In One Tab.",
   description:
     "Your entire sales team in one tab. The AI sales OS for service businesses — prospects, landing pages, proposals, sequences, and payments, all in one place.",
   icons: {
@@ -28,9 +28,25 @@ export const metadata: Metadata = {
     apple: "/apple-icon"
   },
   openGraph: {
-    title: "LACORE — Your AI Sales Machine",
-    description: "From offer to first client in 60 minutes.",
-    siteName: "LACORE"
+    title: "LACORE — Your entire sales team. In one tab.",
+    description: "The AI sales OS for service businesses. Find prospects, launch landing pages, close with proposals, get paid — without switching tools.",
+    siteName: "LACORE",
+    url: "https://www.lacore.ai",
+    type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "LACORE — Your entire sales team. In one tab."
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LACORE — Your entire sales team. In one tab.",
+    description: "The AI sales OS for service businesses. Find prospects, launch pages, close with proposals, get paid.",
+    images: ["/opengraph-image"]
   },
   verification: {
     google: "5tSyzFVAJt2ONZr3Nw2YgU4nuQ2HSR1qcVE3-wWKuqw"
