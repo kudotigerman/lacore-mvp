@@ -145,23 +145,25 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const sectionLabelStyle = {
     color: theme.accent,
     fontSize: 11,
-    letterSpacing: "0.12em",
+    letterSpacing: "0.1em",
     fontWeight: 700,
     textTransform: "uppercase" as const,
+    display: "inline-flex" as const,
+    alignItems: "center" as const,
+    gap: 8,
   };
 
   const buttonBaseStyle = {
-    borderRadius: 8,
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase" as const,
-    fontSize: 13,
-    transition: "all 0.2s ease",
+    borderRadius: 999,
+    fontWeight: 700,
+    letterSpacing: "-0.01em",
+    fontSize: 15,
+    transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
     textDecoration: "none",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 8,
   };
 
   const hexToRgb = (hex: string) => {
@@ -206,25 +208,27 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
 
   const primaryButtonStyle = {
     ...buttonBaseStyle,
-    letterSpacing: "0.05em",
     background: theme.accent,
     color: primaryButtonTextColor,
-    padding: "14px 28px",
+    padding: "14px 32px",
     border: "none",
+    boxShadow: `0 0 0 1px ${theme.accent}40, 0 1px 2px rgba(0,0,0,0.3)`,
   };
 
   const secondaryButtonStyle = {
     ...buttonBaseStyle,
-    background: "transparent",
+    background: theme.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
     color: theme.textPrimary,
     padding: "14px 28px",
-    border: theme.isDark ? "1px solid rgba(255,255,255,0.15)" : `1px solid ${theme.accent}40`,
+    border: theme.isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.1)",
   };
 
   const buttonHoverOn = (e: HoverEvent) => {
-    e.currentTarget.style.transform = "translateY(-2px)";
-    e.currentTarget.style.boxShadow = `0 8px 30px ${theme.accent}66`;
-    e.currentTarget.style.filter = "brightness(1.12)";
+    e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+    e.currentTarget.style.boxShadow = `0 8px 40px ${theme.accent}55, 0 0 0 1px ${theme.accent}60`;
+    e.currentTarget.style.filter = "brightness(1.08)";
   };
   const buttonHoverOff = (e: HoverEvent) => {
     e.currentTarget.style.transform = "translateY(0)";
@@ -240,9 +244,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     e.currentTarget.style.transform = "translateY(0)";
   };
   const cardHoverOn = (e: HoverEvent) => {
-    e.currentTarget.style.transform = "translateY(-4px)";
-    e.currentTarget.style.borderColor = `${theme.accent}66`;
-    e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.3)";
+    e.currentTarget.style.transform = "translateY(-6px)";
+    e.currentTarget.style.borderColor = `${theme.accent}50`;
+    e.currentTarget.style.boxShadow = `0 24px 60px rgba(0,0,0,0.35), 0 0 0 1px ${theme.accent}20`;
   };
   const cardHoverOff = (e: HoverEvent) => {
     e.currentTarget.style.transform = "translateY(0)";
@@ -350,8 +354,8 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         };
         return (
       <section className="py-12 md:py-[120px]" data-aos="fade-up" style={heroSectionStyle}>
-        <div className="hero-orb" style={{ background: `radial-gradient(ellipse 800px 500px at 50% -100px, ${theme.accent}${theme.isDark ? "33" : "11"}, transparent)` }} />
-        <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 600px 400px at 20% 50%, ${theme.accentLight}${theme.isDark ? "1A" : "0D"}, transparent)` }} />
+        <div className="hero-orb" style={{ background: `radial-gradient(ellipse 1000px 600px at 50% -50px, ${theme.accent}${theme.isDark ? "40" : "18"}, transparent)` }} />
+        <div className="hero-orb hero-orb-2" style={{ background: `radial-gradient(ellipse 700px 500px at 15% 60%, ${theme.accentLight}${theme.isDark ? "25" : "12"}, transparent)` }} />
         <div className="hero-orb hero-orb-3" style={{ background: `radial-gradient(ellipse 400px 300px at 80% 60%, ${theme.accent}${theme.isDark ? "0F" : "08"}, transparent)` }} />
         {hi?.url ? (
           <div
@@ -359,7 +363,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(0,0,0,0.55)",
+              background: `linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.55) 100%)`,
               zIndex: 1,
               pointerEvents: "none",
             }}
@@ -367,9 +371,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         ) : null}
         <>
         <div className="container" style={{ position: "relative", zIndex: hi?.url ? 2 : 1, paddingTop: 60 }}>
-          <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: theme.isDark ? "1px solid rgba(255,255,255,0.12)" : `1px solid ${theme.accent}25`, borderRadius: 999, padding: "8px 14px", marginBottom: 24 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, marginTop: 6 }} />
-            <span style={{ color: theme.textSecondary, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
+          <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: `1px solid ${theme.accent}35`, borderRadius: 999, padding: "6px 14px 6px 8px", marginBottom: 28, background: `${theme.accent}10`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: theme.accent, fontSize: 10 }}>✦</span>
+            <span style={{ color: theme.textPrimary, fontSize: 12, letterSpacing: "0.02em", fontWeight: 600 }}>{content.badge}</span>
           </div>
           <h1
             className="text-4xl md:text-6xl lg:text-7xl"
@@ -525,7 +529,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <section className="py-12 md:py-[120px]" id="benefits" data-aos="fade-up">
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={sectionLabelStyle}>THE PROBLEM</div>
+            <div style={sectionLabelStyle}>
+              <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+              THE PROBLEM
+            </div>
             <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.problemHeadline}</h2>
           </div>
           <div className="grid3">
@@ -537,11 +544,13 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 onMouseOver={cardHoverOn}
                 onMouseOut={cardHoverOff}
                 style={{
-                  background: theme.bgSecondary,
-                  border: `1px solid ${theme.cardBorder}`,
-                  borderRadius: 12,
+                  background: theme.isDark ? "rgba(239,68,68,0.04)" : "rgba(239,68,68,0.02)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(239,68,68,0.12)",
+                  borderRadius: 16,
                   padding: 28,
-                  transition: "all 0.25s ease",
+                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                   animation: `lacore-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s both`,
                 }}
               >
@@ -567,10 +576,13 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={sectionLabelStyle}>THE SOLUTION</div>
+            <div style={sectionLabelStyle}>
+              <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+              THE SOLUTION
+            </div>
             <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.solutionHeadline}</h2>
           </div>
-          <div className="grid3">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 20 }}>
             {content.features.slice(0, 3).map((f, i) => {
               return (
                 <div
@@ -580,11 +592,13 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   onMouseOver={cardHoverOn}
                   onMouseOut={cardHoverOff}
                   style={{
-                    background: theme.cardBg,
-                    border: `1px solid ${theme.cardBorder}`,
-                    borderRadius: 12,
+                    background: theme.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: `1px solid ${theme.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+                    borderRadius: 16,
                     padding: 28,
-                    transition: "all 0.25s ease",
+                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                     animation: `lacore-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s both`,
                   }}
                 >
@@ -614,13 +628,16 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <section className="py-12 md:py-[120px]" id="process" data-aos="fade-up">
         <div className="container" style={{ maxWidth: 860 }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={sectionLabelStyle}>HOW IT WORKS</div>
+            <div style={sectionLabelStyle}>
+              <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+              HOW IT WORKS
+            </div>
             <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.processHeadline}</h2>
           </div>
           {content.steps.slice(0, 3).map((s, i) => (
             <div data-aos="fade-up" data-aos-delay={i * 100} key={s.title} style={{ display: "flex", gap: 18, paddingBottom: i < 2 ? 28 : 0 }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ width: 46, height: 46, borderRadius: "50%", background: theme.accent, color: primaryButtonTextColor, display: "grid", placeItems: "center", fontWeight: 800, boxShadow: `0 0 20px ${theme.accent}66` }}>{i + 1}</div>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, color: primaryButtonTextColor, display: "grid", placeItems: "center", fontWeight: 800, fontSize: 15, boxShadow: `0 0 30px ${theme.accent}55, 0 0 0 4px ${theme.accent}15` }}>{i + 1}</div>
                 {i < 2 ? <div style={{ width: 2, flex: 1, marginTop: 6, background: `repeating-linear-gradient(to bottom, ${theme.accent}, ${theme.accent} 6px, transparent 6px, transparent 12px)` }} /> : null}
               </div>
               <div style={{ paddingTop: 6 }}>
@@ -637,7 +654,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
       <section className="py-12 md:py-[120px]" id="testimonials" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 56 }}>
-            <div style={sectionLabelStyle}>RESULTS</div>
+            <div style={sectionLabelStyle}>
+              <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+              RESULTS
+            </div>
             <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>{content.testimonialsHeadline}</h2>
           </div>
           {content.testimonials[0] ? (
@@ -739,7 +759,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 860 }}>
             <div style={{ textAlign: "center", marginBottom: 42 }}>
-              <div style={sectionLabelStyle}>FAQ</div>
+              <div style={sectionLabelStyle}>
+                <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+                FAQ
+              </div>
               <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.faqHeadline || "Frequently asked questions"}
               </h2>
@@ -795,7 +818,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <section className="py-12 md:py-[120px]" data-aos="fade-up">
           <div className="container">
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <div style={sectionLabelStyle}>PRICING</div>
+              <div style={sectionLabelStyle}>
+                <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+                PRICING
+              </div>
               <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.pricingHeadline || "Choose your plan"}
               </h2>
@@ -857,7 +883,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <div style={sectionLabelStyle}>VIDEO</div>
+              <div style={sectionLabelStyle}>
+                <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+                VIDEO
+              </div>
               <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.video.headline || "Watch the walkthrough"}
               </h2>
@@ -891,7 +920,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <section className="py-12 md:py-[120px]" data-aos="fade-up">
           <div className="container" style={{ maxWidth: 980 }}>
             <div style={{ textAlign: "center", marginBottom: 36 }}>
-              <div style={sectionLabelStyle}>ABOUT</div>
+              <div style={sectionLabelStyle}>
+                <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+                ABOUT
+              </div>
               <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.aboutHeadline || "Meet the expert"}
               </h2>
@@ -976,7 +1008,10 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 26 }}>
-              <div style={sectionLabelStyle}>BOOKING</div>
+              <div style={sectionLabelStyle}>
+                <span style={{ display: "inline-block", width: 20, height: 1.5, background: theme.accent, borderRadius: 999 }} />
+                BOOKING
+              </div>
               <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
                 {extendedContent.calendly.headline || "Book a call"}
               </h2>
@@ -1027,9 +1062,9 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             }}
           >
             <div style={{ display: "grid", gap: 16 }}>
-              <input value={name} onChange={(e) => setName(e.target.value)} required name="name" placeholder="Your name" style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px" }} />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" placeholder="Email address" style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px" }} />
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} name="message" rows={5} placeholder="Tell me about your goals..." style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px", resize: "vertical" }} />
+              <input value={name} onChange={(e) => setName(e.target.value)} required name="name" placeholder="Your name" style={{ width: "100%", background: theme.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${theme.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`, color: theme.textPrimary, borderRadius: 12, padding: "13px 16px", outline: "none", transition: "border-color 0.2s ease, box-shadow 0.2s ease" }} />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" placeholder="Email address" style={{ width: "100%", background: theme.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${theme.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`, color: theme.textPrimary, borderRadius: 12, padding: "13px 16px", outline: "none", transition: "border-color 0.2s ease, box-shadow 0.2s ease" }} />
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} name="message" rows={5} placeholder="Tell me about your goals..." style={{ width: "100%", background: theme.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${theme.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`, color: theme.textPrimary, borderRadius: 12, padding: "13px 16px", outline: "none", transition: "border-color 0.2s ease, box-shadow 0.2s ease", resize: "vertical" }} />
               <button
                 disabled={loading}
                 type="submit"
@@ -1059,12 +1094,16 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         .container { width: min(1100px, 100% - 48px); margin: 0 auto; }
         section { position: relative; overflow: hidden; }
         .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-        .hero-orb { position: absolute; inset: 0; pointer-events: none; z-index: 0; animation: lacore-float 8s ease-in-out infinite; }
+        .hero-orb { position: absolute; inset: 0; pointer-events: none; z-index: 0; animation: lacore-float 8s ease-in-out infinite, lacore-aurora-pulse 5s ease-in-out infinite; }
         .hero-orb-2 { animation-delay: 1.2s; }
         .hero-orb-3 { animation-delay: 2.3s; }
         @keyframes lacore-float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-20px); }
+        }
+        @keyframes lacore-aurora-pulse {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
         }
         [data-aos].aos-animate { opacity: 1 !important; }
         @keyframes lacore-orbit-spin {
@@ -1109,7 +1148,8 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           background: theme.navBg,
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "none",
+          boxShadow: `0 1px 0 0 ${theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}, 0 4px 20px rgba(0,0,0,0.15)`,
         }}
       >
         <div className="container" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between" }}>
