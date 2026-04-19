@@ -69,6 +69,86 @@ function detectStyleChangeIntent(instruction: string): string | null {
   return null;
 }
 
+function detectPhotoChangeIntent(instruction: string): string | null {
+  const raw = instruction.toLowerCase();
+  const hasPhotoIntent =
+    /(change|replace|update|swap|make|set|поменяй|замени|сделай).*(photo|image|background|picture|фото|фон|картинку|изображение|background)|(photo|image|background|фото|фон).*(change|different|new|другой|другое|новый)/i.test(
+      instruction
+    );
+  if (!hasPhotoIntent && !/(add.*photo|add.*image|поставь фото|добавь фото)/.test(raw)) return null;
+
+  // Extract search query from instruction
+  // Remove common filler words and extract the visual description
+  const cleaned = raw
+    .replace(
+      /(change|replace|update|swap|make|set|the|a|an|поменяй|замени|сделай|фон|фото|на|background|picture|photo|image|to|into|like|with|картинку|изображение)/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned.length > 2 ? cleaned : "professional business";
+}
+
+async function fetchUnsplashPhoto(query: string): Promise<{
+  url: string;
+  photographer: string;
+  photographerUrl: string;
+  unsplashUrl: string;
+} | null> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY?.trim();
+  if (!accessKey) return null;
+
+  try {
+    const searchQuery = encodeURIComponent(query || "professional business");
+    const res = await fetch(
+      `https://api.unsplash.com/photos/random?query=${searchQuery}&orientation=landscape&content_filter=high`,
+      { headers: { Authorization: `Client-ID ${accessKey}` } }
+    );
+    if (!res.ok) return null;
+
+    const photo = (await res.json()) as {
+      id?: string;
+      urls?: { regular?: string };
+      user?: { name?: string; links?: { html?: string } };
+      links?: { html?: string };
+    };
+
+    const url = photo.urls?.regular ?? "";
+    const photoId = photo.id ?? "";
+    const photographer = photo.user?.name ?? "";
+    const userHtml = photo.user?.links?.html ?? "";
+    const photoPageHtml = photo.links?.html ?? "";
+
+    if (!url || !photoId || !photographer || !userHtml || !photoPageHtml) return null;
+
+    // Fire download tracking (Unsplash API requirement)
+    void fetch(`https://api.unsplash.com/photos/${photoId}/download`, {
+      headers: { Authorization: `Client-ID ${accessKey}` },
+    });
+
+    function withReferral(baseUrl: string): string {
+      try {
+        const u = new URL(baseUrl);
+        u.searchParams.set("utm_source", "lacore");
+        u.searchParams.set("utm_medium", "referral");
+        return u.toString();
+      } catch {
+        return baseUrl;
+      }
+    }
+
+    return {
+      url,
+      photographer,
+      photographerUrl: withReferral(userHtml),
+      unsplashUrl: withReferral(photoPageHtml),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const maxDuration = 120;
 
 type EditPayload = {
@@ -675,6 +755,28 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
         return NextResponse.json({ success: true, json: updatedWithStyle, styleChanged: styleChangeIntent });
       }
 
+      // Detect photo change intent — search Unsplash and update heroImage
+      const photoQuery = detectPhotoChangeIntent(instructionWithImageUrl);
+      if (photoQuery) {
+        const newPhoto = await fetchUnsplashPhoto(photoQuery);
+        if (newPhoto) {
+          const updatedWithPhoto = { ...currentJsonObjForReorder, heroImage: newPhoto };
+          const { error: photoSaveError } = await supabase
+            .from("landing_pages")
+            .update({ json_content: updatedWithPhoto } as never)
+            .eq("slug", body.slug)
+            .eq("user_id", user.id);
+          if (photoSaveError) {
+            return NextResponse.json({ error: "Failed to save photo." }, { status: 500 });
+          }
+          if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+            return NextResponse.json({ error: "insufficient_credits", message: "Not enough credits." }, { status: 402 });
+          }
+          return NextResponse.json({ success: true, json: updatedWithPhoto });
+        }
+        // If Unsplash failed, fall through to normal JSON edit
+      }
+
       const jsonUser = `Here is the current landing page content as JSON:
 ${body.currentJson}
 
@@ -699,7 +801,7 @@ CRITICAL RULES:
 - The only valid top-level fields are: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
 - If user asks to change background/color/style/theme — respond by changing relevant TEXT content only (headline, badge, etc.) and ignore the visual styling request since styles are controlled separately.
 - heroImage field MUST only be set if it contains a valid object with these exact fields: { url: string (must be a real https:// URL), photographer: string, photographerUrl: string, unsplashUrl: string }. 
-- If user asks to "change background", "change photo", "change image", or describes a visual scene (like "office view", "city", "nature") WITHOUT providing a real image URL — do NOT modify heroImage at all. Instead, respond by updating the badge or subheadline text to acknowledge the request, and leave heroImage exactly as it is.
+- Photo/background change requests are handled automatically before reaching you — you will NOT receive them. If somehow you do receive a photo request, leave heroImage exactly as it is and only update text fields.
 - To REMOVE the hero image entirely, set heroImage to null.
 - NEVER set heroImage to a string, a description, or an object with a non-https URL.`,
           jsonUser as ClaudeUserContent
