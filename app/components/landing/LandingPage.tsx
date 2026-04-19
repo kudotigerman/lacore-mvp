@@ -319,15 +319,17 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch("/api/leads/notify", {
+      const res = await fetch("/api/leads/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug, name, email, message }),
       });
-      setSubmitted(true);
-      setName("");
-      setEmail("");
-      setMessage("");
+      if (res.ok) {
+        setSubmitted(true);
+        setName("");
+        setEmail("");
+        setMessage("");
+      }
     } finally {
       setLoading(false);
     }
