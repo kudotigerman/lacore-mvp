@@ -325,7 +325,7 @@ export function LandingEditorSplitView({
           <p className="text-xs text-white/40">Tell me what to change</p>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div className="min-h-[120px] flex-1 overflow-y-auto overflow-x-hidden overscroll-contain lg:min-h-0 lg:flex-1">
           <div className="space-y-3 px-4 py-3">
             {messages.map((msg) => (
               <div
@@ -342,116 +342,124 @@ export function LandingEditorSplitView({
             ))}
             <div ref={messagesEndRef} />
           </div>
+        </div>
 
-          <div className="flex gap-1.5 overflow-x-auto border-b border-t border-white/[0.06] px-3 py-2 scrollbar-hide">
-            {[
-              { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
-              { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
-              { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
-            ].map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                disabled={isEditing}
-                onClick={async () => {
-                  const userMsg: ChatMsg = {
-                    id: `u-${Date.now()}`,
-                    role: "user",
-                    content: item.action
+        <div className="shrink-0 flex gap-1.5 overflow-x-auto border-t border-white/[0.06] px-3 py-2 scrollbar-hide">
+          {[
+            { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
+            { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
+            { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
+          ].map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              disabled={isEditing}
+              onClick={async () => {
+                const userMsg: ChatMsg = {
+                  id: `u-${Date.now()}`,
+                  role: "user",
+                  content: item.action
+                };
+                setMessages((prev) => [...prev, userMsg]);
+                setIsEditing(true);
+                try {
+                  const supabase = getSupabaseClient();
+                  const { data, error } = await supabase
+                    .from("landing_pages")
+                    .select("html_content, jsx_content, json_content")
+                    .eq("slug", slug)
+                    .single();
+                  if (error) throw new Error(error.message);
+                  const row = data as { html_content: string | null; jsx_content: string | null; json_content: Record<string, unknown> | null };
+                  const jsx = row.jsx_content?.trim() ?? "";
+                  const html = row.html_content?.trim() ?? "";
+                  const jsonContent = row.json_content;
+                  const useJsx = Boolean(jsx);
+                  if (!useJsx && !html && !jsonContent) throw new Error("No page content found.");
+                  const res = await fetch("/api/edit-landing", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${d.sessionToken}` },
+                    body: JSON.stringify({
+                      slug,
+                      instruction: item.action,
+                      ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
+                    })
+                  });
+                  const text = await res.text();
+                  const result = JSON.parse(text) as {
+                    success?: boolean;
+                    error?: string;
+                    json?: Record<string, unknown>;
+                    styleChanged?: string;
                   };
-                  setMessages((prev) => [...prev, userMsg]);
-                  setIsEditing(true);
-                  try {
-                    const supabase = getSupabaseClient();
-                    const { data, error } = await supabase
-                      .from("landing_pages")
-                      .select("html_content, jsx_content, json_content")
-                      .eq("slug", slug)
-                      .single();
-                    if (error) throw new Error(error.message);
-                    const row = data as { html_content: string | null; jsx_content: string | null; json_content: Record<string, unknown> | null };
-                    const jsx = row.jsx_content?.trim() ?? "";
-                    const html = row.html_content?.trim() ?? "";
-                    const jsonContent = row.json_content;
-                    const useJsx = Boolean(jsx);
-                    if (!useJsx && !html && !jsonContent) throw new Error("No page content found.");
-                    const res = await fetch("/api/edit-landing", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${d.sessionToken}` },
-                      body: JSON.stringify({
-                        slug,
-                        instruction: item.action,
-                        ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
-                      })
-                    });
-                    const text = await res.text();
-                    const result = JSON.parse(text) as {
-                      success?: boolean;
-                      error?: string;
-                      json?: Record<string, unknown>;
-                      styleChanged?: string;
-                    };
-                    if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
-                    if (result.json) setCurrentJsonContent(result.json);
-                    if (result.styleChanged && typeof result.styleChanged === "string") {
-                      setSelectedStyle(result.styleChanged as LandingStyle);
-                      d.setLandingStyle(result.styleChanged as LandingStyle);
-                    }
-                    setIframeKey((k) => k + 1);
-                    setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
-                  } catch (e) {
-                    const msg = e instanceof Error ? e.message : "Something went wrong.";
-                    setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: msg }]);
-                  } finally {
-                    setIsEditing(false);
+                  if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
+                  if (result.json) setCurrentJsonContent(result.json);
+                  if (result.styleChanged && typeof result.styleChanged === "string") {
+                    setSelectedStyle(result.styleChanged as LandingStyle);
+                    d.setLandingStyle(result.styleChanged as LandingStyle);
+                  }
+                  setIframeKey((k) => k + 1);
+                  setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
+                } catch (e) {
+                  const msg = e instanceof Error ? e.message : "Something went wrong.";
+                  setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: msg }]);
+                } finally {
+                  setIsEditing(false);
+                }
+              }}
+              className="shrink-0 whitespace-nowrap rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80 disabled:opacity-40"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="shrink-0 border-t border-white/[0.06] px-4 py-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              {!input.trim() && !inputFocused ? (
+                <div
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                  style={{ opacity: placeholderVisible ? 1 : 0, transition: "opacity 180ms ease", fontSize: "12px" }}
+                >
+                  {rotatingPlaceholders[placeholderIndex]}
+                </div>
+              ) : null}
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder=""
+                rows={1}
+                style={{ resize: "none", fontSize: "12px", lineHeight: "1.45" }}
+                className="dash-focusable min-h-[2.25rem] w-full rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2 text-white shadow-inner shadow-black/20 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleEdit();
                   }
                 }}
-                className="shrink-0 whitespace-nowrap rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80 disabled:opacity-40"
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="px-4 py-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                {!input.trim() && !inputFocused ? (
-                  <div
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-                    style={{ opacity: placeholderVisible ? 1 : 0, transition: "opacity 180ms ease", fontSize: "12px" }}
-                  >
-                    {rotatingPlaceholders[placeholderIndex]}
-                  </div>
-                ) : null}
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder=""
-                  rows={1}
-                  style={{ resize: "none", fontSize: "12px", lineHeight: "1.45" }}
-                  className="dash-focusable min-h-[2.25rem] w-full rounded-xl border-2 border-white/20 bg-[#111116] px-3 py-2 text-white shadow-inner shadow-black/20 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35"
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleEdit();
-                    }
-                  }}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => void handleEdit()}
-                disabled={isEditing || !input.trim()}
-                className="shrink-0 self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
-              >
-                →
-              </button>
+              />
             </div>
-            <p className="mt-1.5 text-[11px] text-white/30">💡 You can reorder sections — just ask</p>
-            <div style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => void handleEdit()}
+              disabled={isEditing || !input.trim()}
+              className="shrink-0 self-end rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40"
+            >
+              →
+            </button>
+          </div>
+          <p className="mt-1.5 text-[11px] text-white/30">💡 You can reorder sections — just ask</p>
+        </div>
+
+        <div
+          className="shrink-0 overflow-y-auto border-t border-white/[0.06]"
+          style={{ maxHeight: "45vh" }}
+        >
+          <div className="space-y-3 px-4 py-3">
+            <div>
               <button
                 type="button"
                 onClick={() => setAddBlockOpen(true)}
@@ -461,7 +469,6 @@ export function LandingEditorSplitView({
               </button>
             </div>
 
-          <div className="space-y-3 border-t border-white/[0.08] py-3">
             <div className="flex gap-2">
               <input
                 readOnly
@@ -520,7 +527,6 @@ export function LandingEditorSplitView({
                 {undoBusy ? "Restoring…" : "Undo — restore previous version"}
               </button>
             ) : null}
-          </div>
 
           <div className="border-t border-white/[0.06]">
             <button
@@ -616,7 +622,7 @@ export function LandingEditorSplitView({
               </div>
             ) : null}
           </div>
-        </div>
+          </div>
         </div>
       </div>
 
