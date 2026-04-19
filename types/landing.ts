@@ -56,6 +56,10 @@ export interface LandingContent {
   ctaButton: string;
   formHeadline: string;
   formButton: string;
+  headlineColor?: string;
+  subheadlineColor?: string;
+  accentColor?: string;
+  badgeTextColor?: string;
   heroImage?: LandingHeroImage;
 }
 

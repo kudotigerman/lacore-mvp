@@ -386,7 +386,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         <div className="container" style={{ position: "relative", zIndex: hi?.url ? 2 : 1, paddingTop: 60 }}>
           <div data-aos="fade-up" style={{ display: "inline-flex", gap: 8, border: `1px solid ${theme.accent}35`, borderRadius: 999, padding: "6px 14px 6px 8px", marginBottom: 28, background: `${theme.accent}10`, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
             <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: theme.accent, fontSize: 10 }}>✦</span>
-            <span style={{ color: theme.textPrimary, fontSize: 12, letterSpacing: "0.02em", fontWeight: 600 }}>{content.badge}</span>
+            <span style={{ color: content.badgeTextColor ?? theme.textPrimary, fontSize: 12, letterSpacing: "0.02em", fontWeight: 600 }}>{content.badge}</span>
           </div>
           <h1
             className="text-4xl md:text-6xl lg:text-7xl"
@@ -398,16 +398,26 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               margin: "0 0 20px",
               letterSpacing: "-0.03em",
               animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              ...(content.headlineColor ? { color: content.headlineColor } : {}),
             }}
           >
             {content.headline}
             <br />
-            <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", display: "inline" }}>{content.headlineAccent}</span>
+            <span style={{
+              background: content.accentColor
+                ? content.accentColor
+                : `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`,
+              WebkitBackgroundClip: content.accentColor ? undefined : "text",
+              backgroundClip: content.accentColor ? undefined : "text",
+              WebkitTextFillColor: content.accentColor ? undefined : "transparent",
+              color: content.accentColor ? content.accentColor : undefined,
+              display: "inline"
+            }}>{content.headlineAccent}</span>
           </h1>
           <p
             data-aos="fade-up"
             style={{
-              color: theme.textSecondary,
+              color: content.subheadlineColor ?? theme.textSecondary,
               fontSize: 20,
               maxWidth: 700,
               lineHeight: 1.7,

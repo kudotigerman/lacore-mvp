@@ -416,9 +416,9 @@ Return ONLY a valid JSON object with no markdown, no explanation:
 }
 
 Action rules:
-- "style": user wants to change the color theme, visual style, mood, or overall appearance (e.g. "make it purple", "go darker", "more elegant", "luxury feel", "something warmer")
+- "style": user wants to change the overall color theme, visual style, mood, or aesthetic (e.g. "make it purple", "go darker", "more elegant", "luxury feel"). NOT for specific text color changes.
 - "photo": user wants to change the hero background image/photo (e.g. "change background", "поменяй фон", "more professional photo", "office setting", "add a hero image")
-- "edit_json": everything else — headline changes, text edits, adding sections, changing copy, etc.
+- "edit_json": includes specific text color changes like "make headline white", "subheadline is hard to read", "change button color", "сделай текст белым" — these use color override fields in JSON.
 
 Valid styles: ${validStyles.join(", ")}
 
@@ -785,8 +785,10 @@ RULES:
 - Keep the EXACT same JSON structure and all existing fields.
 - Only modify fields directly relevant to the user's request.
 - NEVER add new top-level fields that don't exist in the input.
-- Valid top-level fields: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
+- Valid top-level fields: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, headlineColor, subheadlineColor, accentColor, badgeTextColor, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
 - heroImage: never modify this field. Leave it exactly as is.
+- Color override fields (headlineColor, subheadlineColor, accentColor, badgeTextColor) accept valid CSS color strings like "#FFFFFF", "rgba(255,255,255,0.9)", or named colors like "white". Set to null to remove override and revert to theme default.
+- When user asks to change text color or says text is hard to read — use these color override fields. NEVER add HTML tags to text fields.
 - Style and photo changes are handled by a separate system — you only handle text and content.`,
           jsonUser as ClaudeUserContent
         );
