@@ -453,44 +453,6 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             </div>
           </div>
         </div>
-        <div data-aos="fade-left" className="hide-mobile" style={{
-          position: "absolute",
-          right: "-5%",
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: "420px",
-          height: "420px",
-          pointerEvents: "none",
-          zIndex: hi?.url ? 2 : 0,
-          opacity: theme.isDark ? 0.25 : 0.12,
-        }}>
-          <div style={{
-            width: "100%",
-            height: "100%",
-            animation: "lacore-orbit-spin 30s linear infinite",
-          }}
-          >
-          <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
-            <circle cx="200" cy="200" r="160" stroke={theme.accent} strokeWidth="1" strokeDasharray="8 4" opacity="0.6"/>
-            <circle cx="200" cy="200" r="120" stroke={theme.accent} strokeWidth="1" opacity="0.4"/>
-            <circle cx="200" cy="200" r="80" stroke={theme.accent} strokeWidth="2" opacity="0.5"/>
-            <circle cx="200" cy="200" r="40" fill={theme.accent} opacity="0.15"/>
-            <circle cx="200" cy="200" r="20" fill={theme.accent} opacity="0.3"/>
-            <line x1="40" y1="200" x2="360" y2="200" stroke={theme.accent} strokeWidth="0.5" opacity="0.3"/>
-            <line x1="200" y1="40" x2="200" y2="360" stroke={theme.accent} strokeWidth="0.5" opacity="0.3"/>
-            <line x1="87" y1="87" x2="313" y2="313" stroke={theme.accent} strokeWidth="0.5" opacity="0.2"/>
-            <line x1="313" y1="87" x2="87" y2="313" stroke={theme.accent} strokeWidth="0.5" opacity="0.2"/>
-            <circle cx="200" cy="40" r="4" fill={theme.accent} opacity="0.6"/>
-            <circle cx="360" cy="200" r="4" fill={theme.accent} opacity="0.6"/>
-            <circle cx="200" cy="360" r="4" fill={theme.accent} opacity="0.6"/>
-            <circle cx="40" cy="200" r="4" fill={theme.accent} opacity="0.6"/>
-            <circle cx="87" cy="87" r="3" fill={theme.accentLight} opacity="0.5"/>
-            <circle cx="313" cy="87" r="3" fill={theme.accentLight} opacity="0.5"/>
-            <circle cx="313" cy="313" r="3" fill={theme.accentLight} opacity="0.5"/>
-            <circle cx="87" cy="313" r="3" fill={theme.accentLight} opacity="0.5"/>
-          </svg>
-          </div>
-        </div>
         </>
       </section>
         );
@@ -1106,10 +1068,6 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           50% { opacity: 1; }
         }
         [data-aos].aos-animate { opacity: 1 !important; }
-        @keyframes lacore-orbit-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
         @keyframes lacore-hero-in {
           from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
