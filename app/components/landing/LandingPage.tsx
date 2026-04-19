@@ -107,6 +107,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const extendedContent = content as LandingContentExtended;
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -319,6 +320,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
     e.preventDefault();
     setLoading(true);
     try {
+      setSubmitError(false);
       const res = await fetch("/api/leads/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -329,6 +331,8 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
         setName("");
         setEmail("");
         setMessage("");
+      } else {
+        setSubmitError(true);
       }
     } finally {
       setLoading(false);
@@ -1038,7 +1042,16 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               >
                 {loading ? "Sending..." : content.formButton}
               </button>
-              {submitted ? <div id="success-msg" style={{ color: theme.accent, textAlign: "center", fontWeight: 600 }}>Message sent successfully.</div> : null}
+              {submitted ? (
+                <div id="success-msg" style={{ color: theme.accent, textAlign: "center", fontWeight: 600 }}>
+                  Message sent successfully.
+                </div>
+              ) : null}
+              {submitError ? (
+                <div style={{ color: "#EF4444", textAlign: "center", fontSize: 13 }}>
+                  Something went wrong. Please try again.
+                </div>
+              ) : null}
             </div>
           </form>
         </div>
