@@ -62,7 +62,7 @@ export function LeadKanbanCard({
           onSelect();
         }
       }}
-      className={`group min-w-0 w-full cursor-pointer rounded-xl border bg-white/[0.04] p-3 text-left transition-colors overflow-hidden relative ${
+      className={`group min-w-0 w-full cursor-pointer rounded-xl border bg-white/[0.04] p-3 text-left transition-colors relative ${
         selected
           ? "border-indigo-500/50 bg-indigo-500/10"
           : "border-white/[0.08] hover:border-white/[0.15]"
@@ -130,7 +130,7 @@ export function LeadKanbanCard({
               <span style={{ opacity: 0.6 }}>▾</span>
             </button>
             {menuOpen ? (
-              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-20 rounded-lg border border-white/10 bg-[#111116] p-1">
+              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-white/10 bg-[#111116] p-1" style={{ maxHeight: 220, overflowY: "auto" }}>
                 {PIPELINE_COLUMNS.map((status) => {
                   const active = status.id === currentStatus;
                   return (
