@@ -388,7 +388,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, borderRadius: "50%", background: theme.accent, fontSize: 10 }}>✦</span>
             <span style={{ color: theme.textPrimary, fontSize: 12, letterSpacing: "0.02em", fontWeight: 600 }}>{content.badge}</span>
           </div>
-          <div style={{ animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both" }}>
+          <div style={{ animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both", display: "block" }}>
             <h1
               className="text-4xl md:text-6xl lg:text-7xl"
               data-aos="fade-up"
@@ -402,7 +402,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             >
               {content.headline}
               <br />
-              <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", display: "inline" }}>{content.headlineAccent}</span>
+              <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", display: "inline" }}>{content.headlineAccent}</span>
             </h1>
           </div>
           <p
