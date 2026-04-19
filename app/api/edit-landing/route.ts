@@ -6,90 +6,6 @@ import { compileLandingJsx } from "@/lib/compileLandingJsx";
 import { AI_BUSY_USER_MESSAGE } from "@/lib/claudeWithRetry";
 import { checkCredits, deductCredits } from "@/lib/credits";
 
-function detectStyleChangeIntent(instruction: string): string | null {
-  const raw = instruction.toLowerCase();
-
-  const styleMap: Record<string, string> = {
-    indigo: "dark-indigo",
-    blue: "dark-indigo",
-    navy: "dark-indigo",
-    purple: "dark-purple",
-    violet: "dark-purple",
-    lavender: "dark-purple",
-    gold: "dark-gold",
-    golden: "dark-gold",
-    luxury: "dark-gold",
-    premium: "dark-gold",
-    amber: "dark-amber",
-    yellow: "dark-amber",
-    sunset: "dark-amber",
-    orange: "dark-orange",
-    fire: "dark-orange",
-    energy: "dark-orange",
-    red: "dark-red",
-    crimson: "dark-red",
-    bold: "dark-red",
-    green: "dark-green",
-    emerald: "dark-green",
-    nature: "dark-green",
-    growth: "dark-green",
-    pink: "dark-pink",
-    rose: "dark-pink",
-    feminine: "dark-pink",
-    magenta: "dark-pink",
-    cyan: "dark-cyan",
-    teal: "dark-cyan",
-    aqua: "dark-cyan",
-    tech: "dark-cyan",
-    black: "pure-black",
-    dark: "pure-black",
-    minimal: "pure-black",
-    monochrome: "pure-black",
-    elegant: "pure-black",
-    white: "light-clean",
-    light: "light-clean",
-    clean: "light-clean",
-    bright: "light-clean",
-    airy: "light-clean",
-    fresh: "light-clean",
-    cream: "warm-cream",
-    warm: "warm-cream",
-    beige: "warm-cream",
-    earthy: "warm-cream",
-    cozy: "warm-cream",
-    natural: "warm-cream",
-  };
-
-  const hasColorKeyword = Object.keys(styleMap).some((k) => raw.includes(k));
-  if (!hasColorKeyword) return null;
-
-  for (const [keyword, styleValue] of Object.entries(styleMap)) {
-    if (raw.includes(keyword)) return styleValue;
-  }
-  return null;
-}
-
-function detectPhotoChangeIntent(instruction: string): string | null {
-  const raw = instruction.toLowerCase();
-  const hasPhotoIntent =
-    /(change|replace|update|swap|make|set|поменяй|замени|сделай).*(photo|image|background|picture|фото|фон|картинку|изображение|background)|(photo|image|background|фото|фон).*(change|different|new|другой|другое|новый)/i.test(
-      instruction
-    );
-  if (!hasPhotoIntent && !/(add.*photo|add.*image|поставь фото|добавь фото)/.test(raw)) return null;
-
-  // Extract search query from instruction
-  // Remove common filler words and extract the visual description
-  const cleaned = raw
-    .replace(
-      /(change|replace|update|swap|make|set|the|a|an|поменяй|замени|сделай|фон|фото|на|background|picture|photo|image|to|into|like|with|картинку|изображение)/g,
-      " "
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return cleaned.length > 2 ? cleaned : "professional business";
-}
-
 async function fetchUnsplashPhoto(query: string): Promise<{
   url: string;
   photographer: string;
@@ -464,6 +380,79 @@ async function callClaude(apiKey: string, system: string, userContent: ClaudeUse
   throw new Error(AI_BUSY_USER_MESSAGE);
 }
 
+async function classifyEditIntent(
+  apiKey: string,
+  instruction: string,
+  currentJson: Record<string, unknown>
+): Promise<{
+  action: "style" | "photo" | "edit_json" | "reorder";
+  style?: string;
+  photoQuery?: string;
+}> {
+  const validStyles = [
+    "dark-indigo",
+    "dark-purple",
+    "dark-gold",
+    "dark-amber",
+    "dark-red",
+    "dark-green",
+    "dark-pink",
+    "dark-cyan",
+    "dark-orange",
+    "pure-black",
+    "light-clean",
+    "warm-cream",
+    "bold-black",
+  ];
+
+  const systemPrompt = `You are an intent classifier for a landing page editor. 
+Given a user instruction and the current page context, determine what action to take.
+
+Return ONLY a valid JSON object with no markdown, no explanation:
+{
+  "action": "style" | "photo" | "edit_json",
+  "style": "<one of the valid styles, only if action=style>",
+  "photoQuery": "<english search query for Unsplash, only if action=photo, 2-5 words>"
+}
+
+Action rules:
+- "style": user wants to change the color theme, visual style, mood, or overall appearance (e.g. "make it purple", "go darker", "more elegant", "luxury feel", "something warmer")
+- "photo": user wants to change the hero background image/photo (e.g. "change background", "поменяй фон", "more professional photo", "office setting", "add a hero image")
+- "edit_json": everything else — headline changes, text edits, adding sections, changing copy, etc.
+
+Valid styles: ${validStyles.join(", ")}
+
+For photoQuery: always translate to English, be specific but concise. 
+Examples: "office meeting professional" / "woman coaching executive" / "modern gym fitness"
+
+Current page niche: ${typeof currentJson.niche === "string" ? currentJson.niche : "default"}
+Current page brand: ${typeof currentJson.brand === "string" ? currentJson.brand : ""}`;
+
+  try {
+    const raw = await callClaude(apiKey, systemPrompt, `User instruction: "${instruction}"`);
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const parsed = JSON.parse(cleaned) as {
+      action?: string;
+      style?: string;
+      photoQuery?: string;
+    };
+    const action = parsed.action;
+    if (action === "style" && typeof parsed.style === "string" && validStyles.includes(parsed.style)) {
+      return { action: "style", style: parsed.style };
+    }
+    if (action === "photo") {
+      return {
+        action: "photo",
+        photoQuery: typeof parsed.photoQuery === "string" ? parsed.photoQuery : "professional business",
+      };
+    }
+    return { action: "edit_json" };
+  } catch {
+    // If classifier fails, fall through to normal JSON edit
+    return { action: "edit_json" };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as EditPayload;
@@ -737,12 +726,13 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
         return NextResponse.json({ success: true, json: updatedJson });
       }
 
-      // Detect style change intent — handle separately since style is stored outside json_content
-      const styleChangeIntent = detectStyleChangeIntent(instructionWithImageUrl);
-      if (styleChangeIntent) {
+      // Use Claude to classify intent — style change, photo change, or text edit
+      const intent = await classifyEditIntent(apiKey, instructionWithImageUrl, currentJsonObjForReorder);
+
+      if (intent.action === "style" && intent.style) {
         const { error: styleError } = await supabase
           .from("landing_pages")
-          .update({ style: styleChangeIntent } as never)
+          .update({ style: intent.style } as never)
           .eq("slug", body.slug)
           .eq("user_id", user.id);
         if (styleError) {
@@ -751,14 +741,11 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
         if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
           return NextResponse.json({ error: "insufficient_credits", message: "Not enough credits." }, { status: 402 });
         }
-        const updatedWithStyle = { ...currentJsonObjForReorder };
-        return NextResponse.json({ success: true, json: updatedWithStyle, styleChanged: styleChangeIntent });
+        return NextResponse.json({ success: true, json: currentJsonObjForReorder, styleChanged: intent.style });
       }
 
-      // Detect photo change intent — search Unsplash and update heroImage
-      const photoQuery = detectPhotoChangeIntent(instructionWithImageUrl);
-      if (photoQuery) {
-        const newPhoto = await fetchUnsplashPhoto(photoQuery);
+      if (intent.action === "photo") {
+        const newPhoto = await fetchUnsplashPhoto(intent.photoQuery ?? "professional business");
         if (newPhoto) {
           const updatedWithPhoto = { ...currentJsonObjForReorder, heroImage: newPhoto };
           const { error: photoSaveError } = await supabase
@@ -774,9 +761,10 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
           }
           return NextResponse.json({ success: true, json: updatedWithPhoto });
         }
-        // If Unsplash failed, fall through to normal JSON edit
+        // Unsplash failed — fall through to normal JSON edit
       }
 
+      // Normal JSON edit — Claude updates text content
       const jsonUser = `Here is the current landing page content as JSON:
 ${body.currentJson}
 
@@ -790,20 +778,16 @@ No markdown, no explanation, just the JSON object.`;
       try {
         updatedJsonText = await callClaude(
           apiKey,
-          `You are editing landing page content JSON for a marketing landing page.
+          `You are editing landing page content JSON. Apply the requested text/content change and return only the updated JSON object.
 
-CRITICAL RULES:
+RULES:
 - Return ONLY valid JSON, no markdown, no explanation.
 - Keep the EXACT same JSON structure and all existing fields.
-- Only modify fields that are directly relevant to the user's request.
-- NEVER add new top-level fields that don't exist in the input JSON.
-- NEVER add fields like "heroBackground", "backgroundColor", "theme", "colors" — these don't exist in the schema.
-- The only valid top-level fields are: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
-- If user asks to change background/color/style/theme — respond by changing relevant TEXT content only (headline, badge, etc.) and ignore the visual styling request since styles are controlled separately.
-- heroImage field MUST only be set if it contains a valid object with these exact fields: { url: string (must be a real https:// URL), photographer: string, photographerUrl: string, unsplashUrl: string }. 
-- Photo/background change requests are handled automatically before reaching you — you will NOT receive them. If somehow you do receive a photo request, leave heroImage exactly as it is and only update text fields.
-- To REMOVE the hero image entirely, set heroImage to null.
-- NEVER set heroImage to a string, a description, or an object with a non-https URL.`,
+- Only modify fields directly relevant to the user's request.
+- NEVER add new top-level fields that don't exist in the input.
+- Valid top-level fields: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
+- heroImage: never modify this field. Leave it exactly as is.
+- Style and photo changes are handled by a separate system — you only handle text and content.`,
           jsonUser as ClaudeUserContent
         );
       } catch {
