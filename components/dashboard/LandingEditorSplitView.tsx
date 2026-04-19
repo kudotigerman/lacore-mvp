@@ -192,8 +192,12 @@ export function LandingEditorSplitView({
       if (!res.ok || !result.success) {
         throw new Error(typeof result.error === "string" ? result.error : "Update failed.");
       }
-      const extended = result as { json?: Record<string, unknown> };
+      const extended = result as { json?: Record<string, unknown>; styleChanged?: string };
       if (extended.json) setCurrentJsonContent(extended.json);
+      if (extended.styleChanged && typeof extended.styleChanged === "string") {
+        setSelectedStyle(extended.styleChanged as LandingStyle);
+        d.setLandingStyle(extended.styleChanged as LandingStyle);
+      }
 
       setIframeKey((k) => k + 1);
       onViewsRefresh();
@@ -216,7 +220,7 @@ export function LandingEditorSplitView({
       setImageBase64("");
       setImageMediaType("image/jpeg");
     }
-  }, [d.sessionToken, imageBase64, imageMediaType, input, isEditing, onViewsRefresh, slug]);
+  }, [d, d.sessionToken, imageBase64, imageMediaType, input, isEditing, onViewsRefresh, slug]);
 
   const handleRegenerate = useCallback(() => {
     d.setRegenerateError(null);
@@ -375,9 +379,18 @@ export function LandingEditorSplitView({
                       })
                     });
                     const text = await res.text();
-                    const result = JSON.parse(text) as { success?: boolean; error?: string; json?: Record<string, unknown> };
+                    const result = JSON.parse(text) as {
+                      success?: boolean;
+                      error?: string;
+                      json?: Record<string, unknown>;
+                      styleChanged?: string;
+                    };
                     if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
                     if (result.json) setCurrentJsonContent(result.json);
+                    if (result.styleChanged && typeof result.styleChanged === "string") {
+                      setSelectedStyle(result.styleChanged as LandingStyle);
+                      d.setLandingStyle(result.styleChanged as LandingStyle);
+                    }
                     setIframeKey((k) => k + 1);
                     setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
                   } catch (e) {

@@ -6,6 +6,42 @@ import { compileLandingJsx } from "@/lib/compileLandingJsx";
 import { AI_BUSY_USER_MESSAGE } from "@/lib/claudeWithRetry";
 import { checkCredits, deductCredits } from "@/lib/credits";
 
+function detectStyleChangeIntent(instruction: string): string | null {
+  const raw = instruction.toLowerCase();
+
+  const styleMap: Record<string, string> = {
+    indigo: "dark-indigo",
+    purple: "dark-purple",
+    gold: "dark-gold",
+    amber: "dark-amber",
+    orange: "dark-orange",
+    red: "dark-red",
+    green: "dark-green",
+    pink: "dark-pink",
+    cyan: "dark-cyan",
+    teal: "dark-cyan",
+    black: "pure-black",
+    minimal: "pure-black",
+    white: "light-clean",
+    light: "light-clean",
+    clean: "light-clean",
+    cream: "warm-cream",
+    warm: "warm-cream",
+    beige: "warm-cream",
+  };
+
+  const hasStyleIntent =
+    /(change|make|set|switch|use).*(color|theme|style|background|palette|scheme)|(color|theme|style).*(change|make|to|into)/i.test(
+      raw
+    );
+  if (!hasStyleIntent) return null;
+
+  for (const [keyword, styleValue] of Object.entries(styleMap)) {
+    if (raw.includes(keyword)) return styleValue;
+  }
+  return null;
+}
+
 export const maxDuration = 120;
 
 type EditPayload = {
@@ -594,6 +630,24 @@ Previous output did not compile (${compiled.message}). Fix the JSX and return th
         return NextResponse.json({ success: true, json: updatedJson });
       }
 
+      // Detect style change intent — handle separately since style is stored outside json_content
+      const styleChangeIntent = detectStyleChangeIntent(instructionWithImageUrl);
+      if (styleChangeIntent) {
+        const { error: styleError } = await supabase
+          .from("landing_pages")
+          .update({ style: styleChangeIntent } as never)
+          .eq("slug", body.slug)
+          .eq("user_id", user.id);
+        if (styleError) {
+          return NextResponse.json({ error: "Failed to update style." }, { status: 500 });
+        }
+        if (!(await deductCredits(supabase, user.id, "edit_landing"))) {
+          return NextResponse.json({ error: "insufficient_credits", message: "Not enough credits." }, { status: 402 });
+        }
+        const updatedWithStyle = { ...currentJsonObjForReorder };
+        return NextResponse.json({ success: true, json: updatedWithStyle, styleChanged: styleChangeIntent });
+      }
+
       const jsonUser = `Here is the current landing page content as JSON:
 ${body.currentJson}
 
@@ -605,7 +659,21 @@ No markdown, no explanation, just the JSON object.`;
 
       let updatedJsonText: string;
       try {
-        updatedJsonText = await callClaude(apiKey, `You are editing landing page content JSON. Apply the requested change and return only the updated JSON object. Keep the exact same structure.`, jsonUser as ClaudeUserContent);
+        updatedJsonText = await callClaude(
+          apiKey,
+          `You are editing landing page content JSON for a marketing landing page.
+
+CRITICAL RULES:
+- Return ONLY valid JSON, no markdown, no explanation.
+- Keep the EXACT same JSON structure and all existing fields.
+- Only modify fields that are directly relevant to the user's request.
+- NEVER add new top-level fields that don't exist in the input JSON.
+- NEVER add fields like "heroBackground", "backgroundColor", "theme", "colors" — these don't exist in the schema.
+- The only valid top-level fields are: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
+- If user asks to change background/color/style/theme — respond by changing relevant TEXT content only (headline, badge, etc.) and ignore the visual styling request since styles are controlled separately.
+- If user asks to change the hero image/photo — set heroImage to null to remove it, or keep existing heroImage unchanged.`,
+          jsonUser as ClaudeUserContent
+        );
       } catch {
         return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
       }
