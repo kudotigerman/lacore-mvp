@@ -3,7 +3,7 @@ export const DODO_PRODUCT_IDS = {
   starter_annual: "pdt_0Nd3lhgtbkTcjSmpCMD3N",
   pro_monthly: "pdt_0Nd3ly8Vu4KF618oMiPnr",
   pro_annual: "pdt_0Nd3mF5E8dM8JLidnl5jK",
-  scale_monthly: "pdt_0Nd3mT9phm2RyYll4mGRc",
+  scale_monthly: "pdt_0Nd3mT9phm2RyYIl4mGRc",
   scale_annual: "pdt_0Nd3mk29D1fqW0bUL0gKG",
   credits_50: "pdt_0Nd3o3eFpxYUKcGV2LER2",
   credits_150: "pdt_0Nd3oC3p0srF8BfVC3ebp",
@@ -40,7 +40,7 @@ export const PRODUCT_TO_PLAN: Record<string, string> = {
   pdt_0Nd3lhgtbkTcjSmpCMD3N: "starter",
   pdt_0Nd3ly8Vu4KF618oMiPnr: "pro",
   pdt_0Nd3mF5E8dM8JLidnl5jK: "pro",
-  pdt_0Nd3mT9phm2RyYll4mGRc: "scale",
+  pdt_0Nd3mT9phm2RyYIl4mGRc: "scale",
   pdt_0Nd3mk29D1fqW0bUL0gKG: "scale",
 };
 
