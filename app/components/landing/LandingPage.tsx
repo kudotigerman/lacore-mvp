@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Fragment, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { NICHE_THEMES, STYLE_THEMES, type LandingContent, type LandingStyle } from "@/types/landing";
 import { ChevronDown } from "lucide-react";
 import {
@@ -23,6 +23,53 @@ function initials(name: string) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+function CountUp({ target, duration = 1500 }: { target: string; duration?: number }) {
+  const [display, setDisplay] = useState(target);
+  const ref = useRef<HTMLDivElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const numericMatch = target.match(/[\d,.]+/);
+    if (!numericMatch) return;
+    const numStr = numericMatch[0].replace(/,/g, "");
+    const end = parseFloat(numStr);
+    if (isNaN(end)) return;
+    const prefix = target.slice(0, target.indexOf(numericMatch[0]));
+    const suffix = target.slice(target.indexOf(numericMatch[0]) + numericMatch[0].length);
+    const hasDecimal = numStr.includes(".");
+    const decimals = hasDecimal ? (numStr.split(".")[1]?.length ?? 0) : 0;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !started.current) {
+          started.current = true;
+          const startTime = performance.now();
+          const tick = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = eased * end;
+            const formatted = hasDecimal
+              ? current.toFixed(decimals)
+              : Math.round(current).toLocaleString();
+            setDisplay(`${prefix}${formatted}${suffix}`);
+            if (progress < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return <div ref={ref}>{display}</div>;
 }
 
 type HoverEvent = { currentTarget: HTMLElement };
@@ -177,10 +224,12 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const buttonHoverOn = (e: HoverEvent) => {
     e.currentTarget.style.transform = "translateY(-2px)";
     e.currentTarget.style.boxShadow = `0 8px 30px ${theme.accent}66`;
+    e.currentTarget.style.filter = "brightness(1.12)";
   };
   const buttonHoverOff = (e: HoverEvent) => {
     e.currentTarget.style.transform = "translateY(0)";
     e.currentTarget.style.boxShadow = "none";
+    e.currentTarget.style.filter = "brightness(1)";
   };
   const secondaryHoverOn = (e: HoverEvent) => {
     e.currentTarget.style.background = "rgba(255,255,255,0.06)";
@@ -322,13 +371,45 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: theme.accent, marginTop: 6 }} />
             <span style={{ color: theme.textSecondary, fontSize: 11, letterSpacing: "0.12em", fontWeight: 700 }}>{content.badge}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl" data-aos="fade-up" style={{ fontFamily: fontHeading, fontWeight: 900, lineHeight: 1.02, margin: "0 0 20px", letterSpacing: "-0.03em" }}>
+          <h1
+            className="text-4xl md:text-6xl lg:text-7xl"
+            data-aos="fade-up"
+            style={{
+              fontFamily: fontHeading,
+              fontWeight: 900,
+              lineHeight: 1.02,
+              margin: "0 0 20px",
+              letterSpacing: "-0.03em",
+              animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both",
+            }}
+          >
             {content.headline}
             <br />
             <span style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{content.headlineAccent}</span>
           </h1>
-          <p data-aos="fade-up" style={{ color: theme.textSecondary, fontSize: 20, maxWidth: 700, lineHeight: 1.7, fontWeight: 400 }}>{content.subheadline}</p>
-          <div data-aos="fade-up" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 30 }}>
+          <p
+            data-aos="fade-up"
+            style={{
+              color: theme.textSecondary,
+              fontSize: 20,
+              maxWidth: 700,
+              lineHeight: 1.7,
+              fontWeight: 400,
+              animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both",
+            }}
+          >
+            {content.subheadline}
+          </p>
+          <div
+            data-aos="fade-up"
+            style={{
+              display: "flex",
+              gap: 14,
+              flexWrap: "wrap",
+              marginTop: 30,
+              animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both",
+            }}
+          >
             <a
               href="#contact-form"
               style={primaryButtonStyle}
@@ -347,7 +428,16 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               {content.ctaSecondary}
             </a>
           </div>
-          <div data-aos="fade-up" style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 42 }}>
+          <div
+            data-aos="fade-up"
+            style={{
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+              marginTop: 42,
+              animation: "lacore-hero-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both",
+            }}
+          >
             <div style={{ display: "flex" }}>
               {["A", "M", "K"].map((x, i) => (
                 <div key={x} style={{ width: 36, height: 36, marginLeft: i ? -8 : 0, borderRadius: "50%", display: "grid", placeItems: "center", border: `2px solid ${theme.bgPrimary}`, background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentLight})`, fontSize: 12, fontWeight: 700, color: getContrastColor(theme.accent) }}>{x}</div>
@@ -368,8 +458,14 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           height: "420px",
           pointerEvents: "none",
           zIndex: hi?.url ? 2 : 0,
-          opacity: theme.isDark ? 0.15 : 0.08,
+          opacity: theme.isDark ? 0.25 : 0.12,
         }}>
+          <div style={{
+            width: "100%",
+            height: "100%",
+            animation: "lacore-orbit-spin 30s linear infinite",
+          }}
+          >
           <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
             <circle cx="200" cy="200" r="160" stroke={theme.accent} strokeWidth="1" strokeDasharray="8 4" opacity="0.6"/>
             <circle cx="200" cy="200" r="120" stroke={theme.accent} strokeWidth="1" opacity="0.4"/>
@@ -389,6 +485,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
             <circle cx="313" cy="313" r="3" fill={theme.accentLight} opacity="0.5"/>
             <circle cx="87" cy="313" r="3" fill={theme.accentLight} opacity="0.5"/>
           </svg>
+          </div>
         </div>
         </>
       </section>
@@ -415,7 +512,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
               }}
             >
               <div style={{ color: theme.accent, fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.04em", fontSize: "clamp(56px, 8vw, 96px)", lineHeight: 1 }}>
-                {s.number}
+                <CountUp target={s.number} />
               </div>
               <div style={{ color: theme.textSecondary, fontSize: 14 }}>{s.label}</div>
             </div>
@@ -439,7 +536,14 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 key={p.title}
                 onMouseOver={cardHoverOn}
                 onMouseOut={cardHoverOff}
-                style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
+                style={{
+                  background: theme.bgSecondary,
+                  border: `1px solid ${theme.cardBorder}`,
+                  borderRadius: 12,
+                  padding: 28,
+                  transition: "all 0.25s ease",
+                  animation: `lacore-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s both`,
+                }}
               >
                 <div style={{
                   width: 40, height: 40,
@@ -475,7 +579,14 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                   key={f.title}
                   onMouseOver={cardHoverOn}
                   onMouseOut={cardHoverOff}
-                  style={{ background: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 28, transition: "all 0.25s ease" }}
+                  style={{
+                    background: theme.cardBg,
+                    border: `1px solid ${theme.cardBorder}`,
+                    borderRadius: 12,
+                    padding: 28,
+                    transition: "all 0.25s ease",
+                    animation: `lacore-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.1}s both`,
+                  }}
                 >
                   <div style={{
                     width: 44, height: 44,
@@ -899,7 +1010,22 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           <div style={{ textAlign: "center", marginBottom: 34 }}>
             <h2 style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", fontSize: "clamp(30px,5vw,46px)", margin: 0 }}>{content.formHeadline}</h2>
           </div>
-          <form onSubmit={handleSubmit} style={{ background: theme.bgSecondary, border: `1px solid ${theme.cardBorder}`, borderRadius: 12, padding: 30 }}>
+          <form
+            onSubmit={handleSubmit}
+            style={{
+              background: theme.bgSecondary,
+              border: `1px solid ${theme.cardBorder}`,
+              borderRadius: 12,
+              padding: 30,
+              transition: "box-shadow 0.3s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = `0 0 0 1px ${theme.accent}60, 0 20px 60px ${theme.accent}15`;
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
             <div style={{ display: "grid", gap: 16 }}>
               <input value={name} onChange={(e) => setName(e.target.value)} required name="name" placeholder="Your name" style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px" }} />
               <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" name="email" placeholder="Email address" style={{ width: "100%", background: theme.bgPrimary, border: `1px solid ${theme.cardBorder}`, color: theme.textPrimary, borderRadius: 10, padding: "13px 14px" }} />
@@ -940,7 +1066,19 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-20px); }
         }
-        [data-aos] { opacity: 1 !important; transform: none !important; }
+        [data-aos].aos-animate { opacity: 1 !important; }
+        @keyframes lacore-orbit-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes lacore-hero-in {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes lacore-card-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
         @media (max-width: 768px) {
           .container { width: min(1100px, 100% - 40px); }
