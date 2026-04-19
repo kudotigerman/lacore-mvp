@@ -107,7 +107,6 @@ export default function DashboardLandingPage() {
     { id: "pure-black", label: "Minimal", accent: "#FFFFFF", bg: "#000000" },
     { id: "light-clean", label: "Light", accent: "#6366F1", bg: "#FFFFFF" },
     { id: "warm-cream", label: "Warm", accent: "#D97706", bg: "#FDFAF5" },
-    { id: "bold-black", label: "Bold", accent: "#FFFFFF", bg: "#000000" },
   ];
 
   if (d.loading) {
@@ -163,21 +162,39 @@ export default function DashboardLandingPage() {
                     onClick={() => setSelectedStyle(s.id)}
                     title={s.label}
                     style={{
-                      width: 36, height: 36,
-                      borderRadius: "50%",
-                      background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
-                      border: selectedStyle === s.id 
-                        ? "2px solid #fff" 
-                        : s.bg === "#FFFFFF" || s.bg === "#FDFAF5" 
-                          ? "2px solid rgba(255,255,255,0.3)" 
-                          : "2px solid transparent",
-                      outline: selectedStyle === s.id ? `2px solid ${s.accent}` : "none",
-                      outlineOffset: 2,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      background: s.accent,
+                      border: selectedStyle === s.id
+                        ? "2px solid white"
+                        : s.id === "light-clean" || s.id === "warm-cream"
+                          ? "1px solid rgba(0,0,0,0.15)"
+                          : "1px solid rgba(255,255,255,0.08)",
+                      outline: selectedStyle === s.id ? `2px solid ${s.accent}40` : "none",
+                      outlineOffset: 1,
                       cursor: "pointer",
-                      transition: "all 0.15s",
+                      transition: "transform 0.15s ease",
                       flexShrink: 0,
+                      position: "relative" as const,
+                      overflow: "hidden",
                     }}
-                  />
+                    onMouseOver={(e) => { e.currentTarget.style.transform = "scale(1.15)"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                  >
+                    {(s.id === "pure-black" || s.id === "light-clean" || s.id === "warm-cream") ? (
+                      <span style={{
+                        position: "absolute",
+                        bottom: 4,
+                        right: 4,
+                        width: 7,
+                        height: 7,
+                        borderRadius: "50%",
+                        background: s.id === "pure-black" ? "#444444" : s.id === "warm-cream" ? "#D97706" : "#6366F1",
+                        opacity: 0.85,
+                      }} />
+                    ) : null}
+                  </button>
                 ))}
               </div>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>
