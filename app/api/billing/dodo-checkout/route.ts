@@ -24,7 +24,12 @@ export async function POST(req: NextRequest) {
   const returnUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.lacore.ai"}/dashboard`;
 
   try {
-    const res = await fetch("https://api.dodopayments.com/payment_links", {
+    const environment = process.env.DODO_PAYMENTS_ENVIRONMENT ?? "live_mode";
+    const baseUrl = environment === "test_mode"
+      ? "https://test.dodopayments.com"
+      : "https://live.dodopayments.com";
+
+    const res = await fetch(`${baseUrl}/checkouts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,9 +37,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         product_cart: [{ product_id: productId, quantity: 1 }],
-        payment_link: true,
-        return_url: returnUrl,
         customer: { email: user.email },
+        return_url: returnUrl,
         metadata: { lacore_user_id: user.id },
       }),
     });
@@ -45,8 +49,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
     }
 
-    const data = await res.json() as { payment_link?: string; url?: string };
-    const url = data.payment_link ?? data.url;
+    const data = await res.json() as { checkout_url?: string; payment_link?: string; url?: string };
+    const url = data.checkout_url ?? data.payment_link ?? data.url;
     if (!url) {
       return NextResponse.json({ error: "No checkout URL returned" }, { status: 500 });
     }
