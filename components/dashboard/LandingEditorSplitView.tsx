@@ -79,7 +79,6 @@ export function LandingEditorSplitView({
     { id: "pure-black", label: "Minimal", accent: STYLE_THEMES["pure-black"].accent, bg: STYLE_THEMES["pure-black"].bgPrimary },
     { id: "light-clean", label: "Light", accent: STYLE_THEMES["light-clean"].accent, bg: STYLE_THEMES["light-clean"].bgPrimary },
     { id: "warm-cream", label: "Warm", accent: STYLE_THEMES["warm-cream"].accent, bg: STYLE_THEMES["warm-cream"].bgPrimary },
-    { id: "bold-black", label: "Bold", accent: STYLE_THEMES["bold-black"].accent, bg: STYLE_THEMES["bold-black"].bgPrimary },
   ];
 
   useEffect(() => {
@@ -524,6 +523,7 @@ export function LandingEditorSplitView({
                       <button
                         key={s.id}
                         type="button"
+                        title={s.label}
                         onClick={() => {
                           setSelectedStyle(s.id);
                           if (!landingId) {
@@ -533,22 +533,26 @@ export function LandingEditorSplitView({
                           void d.handleChangeStyle(landingId, s.id);
                           setIframeKey((k) => k + 1);
                         }}
-                        title={s.label}
                         style={{
-                          width: 36, height: 36,
-                          borderRadius: "50%",
-                          background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
-                          border: d.landingStyle === s.id
-                            ? "2px solid #fff"
-                            : s.bg === "#FFFFFF" || s.bg === "#FDFAF5"
-                              ? "2px solid rgba(255,255,255,0.3)"
-                              : "2px solid transparent",
-                          outline: d.landingStyle === s.id ? `2px solid ${s.accent}` : "none",
-                          outlineOffset: 2,
+                          width: 28,
+                          height: 28,
+                          borderRadius: 7,
+                          background: s.id === "light-clean" || s.id === "warm-cream"
+                            ? s.bg
+                            : s.accent,
+                          border: selectedStyle === s.id
+                            ? "2px solid white"
+                            : s.id === "light-clean" || s.id === "warm-cream"
+                              ? "1px solid rgba(0,0,0,0.15)"
+                              : "1px solid rgba(255,255,255,0.08)",
+                          outline: selectedStyle === s.id ? "2px solid rgba(255,255,255,0.3)" : "none",
+                          outlineOffset: 1,
                           cursor: "pointer",
-                          transition: "all 0.15s",
+                          transition: "transform 0.15s ease, outline 0.15s ease",
                           flexShrink: 0,
                         }}
+                        onMouseOver={(e) => { e.currentTarget.style.transform = "scale(1.15)"; }}
+                        onMouseOut={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                       />
                     ))}
                   </div>
@@ -637,22 +641,28 @@ export function LandingEditorSplitView({
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => setSelectedStyle(s.id)}
                     title={s.label}
+                    onClick={() => setSelectedStyle(s.id)}
                     style={{
-                      width: 28, height: 28,
-                      borderRadius: "50%",
-                      background: `radial-gradient(circle at 35% 35%, ${s.accent}, ${s.bg})`,
-                      border: selectedStyle === s.id 
-                        ? "2px solid #fff" 
-                        : s.bg === "#FFFFFF" || s.bg === "#FDFAF5" 
-                          ? "2px solid rgba(255,255,255,0.3)" 
-                          : "2px solid transparent",
-                      outline: selectedStyle === s.id ? `2px solid ${s.accent}` : "none",
-                      outlineOffset: 2,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      background: s.id === "light-clean" || s.id === "warm-cream"
+                        ? s.bg
+                        : s.accent,
+                      border: selectedStyle === s.id
+                        ? "2px solid white"
+                        : s.id === "light-clean" || s.id === "warm-cream"
+                          ? "1px solid rgba(0,0,0,0.15)"
+                          : "1px solid rgba(255,255,255,0.08)",
+                      outline: selectedStyle === s.id ? "2px solid rgba(255,255,255,0.3)" : "none",
+                      outlineOffset: 1,
                       cursor: "pointer",
+                      transition: "transform 0.15s ease, outline 0.15s ease",
                       flexShrink: 0,
                     }}
+                    onMouseOver={(e) => { e.currentTarget.style.transform = "scale(1.15)"; }}
+                    onMouseOut={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                   />
                 ))}
               </div>
