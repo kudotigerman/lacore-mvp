@@ -537,13 +537,13 @@ export function LandingEditorSplitView({
                           width: 28,
                           height: 28,
                           borderRadius: 7,
-                          background: s.bg,
+                          background: s.accent,
                           border: selectedStyle === s.id
-                            ? `2px solid ${s.accent}`
-                            : STYLE_THEMES[s.id].isDark
-                              ? "1px solid rgba(255,255,255,0.12)"
-                              : "1px solid rgba(0,0,0,0.15)",
-                          outline: selectedStyle === s.id ? `2px solid ${s.accent}40` : "none",
+                            ? "2px solid white"
+                            : s.id === "light-clean" || s.id === "warm-cream"
+                              ? "1px solid rgba(0,0,0,0.15)"
+                              : "1px solid rgba(255,255,255,0.08)",
+                          outline: selectedStyle === s.id ? "2px solid rgba(255,255,255,0.3)" : "none",
                           outlineOffset: 1,
                           cursor: "pointer",
                           transition: "transform 0.15s ease",
@@ -554,18 +554,20 @@ export function LandingEditorSplitView({
                         onMouseOver={(e) => { e.currentTarget.style.transform = "scale(1.15)"; }}
                         onMouseOut={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                       >
-                        <span
-                          style={{
-                            position: "absolute",
-                            bottom: 4,
-                            right: 4,
-                            width: 7,
-                            height: 7,
-                            borderRadius: "50%",
-                            background: s.accent,
-                            opacity: 0.9,
-                          }}
-                        />
+                        {(s.id === "pure-black" || s.id === "light-clean" || s.id === "warm-cream") ? (
+                          <span
+                            style={{
+                              position: "absolute",
+                              bottom: 4,
+                              right: 4,
+                              width: 7,
+                              height: 7,
+                              borderRadius: "50%",
+                              background: s.id === "pure-black" ? "#444444" : s.id === "warm-cream" ? "#D97706" : "#6366F1",
+                              opacity: 0.85,
+                            }}
+                          />
+                        ) : null}
                       </button>
                     ))}
                   </div>
@@ -660,13 +662,13 @@ export function LandingEditorSplitView({
                       width: 28,
                       height: 28,
                       borderRadius: 7,
-                      background: s.bg,
+                      background: s.accent,
                       border: selectedStyle === s.id
-                        ? `2px solid ${s.accent}`
-                        : STYLE_THEMES[s.id].isDark
-                          ? "1px solid rgba(255,255,255,0.12)"
-                          : "1px solid rgba(0,0,0,0.15)",
-                      outline: selectedStyle === s.id ? `2px solid ${s.accent}40` : "none",
+                        ? "2px solid white"
+                        : s.id === "light-clean" || s.id === "warm-cream"
+                          ? "1px solid rgba(0,0,0,0.15)"
+                          : "1px solid rgba(255,255,255,0.08)",
+                      outline: selectedStyle === s.id ? "2px solid rgba(255,255,255,0.3)" : "none",
                       outlineOffset: 1,
                       cursor: "pointer",
                       transition: "transform 0.15s ease",
@@ -677,18 +679,20 @@ export function LandingEditorSplitView({
                     onMouseOver={(e) => { e.currentTarget.style.transform = "scale(1.15)"; }}
                     onMouseOut={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                   >
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: 4,
-                        right: 4,
-                        width: 7,
-                        height: 7,
-                        borderRadius: "50%",
-                        background: s.accent,
-                        opacity: 0.9,
-                      }}
-                    />
+                    {(s.id === "pure-black" || s.id === "light-clean" || s.id === "warm-cream") ? (
+                      <span
+                        style={{
+                          position: "absolute",
+                          bottom: 4,
+                          right: 4,
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          background: s.id === "pure-black" ? "#444444" : s.id === "warm-cream" ? "#D97706" : "#6366F1",
+                          opacity: 0.85,
+                        }}
+                      />
+                    ) : null}
                   </button>
                 ))}
               </div>
