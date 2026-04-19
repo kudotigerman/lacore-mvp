@@ -42,15 +42,17 @@ export async function aiComplete(params: {
   system: string;
   user: string;
   maxTokens?: number;
+  model?: string;
 }): Promise<string> {
   const maxTokens = params.maxTokens ?? 1500;
+  const model = params.model ?? "claude-sonnet-4-6";
   const anthropic = getAnthropic();
   const openai = getOpenAI();
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-6",
+        model,
         max_tokens: maxTokens,
         system: params.system,
         messages: [{ role: "user", content: params.user }],

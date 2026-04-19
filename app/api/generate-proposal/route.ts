@@ -98,6 +98,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { data: profileRow } = await supabaseForDb
+      .from("profiles")
+      .select("plan")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const userPlan = (profileRow as { plan?: string } | null)?.plan ?? "free";
+    const proposalModel =
+      userPlan === "pro" || userPlan === "scale" ? "claude-opus-4-6" : "claude-sonnet-4-6";
+
     const hasCredits = await checkCredits(supabaseForDb, user.id, "generate_proposal");
     if (!hasCredits) {
       return NextResponse.json(
@@ -130,6 +139,7 @@ export async function POST(request: Request) {
         system: SYSTEM,
         user: ctx,
         maxTokens: 4000,
+        model: proposalModel,
       });
     } catch {
       return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
