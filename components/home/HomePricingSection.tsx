@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { getPaddleInstance, initializePaddle } from "@paddle/paddle-js";
-import { openPaddleCheckout, paddleInitOptions } from "@/lib/paddle-client";
-import { PADDLE_PRICE_IDS, TOPUP_CREDITS } from "@/lib/paddle-config";
+import { useState } from "react";
+import { DODO_PRODUCT_IDS, TOPUP_CREDITS } from "@/lib/dodo-config";
 
 type Cycle = "monthly" | "annual";
 
@@ -32,8 +30,8 @@ const PLANS: {
       "1 landing page",
       "Lead kanban + Telegram alerts",
       "Basic proposals",
-      "No credit card required"
-    ]
+      "No credit card required",
+    ],
   },
   {
     key: "starter",
@@ -47,8 +45,8 @@ const PLANS: {
       "5 landing pages + custom domain",
       "Email sequences (send via Resend)",
       "Content machine (5 channels)",
-      "E-sign proposals"
-    ]
+      "E-sign proposals",
+    ],
   },
   {
     key: "pro",
@@ -63,8 +61,8 @@ const PLANS: {
       "Unlimited landing pages",
       "Prospects ICP + 6 channels",
       "All sequences: Email, IG, LinkedIn, WhatsApp, Telegram",
-      "Priority AI generation"
-    ]
+      "Priority AI generation",
+    ],
   },
   {
     key: "scale",
@@ -78,77 +76,90 @@ const PLANS: {
       "Unlimited projects",
       "Weekly lead digest (coming soon)",
       "White-label landing pages",
-      "Best for agencies and teams"
-    ]
-  }
+      "Best for agencies and teams",
+    ],
+  },
 ];
 
-function priceIdForPlan(planKey: string, cycle: Cycle): string | null {
-  if (planKey === "starter") return cycle === "monthly" ? PADDLE_PRICE_IDS.starter_monthly : PADDLE_PRICE_IDS.starter_annual;
-  if (planKey === "pro") return cycle === "monthly" ? PADDLE_PRICE_IDS.pro_monthly : PADDLE_PRICE_IDS.pro_annual;
-  if (planKey === "scale") return cycle === "monthly" ? PADDLE_PRICE_IDS.scale_monthly : PADDLE_PRICE_IDS.scale_annual;
+function productIdForPlan(planKey: string, cycle: Cycle): string | null {
+  if (planKey === "starter") return cycle === "monthly" ? DODO_PRODUCT_IDS.starter_monthly : DODO_PRODUCT_IDS.starter_annual;
+  if (planKey === "pro") return cycle === "monthly" ? DODO_PRODUCT_IDS.pro_monthly : DODO_PRODUCT_IDS.pro_annual;
+  if (planKey === "scale") return cycle === "monthly" ? DODO_PRODUCT_IDS.scale_monthly : DODO_PRODUCT_IDS.scale_annual;
   return null;
+}
+
+async function startDodoCheckout(productId: string, data: { customerId?: string; customerEmail?: string; userId?: string }) {
+  const apiKey = process.env.NEXT_PUBLIC_DODO_PAYMENTS_API_KEY;
+  if (!apiKey) {
+    console.error("Missing NEXT_PUBLIC_DODO_PAYMENTS_API_KEY");
+    return;
+  }
+  const returnUrl = `${window.location.origin}/dashboard`;
+  const u = new URL("https://api.dodopayments.com/checkout");
+  u.searchParams.set("product_id", productId);
+  u.searchParams.set("quantity", "1");
+  u.searchParams.set("return_url", returnUrl);
+  if (data.customerEmail) u.searchParams.set("customer_email", data.customerEmail);
+  u.searchParams.set("metadata[lacore_user_id]", data.userId ?? "");
+
+  const checkoutRes = await fetch(u.toString(), {
+    method: "GET",
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!checkoutRes.ok) {
+    console.error("Dodo checkout API error:", checkoutRes.status, await checkoutRes.text());
+    return;
+  }
+  const checkoutData = (await checkoutRes.json()) as { payment_link?: string; url?: string };
+  const href = checkoutData.payment_link ?? checkoutData.url;
+  if (href) window.location.href = href;
 }
 
 export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [cycle, setCycle] = useState<Cycle>("monthly");
-  const [paddleReady, setPaddleReady] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
-    if (!token) return;
-    void initializePaddle(
-      paddleInitOptions(
-        token,
-        process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox"
-      )
-    ).then(() => setPaddleReady(true));
-  }, []);
+  async function handleCheckout(planKey: string) {
+    if (planKey === "free") {
+      window.location.href = "/sign-up";
+      return;
+    }
+    if (!isLoggedIn) {
+      window.location.href = `/auth?plan=${encodeURIComponent(planKey)}`;
+      return;
+    }
+    setLoadingPlan(planKey);
+    try {
+      const res = await fetch("/api/billing/checkout", { method: "POST", credentials: "include" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { customerId?: string; customerEmail?: string; userId?: string };
+      const productId = productIdForPlan(planKey, cycle);
+      if (!productId) return;
+      await startDodoCheckout(productId, data);
+    } catch (e) {
+      console.error("Dodo checkout error:", e);
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
 
-  const openCheckout = useCallback(
-    async (priceId: string) => {
-      const paddle = paddleReady ? getPaddleInstance() : null;
-      if (!paddle?.Checkout) {
-        console.error("Paddle not initialized");
-        alert("Payment system loading, please try again in a moment");
-        return;
-      }
-
-      if (isLoggedIn) {
-        const res = await fetch("/api/billing/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ priceId })
-        });
-        if (!res.ok) return;
-        const { customerEmail, customerId, userId } = (await res.json()) as {
-          customerEmail?: string;
-          customerId?: string;
-          userId?: string;
-        };
-        openPaddleCheckout(paddle, {
-          items: [{ priceId, quantity: 1 }],
-          customData: userId ? { lacore_user_id: userId } : undefined,
-          customer: customerId ? { id: customerId } : { email: customerEmail ?? "" }
-        });
-        return;
-      }
-
-      openPaddleCheckout(paddle, {
-        items: [{ priceId, quantity: 1 }]
-      });
-    },
-    [paddleReady, isLoggedIn]
-  );
-
-  const openTopup = async (priceId: string) => {
+  async function handleTopup(productId: string) {
     if (!isLoggedIn) {
       window.location.assign("/auth");
       return;
     }
-    await openCheckout(priceId);
-  };
+    setLoadingPlan(`topup:${productId}`);
+    try {
+      const res = await fetch("/api/billing/checkout", { method: "POST", credentials: "include" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { customerId?: string; customerEmail?: string; userId?: string };
+      await startDodoCheckout(productId, data);
+    } catch (e) {
+      console.error("Dodo topup error:", e);
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
 
   return (
     <section id="pricing" className="scroll-mt-20 px-5 py-10 sm:px-10 sm:py-14">
@@ -194,7 +205,8 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {PLANS.map((p) => {
             const price = cycle === "monthly" ? p.monthly : p.annual;
-            const priceId = priceIdForPlan(p.key, cycle);
+            const productId = productIdForPlan(p.key, cycle);
+            const busy = loadingPlan === p.key;
             return (
               <div
                 key={p.key}
@@ -236,20 +248,15 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (!paddleReady || !priceId) {
-                          window.location.assign(`/auth?plan=${p.key}`);
-                          return;
-                        }
-                        void openCheckout(priceId);
-                      }}
-                      className={`w-full rounded-xl py-3 text-sm font-medium transition ${
+                      disabled={busy || !productId}
+                      onClick={() => void handleCheckout(p.key)}
+                      className={`w-full rounded-xl py-3 text-sm font-medium transition disabled:opacity-50 ${
                         p.featured
                           ? "bg-indigo-600 text-white hover:bg-indigo-500"
                           : "border border-white/15 text-white/90 hover:bg-white/[0.06]"
                       }`}
                     >
-                      {paddleReady ? `Get ${p.name} →` : `Start free · ${p.name} waitlist`}
+                      {busy ? "Loading…" : `Get ${p.name} →`}
                     </button>
                   )}
                 </div>
@@ -269,8 +276,9 @@ export function HomePricingSection({ isLoggedIn }: { isLoggedIn: boolean }) {
               <button
                 key={id}
                 type="button"
-                onClick={() => void openTopup(id)}
-                className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                disabled={loadingPlan !== null}
+                onClick={() => void handleTopup(id)}
+                className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 disabled:opacity-50"
               >
                 +{n} credits
               </button>

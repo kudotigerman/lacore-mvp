@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
-import { PaddleProvider } from "@/components/PaddleProvider";
-
 const themeInitScript = `
 (function(){
   try {
@@ -66,7 +64,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <PaddleProvider />
         {children}
       </body>
     </html>

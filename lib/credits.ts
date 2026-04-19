@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CREDIT_COSTS, type CreditAction } from "./paddle-config";
+import { CREDIT_COSTS, type CreditAction } from "./dodo-config";
 
 export async function checkCredits(
   client: SupabaseClient,

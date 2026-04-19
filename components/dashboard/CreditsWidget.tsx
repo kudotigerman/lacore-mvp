@@ -1,31 +1,56 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getPaddleInstance, initializePaddle } from "@paddle/paddle-js";
-import { openPaddleCheckout, paddleInitOptions } from "@/lib/paddle-client";
-import { PADDLE_PRICE_IDS } from "@/lib/paddle-config";
+import { DODO_PRODUCT_IDS } from "@/lib/dodo-config";
 
 const TOPUP_PACKS = [
-  { label: "50 credits", price: "$9", priceId: PADDLE_PRICE_IDS.credits_50, credits: 50 },
-  { label: "150 credits", price: "$19", priceId: PADDLE_PRICE_IDS.credits_150, credits: 150, best: true },
-  { label: "300 credits", price: "$34", priceId: PADDLE_PRICE_IDS.credits_300, credits: 300 },
-  { label: "600 credits", price: "$59", priceId: PADDLE_PRICE_IDS.credits_600, credits: 600 }
+  { label: "50 credits", price: "$9", productId: DODO_PRODUCT_IDS.credits_50, credits: 50 },
+  { label: "150 credits", price: "$19", productId: DODO_PRODUCT_IDS.credits_150, credits: 150, best: true },
+  { label: "300 credits", price: "$34", productId: DODO_PRODUCT_IDS.credits_300, credits: 300 },
+  { label: "600 credits", price: "$59", productId: DODO_PRODUCT_IDS.credits_600, credits: 600 },
 ];
 
 type BalancePayload = { credits_balance: number; plan: string };
+
+async function startDodoCheckout(productId: string, data: { customerId?: string; customerEmail?: string; userId?: string }) {
+  const apiKey = process.env.NEXT_PUBLIC_DODO_PAYMENTS_API_KEY;
+  if (!apiKey) {
+    console.error("Missing NEXT_PUBLIC_DODO_PAYMENTS_API_KEY");
+    return;
+  }
+  const returnUrl = `${window.location.origin}/dashboard`;
+  const u = new URL("https://api.dodopayments.com/checkout");
+  u.searchParams.set("product_id", productId);
+  u.searchParams.set("quantity", "1");
+  u.searchParams.set("return_url", returnUrl);
+  if (data.customerEmail) u.searchParams.set("customer_email", data.customerEmail);
+  u.searchParams.set("metadata[lacore_user_id]", data.userId ?? "");
+
+  const checkoutRes = await fetch(u.toString(), {
+    method: "GET",
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!checkoutRes.ok) {
+    console.error("Dodo checkout API error:", checkoutRes.status, await checkoutRes.text());
+    return;
+  }
+  const checkoutData = (await checkoutRes.json()) as { payment_link?: string; url?: string };
+  const href = checkoutData.payment_link ?? checkoutData.url;
+  if (href) window.location.href = href;
+}
 
 export function CreditsWidget() {
   const [balance, setBalance] = useState<number | null>(null);
   const [plan, setPlan] = useState("free");
   const [showModal, setShowModal] = useState(false);
-  const [paddleReady, setPaddleReady] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   const reload = useCallback(async () => {
     try {
       const res = await fetch("/api/credits/balance", {
         method: "GET",
         credentials: "include",
-        cache: "no-store"
+        cache: "no-store",
       });
       if (res.status === 401) {
         setBalance(0);
@@ -50,17 +75,6 @@ export function CreditsWidget() {
     void reload();
   }, [reload]);
 
-  useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
-    if (!token) return;
-    void initializePaddle(
-      paddleInitOptions(
-        token,
-        process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox"
-      )
-    ).then(() => setPaddleReady(true));
-  }, []);
-
   const planLimit: Record<string, number> = { free: 20, starter: 100, pro: 300, scale: 1000 };
   const limit = planLimit[plan] ?? 20;
   const pct = balance !== null ? Math.min((balance / limit) * 100, 100) : 0;
@@ -70,32 +84,27 @@ export function CreditsWidget() {
 
   const handleBuyCredits = () => setShowModal(true);
 
-  const handleTopup = async (priceId: string) => {
-    const paddle = paddleReady ? getPaddleInstance() : null;
-    if (!paddle?.Checkout) {
-      console.error("Paddle not initialized");
-      alert("Payment system loading, please try again in a moment");
-      return;
+  const handleTopup = async (productId: string) => {
+    setCheckoutBusy(true);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        customerEmail?: string;
+        customerId?: string;
+        userId?: string;
+      };
+      await startDodoCheckout(productId, data);
+      setShowModal(false);
+    } catch (e) {
+      console.error("Dodo topup error:", e);
+    } finally {
+      setCheckoutBusy(false);
     }
-    const res = await fetch("/api/billing/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ priceId })
-    });
-    if (!res.ok) return;
-    const { customerEmail, customerId, userId } = (await res.json()) as {
-      customerEmail?: string;
-      customerId?: string;
-      userId?: string;
-    };
-    openPaddleCheckout(paddle, {
-      items: [{ priceId, quantity: 1 }],
-      customData: userId ? { lacore_user_id: userId } : undefined,
-      customer: customerId ? { id: customerId } : { email: customerEmail ?? "" }
-    });
-    setShowModal(false);
-    void reload();
   };
 
   if (balance === null) {
@@ -192,10 +201,11 @@ export function CreditsWidget() {
             <div className="flex flex-col gap-2">
               {TOPUP_PACKS.map((pack) => (
                 <button
-                  key={pack.priceId}
+                  key={pack.productId}
                   type="button"
-                  onClick={() => void handleTopup(pack.priceId)}
-                  className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-colors ${
+                  disabled={checkoutBusy}
+                  onClick={() => void handleTopup(pack.productId)}
+                  className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-colors disabled:opacity-50 ${
                     pack.best
                       ? "border-indigo-400/30 bg-indigo-600 text-white hover:bg-indigo-500"
                       : "border-white/[0.08] bg-white/[0.05] text-white hover:bg-white/10"
