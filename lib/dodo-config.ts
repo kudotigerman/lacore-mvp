@@ -7,7 +7,7 @@ export const DODO_PRODUCT_IDS = {
   scale_annual: "pdt_0Nd3mk29D1fqW0bUL0gKG",
   credits_50: "pdt_0Nd3o3eFpxYUKcGV2LER2",
   credits_150: "pdt_0Nd3oC3p0srF8BfVC3ebp",
-  credits_300: "pdt_0Nd3oLbeELWFlrBstyBvF",
+  credits_300: "pdt_0Nd3oLbeELWFIrBstyBvF",
   credits_600: "pdt_0Nd3oSUfitYYBEFU159c7",
 } as const;
 
@@ -47,6 +47,6 @@ export const PRODUCT_TO_PLAN: Record<string, string> = {
 export const TOPUP_CREDITS: Record<string, number> = {
   pdt_0Nd3o3eFpxYUKcGV2LER2: 50,
   pdt_0Nd3oC3p0srF8BfVC3ebp: 150,
-  pdt_0Nd3oLbeELWFlrBstyBvF: 300,
+  pdt_0Nd3oLbeELWFIrBstyBvF: 300,
   pdt_0Nd3oSUfitYYBEFU159c7: 600,
 };
