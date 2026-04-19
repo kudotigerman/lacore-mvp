@@ -30,11 +30,8 @@ function detectStyleChangeIntent(instruction: string): string | null {
     beige: "warm-cream",
   };
 
-  const hasStyleIntent =
-    /(change|make|set|switch|use).*(color|theme|style|background|palette|scheme)|(color|theme|style).*(change|make|to|into)/i.test(
-      raw
-    );
-  if (!hasStyleIntent) return null;
+  const hasColorKeyword = Object.keys(styleMap).some((k) => raw.includes(k));
+  if (!hasColorKeyword) return null;
 
   for (const [keyword, styleValue] of Object.entries(styleMap)) {
     if (raw.includes(keyword)) return styleValue;
@@ -671,7 +668,10 @@ CRITICAL RULES:
 - NEVER add fields like "heroBackground", "backgroundColor", "theme", "colors" — these don't exist in the schema.
 - The only valid top-level fields are: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
 - If user asks to change background/color/style/theme — respond by changing relevant TEXT content only (headline, badge, etc.) and ignore the visual styling request since styles are controlled separately.
-- If user asks to change the hero image/photo — set heroImage to null to remove it, or keep existing heroImage unchanged.`,
+- heroImage field MUST only be set if it contains a valid object with these exact fields: { url: string (must be a real https:// URL), photographer: string, photographerUrl: string, unsplashUrl: string }. 
+- If user asks to "change background", "change photo", "change image", or describes a visual scene (like "office view", "city", "nature") WITHOUT providing a real image URL — do NOT modify heroImage at all. Instead, respond by updating the badge or subheadline text to acknowledge the request, and leave heroImage exactly as it is.
+- To REMOVE the hero image entirely, set heroImage to null.
+- NEVER set heroImage to a string, a description, or an object with a non-https URL.`,
           jsonUser as ClaudeUserContent
         );
       } catch {

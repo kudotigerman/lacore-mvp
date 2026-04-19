@@ -342,7 +342,14 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
   const renderSection = (key: string): ReactNode => {
     switch (key) {
       case "hero": {
-        const hi = extendedContent.heroImage;
+        const hiRaw = extendedContent.heroImage;
+        const hi =
+          hiRaw &&
+          typeof hiRaw === "object" &&
+          typeof (hiRaw as { url?: unknown }).url === "string" &&
+          (hiRaw as { url: string }).url.startsWith("http")
+            ? hiRaw
+            : null;
         const heroSectionStyle: CSSProperties = {
           minHeight: "100vh",
           display: "flex",
