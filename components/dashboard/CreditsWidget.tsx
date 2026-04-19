@@ -12,31 +12,19 @@ const TOPUP_PACKS = [
 
 type BalancePayload = { credits_balance: number; plan: string };
 
-async function startDodoCheckout(productId: string, data: { customerId?: string; customerEmail?: string; userId?: string }) {
-  const apiKey = process.env.NEXT_PUBLIC_DODO_PAYMENTS_API_KEY;
-  if (!apiKey) {
-    console.error("Missing NEXT_PUBLIC_DODO_PAYMENTS_API_KEY");
-    return;
-  }
-  const returnUrl = `${window.location.origin}/dashboard`;
-  const u = new URL("https://api.dodopayments.com/checkout");
-  u.searchParams.set("product_id", productId);
-  u.searchParams.set("quantity", "1");
-  u.searchParams.set("return_url", returnUrl);
-  if (data.customerEmail) u.searchParams.set("customer_email", data.customerEmail);
-  u.searchParams.set("metadata[lacore_user_id]", data.userId ?? "");
-
-  const checkoutRes = await fetch(u.toString(), {
-    method: "GET",
-    headers: { Authorization: `Bearer ${apiKey}` },
+async function startDodoCheckout(productId: string) {
+  const res = await fetch("/api/billing/dodo-checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ productId }),
   });
-  if (!checkoutRes.ok) {
-    console.error("Dodo checkout API error:", checkoutRes.status, await checkoutRes.text());
+  if (!res.ok) {
+    console.error("Checkout error:", await res.text());
     return;
   }
-  const checkoutData = (await checkoutRes.json()) as { payment_link?: string; url?: string };
-  const href = checkoutData.payment_link ?? checkoutData.url;
-  if (href) window.location.href = href;
+  const data = (await res.json()) as { url?: string };
+  if (data.url) window.location.href = data.url;
 }
 
 export function CreditsWidget() {
@@ -87,18 +75,7 @@ export function CreditsWidget() {
   const handleTopup = async (productId: string) => {
     setCheckoutBusy(true);
     try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as {
-        customerEmail?: string;
-        customerId?: string;
-        userId?: string;
-      };
-      await startDodoCheckout(productId, data);
+      await startDodoCheckout(productId);
       setShowModal(false);
     } catch (e) {
       console.error("Dodo topup error:", e);
