@@ -342,80 +342,78 @@ export function LandingEditorSplitView({
             ))}
             <div ref={messagesEndRef} />
           </div>
-        </div>
 
-        <div className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-t border-white/[0.06] px-3 py-2 scrollbar-hide">
-          {[
-            { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
-            { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
-            { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
-          ].map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              disabled={isEditing}
-              onClick={async () => {
-                const userMsg: ChatMsg = {
-                  id: `u-${Date.now()}`,
-                  role: "user",
-                  content: item.action
-                };
-                setMessages((prev) => [...prev, userMsg]);
-                setIsEditing(true);
-                try {
-                  const supabase = getSupabaseClient();
-                  const { data, error } = await supabase
-                    .from("landing_pages")
-                    .select("html_content, jsx_content, json_content")
-                    .eq("slug", slug)
-                    .single();
-                  if (error) throw new Error(error.message);
-                  const row = data as { html_content: string | null; jsx_content: string | null; json_content: Record<string, unknown> | null };
-                  const jsx = row.jsx_content?.trim() ?? "";
-                  const html = row.html_content?.trim() ?? "";
-                  const jsonContent = row.json_content;
-                  const useJsx = Boolean(jsx);
-                  if (!useJsx && !html && !jsonContent) throw new Error("No page content found.");
-                  const res = await fetch("/api/edit-landing", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${d.sessionToken}` },
-                    body: JSON.stringify({
-                      slug,
-                      instruction: item.action,
-                      ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
-                    })
-                  });
-                  const text = await res.text();
-                  const result = JSON.parse(text) as {
-                    success?: boolean;
-                    error?: string;
-                    json?: Record<string, unknown>;
-                    styleChanged?: string;
+          <div className="flex gap-1.5 overflow-x-auto border-b border-t border-white/[0.06] px-3 py-2 scrollbar-hide">
+            {[
+              { label: "💪 Headline", action: "Make the headline stronger and more compelling" },
+              { label: "⏰ Urgency", action: "Make the copy more urgent with a deadline or scarcity element" },
+              { label: "💬 Testimonials", action: "Make the testimonials section more prominent and add specific results" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                disabled={isEditing}
+                onClick={async () => {
+                  const userMsg: ChatMsg = {
+                    id: `u-${Date.now()}`,
+                    role: "user",
+                    content: item.action
                   };
-                  if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
-                  if (result.json) setCurrentJsonContent(result.json);
-                  if (result.styleChanged && typeof result.styleChanged === "string") {
-                    setSelectedStyle(result.styleChanged as LandingStyle);
-                    d.setLandingStyle(result.styleChanged as LandingStyle);
+                  setMessages((prev) => [...prev, userMsg]);
+                  setIsEditing(true);
+                  try {
+                    const supabase = getSupabaseClient();
+                    const { data, error } = await supabase
+                      .from("landing_pages")
+                      .select("html_content, jsx_content, json_content")
+                      .eq("slug", slug)
+                      .single();
+                    if (error) throw new Error(error.message);
+                    const row = data as { html_content: string | null; jsx_content: string | null; json_content: Record<string, unknown> | null };
+                    const jsx = row.jsx_content?.trim() ?? "";
+                    const html = row.html_content?.trim() ?? "";
+                    const jsonContent = row.json_content;
+                    const useJsx = Boolean(jsx);
+                    if (!useJsx && !html && !jsonContent) throw new Error("No page content found.");
+                    const res = await fetch("/api/edit-landing", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${d.sessionToken}` },
+                      body: JSON.stringify({
+                        slug,
+                        instruction: item.action,
+                        ...(useJsx ? { currentJsx: jsx } : html ? { currentHtml: html } : { currentJson: JSON.stringify(jsonContent, null, 2) })
+                      })
+                    });
+                    const text = await res.text();
+                    const result = JSON.parse(text) as {
+                      success?: boolean;
+                      error?: string;
+                      json?: Record<string, unknown>;
+                      styleChanged?: string;
+                    };
+                    if (!res.ok || !result.success) throw new Error(result.error ?? "Update failed.");
+                    if (result.json) setCurrentJsonContent(result.json);
+                    if (result.styleChanged && typeof result.styleChanged === "string") {
+                      setSelectedStyle(result.styleChanged as LandingStyle);
+                      d.setLandingStyle(result.styleChanged as LandingStyle);
+                    }
+                    setIframeKey((k) => k + 1);
+                    setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
+                  } catch (e) {
+                    const msg = e instanceof Error ? e.message : "Something went wrong.";
+                    setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: msg }]);
+                  } finally {
+                    setIsEditing(false);
                   }
-                  setIframeKey((k) => k + 1);
-                  setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: "Done — your page is updated. Check the preview." }]);
-                } catch (e) {
-                  const msg = e instanceof Error ? e.message : "Something went wrong.";
-                  setMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: msg }]);
-                } finally {
-                  setIsEditing(false);
-                }
-              }}
-              className="shrink-0 whitespace-nowrap rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80 disabled:opacity-40"
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+                }}
+                className="shrink-0 whitespace-nowrap rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 transition-colors hover:border-indigo-500/40 hover:text-white/80 disabled:opacity-40"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
-        <div className="max-h-[60vh] shrink-0 overflow-y-auto px-4 py-3 lg:max-h-none">
-          <div>
+          <div className="px-4 py-3">
             <div className="flex gap-2">
               <div className="relative flex-1">
                 {!input.trim() && !inputFocused ? (
@@ -462,7 +460,6 @@ export function LandingEditorSplitView({
                 + Add
               </button>
             </div>
-          </div>
 
           <div className="space-y-3 border-t border-white/[0.08] py-3">
             <div className="flex gap-2">
@@ -619,6 +616,7 @@ export function LandingEditorSplitView({
               </div>
             ) : null}
           </div>
+        </div>
         </div>
       </div>
 
