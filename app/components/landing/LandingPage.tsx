@@ -96,11 +96,13 @@ type LandingContentExtended = LandingContent & {
     photo?: string;
     highlights?: string[];
   };
-  calendly?: {
-    url?: string;
-    headline?: string;
-    subheadline?: string;
-  };
+  calendly?:
+    | string
+    | {
+        url?: string;
+        headline?: string;
+        subheadline?: string;
+      };
 };
 
 export default function LandingPage({ content, slug, style, showBrandWatermark = true }: Props) {
@@ -987,8 +989,12 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </section>
         );
-      case "calendly":
+      case "calendly": {
         if (!extendedContent.calendly) return null;
+        const calendlyData =
+          typeof extendedContent.calendly === "string"
+            ? { url: extendedContent.calendly, headline: "Book a call", subheadline: "" }
+            : extendedContent.calendly;
         return (
         <section className="py-12 md:py-[120px]" data-aos="fade-up" style={{ background: theme.bgSecondary }}>
           <div className="container" style={{ maxWidth: 900 }}>
@@ -998,18 +1004,18 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
                 BOOKING
               </div>
               <h2 className="text-[28px] md:text-5xl" style={{ fontFamily: fontHeading, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 14 }}>
-                {extendedContent.calendly.headline || "Book a call"}
+                {calendlyData.headline || "Book a call"}
               </h2>
-              {extendedContent.calendly.subheadline ? (
+              {calendlyData.subheadline ? (
                 <p style={{ margin: "10px auto 0", color: theme.textSecondary, maxWidth: 680, lineHeight: 1.65 }}>
-                  {extendedContent.calendly.subheadline}
+                  {calendlyData.subheadline}
                 </p>
               ) : null}
             </div>
-            {extractCalendlyEmbedUrl(extendedContent.calendly.url) ? (
+            {extractCalendlyEmbedUrl(calendlyData.url) ? (
               <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${theme.cardBorder}`, background: theme.cardBg }}>
                 <iframe
-                  src={extractCalendlyEmbedUrl(extendedContent.calendly.url)}
+                  src={extractCalendlyEmbedUrl(calendlyData.url)}
                   title="Calendly booking"
                   style={{ width: "100%", height: 650, border: "none", display: "block" }}
                 />
@@ -1023,6 +1029,7 @@ export default function LandingPage({ content, slug, style, showBrandWatermark =
           </div>
         </section>
         );
+      }
       case "contact-form":
         return (
       <section className="py-12 md:py-[120px]" id="contact-form" data-aos="fade-up">

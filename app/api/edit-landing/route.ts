@@ -125,7 +125,11 @@ function hasSection(data: Record<string, unknown>, key: ReorderSectionKey): bool
   if (key === "faq") return Array.isArray(data.faq) && data.faq.length > 0;
   if (key === "pricing") return Array.isArray(data.pricing) && data.pricing.length > 0;
   if (key === "video") return typeof data.video === "object" && data.video !== null;
-  if (key === "calendly") return typeof data.calendly === "object" && data.calendly !== null;
+  if (key === "calendly") {
+    const c = data.calendly;
+    if (typeof c === "string") return c.trim().length > 0;
+    return typeof c === "object" && c !== null;
+  }
   return false;
 }
 
@@ -786,6 +790,7 @@ RULES:
 - Only modify fields directly relevant to the user's request.
 - NEVER add new top-level fields that don't exist in the input.
 - Valid top-level fields: niche, brand, badge, headline, headlineAccent, subheadline, ctaPrimary, ctaSecondary, socialProof, stats, problemHeadline, problems, solutionHeadline, features, processHeadline, steps, testimonialsHeadline, testimonials, ctaHeadline, ctaSubtext, ctaButton, formHeadline, formButton, headlineColor, subheadlineColor, accentColor, badgeTextColor, heroImage, sectionOrder, faqHeadline, faq, pricingHeadline, pricing, video, aboutHeadline, about, calendly.
+- The "calendly" field must always be an object: { "url": "https://...", "headline": "Book a call", "subheadline": "" }. NEVER set calendly to a plain string URL. If the user provides a Calendly URL, wrap it in that object shape.
 - heroImage: never modify this field. Leave it exactly as is.
 - Color override fields (headlineColor, subheadlineColor, accentColor, badgeTextColor) accept valid CSS color strings like "#FFFFFF", "rgba(255,255,255,0.9)", or named colors like "white". Set to null to remove override and revert to theme default.
 - When user asks to change text color or says text is hard to read — use these color override fields. NEVER add HTML tags to text fields.
