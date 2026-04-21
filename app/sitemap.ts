@@ -22,12 +22,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.4 }
   ];
 
-  const blogEntries: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${SITE}/blog/${post.slug}`,
-    lastModified: post.date ? new Date(post.date) : now,
-    changeFrequency: "monthly" as const,
-    priority: 0.7
-  }));
+  const blogEntries: MetadataRoute.Sitemap = posts.map((post) => {
+    const parsedDate = post.date ? new Date(post.date) : null;
+    const safeLastModified = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : now;
+    return {
+      url: `${SITE}/blog/${post.slug}`,
+      lastModified: safeLastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7
+    };
+  });
 
   return [...staticEntries, ...blogEntries];
 }
