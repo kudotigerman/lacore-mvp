@@ -84,6 +84,14 @@ export async function POST(req: NextRequest) {
         const credits = PLAN_CREDITS[plan] ?? 100;
         const userId = await getUserId();
         if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("credits_balance")
+            .eq("user_id", userId)
+            .maybeSingle();
+          const currentBalance =
+            (profile as { credits_balance?: number } | null)?.credits_balance ?? 0;
+          const newBalance = Math.max(currentBalance, credits);
           await supabase
             .from("profiles")
             .update({
@@ -92,7 +100,7 @@ export async function POST(req: NextRequest) {
               dodo_customer_id: customerId,
               dodo_subscription_id: payload.data.subscription_id ?? null,
               billing_cycle_end: payload.data.next_billing_date ?? null,
-              credits_balance: credits,
+              credits_balance: newBalance,
             } as never)
             .eq("user_id", userId);
         }
