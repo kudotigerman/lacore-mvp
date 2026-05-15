@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { PLANS } from "../_shared/plans.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -313,6 +314,19 @@ serve(async (req) => {
       credits_balance?: number;
     } | null;
     const generationCount = Number(prof?.landing_generations_count ?? 0);
+    const plan =
+      PLANS[(prof?.plan || "free") as keyof typeof PLANS] ?? PLANS.free;
+    if (generationCount >= plan.maxLandingGenerations) {
+      return new Response(
+        JSON.stringify({
+          error: "Generation limit reached. Upgrade your plan.",
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
     const profileDisplayName =
       typeof prof?.display_name === "string" ? prof.display_name.trim() : "";
     const brandNameLine = isDefaultProjectName
