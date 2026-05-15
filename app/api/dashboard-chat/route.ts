@@ -145,6 +145,7 @@ export async function POST(request: Request) {
         system,
         messages: anthropicMessages,
         maxTokens: 4096,
+        model: "claude-haiku-4-5-20251001",
       });
     } catch {
       return NextResponse.json({ error: AI_BUSY_USER_MESSAGE }, { status: 503 });
